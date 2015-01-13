@@ -1,0 +1,16 @@
+# First, ignore everything
+*
+# Now, whitelist anything that's a directory
+!*/
+# And all the file types you're interested in.
+!*.sh
+!*.R
+!*.pl
+!*.py
+!*.c
+!*readme.txt*
+!*README.txt*
+
+
+#make sure to track .gitignore
+!.gitignore
