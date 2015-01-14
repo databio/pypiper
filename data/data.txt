@@ -1,0 +1,10 @@
+
+
+
+CORE
+ls /fhgfs/groups/lab_bsf/meth-seq/projects/BSA_0044_WGBS_CORE-seq/MF00045_CORE_Seq/wgbs-bismark-3.3_PE/hg19/bismark/extractor/*.cov
+
+EP
+ls /fhgfs/groups/lab_bsf/meth-seq/projects/BSA_0044_WGBS_CORE-seq/MF00044_EG_for_COREseq/wgbs-bismark-3.3_PE/hg19/bismark/extractor/*.cov
+
+
