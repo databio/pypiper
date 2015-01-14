@@ -2,6 +2,12 @@
 *
 # Now, whitelist anything that's a directory
 !*/
+
+
+#keep everything in data
+!data/*.tsv
+!data/*.txt
+
 # And all the file types you're interested in.
 !*.sh
 !*.R
