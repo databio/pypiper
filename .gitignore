@@ -8,6 +8,7 @@
 !data/*.tsv
 !data/*.txt
 !data/*
+!data/**
 
 # And all the file types you're interested in.
 !*.sh
