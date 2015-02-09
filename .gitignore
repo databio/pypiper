@@ -9,6 +9,7 @@
 !data/*.txt
 !data/*
 !data/**
+!/data/**/*
 
 # And all the file types you're interested in.
 !*.sh
