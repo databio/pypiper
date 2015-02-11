@@ -43,6 +43,19 @@ parser.add_argument('-q', '--single-end', dest='paired_end', action='store_false
 args = parser.parse_args()
 
 
+# Merging
+########################################################################################
+# If 2 unmapped bam files are given, then these are to be merged.
+# Must be done here to initialize the sample name correctly
+merge = False
+if (len(args.unmapped_bam) > 1):
+	merge = True
+	if (args.sample_name == "default"):
+		args.sample_name = "merged";
+else:
+	if (args.sample_name == "default"):
+		args.sample_name = os.path.splitext(os.path.basename(args.unmapped_bam[0]))[0]
+
 # Set up environment path variables
 ########################################################################################
 # Set up an container class to hold paths
@@ -64,32 +77,16 @@ paths.log_file = paths.pipeline_outfolder + "wgbs.log.md"
 # Run some initial setting and logging code to start the pipeline.
 start_time = pipetk.start_pipeline(paths, args)
 
-# Merging
-########################################################################################
-# If 2 unmapped bam files are given, then these are to be merged.
-
-merge = False
-#if (isinstance(args.unmapped_bam, list)):
-if (len(args.unmapped_bam) > 1):
-	print("Multiple unmapped bams found; merge requested")
-	input_bams = args.unmapped_bam;
-	print("input bams: " + str(input_bams))
-	merge = True
-	if (args.sample_name == "default"):
-		args.sample_name = "merged";
-else:
-	print("Single unmapped bam found; no merge required")
-	if (args.sample_name == "default"):
-		args.sample_name = os.path.splitext(os.path.basename(args.unmapped_bam))[0]
-
 print("N input bams:\t\t" + str(len(args.unmapped_bam)))
 print("Sample name:\t\t" + args.sample_name)
-
 
 sample_merged_bam = args.sample_name + ".merged.bam"
 pipetk.make_sure_path_exists(paths.pipeline_outfolder + "unmapped_bam/")
 
 if merge and not os.path.isfile(sample_merged_bam):
+	print("Multiple unmapped bams found; merge requested")
+	input_bams = args.unmapped_bam;
+	print("input bams: " + str(input_bams))
 	merge_folder = os.path.join(paths.pipeline_outfolder, "unmapped_bam/")
 	input_string = " INPUT=" + " INPUT=".join(input_bams)
 	output_merge = os.path.join(merge_folder, sample_merged_bam)
@@ -103,6 +100,8 @@ if merge and not os.path.isfile(sample_merged_bam):
 	args.unmapped_bam = sample_merged_bam  #update unmapped bam reference
 else:
 	# Link the file into the unmapped_bam directory
+	print("Single unmapped bam found; no merge required")
+	print("Unmapped bam:\t\t" + str(args.unmapped_bam[0]))
 	args.unmapped_bam = args.unmapped_bam[0]
 	local_unmapped_bam = paths.pipeline_outfolder+"unmapped_bam/"+args.sample_name+".bam"
 	call("ln -s " + args.unmapped_bam + " " + local_unmapped_bam, shell=True)

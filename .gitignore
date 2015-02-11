@@ -11,6 +11,11 @@
 !data/**
 !/data/**/*
 
+#ignore everything in data/samples
+#
+data/samples
+
+
 # And all the file types you're interested in.
 !*.sh
 !*.R
