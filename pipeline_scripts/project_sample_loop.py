@@ -31,11 +31,10 @@ wgbs_pipeline.py -i unmapped_bam -r COREseq/data/samples --paired-end -g hg19
 
 
  # here's my sample code:
-
 python wgbs_pipeline.py -i /fhgfs/groups/lab_bock/jklughammer/projects/otherProjects/CORE-seq/titration/CORE/unmapped_bam/BSF_0131_C5FD6ACXX_8__CORE_K562_500_1_sub.bam -s test --no-checks
 
 
-
+python wgbs_pipeline.py -i /fhgfs/groups/lab_bock/jklughammer/projects/otherProjects/CORE-seq/titration/CORE/unmapped_bam/BSF_0131_C5FD6ACXX_8__CORE_K562_500_1.bam
 
 
 
