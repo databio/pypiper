@@ -1,8 +1,11 @@
 # This script loops through all the samples,
 # submits jobs for them.
+import csv
+psa = "projectSampleAnnotation.csv"
 
+import pandas as pd
 # Read in the annotation tables
-f = open(sys.argv[1], 'rb') # opens the csv file
+f = open(psa, 'rb') # opens the csv file
 try:
     reader = csv.reader(f)  # creates the reader object
     for row in reader:   # iterates the rows of the file in orders
@@ -15,7 +18,7 @@ def somefunction():
 
 
 
-
+wgbs_pipeline.py -i unmapped_bam -r COREseq/data/samples --paired-end -g hg19
 # submit merge files job
 
 
@@ -25,4 +28,20 @@ def somefunction():
 
 
 # Submit cluster jobs.
+
+
+ # here's my sample code:
+
+python wgbs_pipeline.py -i /fhgfs/groups/lab_bock/jklughammer/projects/otherProjects/CORE-seq/titration/CORE/unmapped_bam/BSF_0131_C5FD6ACXX_8__CORE_K562_500_1_sub.bam -s test --no-checks
+
+
+
+
+
+
+
+
+
+
+
 
