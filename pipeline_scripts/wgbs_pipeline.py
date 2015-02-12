@@ -7,11 +7,9 @@ documentation.
 from argparse import ArgumentParser
 import pipetk
 import os
-import csv
 import os.path
 import sys
 from subprocess import call
-from subprocess import check_output
 import subprocess
 
 import ngstk
@@ -65,7 +63,7 @@ class Container:
 paths = Container()
 paths.picard_dir = "/fhgfs/groups/lab_bsf/meth-seq/src/tools/picard-tools-1.100"
 paths.trimmomatic_jar = "/cm/shared/apps/trimmomatic/0.32/trimmomatic-0.32-epignome.jar"
-paths.adapter_file = args.project_root + "data/adapters/epignome_adapters_2_add.fa"
+paths.adapter_file = args.project_root + "../adapters/epignome_adapters_2_add.fa"
 paths.base_folder = "/fhgfs/groups/lab_bsf/meth-seq/"
 paths.bismark_indexed_genome = paths.base_folder + "/bisulfite-genomes/bowtie2-indexed/" + args.genome_assembly
 paths.src_folder = paths.base_folder + "/src/wgbs/production"
