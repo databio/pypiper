@@ -25,7 +25,7 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths, sanity_check=True):
 
 	# Sanity checks:
 	if (sanity_check):
-		bam_size = check_output("samtools view -c " + args.unmapped_bam, shell=True)
+		bam_size = subprocess.check_output("samtools view -c " + bam_file, shell=True)
 		print ("Bam size: " + str(bam_size))
 		fastq_size = subprocess.check_output("wc -l " + out_fastq_pre + "_R1.fastq | cut -f1 -d' '", shell=True)
 		if not paired_end:
@@ -33,6 +33,6 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths, sanity_check=True):
 		else:
 			fastq_reads = int(fastq_size) / 2
 
-		print ("Fastq reads: " + str(fastq_reads))
+		print ("Fastq reads: " + "{:,}".format(fastq_reads))
 		if (fastq_reads!= int(bam_size)):
 			raise Exception("Fastq conversion error? Size doesn't match unaligned bam")

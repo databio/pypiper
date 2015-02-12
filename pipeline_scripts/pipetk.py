@@ -35,8 +35,10 @@ def create_file(file):
 	fout.close()
 
 
-def timestamp(message):
+def timestamp(message, time_since=None):
 	message += " (" + strftime("%Y-%m-%d %H:%M:%S") + ")"
+	if time_since!=None:
+		message += " elapsed:" + time_elapsed(time_since)
 	if re.match("^###", message):
 		message = "\n" + message + "\n"
 	print(message)
@@ -76,6 +78,9 @@ def start_pipeline(paths, args):
 	start_time = time()
 	print("################################################################################")
 	timestamp("Script start time: ")
+	print "Script name: " + os.path.basename(__file__)
+	print 'Cmd:' + str(sys.argv)
+	print "Working dir : %s" % os.getcwd()
 	print "Run outfolder:\t\t" + paths.pipeline_outfolder
 	print "Compute host:\t\t" + platform.node()
 	print("Python version:\t\t" + platform.python_version())
