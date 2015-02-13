@@ -5,9 +5,9 @@
 
 
 #keep everything in data
-data/
+!metadata/*
 results_pipeline/
-results/analysis
+results_analysis
 resources/
 
 # And all the file types you're interested in.
@@ -18,6 +18,9 @@ resources/
 !*.c
 !*readme.txt*
 !*README.txt*
+!*readme.md*
+!*README.md*
+
 
 !*.xlsx
 
