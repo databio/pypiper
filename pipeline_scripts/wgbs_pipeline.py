@@ -14,6 +14,7 @@ import subprocess
 
 import ngstk
 
+
 from datetime import datetime
 
 # Argument Parsing
@@ -66,11 +67,15 @@ paths.trimmomatic_jar = "/cm/shared/apps/trimmomatic/0.32/trimmomatic-0.32-epign
 paths.adapter_file = args.project_root + "../adapters/epignome_adapters_2_add.fa"
 paths.base_folder = "/fhgfs/groups/lab_bsf/meth-seq/"
 paths.bismark_indexed_genome = paths.base_folder + "/bisulfite-genomes/bowtie2-indexed/" + args.genome_assembly
+#paths.bismark_spikein_genome = "/fhgfs/groups/lab_bsf/resources/ref_genome_5hmC"
+paths.bismark_spikein_genome = "/fhgfs/groups/lab_bsf/resources/ref_genome_k1_k3"
 paths.src_folder = paths.base_folder + "/src/wgbs/production"
 paths.ref_genome = paths.base_folder + "/genomes"
 paths.pipeline_outfolder = os.path.join(args.project_root + args.sample_name + "/")
 paths.log_file = paths.pipeline_outfolder + "wgbs.log.md"
-
+paths.bowtie1 = "/cm/shared/apps/bowtie/1.1.1/bin"
+paths.bowtie2 = "/cm/shared/apps/bowtie/2.2.3/bin"
+paths.pipe_stats = paths.pipeline_outfolder + "/" + "stats_WGBS.txt"
 
 # Run some initial setting and logging code to start the pipeline.
 start_time = pipetk.start_pipeline(paths, args)
@@ -110,9 +115,6 @@ print("Input Unmapped Bam: " + args.unmapped_bam)
 if not os.path.isfile(args.unmapped_bam):
 	print args.unmapped_bam + "is not a file"
 
-
-
-
 # Fastq conversion
 ########################################################################################
 # Uses ngstk module.
@@ -144,6 +146,10 @@ else:
 pipetk.call_lock(cmd, "lock.adapter", paths.pipeline_outfolder, out_fastq + "_R1_trimmed.fastq")
 trimmed_fastq = out_fastq + "_R1_trimmed.fastq"
 
+if (args.sanity_check):
+	x = ngstk.count_reads(trimmed_fastq)
+	pipetk.report_result("Trimmed size", x, paths)
+
 # WGBS pipeline.
 ########################################################################################
 pipetk.timestamp("### Bismark alignment: ")
@@ -158,9 +164,10 @@ if not args.paired_end:
 	cmd = "bismark " + paths.bismark_indexed_genome + " "
 	cmd += out_fastq + "_R1_trimmed.fastq"
 	cmd += " --bam --unmapped"
-	cmd += " --path_to_bowtie /cm/shared/apps/bowtie/2.2.3/bin --bowtie2 "
-	cmd += "--temp_dir " + bismark_temp
-	cmd += "--output_dir " + bismark_folder
+	cmd += " --path_to_bowtie " + paths.bowtie2
+	cmd += " --bowtie2"
+	cmd += " --temp_dir " + bismark_temp
+	cmd += " --output_dir " + bismark_folder
 	cmd += " -p 4 "
 	cmd += "; mv " + out_bismark_temp + " " + out_bismark  # mv annoying bismark output
 else:
@@ -169,7 +176,8 @@ else:
 	cmd += " --1 " + out_fastq + "_R1_trimmed.fastq"
 	cmd += " --2 " + out_fastq + "_R2_trimmed.fastq"
 	cmd += " --bam --unmapped"
-	cmd += " --path_to_bowtie /cm/shared/apps/bowtie/2.2.3/bin --bowtie2"
+	cmd += " --path_to_bowtie " + paths.bowtie2
+	cmd += " --bowtie2"
 	cmd += " --temp_dir " + bismark_temp
 	cmd += " --output_dir " + bismark_folder
 	cmd += " --minins 0 --maxins 5000"
@@ -177,6 +185,10 @@ else:
 	cmd += "; mv " + out_bismark_temp + " " + out_bismark  # mv annoying bismark output
 
 pipetk.call_lock(cmd, "lock.bismark", paths.pipeline_outfolder, out_bismark)
+
+if (args.sanity_check):
+	x = ngstk.count_reads(out_bismark)
+	pipetk.report_result("Aligned reads", x, paths)
 
 pipetk.timestamp("### PCR duplicate removal: ")
 # Bismark's deduplication forces output naming, how annoying.
@@ -192,6 +204,11 @@ else:
 	cmd += " --bam"
 
 pipetk.call_lock(cmd, "lock.deduplicate", paths.pipeline_outfolder, out_dedup)
+
+if (args.sanity_check):
+	x = ngstk.count_reads(out_dedup)
+	pipetk.report_result("Deduplicated", x, paths)
+
 
 pipetk.timestamp("### Aligned read filtering: ")
 
@@ -220,6 +237,13 @@ if args.paired_end:
 
 pipetk.call_lock(cmd, "lock.read_filter", paths.pipeline_outfolder, out_sam_filter)
 
+if (args.sanity_check):
+	x = ngstk.count_reads(out_sam)
+	pipetk.report_result("Filtered", x, paths)
+
+
+# Methylation extractor
+########################################################################################
 pipetk.timestamp("### Methylation calling (bismark extractor): ")
 
 extract_dir = bismark_folder + "extractor"
@@ -249,6 +273,95 @@ else:
 	cmd += " > " + extract_dir + "/meth-output.txt"
 
 pipetk.call_lock(cmd, "lock.extractor", paths.pipeline_outfolder, out_extractor)
+
+# Spike-in alignment
+########################################################################################
+# currently using bowtie1 instead of bowtie2
+pipetk.timestamp("### Bismark spike-in alignment: ")
+spikein_folder = paths.pipeline_outfolder + "/bismark_spikein/"
+pipetk.make_sure_path_exists(spikein_folder)
+spikein_temp = spikein_folder + "/" + "bismark_temp"
+pipetk.make_sure_path_exists(spikein_temp)
+out_spikein = spikein_folder + args.sample_name + ".spikein.aln.bam"
+
+unmapped_reads_pre = bismark_folder + args.sample_name
+
+if not args.paired_end:
+	out_spikein_temp = spikein_folder + args.sample_name + "_R1_trimmed.fastq_bismark.bam" #bowtie1
+	cmd = "bismark " + paths.bismark_spikein_genome + " "
+	cmd += unmapped_reads_pre + "_trimmed.fastq_unmapped_reads.fq"
+	cmd += " --bam --unmapped"
+	cmd += " --path_to_bowtie " + paths.bowtie1
+#	cmd += " --bowtie2"
+	cmd += " --temp_dir " + spikein_temp
+	cmd += " --output_dir " + spikein_folder
+#	cmd += " -p 4"
+	cmd += "; mv " + out_spikein_temp + " " + out_spikein  # mv annoying bismark output
+else:
+	out_spikein_temp = spikein_folder + args.sample_name + "_R1_trimmed.fastq_unmapped_reads_1.fq_bismark_pe.bam" #bowtie1
+	cmd = "bismark " + paths.bismark_spikein_genome
+	cmd += " --1 " + unmapped_reads_pre + "_R1_trimmed.fastq_unmapped_reads_1.fq"
+	cmd += " --2 " + unmapped_reads_pre + "_R2_trimmed.fastq_unmapped_reads_2.fq"
+	cmd += " --bam --unmapped"
+	cmd += " --path_to_bowtie " + paths.bowtie1
+#	cmd += " --bowtie2"
+	cmd += " --temp_dir " + spikein_temp
+	cmd += " --output_dir " + spikein_folder
+	cmd += " --minins 0 --maxins 5000"
+#	cmd += " -p 4"
+	cmd += "; mv " + out_spikein_temp + " " + out_spikein  # mv annoying bismark output
+
+pipetk.call_lock(cmd, "lock.spikein", paths.pipeline_outfolder, out_spikein)
+
+pipetk.timestamp("### PCR duplicate removal (Spike-in): ")
+# Bismark's deduplication forces output naming, how annoying.
+out_spikein_dedup = spikein_folder + args.sample_name + ".spikein.aln.deduplicated.bam"
+
+if not args.paired_end:
+	cmd = "deduplicate_bismark --single "
+	cmd += out_spikein
+	cmd += " --bam"
+else:
+	cmd = "deduplicate_bismark --paired "
+	cmd += out_spikein
+	cmd += " --bam"
+
+pipetk.call_lock(cmd, "lock.deduplicate", paths.pipeline_outfolder, out_spikein_dedup)
+
+# Methylation extractor
+########################################################################################
+pipetk.timestamp("### Methylation calling (bismark extractor) Spike-in: ")
+
+extract_dir = spikein_folder + "extractor"
+pipetk.make_sure_path_exists(extract_dir)
+out_extractor = extract_dir + "/meth-output.txt"
+if not args.paired_end:
+	cmd = "bismark_methylation_extractor --single-end"
+	cmd += " --report"
+	cmd += " --bedGraph"
+	cmd += " --merge_non_CpG"
+	#cmd += " --cytosine_report"
+	cmd += " --genome_folder " + paths.bismark_spikein_genome
+	cmd += " --gzip"
+	cmd += " --output " + extract_dir
+	cmd += " " + out_spikein_dedup #input file
+	cmd += " > " + extract_dir + "/meth-output.txt"
+else:
+	cmd = "bismark_methylation_extractor --paired-end  --no_overlap"
+	cmd += " --report"
+	cmd += " --bedGraph"
+	cmd += " --merge_non_CpG"
+	#cmd += " --cytosine_report"
+	cmd += " --genome_folder " + paths.bismark_spikein_genome
+	cmd += " --gzip"
+	cmd += " --output " + extract_dir
+	cmd += " " + out_spikein_dedup #input file
+	cmd += " > " + extract_dir + "/meth-output.txt"
+
+pipetk.call_lock(cmd, "lock.extractor", paths.pipeline_outfolder, out_extractor)
+
+
+
 
 
 # Final sorting and indexing

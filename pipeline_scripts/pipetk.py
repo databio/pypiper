@@ -22,7 +22,7 @@ def make_sure_path_exists(path):
 
 
 def wait_for_lock(lock_file):
-	sleeptime = 10
+	sleeptime = 15
 	while os.path.isfile(lock_file):
 		print "Waiting for file lock (" + str(sleeptime) + " sec): " + lock_file
 		sleep(sleeptime)
@@ -44,9 +44,21 @@ def timestamp(message, time_since=None):
 	print(message)
 
 
-def callprint(cmd):
+# split the command to use shell=False;
+# leave it together to use shell=True; I use False so I can get the PID
+# and poll memory use.
+def callprint(cmd, shell=False):
 	print(cmd)
-	call(cmd, shell=True)
+	if not shell:
+		cmd = cmd.split()
+	call(cmd, shell=shell)
+
+
+
+def report_result(key, value, paths):
+	with open(paths.pipe_stats, "a") as myfile:
+		myfile.write(key + ": " + str(value).strip() + "\n")
+
 
 
 
@@ -58,12 +70,14 @@ def call_lock(cmd, lock_name, folder, output_file=None):
 		create_file(lock_file)		# Create lock
 		callprint(cmd)				# Run command
 		os.remove(lock_file)		# Remove lock file
+		print ("Peak memory: " + "{:,}".format(round(memory_usage()["peak"]/1e6, 0)) + "gb")
 	else:
 		print("File already exists: " + output_file)
 
 
 def time_elapsed(time_since):
 	return round(time() - time_since,2)
+
 
 def start_pipeline(paths, args):
 	"""Do some setup, like tee output, print some diagnostics, create temp files"""
@@ -78,8 +92,7 @@ def start_pipeline(paths, args):
 	start_time = time()
 	print("################################################################################")
 	timestamp("Script start time: ")
-	print "Script name: " + os.path.basename(__file__)
-	print 'Cmd:' + str(sys.argv)
+	print "Cmd: " + str(" ".join(sys.argv))
 	print "Working dir : %s" % os.getcwd()
 	print "Run outfolder:\t\t" + paths.pipeline_outfolder
 	print "Compute host:\t\t" + platform.node()
@@ -101,4 +114,28 @@ def stop_pipeline(paths, args, start_time):
 
 	timestamp("### Script end time: ");
 	print ("Total elapsed time: " + str(time_elapsed(start_time)))
+	#print ("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
+	print ("Peak memory used: " + "{:,}".format(memory_usage()["peak"]) + "kb")
 
+
+
+
+
+# Thanks Martin Geisler:
+def memory_usage():
+    """Memory usage of the current process in kilobytes."""
+    status = None
+    result = {'peak': 0, 'rss': 0}
+    try:
+        # This will only work on systems with a /proc file system
+        # (like Linux).
+        status = open('/proc/self/status')
+        for line in status:
+            parts = line.split()
+            key = parts[0][2:-1].lower()
+            if key in result:
+                result[key] = int(parts[1])
+    finally:
+        if status is not None:
+            status.close()
+    return result

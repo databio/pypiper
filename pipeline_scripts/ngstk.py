@@ -25,14 +25,39 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths, sanity_check=True):
 
 	# Sanity checks:
 	if (sanity_check):
-		bam_size = subprocess.check_output("samtools view -c " + bam_file, shell=True)
-		print ("Bam size: " + str(bam_size))
+		bam_size = count_reads(bam_file)
+		pipetk.report_result("Bam reads", str(bam_size), paths)
 		fastq_size = subprocess.check_output("wc -l " + out_fastq_pre + "_R1.fastq | cut -f1 -d' '", shell=True)
 		if not paired_end:
 			fastq_reads = int(fastq_size) / 4
 		else:
 			fastq_reads = int(fastq_size) / 2
-
+		pipetk.report_result("Fastq reads" , "{:,}".format(fastq_reads), paths)
 		print ("Fastq reads: " + "{:,}".format(fastq_reads))
 		if (fastq_reads!= int(bam_size)):
 			raise Exception("Fastq conversion error? Size doesn't match unaligned bam")
+
+
+
+def count_lines(file):
+	x = subprocess.check_output("wc -l " + file + " | cut -f1 -d' '", shell=True)
+	return x
+
+
+def count_reads_bam(file):
+	x = subprocess.check_output("samtools view -c " + file, shell=True)
+	return x
+
+
+def count_reads(file, paired_end=True):
+	if file.endswith("bam"):
+		return count_reads_bam(file)
+	if file.endswith("fastq") or file.endswith("fq"):
+		x = count_lines(file)
+		if (paired_end):
+			return int(x)/2
+		else:
+			return int(x)/4
+	if file.endswith("sam"):
+			return count_lines(file)
+	return -1
