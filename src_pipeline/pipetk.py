@@ -11,7 +11,10 @@ import sys
 from subprocess import call
 import subprocess
 from time import sleep, time, strftime
+#import psutil
 
+# Define global maximum memory use variable
+maxmem = 0;
 
 def make_sure_path_exists(path):
 	try:
@@ -22,11 +25,11 @@ def make_sure_path_exists(path):
 
 
 def wait_for_lock(lock_file):
-	sleeptime = 15
+	sleeptime = 5
 	while os.path.isfile(lock_file):
 		print "Waiting for file lock (" + str(sleeptime) + " sec): " + lock_file
 		sleep(sleeptime)
-		sleeptime = min(sleeptime+5, 3600)
+		sleeptime = min(sleeptime+5, 120)
 
 
 def create_file(file):
@@ -48,10 +51,34 @@ def timestamp(message, time_since=None):
 # leave it together to use shell=True; I use False so I can get the PID
 # and poll memory use.
 def callprint(cmd, shell=False):
+	global maxmem
 	print(cmd)
 	if not shell:
+		if ("|" in cmd or ">" in cmd):
+			print("Should this command run in a shell intead of directly in a subprocess?")
 		cmd = cmd.split()
-	call(cmd, shell=shell)
+	#call(cmd, shell=shell) # old way (no memory profiling)
+
+	p = subprocess.Popen(cmd, shell=shell)
+	local_maxmem = -1
+	sleeptime=5
+	while p.poll() == None:
+		if not shell:
+			local_maxmem = max(local_maxmem, memory_usage(p.pid))
+			#print ("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
+		sleep(sleeptime)
+		sleeptime = min(sleeptime+5, 60)
+
+	# set global maxmem
+	maxmem = max(maxmem, local_maxmem)
+
+	info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
+	info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
+	info += " Pipeline: " +  str(maxmem) +"b)"
+	print (info)
+	if p.returncode != 0:
+		raise Exception("Process returned nonzero result.")
+	return [p.returncode, maxmem]
 
 
 
@@ -62,17 +89,21 @@ def report_result(key, value, paths):
 
 
 
-def call_lock(cmd, lock_name, folder, output_file=None):
+def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
 	# Create lock file:
 	lock_file = os.path.join(folder,  lock_name)
 	wait_for_lock(lock_file)
-	if output_file is None or not os.path.isfile(output_file):
+	ret = 0
+	if output_file is not None:
+		print ("Looking for file: " + output_file)
+	if output_file is None or not (os.path.exists(output_file)):
 		create_file(lock_file)		# Create lock
-		callprint(cmd)				# Run command
+		ret, maxmem = callprint(cmd, shell)				# Run command
 		os.remove(lock_file)		# Remove lock file
-		print ("Peak memory: " + "{:,}".format(round(memory_usage()["peak"]/1e6, 0)) + "gb")
 	else:
 		print("File already exists: " + output_file)
+
+	return ret
 
 
 def time_elapsed(time_since):
@@ -106,6 +137,7 @@ def start_pipeline(paths, args):
 	create_file(pipeline_temp_marker)
 	return start_time
 
+
 def stop_pipeline(paths, args, start_time):
 
 	"""Remove temporary marker files to complete the pipeline"""
@@ -115,27 +147,26 @@ def stop_pipeline(paths, args, start_time):
 	timestamp("### Script end time: ");
 	print ("Total elapsed time: " + str(time_elapsed(start_time)))
 	#print ("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-	print ("Peak memory used: " + "{:,}".format(memory_usage()["peak"]) + "kb")
-
-
-
+	print ("Peak memory used: " + str(maxmem/1e6) + " GB")
 
 
 # Thanks Martin Geisler:
-def memory_usage():
-    """Memory usage of the current process in kilobytes."""
-    status = None
-    result = {'peak': 0, 'rss': 0}
-    try:
-        # This will only work on systems with a /proc file system
-        # (like Linux).
-        status = open('/proc/self/status')
-        for line in status:
-            parts = line.split()
-            key = parts[0][2:-1].lower()
-            if key in result:
-                result[key] = int(parts[1])
-    finally:
-        if status is not None:
-            status.close()
-    return result
+def memory_usage(pid='self', category="peak"):
+	"""Memory usage of the current process in kilobytes."""
+	status = None
+	result = {'peak': 0, 'rss': 0}
+	try:
+		# This will only work on systems with a /proc file system
+		# (like Linux).
+		#status = open('/proc/self/status')
+		proc_spot = '/proc/%s/status' % pid
+		status = open(proc_spot)
+		for line in status:
+			parts = line.split()
+			key = parts[0][2:-1].lower()
+			if key in result:
+				result[key] = int(parts[1])
+	finally:
+		if status is not None:
+			status.close()
+	return result[category]
