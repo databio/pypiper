@@ -32,8 +32,7 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths, sanity_check=True):
 			fastq_reads = int(fastq_size) / 4
 		else:
 			fastq_reads = int(fastq_size) / 2
-		pipetk.report_result("Fastq reads" , "{:,}".format(fastq_reads), paths)
-		print ("Fastq reads: " + "{:,}".format(fastq_reads))
+		pipetk.report_result("Fastq reads" , fastq_reads, paths)
 		if (fastq_reads!= int(bam_size)):
 			raise Exception("Fastq conversion error? Size doesn't match unaligned bam")
 
