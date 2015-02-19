@@ -13,8 +13,13 @@ import subprocess
 from time import sleep, time, strftime
 #import psutil
 
-# Define global maximum memory use variable
-maxmem = 0;
+# Define global variables
+# These just record some details about the pipeline
+
+PEAKMEM = 0			# memory high water mark
+STARTTIME = time()
+LAST_TIMESTAMP = STARTTIME	# time of the last call to timestamp()
+
 
 def make_sure_path_exists(path):
 	try:
@@ -38,20 +43,22 @@ def create_file(file):
 	fout.close()
 
 
-def timestamp(message, time_since=None):
-	message += " (" + strftime("%Y-%m-%d %H:%M:%S") + ")"
-	if time_since!=None:
-		message += " elapsed:" + time_elapsed(time_since)
+def timestamp(message):
+	global LAST_TIMESTAMP
+	message += " (" + strftime("%m-%d %H:%M:%S") + ")"
+	message += " elapsed:" + str(time_elapsed(LAST_TIMESTAMP))
+	message += " _TIME_"
 	if re.match("^###", message):
 		message = "\n" + message + "\n"
 	print(message)
+	LAST_TIMESTAMP = time()
 
 
 # split the command to use shell=False;
 # leave it together to use shell=True; I use False so I can get the PID
 # and poll memory use.
 def callprint(cmd, shell=False):
-	global maxmem
+	global PEAKMEM
 	print(cmd)
 	if not shell:
 		if ("|" in cmd or ">" in cmd):
@@ -70,21 +77,23 @@ def callprint(cmd, shell=False):
 		sleeptime = min(sleeptime+5, 60)
 
 	# set global maxmem
-	maxmem = max(maxmem, local_maxmem)
+	PEAKMEM = max(PEAKMEM, local_maxmem)
 
 	info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
 	info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
-	info += " Pipeline: " +  str(maxmem) +"b)"
+	info += " Pipeline: " +  str(PEAKMEM) +"b)"
 	print (info)
 	if p.returncode != 0:
 		raise Exception("Process returned nonzero result.")
-	return [p.returncode, maxmem]
+	return [p.returncode, local_maxmem]
 
 
 
 def report_result(key, value, paths):
+	message = key + "\t " + str(value).strip()
+	print(message)
 	with open(paths.pipe_stats, "a") as myfile:
-		myfile.write(key + ": " + str(value).strip() + "\n")
+		myfile.write(message + "\n")
 
 
 
@@ -98,7 +107,7 @@ def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
 		print ("Looking for file: " + output_file)
 	if output_file is None or not (os.path.exists(output_file)):
 		create_file(lock_file)		# Create lock
-		ret, maxmem = callprint(cmd, shell)				# Run command
+		ret, local_maxmem = callprint(cmd, shell)				# Run command
 		os.remove(lock_file)		# Remove lock file
 	else:
 		print("File already exists: " + output_file)
@@ -113,7 +122,8 @@ def time_elapsed(time_since):
 def start_pipeline(paths, args):
 	"""Do some setup, like tee output, print some diagnostics, create temp files"""
 	make_sure_path_exists(paths.pipeline_outfolder)
-
+	global STARTTIME
+	STARTTIME = time()
 	# Mirror every operation on sys.stdout to log file
 	sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0) # Unbuffer output
 	# a for append to file
@@ -138,16 +148,17 @@ def start_pipeline(paths, args):
 	return start_time
 
 
-def stop_pipeline(paths, args, start_time):
-
+def stop_pipeline(paths, args, start_time=STARTTIME):
+	global PEAKMEM
+	global STARTTIME
 	"""Remove temporary marker files to complete the pipeline"""
 	pipeline_temp_marker = paths.pipeline_outfolder + "/" + "WGBS-running.temp"
 	os.remove(os.path.join(pipeline_temp_marker))
 
 	timestamp("### Script end time: ");
-	print ("Total elapsed time: " + str(time_elapsed(start_time)))
+	print ("Total elapsed time: " + str(time_elapsed(STARTTIME)))
 	#print ("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-	print ("Peak memory used: " + str(maxmem/1e6) + " GB")
+	print ("Peak memory used: " + str(PEAKMEM/1e6) + " GB")
 
 
 # Thanks Martin Geisler:
