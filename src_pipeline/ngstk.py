@@ -32,8 +32,7 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths, sanity_check=True):
 			fastq_reads = int(fastq_size) / 4
 		else:
 			fastq_reads = int(fastq_size) / 2
-		pipetk.report_result("Fastq reads" , "{:,}".format(fastq_reads), paths)
-		print ("Fastq reads: " + "{:,}".format(fastq_reads))
+		pipetk.report_result("Fastq reads" , fastq_reads, paths)
 		if (fastq_reads!= int(bam_size)):
 			raise Exception("Fastq conversion error? Size doesn't match unaligned bam")
 
@@ -44,14 +43,14 @@ def count_lines(file):
 	return x
 
 
-def count_reads_bam(file):
-	x = subprocess.check_output("samtools view -c " + file, shell=True)
+def count_reads_bam(file , param):
+	x = subprocess.check_output("samtools view -c " + param + file, shell=True)
 	return x
 
 
-def count_reads(file, paired_end=True):
+def count_reads(file, param="" , paired_end=True):
 	if file.endswith("bam"):
-		return count_reads_bam(file)
+		return count_reads_bam(file , param)
 	if file.endswith("fastq") or file.endswith("fq"):
 		x = count_lines(file)
 		if (paired_end):
@@ -59,5 +58,15 @@ def count_reads(file, paired_end=True):
 		else:
 			return int(x)/4
 	if file.endswith("sam"):
-			return count_lines(file)
+			return count_reads_bam(file , param)
 	return -1
+
+
+def sam_conversions(sam, depth=True):
+    cmd = "samtools view -bS " + sam + " > " + sam.replace(".sam",".bam") + "\n"
+    cmd += "samtools sort " + sam.replace(".sam",".bam") + " " + sam.replace(".sam" , "_sorted") + "\n"
+    cmd += "samtools index " + sam.replace(".sam" , "_sorted.bam") + "\n"
+    if depth:
+        cmd += "samtools depth " + sam.replace(".sam" , "_sorted.bam") + " > " + sam.replace(".sam" , "_sorted.depth") + "\n"
+    return cmd
+
