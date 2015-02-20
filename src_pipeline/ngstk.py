@@ -32,8 +32,7 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths, sanity_check=True):
 			fastq_reads = int(fastq_size) / 4
 		else:
 			fastq_reads = int(fastq_size) / 2
-		pipetk.report_result("Fastq reads" , "{:,}".format(fastq_reads), paths)
-		print ("Fastq reads: " + "{:,}".format(fastq_reads))
+		pipetk.report_result("Fastq reads" , fastq_reads, paths)
 		if (fastq_reads!= int(bam_size)):
 			raise Exception("Fastq conversion error? Size doesn't match unaligned bam")
 
@@ -70,3 +69,4 @@ def sam_conversions(sam, depth=True):
     if depth:
         cmd += "samtools depth " + sam.replace(".sam" , "_sorted.bam") + " > " + sam.replace(".sam" , "_sorted.depth") + "\n"
     return cmd
+
