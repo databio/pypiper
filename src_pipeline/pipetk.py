@@ -98,7 +98,11 @@ def report_result(key, value, paths):
 
 
 
+<<<<<<< HEAD:src_pipeline/pipetk.py
 def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
+=======
+def call_lock(cmd, lock_name, folder, output_file=None , shell=False):
+>>>>>>> add python version of RNA_BitSeq pipeline:pipeline_scripts/pipetk.py
 	# Create lock file:
 	lock_file = os.path.join(folder,  lock_name)
 	wait_for_lock(lock_file)
@@ -107,7 +111,11 @@ def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
 		print ("Looking for file: " + output_file)
 	if output_file is None or not (os.path.exists(output_file)):
 		create_file(lock_file)		# Create lock
+<<<<<<< HEAD:src_pipeline/pipetk.py
 		ret, local_maxmem = callprint(cmd, shell)				# Run command
+=======
+		callprint(cmd , shell=shell)				# Run command
+>>>>>>> add python version of RNA_BitSeq pipeline:pipeline_scripts/pipetk.py
 		os.remove(lock_file)		# Remove lock file
 	else:
 		print("File already exists: " + output_file)
@@ -119,7 +127,7 @@ def time_elapsed(time_since):
 	return round(time() - time_since,2)
 
 
-def start_pipeline(paths, args):
+def start_pipeline(paths, args , pipeline):
 	"""Do some setup, like tee output, print some diagnostics, create temp files"""
 	make_sure_path_exists(paths.pipeline_outfolder)
 	global STARTTIME
@@ -143,16 +151,20 @@ def start_pipeline(paths, args):
 	print("################################################################################")
 
 	# Create a temporary file to indicate that this pipeline is currently running in this folder.
-	pipeline_temp_marker = paths.pipeline_outfolder + "/" + "WGBS-running.temp"
+	pipeline_temp_marker = paths.pipeline_outfolder + "/" + pipeline + "-running.temp"
 	create_file(pipeline_temp_marker)
 	return start_time
 
+<<<<<<< HEAD:src_pipeline/pipetk.py
+=======
+def stop_pipeline(paths, args, start_time , pipeline):
+>>>>>>> add python version of RNA_BitSeq pipeline:pipeline_scripts/pipetk.py
 
 def stop_pipeline(paths, args, start_time=STARTTIME):
 	global PEAKMEM
 	global STARTTIME
 	"""Remove temporary marker files to complete the pipeline"""
-	pipeline_temp_marker = paths.pipeline_outfolder + "/" + "WGBS-running.temp"
+	pipeline_temp_marker = paths.pipeline_outfolder + "/" + pipeline + "-running.temp"
 	os.remove(os.path.join(pipeline_temp_marker))
 
 	timestamp("### Script end time: ");
