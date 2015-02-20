@@ -62,13 +62,13 @@ def report_result(key, value, paths):
 
 
 
-def call_lock(cmd, lock_name, folder, output_file=None):
+def call_lock(cmd, lock_name, folder, output_file=None , shell=False):
 	# Create lock file:
 	lock_file = os.path.join(folder,  lock_name)
 	wait_for_lock(lock_file)
 	if output_file is None or not os.path.isfile(output_file):
 		create_file(lock_file)		# Create lock
-		callprint(cmd)				# Run command
+		callprint(cmd , shell=shell)				# Run command
 		os.remove(lock_file)		# Remove lock file
 		print ("Peak memory: " + "{:,}".format(round(memory_usage()["peak"]/1e6, 0)) + "gb")
 	else:
@@ -79,7 +79,7 @@ def time_elapsed(time_since):
 	return round(time() - time_since,2)
 
 
-def start_pipeline(paths, args):
+def start_pipeline(paths, args , pipeline):
 	"""Do some setup, like tee output, print some diagnostics, create temp files"""
 	make_sure_path_exists(paths.pipeline_outfolder)
 
@@ -102,14 +102,14 @@ def start_pipeline(paths, args):
 	print("################################################################################")
 
 	# Create a temporary file to indicate that this pipeline is currently running in this folder.
-	pipeline_temp_marker = paths.pipeline_outfolder + "/" + "WGBS-running.temp"
+	pipeline_temp_marker = paths.pipeline_outfolder + "/" + pipeline + "-running.temp"
 	create_file(pipeline_temp_marker)
 	return start_time
 
-def stop_pipeline(paths, args, start_time):
+def stop_pipeline(paths, args, start_time , pipeline):
 
 	"""Remove temporary marker files to complete the pipeline"""
-	pipeline_temp_marker = paths.pipeline_outfolder + "/" + "WGBS-running.temp"
+	pipeline_temp_marker = paths.pipeline_outfolder + "/" + pipeline + "-running.temp"
 	os.remove(os.path.join(pipeline_temp_marker))
 
 	timestamp("### Script end time: ");
