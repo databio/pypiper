@@ -5,16 +5,10 @@
 
 
 #keep everything in data
-!data/*.tsv
-!data/*.txt
-!data/*
-!data/**
-!/data/**/*
-
-#ignore everything in data/samples
-#
-data/samples
-
+!metadata/*
+results_pipeline/
+results_analysis
+resources/
 
 # And all the file types you're interested in.
 !*.sh
@@ -24,6 +18,9 @@ data/samples
 !*.c
 !*readme.txt*
 !*README.txt*
+!*readme.md*
+!*README.md*
+
 
 !*.xlsx
 
