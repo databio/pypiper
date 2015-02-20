@@ -62,7 +62,7 @@ def callprint(cmd, shell=False):
 	print(cmd)
 	if not shell:
 		if ("|" in cmd or ">" in cmd):
-			print("Should this command run in a shell intead of directly in a subprocess?")
+			print("Should this command run in a shell intsead of directly in a subprocess?")
 		cmd = cmd.split()
 	#call(cmd, shell=shell) # old way (no memory profiling)
 
