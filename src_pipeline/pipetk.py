@@ -91,7 +91,7 @@ def callprint(cmd, shell=False):
 
 def report_result(key, value, paths):
 	message = key + "\t " + str(value).strip()
-	print(message)
+	print(message + "\t" + "_RES_")
 	with open(paths.pipe_stats, "a") as myfile:
 		myfile.write(message + "\n")
 
