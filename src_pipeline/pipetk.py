@@ -137,6 +137,8 @@ def start_pipeline(paths, args, pipeline_name):
 	tee = subprocess.Popen(["tee", "-a", paths.log_file], stdin=subprocess.PIPE)
 	os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
 	os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
+	# get git commit
+	git_commit_hash = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
 	start_time = time()
 	print("################################################################################")
 	timestamp("Script start time: ")
@@ -144,6 +146,7 @@ def start_pipeline(paths, args, pipeline_name):
 	print "Working dir : %s" % os.getcwd()
 	print "Run outfolder:\t\t" + paths.pipeline_outfolder
 	print "Compute host:\t\t" + platform.node()
+	print "Git commit (pipeline version):\t\t" + git_commit_hash.strip()
 	print("Python version:\t\t" + platform.python_version())
 	print("Project root:\t\t" + args.project_root)
 	print("Paired end mode:\t\t" + str(args.paired_end))
