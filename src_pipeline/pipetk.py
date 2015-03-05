@@ -154,7 +154,8 @@ def stop_pipeline(paths, args, start_time=STARTTIME, pipeline = "WGBS"):
 	"""Remove temporary marker files to complete the pipeline"""
 	pipeline_temp_marker = paths.pipeline_outfolder + "/" + pipeline + "-running.temp"
 	os.remove(os.path.join(pipeline_temp_marker))
-
+	pipeline_done_marker = paths.pipeline_outfolder + "/" + pipeline + "-completed"
+	create_file(pipeline_done_marker)
 	timestamp("### Script end time: ");
 	print ("Total elapsed time: " + str(time_elapsed(STARTTIME)))
 	#print ("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
