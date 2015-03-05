@@ -36,7 +36,15 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths, sanity_check=True):
 			raise Exception("Fastq conversion error? Size doesn't match unaligned bam")
 
 
-def merge_bams(bam_files):
+def merge_bams(unmapped_bams, merged_bam, paths, sanity_check=True):
+	if (len(args.unmapped_bam) > 1):
+		merge = True
+		if (args.sample_name == "default"):
+			args.sample_name = "merged";
+	else:
+		if (args.sample_name == "default"):
+			args.sample_name = os.path.splitext(os.path.basename(args.unmapped_bam[0]))[0]
+
 	if merge and not os.path.isfile(sample_merged_bam):
 		print("Multiple unmapped bams found; merge requested")
 		input_bams = args.unmapped_bam;
