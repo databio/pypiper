@@ -120,7 +120,7 @@ def time_elapsed(time_since):
 	return round(time() - time_since,2)
 
 
-def start_pipeline(paths, args , pipeline_name):
+def start_pipeline(paths, args, pipeline_name):
 	"""Do some setup, like tee output, print some diagnostics, create temp files"""
 	make_sure_path_exists(paths.pipeline_outfolder)
 	global STARTTIME
@@ -152,6 +152,8 @@ def start_pipeline(paths, args , pipeline_name):
 	PIPELINE_NAME = pipeline_name
 	paths.pipe_stats = paths.pipeline_outfolder + "/" + "stats_" + pipeline_name
 	paths.log_file = paths.pipeline_outfolder + pipeline_name  + ".log.md"
+	paths.pipeline_outfolder = os.path.join(args.project_root + args.sample_name + "/")
+
 	return paths
 
 
