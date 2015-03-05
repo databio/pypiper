@@ -139,6 +139,7 @@ def start_pipeline(paths, args, pipeline_name):
 	os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
 	# get git commit
 	git_commit_hash = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
+	git_commit_date = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD", shell=True)
 	start_time = time()
 	print("################################################################################")
 	timestamp("Script start time: ")
@@ -147,6 +148,7 @@ def start_pipeline(paths, args, pipeline_name):
 	print "Run outfolder:\t\t" + paths.pipeline_outfolder
 	print "Compute host:\t\t" + platform.node()
 	print "Git commit (pipeline version):\t\t" + git_commit_hash.strip()
+	print "Git pipeline date:\t\t" + git_commit_date.strip()
 	print("Python version:\t\t" + platform.python_version())
 	print("Project root:\t\t" + args.project_root)
 	print("Paired end mode:\t\t" + str(args.paired_end))
