@@ -150,9 +150,9 @@ def start_pipeline(paths, args, pipeline_name):
 	# add variables for this pipeline
 	global PIPELINE_NAME
 	PIPELINE_NAME = pipeline_name
+	paths.pipeline_outfolder = os.path.join(args.project_root + args.sample_name + "/")
 	paths.pipe_stats = paths.pipeline_outfolder + "/" + "stats_" + pipeline_name
 	paths.log_file = paths.pipeline_outfolder + pipeline_name  + ".log.md"
-	paths.pipeline_outfolder = os.path.join(args.project_root + args.sample_name + "/")
 
 	return paths
 
