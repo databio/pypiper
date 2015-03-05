@@ -154,9 +154,9 @@ def start_pipeline(paths, args, pipeline_name):
 	print "Working dir : %s" % os.getcwd()
 	print "Run outfolder:\t\t" + paths.pipeline_outfolder
 	print "Compute host:\t\t" + platform.node()
-	print "Git commit (pipeline version):\t\t" + git_commit_hash.strip()
+	print "Git pipeline version:\t\t" + git_commit_hash.strip()
 	print "Git pipeline date:\t\t" + git_commit_date.strip()
-	print "Git diff: \t\t" + git_commit_diff.strip()
+	print "Git pipeline diff: \t\t" + git_commit_diff.strip()
 	print("Python version:\t\t" + platform.python_version())
 	print("Project root:\t\t" + args.project_root)
 	print("Paired end mode:\t\t" + str(args.paired_end))
