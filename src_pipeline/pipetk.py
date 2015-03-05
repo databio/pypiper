@@ -137,10 +137,16 @@ def start_pipeline(paths, args, pipeline_name):
 	tee = subprocess.Popen(["tee", "-a", paths.log_file], stdin=subprocess.PIPE)
 	os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
 	os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
-	# get git commit
+
+	# Record the git version of the pipeline being run. This code gets:
+	# hash: the commit id of the last commit in this repo
+	# date: the date of the last commit in this repo
+	# diff: a summary of any differences in the current (run) version vs. the committed version
 	git_commit_hash = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
 	git_commit_date = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD", shell=True)
-	git_commit_change = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD", shell=True)
+	git_commit_diff = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD", shell=True)
+	if (git_commit_diff==""):
+		git_commit_diff = "No uncommitted changes."
 	start_time = time()
 	print("################################################################################")
 	timestamp("Script start time: ")
@@ -150,7 +156,7 @@ def start_pipeline(paths, args, pipeline_name):
 	print "Compute host:\t\t" + platform.node()
 	print "Git commit (pipeline version):\t\t" + git_commit_hash.strip()
 	print "Git pipeline date:\t\t" + git_commit_date.strip()
-	print "Git diff: \t\t" + git_commit_change.strip()
+	print "Git diff: \t\t" + git_commit_diff.strip()
 	print("Python version:\t\t" + platform.python_version())
 	print("Project root:\t\t" + args.project_root)
 	print("Paired end mode:\t\t" + str(args.paired_end))
