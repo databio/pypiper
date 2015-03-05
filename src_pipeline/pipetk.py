@@ -16,6 +16,7 @@ from time import sleep, time, strftime
 # Define global variables
 # These just record some details about the pipeline
 
+PIPELINE_NAME = ""
 PEAKMEM = 0			# memory high water mark
 STARTTIME = time()
 LAST_TIMESTAMP = STARTTIME	# time of the last call to timestamp()
@@ -62,7 +63,7 @@ def callprint(cmd, shell=False):
 	print(cmd)
 	if not shell:
 		if ("|" in cmd or ">" in cmd):
-			print("Should this command run in a shell intsead of directly in a subprocess?")
+			print("Should this command run in a shell instead of directly in a subprocess?")
 		cmd = cmd.split()
 	#call(cmd, shell=shell) # old way (no memory profiling)
 
@@ -119,7 +120,7 @@ def time_elapsed(time_since):
 	return round(time() - time_since,2)
 
 
-def start_pipeline(paths, args , pipeline):
+def start_pipeline(paths, args , pipeline_name):
 	"""Do some setup, like tee output, print some diagnostics, create temp files"""
 	make_sure_path_exists(paths.pipeline_outfolder)
 	global STARTTIME
@@ -143,18 +144,25 @@ def start_pipeline(paths, args , pipeline):
 	print("################################################################################")
 
 	# Create a temporary file to indicate that this pipeline is currently running in this folder.
-	pipeline_temp_marker = paths.pipeline_outfolder + "/" + pipeline + "-running.temp"
+	pipeline_temp_marker = paths.pipeline_outfolder + "/" + pipeline_name + "-running.temp"
 	create_file(pipeline_temp_marker)
-	return start_time
+
+	# add variables for this pipeline
+	global PIPELINE_NAME
+	PIPELINE_NAME = pipeline_name
+	paths.pipe_stats = paths.pipeline_outfolder + "/" + "stats_" + pipeline_name
+	paths.log_file = paths.pipeline_outfolder + pipeline_name  + ".log.md"
+	return paths
 
 
-def stop_pipeline(paths, args, start_time=STARTTIME, pipeline = "WGBS"):
+def stop_pipeline(paths):
 	global PEAKMEM
 	global STARTTIME
+	global PIPELINE_NAME
 	"""Remove temporary marker files to complete the pipeline"""
-	pipeline_temp_marker = paths.pipeline_outfolder + "/" + pipeline + "-running.temp"
+	pipeline_temp_marker = paths.pipeline_outfolder + "/" + PIPELINE_NAME + "-running.temp"
 	os.remove(os.path.join(pipeline_temp_marker))
-	pipeline_done_marker = paths.pipeline_outfolder + "/" + pipeline + "-completed"
+	pipeline_done_marker = paths.pipeline_outfolder + "/" + PIPELINE_NAME + "-completed"
 	create_file(pipeline_done_marker)
 	timestamp("### Script end time: ");
 	print ("Total elapsed time: " + str(time_elapsed(STARTTIME)))
