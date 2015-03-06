@@ -11,6 +11,8 @@ import sys
 from subprocess import call
 import subprocess
 from time import sleep, time, strftime
+
+import atexit
 #import psutil
 
 # Define global variables
@@ -20,17 +22,50 @@ PIPELINE_NAME = ""
 PEAKMEM = 0			# memory high water mark
 STARTTIME = time()
 LAST_TIMESTAMP = STARTTIME	# time of the last call to timestamp()
+STATUS = "initializing"
+PIPELINE_OUTFOLDER = ""
+
+def exit_handler():
+	# Catch-all for uncaught exceptions...
+	global STATUS
+	if STATUS != "completed":
+		set_status_flag("failed")
+
+
+def set_status_flag(status):
+	global PIPELINE_NAME
+	global PIPELINE_OUTFOLDER
+	global STATUS
+	prev_status = STATUS
+	# Remove previous status
+	flag_file = PIPELINE_OUTFOLDER + "/" + PIPELINE_NAME + "_" + prev_status + ".flag"
+	try:
+		os.remove(os.path.join(flag_file))
+	except:
+		pass
+
+	# Set new status
+	STATUS = status
+	flag_file = PIPELINE_OUTFOLDER + "/" + PIPELINE_NAME + "_" + status + ".flag"
+	create_file(flag_file)
+
+	print ("Change status from " + prev_status + " to " + status)
 
 
 def start_pipeline(paths, args, pipeline_name):
 	"""Do some setup, like tee output, print some diagnostics, create temp files"""
 	# add variables for this pipeline
+	atexit.register(exit_handler)
+
 	global PIPELINE_NAME
 	PIPELINE_NAME = pipeline_name
 	paths.pipeline_outfolder = os.path.join(args.project_root + args.sample_name + "/")
-	paths.pipe_stats = paths.pipeline_outfolder + "/" + "stats_" + pipeline_name
-	paths.log_file = paths.pipeline_outfolder + pipeline_name  + ".log.md"
+	paths.pipe_stats = paths.pipeline_outfolder + "/" + pipeline_name + "_stats.txt"
+	paths.log_file = paths.pipeline_outfolder + pipeline_name  + "_log.md"
 	make_sure_path_exists(paths.pipeline_outfolder)
+	global PIPELINE_OUTFOLDER
+	PIPELINE_OUTFOLDER = paths.pipeline_outfolder
+
 	global STARTTIME
 	STARTTIME = time()
 	# Mirror every operation on sys.stdout to log file
@@ -51,7 +86,7 @@ def start_pipeline(paths, args, pipeline_name):
 		git_commit_diff = "No uncommitted changes."
 	start_time = time()
 	print("################################################################################")
-	timestamp("Script start time: ")
+	timestamp("Pipeline started at: ")
 	print "Cmd: " + str(" ".join(sys.argv))
 	print "Working dir : %s" % os.getcwd()
 	print "Run outfolder:\t\t" + paths.pipeline_outfolder
@@ -64,19 +99,12 @@ def start_pipeline(paths, args, pipeline_name):
 	print("Paired end mode:\t\t" + str(args.paired_end))
 	print("################################################################################")
 
-	# Create a temporary file to indicate that this pipeline is currently running in this folder.
-	pipeline_temp_marker = paths.pipeline_outfolder + "/" + pipeline_name + "-running.temp"
-	create_file(pipeline_temp_marker)
+	set_status_flag("running")
+
 	return paths
 
-
 def fail_pipeline(reason):
-	global PIPELINE_NAME
-	pipeline_temp_marker = paths.pipeline_outfolder + "/" + PIPELINE_NAME + "-running.temp"
-	os.remove(os.path.join(pipeline_temp_marker))
-	pipeline_fail_marker = paths.pipeline_outfolder + "/" + PIPELINE_NAME + "-failed"
-	create_file(pipeline_fail_marker)
-	print("Remove running marker file; add failed marker file.")
+	set_status_flag("failed")
 	raise Exception(reason)
 
 def make_sure_path_exists(path):
@@ -170,7 +198,7 @@ def callprint(cmd, shell=False):
 	info += " Pipeline: " +  str(PEAKMEM) +"b)"
 	print (info)
 	if p.returncode != 0:
-		fail_pipeline("Process returend nonzero result.")
+		fail_pipeline("Process returned nonzero result.")
 		#raise Exception("Process returned nonzero result.")
 	return [p.returncode, local_maxmem]
 
@@ -184,16 +212,12 @@ def time_elapsed(time_since):
 def stop_pipeline(paths):
 	global PEAKMEM
 	global STARTTIME
-	global PIPELINE_NAME
 	"""Remove temporary marker files to complete the pipeline"""
-	pipeline_temp_marker = paths.pipeline_outfolder + "/" + PIPELINE_NAME + "-running.temp"
-	os.remove(os.path.join(pipeline_temp_marker))
-	pipeline_done_marker = paths.pipeline_outfolder + "/" + PIPELINE_NAME + "-completed"
-	create_file(pipeline_done_marker)
-	timestamp("### Script end time: ");
+	set_status_flag("completed")
 	print ("Total elapsed time: " + str(time_elapsed(STARTTIME)))
 	#print ("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
 	print ("Peak memory used: " + str(PEAKMEM/1e6) + " GB")
+	timestamp("### Pipeline completed at: ");
 
 
 # Thanks Martin Geisler:
