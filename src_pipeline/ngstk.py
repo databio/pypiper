@@ -77,14 +77,14 @@ def count_lines(file):
 	return x
 
 
-def count_reads_bam(file, param):
-	x = subprocess.check_output("samtools view -c " + param + file, shell=True)
+def samtools_view(file, param):
+	x = subprocess.check_output("samtools view " + param + " " + file, shell=True)
 	return x
 
 
-def count_reads(file, param="", paired_end=True):
+def count_reads(file, paired_end=True):
 	if file.endswith("bam"):
-		return count_reads_bam(file, param)
+		return samtools_view(file, param="-c")
 	if file.endswith("fastq") or file.endswith("fq"):
 		x = count_lines(file)
 		if (paired_end):
@@ -92,7 +92,15 @@ def count_reads(file, param="", paired_end=True):
 		else:
 			return int(x) / 4
 	if file.endswith("sam"):
-		return count_reads_bam(file, param)
+		return samtools_view(file, param="-c -S")
+	return -1
+
+
+def count_mapped_reads(file):
+	if file.endswith("bam"):
+		return samtools_view(file, param="-c -F4")
+	if file.endswith("sam"):
+		return samtools_view(file, param="-c -F4 -S")
 	return -1
 
 
