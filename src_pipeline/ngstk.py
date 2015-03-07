@@ -5,6 +5,19 @@ import subprocess
 # #######################################################################################
 # in here is stuff that will be used by multiple pipelines.
 
+
+def markDuplicates(paths, aligned_file, out_file, metrics_file, remove_duplicates="True"):
+	cmd = "java -jar "
+	cmd += os.path.join(paths.picard_dir, "MarkDuplicates.jar")
+	cmd += " INPUT=" + aligned_file
+	cmd += " OUTPUT=" + out_file
+	cmd += " METRICS_FILE=" + metrics_file
+	cmd += " REMOVE_DUPLICATES=" + remove_duplicates
+
+	return cmd
+
+
+
 def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths, sanity_check=True):
 	pipetk.timestamp("### Fastq conversion: ")
 	pipetk.make_sure_path_exists(os.path.dirname(out_fastq_pre))
