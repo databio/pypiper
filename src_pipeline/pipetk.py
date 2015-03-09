@@ -122,6 +122,7 @@ def wait_for_lock(lock_file):
 	while os.path.isfile(lock_file):
 		if first_message_flag == False:
 			timestamp("Waiting for file lock: " + lock_file)
+			first_message_flag = True
 		else:
 			sys.stdout.write(".")
 			dot_count = dot_count+1
@@ -130,7 +131,9 @@ def wait_for_lock(lock_file):
 				dot_count = 0
 		sleep(sleeptime)
 		sleeptime = min(sleeptime+5, 120)
-	timestamp("File unlocked.")
+
+	if first_message_flag:
+		timestamp("File unlocked.")
 
 
 def create_file(file):
@@ -165,9 +168,10 @@ def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
 	lock_file = os.path.join(folder,  lock_name)
 	wait_for_lock(lock_file)
 	ret = 0
-	if output_file is not None:
-		print ("Looking for file: " + output_file)
+	local_maxmem = 0
 	if output_file is None or not (os.path.exists(output_file)):
+		if output_file is not None:
+			print ("File to produce: " + output_file)
 		create_file(lock_file)		# Create lock
 		if isinstance(cmd, list): # Handle command lists
 			for cmd_i in cmd:
@@ -178,7 +182,9 @@ def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
 			ret, local_maxmem = callprint(cmd, shell)	# Run command
 		os.remove(lock_file)		# Remove lock file
 	else:
-		print("File already exists: " + output_file)
+		if output_file is not None:
+			print("File already exists: " + output_file)
+
 	return ret
 
 
