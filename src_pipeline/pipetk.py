@@ -169,11 +169,13 @@ def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
 		print ("Looking for file: " + output_file)
 	if output_file is None or not (os.path.exists(output_file)):
 		create_file(lock_file)		# Create lock
-		if isinstance(cmd, list):
+		if isinstance(cmd, list): # Handle command lists
 			for cmd_i in cmd:
-				ret, local_maxmeme = callprint(cmd_i, shell)
-			else:
-				ret, local_maxmem = callprint(cmd, shell)	# Run command
+				list_ret, list_maxmem = callprint(cmd_i, shell)
+				local_maxmem = max(local_maxmem, list_maxmem)
+				ret = max(ret, list_ret)
+		else: # Single command (most common)
+			ret, local_maxmem = callprint(cmd, shell)	# Run command
 		os.remove(lock_file)		# Remove lock file
 	else:
 		print("File already exists: " + output_file)
