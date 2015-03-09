@@ -117,10 +117,20 @@ def make_sure_path_exists(path):
 
 def wait_for_lock(lock_file):
 	sleeptime = 5
+	first_message_flag = False
+	dot_count=0
 	while os.path.isfile(lock_file):
-		print "Waiting for file lock (" + str(sleeptime) + " sec): " + lock_file
+		if first_message_flag == False:
+			timestamp("Waiting for file lock: " + lock_file)
+		else:
+			sys.stdout.write(".")
+			dot_count = dot_count+1
+			if dot_count == 60:
+				print "" # linefeed
+				dot_count = 0
 		sleep(sleeptime)
 		sleeptime = min(sleeptime+5, 120)
+	timestamp("File unlocked.")
 
 
 def create_file(file):
@@ -159,11 +169,14 @@ def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
 		print ("Looking for file: " + output_file)
 	if output_file is None or not (os.path.exists(output_file)):
 		create_file(lock_file)		# Create lock
-		ret, local_maxmem = callprint(cmd, shell)				# Run command
+		if isinstance(cmd, list):
+			for cmd_i in cmd:
+				ret, local_maxmeme = callprint(cmd_i, shell)
+			else:
+				ret, local_maxmem = callprint(cmd, shell)	# Run command
 		os.remove(lock_file)		# Remove lock file
 	else:
 		print("File already exists: " + output_file)
-
 	return ret
 
 
