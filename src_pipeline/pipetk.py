@@ -126,11 +126,10 @@ def wait_for_lock(lock_file):
 		else:
 			sys.stdout.write(".")
 			dot_count = dot_count+1
-			if dot_count == 60:
+			if dot_count % 60 == 0:
 				print "" # linefeed
-				dot_count = 0
 		sleep(sleeptime)
-		sleeptime = min(sleeptime+5, 120)
+		sleeptime = min(sleeptime+5, 60)
 
 	if first_message_flag:
 		timestamp("File unlocked.")
