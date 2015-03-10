@@ -13,13 +13,10 @@ def markDuplicates(paths, aligned_file, out_file, metrics_file, remove_duplicate
 	cmd += " OUTPUT=" + out_file
 	cmd += " METRICS_FILE=" + metrics_file
 	cmd += " REMOVE_DUPLICATES=" + remove_duplicates
-
 	return cmd
 
 
-
-def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths, sanity_check=True):
-	pipetk.timestamp("### Fastq conversion: ")
+def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths):
 	pipetk.make_sure_path_exists(os.path.dirname(out_fastq_pre))
 	# Build commands:
 
@@ -32,56 +29,22 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths, sanity_check=True):
 		cmd += " F2=" + out_fastq_pre + "_R2.fastq"
 
 	cmd += " INCLUDE_NON_PF_READS=true"
-
-	pipetk.call_lock(cmd, "lock.fastq", paths.pipeline_outfolder, out_fastq_pre + "_R1.fastq")
-
-	# Sanity checks:
-	if (sanity_check):
-		bam_size = count_reads(bam_file)
-		pipetk.report_result("Bam reads", str(bam_size), paths)
-		fastq_size = subprocess.check_output("wc -l " + out_fastq_pre + "_R1.fastq | cut -f1 -d' '", shell=True)
-		if not paired_end:
-			fastq_reads = int(fastq_size) / 4
-		else:
-			fastq_reads = int(fastq_size) / 2
-		pipetk.report_result("Fastq reads", fastq_reads, paths)
-		if (fastq_reads != int(bam_size)):
-			raise Exception("Fastq conversion error? Size doesn't match unaligned bam")
+	return cmd
 
 
-def merge_bams(unmapped_bams, merged_bam, paths, sanity_check=True):
-	if (len(args.unmapped_bam) > 1):
-		merge = True
-		if (args.sample_name == "default"):
-			args.sample_name = "merged";
-	else:
-		if (args.sample_name == "default"):
-			args.sample_name = os.path.splitext(os.path.basename(args.unmapped_bam[0]))[0]
+def merge_bams(input_bams, merged_bam, paths):
+	if not len(input_bams) > 1:
+		print "No merge required"
+		return 0
 
-	if merge and not os.path.isfile(sample_merged_bam):
-		print("Multiple unmapped bams found; merge requested")
-		input_bams = args.unmapped_bam;
-		print("input bams: " + str(input_bams))
-		merge_folder = os.path.join(paths.pipeline_outfolder, "unmapped_bam/")
-		input_string = " INPUT=" + " INPUT=".join(input_bams)
-		output_merge = os.path.join(merge_folder, sample_merged_bam)
-		cmd = "java -jar " + os.path.join(paths.picard_dir, "MergeSamFiles.jar")
-		cmd += input_string
-		cmd += " OUTPUT=" + output_merge
-		cmd += " ASSUME_SORTED=TRUE"
-		cmd += " CREATE_INDEX=TRUE"
-
-		pipetk.call_lock(cmd, "lock.merge", paths.pipeline_outfolder, output_merge)
-		args.unmapped_bam = paths.pipeline_outfolder+"unmapped_bam/" + sample_merged_bam  #update unmapped bam reference
-		local_unmapped_bam = paths.pipeline_outfolder+"unmapped_bam/" + sample_merged_bam
-	else:
-		# Link the file into the unmapped_bam directory
-		print("Single unmapped bam found; no merge required")
-		print("Unmapped bam:\t\t" + str(args.unmapped_bam[0]))
-		args.unmapped_bam = args.unmapped_bam[0]
-		local_unmapped_bam = paths.pipeline_outfolder+"unmapped_bam/"+args.sample_name+".bam"
-		call("ln -s " + args.unmapped_bam + " " + local_unmapped_bam, shell=True)
-
+	print("Merging multiple bams: " + str(input_bams))
+	input_string = " INPUT=" + " INPUT=".join(input_bams)
+	cmd = "java -jar " + os.path.join(paths.picard_dir, "MergeSamFiles.jar")
+	cmd += input_string
+	cmd += " OUTPUT=" + merged_bam
+	cmd += " ASSUME_SORTED=TRUE"
+	cmd += " CREATE_INDEX=TRUE"
+	return(cmd)
 
 
 
