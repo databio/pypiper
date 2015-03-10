@@ -16,6 +16,8 @@ resources/
 !*.pl
 !*.py
 !*.c
+!*.md
+!*.sub
 !*readme.txt*
 !*README.txt*
 !*readme.md*
