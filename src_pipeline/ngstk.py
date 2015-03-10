@@ -53,10 +53,38 @@ def count_lines(file):
 	return x
 
 
-def samtools_view(file, param):
-	x = subprocess.check_output("samtools view " + param + " " + file, shell=True)
-	return x
 
+# This accounts for paired end or not for free!
+# because pairs have the same read name.
+def count_unique_reads(file, paired_end):
+	if file.endswith("sam"):
+		param = "-S"
+	if file.endswith("bam"):
+		param = ""
+	if paired_end:
+		r1 = samtools_view(file, param=param+" -f64", postpend=" | cut -f1 | uniq | wc -l ")
+		r2 = samtools_view(file, param=param+" -f128", postpend=" | cut -f1 | uniq | wc -l ")
+	else:
+		r1 = samtools_view(file, param=param+"", postpend=" | cut -f1 | uniq | wc -l ")
+		r2 = 0
+	return int(r1)+int(r2)
+
+def count_unique_mapped_reads(file, paired_end):
+	if file.endswith("sam"):
+		param = "-S -F4"
+	if file.endswith("bam"):
+		param = "-F4"
+	if paired_end:
+		r1 = samtools_view(file, param=param+" -f64", postpend=" | cut -f1 | uniq | wc -l ")
+		r2 = samtools_view(file, param=param+" -f128", postpend=" | cut -f1 | uniq | wc -l ")
+	else:
+		r1 = samtools_view(file, param=param+"", postpend=" | cut -f1 | uniq | wc -l ")
+		r2 = 0
+	return int(r1)+int(r2)
+
+def samtools_view(file, param, postpend=""):
+	x = subprocess.check_output("samtools view " + param + " " + file + " " + postpend, shell=True)
+	return x
 
 def count_reads(file, paired_end=True):
 	if file.endswith("bam"):
