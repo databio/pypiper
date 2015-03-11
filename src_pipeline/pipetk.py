@@ -258,6 +258,7 @@ def stop_pipeline(paths):
 	print ("Total elapsed time: " + str(time_elapsed(STARTTIME)))
 	#print ("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
 	print ("Peak memory used: " + str(PEAKMEM/1e6) + " GB")
+	report_result("Success", 1, paths)
 	timestamp("### Pipeline completed at: ");
 
 
