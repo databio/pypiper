@@ -62,10 +62,10 @@ def count_unique_reads(file, paired_end):
 	if file.endswith("bam"):
 		param = ""
 	if paired_end:
-		r1 = samtools_view(file, param=param+" -f64", postpend=" | cut -f1 | uniq | wc -l ")
-		r2 = samtools_view(file, param=param+" -f128", postpend=" | cut -f1 | uniq | wc -l ")
+		r1 = samtools_view(file, param=param+" -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
+		r2 = samtools_view(file, param=param+" -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
 	else:
-		r1 = samtools_view(file, param=param+"", postpend=" | cut -f1 | uniq | wc -l ")
+		r1 = samtools_view(file, param=param+"", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
 		r2 = 0
 	return int(r1)+int(r2)
 
@@ -75,10 +75,10 @@ def count_unique_mapped_reads(file, paired_end):
 	if file.endswith("bam"):
 		param = "-F4"
 	if paired_end:
-		r1 = samtools_view(file, param=param+" -f64", postpend=" | cut -f1 | uniq | wc -l ")
-		r2 = samtools_view(file, param=param+" -f128", postpend=" | cut -f1 | uniq | wc -l ")
+		r1 = samtools_view(file, param=param+" -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
+		r2 = samtools_view(file, param=param+" -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
 	else:
-		r1 = samtools_view(file, param=param+"", postpend=" | cut -f1 | uniq | wc -l ")
+		r1 = samtools_view(file, param=param+"", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
 		r2 = 0
 	return int(r1)+int(r2)
 
