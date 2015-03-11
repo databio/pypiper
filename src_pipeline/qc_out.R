@@ -1,5 +1,7 @@
-project.init()
-inputFolder = "/fhgfs/groups/lab_bock/shared/COREseq/results_pipeline"
+#project.init()
+library(data.table)
+
+inputFolder = "/fhgfs/groups/lab_bock/shared/COREseq/results_pipeline3"
 
 pipeDirs = list.dirs(inputFolder, recursive=FALSE)
 
@@ -22,7 +24,7 @@ for (dir in pipeDirs) {
 		a[,sampleName:=basename(dir)]
 		a[,pipeline:=pipeline]
 		sampleName = basename(dir)
-		results[[sampleName]] = a;
+		results[[paste0(sampleName,"_",pipeline)]] = a;
 	}
 }
 resultsDT = do.call(rbind, results)
@@ -55,7 +57,7 @@ resultsDT = resultsDT[! key %in% garbageCols,]
 
 library(reshape2) #no longer necessary after data.table 1.9.5??
 resultsTable = dcast(resultsDT, formula = "... ~ key")
-write.tsv(resultsTable, paste0(inputFolder, "/qc_results_complete.tsv"))
+write.table(resultsTable, paste0(inputFolder, "/qc_results_complete.tsv"),sep="\t",row.names=FALSE,quote=FALSE)
 
 # Make table prettier
 resultsTable = as.data.table(resultsTable)
@@ -68,8 +70,13 @@ resultsTable[1:10,]
 
 resultsTable[, trim_rate := (Bam_reads - Trimmed_size)/Bam_reads]
 resultsTable[, alignment_rate := (Trimmed_size - Aligned_reads)/Trimmed_size]
-resultsTable[, dupe_rate := (Aligned_reads - Deduplicated)/Aligned_reads]
-resultsTable[, filt_rate := (Deduplicated - Filtered)/Deduplicated]
+resultsTable[pipeline=="WGBS", dupe_rate := (Aligned_reads - Deduplicated)/Aligned_reads]
+resultsTable[pipeline=="WGBS", filt_rate := (Deduplicated - Filtered)/Deduplicated]
+resultsTable[!pipeline=="WGBS", dupe_rate := (Filtered - Deduplicated)/Filtered]
+resultsTable[!pipeline=="WGBS", filt_rate := (Aligned_reads - Filtered)/Aligned_reads]
+resultsTable[, ERCC_alignment_rate := (Trimmed_size-ERCC_aligned_reads)/Trimmed_size]
+
+
 resultsTable
 
 resultsTable[pipeline=="WGBS",  c("sampleName", "pipeline", "Bam_reads", "Trimmed_size", "trim_rate", "Aligned_reads", "alignment_rate", "Deduplicated", "dupe_rate", "Filtered", "filt_rate"), with=F]
