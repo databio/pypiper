@@ -115,6 +115,26 @@ def make_sure_path_exists(path):
 			raise
 
 
+def timestamp(message):
+	global LAST_TIMESTAMP
+	message += " (" + strftime("%m-%d %H:%M:%S") + ")"
+	message += " elapsed:" + str(time_elapsed(LAST_TIMESTAMP))
+	message += " _TIME_"
+	if re.match("^###", message):
+		message = "\n" + message + "\n"
+	print(message)
+	LAST_TIMESTAMP = time()
+
+
+
+def report_result(key, value, paths):
+	message = key + "\t " + str(value).strip()
+	print(message + "\t" + "_RES_")
+	with open(paths.pipe_stats, "a") as myfile:
+		myfile.write(message + "\n")
+
+
+
 def wait_for_lock(lock_file):
 	sleeptime = 5
 	first_message_flag = False
@@ -138,51 +158,52 @@ def wait_for_lock(lock_file):
 def create_file(file):
 	with open(file, 'w') as fout:
 		fout.write('')
-	fout.close()
 
-
-def timestamp(message):
-	global LAST_TIMESTAMP
-	message += " (" + strftime("%m-%d %H:%M:%S") + ")"
-	message += " elapsed:" + str(time_elapsed(LAST_TIMESTAMP))
-	message += " _TIME_"
-	if re.match("^###", message):
-		message = "\n" + message + "\n"
-	print(message)
-	LAST_TIMESTAMP = time()
-
-
-
-def report_result(key, value, paths):
-	message = key + "\t " + str(value).strip()
-	print(message + "\t" + "_RES_")
-	with open(paths.pipe_stats, "a") as myfile:
-		myfile.write(message + "\n")
-
-
+# This version will only succeed if this process actually
+# creates the file; if the file already exists, it will
+# raise an OSError
+def create_file_racefree(file):
+	write_lock_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+	os.open(file, write_lock_flags)
 
 
 def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
 	# Create lock file:
 	lock_file = os.path.join(folder,  lock_name)
-	wait_for_lock(lock_file)
 	ret = 0
 	local_maxmem = 0
-	if output_file is None or not (os.path.exists(output_file)):
-		if output_file is not None:
-			print ("File to produce: " + output_file)
-		create_file(lock_file)		# Create lock
-		if isinstance(cmd, list): # Handle command lists
-			for cmd_i in cmd:
-				list_ret, list_maxmem = callprint(cmd_i, shell)
-				local_maxmem = max(local_maxmem, list_maxmem)
-				ret = max(ret, list_ret)
-		else: # Single command (most common)
-			ret, local_maxmem = callprint(cmd, shell)	# Run command
-		os.remove(lock_file)		# Remove lock file
-	else:
-		if output_file is not None:
-			print("File already exists: " + output_file)
+
+	# The loop here is unlikely to be triggered, and is just a wrapper
+	# to prevent race conditions; the lock_file must be created by
+	# the current loop. If not, we wait again for it and then
+	# re-do the tests.
+	while True:
+		wait_for_lock(lock_file)
+		if output_file is None or not (os.path.exists(output_file)):
+			try:
+				create_file_racefree(lock_file)		# Create lock
+			except OSError as e:
+				if e.errno == errno.EEXIST: # File already exists
+					print ("Lock file created after test! Looping again.")
+					continue # Go back to start
+			# If you make it past the try block, we successfully
+			# created the lock file and should proceed.
+			if output_file is not None:
+				print ("File to produce: " + output_file)
+			if isinstance(cmd, list): # Handle command lists
+				for cmd_i in cmd:
+					list_ret, list_maxmem = callprint(cmd_i, shell)
+					local_maxmem = max(local_maxmem, list_maxmem)
+					ret = max(ret, list_ret)
+			else: # Single command (most common)
+				ret, local_maxmem = callprint(cmd, shell)	# Run command
+			os.remove(lock_file)		# Remove lock file
+		else:
+			if output_file is not None:
+				print("File already exists: " + output_file)
+		# If you make it to the end of the while loop, you're done
+		break
+
 
 	return ret
 
