@@ -103,17 +103,6 @@ def start_pipeline(paths, args, pipeline_name):
 
 	return paths
 
-def fail_pipeline(reason):
-	set_status_flag("failed")
-	raise Exception(reason)
-
-def make_sure_path_exists(path):
-	try:
-		os.makedirs(path)
-	except OSError as exception:
-		if exception.errno != errno.EEXIST:
-			raise
-
 
 def timestamp(message):
 	global LAST_TIMESTAMP
@@ -132,6 +121,14 @@ def report_result(key, value, paths):
 	print(message + "\t" + "_RES_")
 	with open(paths.pipe_stats, "a") as myfile:
 		myfile.write(message + "\n")
+
+
+def make_sure_path_exists(path):
+	try:
+		os.makedirs(path)
+	except OSError as exception:
+		if exception.errno != errno.EEXIST:
+			raise
 
 
 
@@ -167,7 +164,17 @@ def create_file_racefree(file):
 	os.open(file, write_lock_flags)
 
 
+
+# @pass_failure	Should the pipeline bail on a nonzero return from a process? Default:  True
+# 				This can be used to implement non-essential parts of the pipeline.
+
+def call_lock_nofail(cmd, lock_name, folder, output_file=None, shell=False):
+	call_lock_internal(cmd, lock_name, folder, output_file, shell, pass_failure=False)
+
 def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
+	call_lock_internal(cmd, lock_name, folder, output_file, shell, pass_failure=True)
+
+def call_lock_internal(cmd, lock_name, folder, output_file=None, shell=False, pass_failure=True):
 	# Create lock file:
 	lock_file = os.path.join(folder,  lock_name)
 	ret = 0
@@ -190,13 +197,20 @@ def call_lock(cmd, lock_name, folder, output_file=None, shell=False):
 			# created the lock file and should proceed.
 			if output_file is not None:
 				print ("File to produce: " + output_file)
-			if isinstance(cmd, list): # Handle command lists
-				for cmd_i in cmd:
-					list_ret, list_maxmem = callprint(cmd_i, shell)
-					local_maxmem = max(local_maxmem, list_maxmem)
-					ret = max(ret, list_ret)
-			else: # Single command (most common)
-				ret, local_maxmem = callprint(cmd, shell)	# Run command
+			try:
+				if isinstance(cmd, list): # Handle command lists
+					for cmd_i in cmd:
+						list_ret, list_maxmem = callprint(cmd_i, shell)
+						local_maxmem = max(local_maxmem, list_maxmem)
+						ret = max(ret, list_ret)
+				else: # Single command (most common)
+					ret, local_maxmem = callprint(cmd, shell)	# Run command
+			except Exception as e:
+				if (pass_failure):
+					fail_pipeline(e)
+				else:
+					print(e)
+					print("Process failed, but pipeline is continuing because pass_failure=False")
 			os.remove(lock_file)		# Remove lock file
 		else:
 			if output_file is not None:
@@ -239,10 +253,13 @@ def callprint(cmd, shell=False):
 	info += " Pipeline: " +  str(PEAKMEM) +"b)"
 	print (info)
 	if p.returncode != 0:
-		fail_pipeline("Process returned nonzero result.")
-		#raise Exception("Process returned nonzero result.")
+		raise Exception("Process returned nonzero result.")
 	return [p.returncode, local_maxmem]
 
+
+def fail_pipeline(e):
+	set_status_flag("failed")
+	raise e
 
 
 def time_elapsed(time_since):
@@ -258,7 +275,7 @@ def stop_pipeline(paths):
 	print ("Total elapsed time: " + str(time_elapsed(STARTTIME)))
 	#print ("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
 	print ("Peak memory used: " + str(PEAKMEM/1e6) + " GB")
-	report_result("Success", 1, paths)
+	report_result("Success", strftime("%m-%d %H:%M:%S"), paths)
 	timestamp("### Pipeline completed at: ");
 
 
