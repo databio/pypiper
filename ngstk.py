@@ -1,4 +1,4 @@
-import pipetk
+import pypiper
 import os
 import subprocess
 # Path variables
@@ -17,7 +17,7 @@ def markDuplicates(paths, aligned_file, out_file, metrics_file, remove_duplicate
 
 
 def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths):
-	pipetk.make_sure_path_exists(os.path.dirname(out_fastq_pre))
+	pypiper.make_sure_path_exists(os.path.dirname(out_fastq_pre))
 	# Build commands:
 
 	cmd = "java -jar "
