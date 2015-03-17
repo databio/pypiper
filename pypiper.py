@@ -1,6 +1,6 @@
 #!/usr/bin/python2.7
 """
-Pipe ToolKit (pipetk) documentation
+Pypiper documentation
 """
 
 import os
