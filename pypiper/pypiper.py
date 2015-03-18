@@ -1,4 +1,5 @@
-#!/usr/bin/python2.7
+#!/usr/env python
+
 """
 Pypiper documentation
 """
