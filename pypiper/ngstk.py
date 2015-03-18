@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/env python
 
 import pypiper
 import os
@@ -128,4 +128,16 @@ def bam_conversions(bam, depth=True):
     cmd += "samtools index " + bam.replace(".bam", "_sorted.bam") + "\n"
     if depth:
         cmd += "samtools depth " + bam.replace(".bam", "_sorted.bam") + " > " + bam.replace(".bam", "_sorted.depth") + "\n"
+    return cmd
+
+
+def fastqc(bam, outputDir):
+    """Call fastqc on a bam file."""
+    cmd = "fastqc --noextract --outdir " + outputDir + " " + bam
+    return cmd
+
+
+def samtools_index(bam):
+    """Index a bam file."""
+    cmd = "samtools index {0}".format(bam)
     return cmd
