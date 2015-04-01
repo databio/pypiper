@@ -36,31 +36,27 @@ class Pypiper:
 	LOGFILE = ""  # required for termination signal code only.
 
 
-	def __init__(self, name, ):
+	def __init__(self, name, outfolder):
 		self.PIPELINE_NAME = name
+		self.PIPELINE_OUTFOLDER = os.path.join(outfolder, '')
+		self.LOGFILE =  self.PIPELINE_OUTFOLDER + self.PIPELINE_NAME + "_log.md"
+		self.PIPELINE_STATS = self.PIPELINE_OUTFOLDER + self.PIPELINE_NAME + "_stats.txt"
 
 
-	def start_pipeline(self, paths, args):
-		"""Do some setup, like tee output, print some diagnostics, create temp files"""
-		# add variables for this pipeline
-		atexit.register(self.exit_handler)
-
-		paths.pipeline_outfolder = os.path.join(args.project_root + args.sample_name + "/")
-		paths.pipe_stats = paths.pipeline_outfolder + "/" + self.PIPELINE_NAME + "_stats.txt"
-		paths.log_file = paths.pipeline_outfolder + self.PIPELINE_NAME + "_log.md"
-
-		self.LOGFILE = paths.log_file
-		self.PIPELINE_OUTFOLDER = paths.pipeline_outfolder
-		self.PIPELINE_STATS = paths.pipe_stats
-
-		self.make_sure_path_exists(paths.pipeline_outfolder)
-
+	def start_pipeline(self, args=None):
+		"""
+		Do some setup, like tee output, print some diagnostics, create temp files.
+		You provide only the output directory (used for pipeline stats, log, and status flag files).
+		"""
 		self.STARTTIME = time()
 
 		# Register handler functions to deal with interrupt and termination signals;
 		# If received, we would then clean up properly (set pipeline status to FAIL, etc).
+		atexit.register(self.exit_handler)
 		signal.signal(signal.SIGINT, self.signal_int_handler)
 		signal.signal(signal.SIGTERM, self.signal_term_handler)
+
+		self.make_sure_path_exists(self.PIPELINE_OUTFOLDER)
 
 		# Mirror every operation on sys.stdout to log file
 		sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
@@ -75,38 +71,42 @@ class Pypiper:
 		# hash: the commit id of the last commit in this repo
 		# date: the date of the last commit in this repo
 		# diff: a summary of any differences in the current (run) version vs. the committed version
-		git_pypiper_commit_hash = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
-		git_pypiper_commit_date = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD", shell=True)
-		git_pypiper_commit_diff = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD", shell=True)
-		git_pipe_commit_hash = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD", shell=True)
-		git_pipe_commit_date = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD", shell=True)
-		git_pipe_commit_diff = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD", shell=True)
+
+		gitvars = {}
+		try:
+			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
+			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD", shell=True)
+			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD", shell=True)
+			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD", shell=True)
+			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD", shell=True)
+			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD", shell=True)
+		except Exception:
+			pass
 
 		# Print out a header section in the pipeline log:
 		print("################################################################################")
 		self.timestamp("Pipeline started at: ")
 		print("Compute host:\t\t" + platform.node())
 		print("Working dir : %s" % os.getcwd())
-		print("Git pypiper version:\t\t" + git_pypiper_commit_hash.strip())
-		print("Git pypiper date:\t\t" + git_pypiper_commit_date.strip())
-		if (git_pypiper_commit_diff != ""):
-			print("Git pypiper diff: \t\t" + git_pypiper_commit_diff.strip())
-		print("Git pipeline version:\t\t" + git_pipe_commit_hash.strip())
-		print("Git pipeline date:\t\t" + git_pipe_commit_date.strip())
-		if (git_pipe_commit_diff != ""):
-			print("Git pipeline diff: \t\t" + git_pipe_commit_diff.strip())
+		print("Git pypiper version:\t\t" + gitvars['pypiper_hash'].strip())
+		print("Git pypiper date:\t\t" + gitvars['pypiper_date'].strip())
+		if (gitvars['pypiper_diff'] != ""):
+			print("Git pypiper diff: \t\t" + gitvars['pypiper_diff'].strip())
+		print("Git pipeline version:\t\t" + gitvars['pipe_hash'].strip())
+		print("Git pipeline date:\t\t" + gitvars['pipe_date'].strip())
+		if (gitvars['pipe_diff'] != ""):
+			print("Git pipeline diff: \t\t" + gitvars['pipe_diff'].strip())
 		print("Python version:\t\t" + platform.python_version())
 		print("Cmd: " + str(" ".join(sys.argv)))
-		# Print all arguments
-		argsDict = vars(args)
-		for arg in argsDict:
-			print(arg + ":\t\t" + str(argsDict[arg]))
+		# Print all arguments (if any)
+		if args is not None:
+			argsDict = vars(args)
+			for arg in argsDict:
+				print(arg + ":\t\t" + str(argsDict[arg]))
 		print("Run outfolder:\t\t" + self.PIPELINE_OUTFOLDER)
 		print("################################################################################")
 
 		self.set_status_flag("running")
-
-		return paths
 
 
 	def set_status_flag(self, status):
@@ -188,16 +188,16 @@ class Pypiper:
 		os.open(file, write_lock_flags)
 
 
-	def call_lock_nofail(self, cmd, lock_name, folder, output_file=None, shell=False):
+	def call_lock_nofail(self, cmd, lock_name, output_file=None, shell=False):
 		"""
 		@pass_failure Should the pipeline bail on a nonzero return from a process? Default:  True
 		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 		they will not cause the pipeline to bail out.
 		"""
-		self.call_lock_internal(cmd, lock_name, folder, output_file, shell, pass_failure=False)
+		self.call_lock_internal(cmd, lock_name, output_file, shell, pass_failure=False)
 
 
-	def call_lock(self, cmd, lock_name, folder, output_file=None, shell=False):
+	def call_lock(self, cmd, lock_name, output_file=None, shell=False):
 		"""
 		The primary workhorse function of pypiper. This is the command execution function, which enforces
 		file-locking to enable restartability, and multiple pipelines using the same files. The function will
@@ -206,12 +206,12 @@ class Pypiper:
 		(for example, in parallel pipelines) from touching the file while it is being created.
 		It also record the memory of the process and provides some logging output.
 		"""
-		self.call_lock_internal(cmd, lock_name, folder, output_file, shell, pass_failure=True)
+		self.call_lock_internal(cmd, lock_name, output_file, shell, pass_failure=True)
 
 
-	def call_lock_internal(self, cmd, lock_name, folder, output_file=None, shell=False, pass_failure=True):
+	def call_lock_internal(self, cmd, lock_name, output_file=None, shell=False, pass_failure=True):
 		# Create lock file:
-		lock_file = os.path.join(folder, lock_name)
+		lock_file = os.path.join(self.PIPELINE_OUTFOLDER, lock_name)
 		ret = 0
 		local_maxmem = 0
 
