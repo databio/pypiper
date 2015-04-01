@@ -22,21 +22,8 @@ Benefits of using PyPiper
 # Your first pipeline
 ---------------------
 
-The workhorse of PyPiper is the `call_lock()` function. A simple pipeline could look something like this:
+The workhorse of PyPiper is the `call_lock()` function. To see an example of a simple pipline, look at the `sample_pipeline.py` script in this repository.
 
-```python
-import pypiper
-
-# First, generate some random data
-cmd = "time shuf -i 1-500000000 -n 100000000 > test.out"
-pypiper.call_lock(cmd, "lock.shuf")
-
-cmd = "time paste test.out test.out test.out > pasted.out"
-pypiper.call_lock(cmd, "lock.paste")
-
-cmd = "awk 'n < $0 {n=$0}END{print n}' pasted.out"
-pypiper.call_lock(cmd, "lock.max")
-```
 
 
 
