@@ -3,10 +3,18 @@
 import pypiper
 import os
 import subprocess
+import errno
 
 # Path variables
 # #######################################################################################
 # in here is stuff that will be used by multiple pipelines.
+
+def make_sure_path_exists(path):
+	try:
+		os.makedirs(path)
+	except OSError as exception:
+		if exception.errno != errno.EEXIST:
+			raise
 
 
 def markDuplicates(paths, aligned_file, out_file, metrics_file, remove_duplicates="True"):
@@ -20,7 +28,7 @@ def markDuplicates(paths, aligned_file, out_file, metrics_file, remove_duplicate
 
 
 def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths):
-    pypiper.make_sure_path_exists(os.path.dirname(out_fastq_pre))
+    make_sure_path_exists(os.path.dirname(out_fastq_pre))
     # Build commands:
 
     cmd = "java -jar "

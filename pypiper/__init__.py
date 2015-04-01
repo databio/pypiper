@@ -1,1 +1,1 @@
-from pypiper import *
+from pypiper import Pypiper
