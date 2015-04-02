@@ -237,7 +237,7 @@ class Pypiper:
 			if not shell:
 				local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
 				# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
-			sleep(sleeptime)
+			time.sleep(sleeptime)
 			sleeptime = min(sleeptime + 5, 60)
 
 		# set self.maxmem
@@ -291,7 +291,7 @@ class Pypiper:
 		if re.match("^###", message):
 			message = "\n" + message + "\n"
 		print(message)
-		last_timestamp = time()
+		self.last_timestamp = time.time()
 
 
 	def time_elapsed(self, time_since):
