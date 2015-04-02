@@ -29,19 +29,19 @@ mypiper.start_pipeline()
 # You must use shell=True here because of redirection (>), which
 # is a shell process, and can't be run as a python subprocess.
 cmd = "shuf -i 1-500000000 -n 100000000 > pipeline_output/test.out"
-mypiper.call_lock(cmd, "lock.shuf", "pipeline_output/test.out", shell=True)
+mypiper.call_lock(cmd, target="pipeline_output/test.out", shell=True)
 
 # Now copy the data into a new file.
 # No pipes or redirects, so this does not require shell function.
 # (this should be the most common use case).
 cmd = "cp pipeline_output/test.out pipeline_output/copied.out"
-mypiper.call_lock(cmd, "lock.cp", "pipeline_output/copied.out")
+mypiper.call_lock(cmd, target="pipeline_output/copied.out")
 
 # You can also string multiple commands together, which will execute
-# as a group to create the final target.
+# in order as a group to create the final target.
 cmd1 = "sleep 5"
 cmd2 = "touch pipeline_output/touched.out"
-mypiper.call_lock([cmd1, cmd2], "lock.touch", "pipeline_output/touched.out")
+mypiper.call_lock([cmd1, cmd2], target="pipeline_output/touched.out")
 
 # A command without a target will run every time.
 # Find the biggest line

@@ -188,16 +188,7 @@ class Pypiper:
 		os.open(file, write_lock_flags)
 
 
-	def call_lock_nofail(self, cmd, lock_name, output_file=None, shell=False):
-		"""
-		@pass_failure Should the pipeline bail on a nonzero return from a process? Default:  True
-		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
-		they will not cause the pipeline to bail out.
-		"""
-		self.call_lock_internal(cmd, lock_name, output_file, shell, pass_failure=False)
-
-
-	def call_lock(self, cmd, lock_name, output_file=None, shell=False):
+	def call_lock(self, cmd, target=None, lock_name=None, shell=False, pass_failure=True):
 		"""
 		The primary workhorse function of pypiper. This is the command execution function, which enforces
 		file-locking to enable restartability, and multiple pipelines using the same files. The function will
@@ -205,12 +196,15 @@ class Pypiper:
 		exists. If the output is to be created, it will first create a lock file to prevent other calls to call_lock
 		(for example, in parallel pipelines) from touching the file while it is being created.
 		It also record the memory of the process and provides some logging output.
+		@pass_failure Should the pipeline bail on a nonzero return from a process? Default:  True
+		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
+		they will not cause the pipeline to bail out.
 		"""
-		self.call_lock_internal(cmd, lock_name, output_file, shell, pass_failure=True)
-
-
-	def call_lock_internal(self, cmd, lock_name, output_file=None, shell=False, pass_failure=True):
 		# Create lock file:
+		# Default lock_name (if not provided) is based on the target file name,
+		# but placed in the parent pipeline outfolder, and not in a subfolder, if any.
+		if lock_name is None:
+			lock_name = "lock." + target.replace(self.PIPELINE_OUTFOLDER, "").replace("/", "__")
 		lock_file = os.path.join(self.PIPELINE_OUTFOLDER, lock_name)
 		ret = 0
 		local_maxmem = 0
@@ -221,7 +215,7 @@ class Pypiper:
 		# re-do the tests.
 		while True:
 			self.wait_for_lock(lock_file)
-			if output_file is None or not (os.path.exists(output_file)):
+			if target is None or not (os.path.exists(target)):
 				try:
 					self.create_file_racefree(lock_file)     # Create lock
 				except OSError as e:
@@ -230,8 +224,8 @@ class Pypiper:
 						continue  # Go back to start
 				# If you make it past the try block, we successfully
 				# created the lock file and should proceed.
-				if output_file is not None:
-					print ("File to produce: " + output_file)
+				if target is not None:
+					print ("File to produce: " + target)
 				try:
 					if isinstance(cmd, list):  # Handle command lists
 						for cmd_i in cmd:
@@ -248,8 +242,8 @@ class Pypiper:
 						print("Process failed, but pipeline is continuing because pass_failure=False")
 				os.remove(lock_file)        # Remove lock file
 			else:
-				if output_file is not None:
-					print("File already exists: " + output_file)
+				if target is not None:
+					print("File already exists: " + target)
 			# If you make it to the end of the while loop, you're done
 			break
 
