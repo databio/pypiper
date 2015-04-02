@@ -33,13 +33,18 @@ class Pypiper:
 	PIPELINE_STATS = ""
 	LOGFILE = ""  # required for termination signal code only.
 
+	# Some pipeline settings
+	OVERWRITE_LOCKS = False		# Should we ignore file locks and overwrite? (DANGEROUS)
+	FRESH_START = False
 
-	def __init__(self, name, outfolder, args=None):
+	def __init__(self, name, outfolder, args=None, overwrite_locks=False, fresh_start=False):
 		self.PIPELINE_NAME = name
 		self.PIPELINE_OUTFOLDER = os.path.join(outfolder, '')
-		self.LOGFILE =  self.PIPELINE_OUTFOLDER + self.PIPELINE_NAME + "_log.md"
+		self.LOGFILE = self.PIPELINE_OUTFOLDER + self.PIPELINE_NAME + "_log.md"
 		self.PIPELINE_STATS = self.PIPELINE_OUTFOLDER + self.PIPELINE_NAME + "_stats.txt"
 
+		self.OVERWRITE_LOCKS = overwrite_locks
+		self.FRESH_START = fresh_start
 		self.start_pipeline(args)
 
 
@@ -133,7 +138,7 @@ class Pypiper:
 	def call_lock(self, cmd, target=None, lock_name=None, shell=False, nofail=False):
 		"""
 		The primary workhorse function of pypiper. This is the command execution function, which enforces
-		file-locking to enable restartability, and multiple pipelines using the same files. The function will
+		file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
 		wait for the file lock if it exists, and not produce new output (by default) if the target output file already
 		exists. If the output is to be created, it will first create a lock file to prevent other calls to call_lock
 		(for example, in parallel pipelines) from touching the file while it is being created.
@@ -142,11 +147,20 @@ class Pypiper:
 		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 		they will not cause the pipeline to bail out.
 		"""
+
+		# The default lock name is based on the target name. Therefore, a targetless command that you want
+		# to lock must specificy a lock_name manually.
+		if target is None and lock_name is None:
+				raise Exception("You must provide either a target or a lock name.")
+
 		# Create lock file:
 		# Default lock_name (if not provided) is based on the target file name,
 		# but placed in the parent pipeline outfolder, and not in a subfolder, if any.
 		if lock_name is None:
-			lock_name = "lock." + target.replace(self.PIPELINE_OUTFOLDER, "").replace("/", "__")
+			lock_name = target.replace(self.PIPELINE_OUTFOLDER, "").replace("/", "__")
+
+		# Prepend "lock." to make it easy to find the lock files.
+		lock_name = "lock." + lock_name
 		lock_file = os.path.join(self.PIPELINE_OUTFOLDER, lock_name)
 		ret = 0
 		local_maxmem = 0
@@ -155,37 +169,50 @@ class Pypiper:
 		# to prevent race conditions; the lock_file must be created by
 		# the current loop. If not, we wait again for it and then
 		# re-do the tests.
+
 		while True:
-			self.wait_for_lock(lock_file)
-			if target is None or not (os.path.exists(target)):
+			##### Tests block
+			# Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
+			if os.path.isfile(lock_file) and self.OVERWRITE_LOCKS:
+				print ("Found lock file; overwriting this target...")
+			# Scenario 2: Target doesn't exist (or is None); Run process, but wait for lock first
+			elif target is None or not (os.path.exists(target)):
+				self.wait_for_lock(lock_file)
 				try:
 					self.create_file_racefree(lock_file)     # Create lock
 				except OSError as e:
 					if e.errno == errno.EEXIST:  # File already exists
 						print ("Lock file created after test! Looping again.")
 						continue  # Go back to start
-				# If you make it past the try block, we successfully
-				# created the lock file and should proceed.
-				if target is not None:
-					print ("File to produce: " + target)
-				try:
-					if isinstance(cmd, list):  # Handle command lists
-						for cmd_i in cmd:
-							list_ret, list_maxmem = self.callprint(cmd_i, shell)
-							local_maxmem = max(local_maxmem, list_maxmem)
-							ret = max(ret, list_ret)
-					else:  # Single command (most common)
-						ret, local_maxmem = self.callprint(cmd, shell)   # Run command
-				except Exception as e:
-					if not nofail:
-						self.fail_pipeline(e)
-					else:
-						print(e)
-						print("Process failed, but pipeline is continuing because nofail=True")
-				os.remove(lock_file)        # Remove lock file
+
+			# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
 			else:
-				if target is not None:
-					print("File already exists: " + target)
+				print("Target exists: " + target)
+				break
+
+			##### End tests block
+			# If you make it past theses tests, we should proceed to run the process.
+
+			if target is not None:
+				print ("Target to produce: " + target)
+			else:
+				print ("Targetless command, running...")
+			try:
+				if isinstance(cmd, list):  # Handle command lists
+					for cmd_i in cmd:
+						list_ret, list_maxmem = self.callprint(cmd_i, shell)
+						local_maxmem = max(local_maxmem, list_maxmem)
+						ret = max(ret, list_ret)
+				else:  # Single command (most common)
+					ret, local_maxmem = self.callprint(cmd, shell)   # Run command
+			except Exception as e:
+				if not nofail:
+					self.fail_pipeline(e)
+				else:
+					print(e)
+					print("Process failed, but pipeline is continuing because nofail=True")
+			os.remove(lock_file)        # Remove lock file
+
 			# If you make it to the end of the while loop, you're done
 			break
 
@@ -194,11 +221,19 @@ class Pypiper:
 
 	def callprint(self, cmd, shell=False):
 		"""
-		split the command to use shell=False;
-		leave it together to use shell=True; I use False so I can get the PID
-		and poll memory use.
-		"""
+		Prints the command, and then executes it, then prints the memory use and return code of the command.
 
+		Uses python's subprocess.Popen() to execute the given command. The shell argument is simply
+		passed along to Popen(). You should use shell=False (default) where possible, because this enables memory
+		profiling. You should use shell=True if you require shell functions like redirects (>) or pipes (|), but this
+		will prevent the script from monitoring memory use.
+
+		cmd can also be a series (a Dict object) of multiple commands, which will be run in succession.
+		"""
+		# The Popen shell argument works like this:
+		# if shell=False, then we rormat the command (with split()) to be a list of command and its arguments.
+		# Split the command to use shell=False;
+		# leave it together to use shell=True;
 		print(cmd)
 		if not shell:
 			if ("|" in cmd or ">" in cmd):
@@ -207,6 +242,8 @@ class Pypiper:
 		# call(cmd, shell=shell) # old way (no memory profiling)
 
 		p = subprocess.Popen(cmd, shell=shell)
+
+		# Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
 		self.RUNNING_SUBPROCESS = p.pid
 		local_maxmem = -1
 		sleeptime = 5
@@ -254,7 +291,12 @@ class Pypiper:
 	# Logging functions
 	###################################
 
-	def timestamp(self, message):
+	def timestamp(self, message=""):
+		"""
+		Prints your given message, along with the current time, and time elapsed since the previous timestamp() call.
+		If you specify a HEADING by beginning the message with "###", it surrounds the message with newlines
+		for easier readability in the log file.
+		"""
 		message += " (" + strftime("%m-%d %H:%M:%S") + ")"
 		message += " elapsed:" + str(self.time_elapsed(self.LAST_TIMESTAMP))
 		message += " _TIME_"
@@ -277,17 +319,20 @@ class Pypiper:
 
 
 	def create_file(self, file):
-		''' An older function that could succumb to race conditions'''
+		"""
+		Creates a file, but will not fail if the file already exists. (Vulnerable to race conditions).
+		Use this for cases where it doesn't matter if this process is the one that created the file.
+		"""
 		with open(file, 'w') as fout:
 			fout.write('')
 
 
 	def create_file_racefree(self, file):
-		'''
-		This function will only succeed if this process actually
-		creates the file; if the file already exists, it will
-		raise an OSError
-		'''
+		"""
+		Creates a file, but fails if the file already exists.
+		This function will thus only succeed if this process actually creates the file;
+		if the file already exists, it will	raise an OSError, solving race conditions.
+		"""
 		write_lock_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
 		os.open(file, write_lock_flags)
 
@@ -303,6 +348,27 @@ class Pypiper:
 	###################################
 	# Pipeline termination functions
 	###################################
+
+	def stop_pipeline(self):
+		"""
+		The normal pipeline completion function, to be run by the user at the end of the script.
+		It sets status flag to completed and records some time and memory statistics to the log file.
+		"""
+		self.set_status_flag("completed")
+		print ("Total elapsed time: " + str(self.time_elapsed(self.STARTTIME)))
+		# print ("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
+		print ("Peak memory used: " + str(self.PEAKMEM / 1e6) + " GB")
+		self.report_result("Success", strftime("%m-%d %H:%M:%S"))
+		self.timestamp("### Pipeline completed at: ")
+
+
+	def fail_pipeline(self, e):
+		"""
+		If the pipeline does not complete, this function will stop the pipeline gracefully.
+		It sets the status flag to failed and skips the	normal success completion procedure.
+		"""
+		self.set_status_flag("failed")
+		raise e
 
 
 	def signal_term_handler(self, signal, frame):
@@ -325,7 +391,7 @@ class Pypiper:
 		"""
 		For catching interrupt (Ctrl +C) signals. Fails gracefully.
 		"""
-		message = "Got SIGINT; Failing gracefully..."
+		message = "Got SIGINT (Ctrl +C); Failing gracefully..."
 		with open(self.LOGFILE, "a") as myfile:
 			myfile.write(message + "\n")
 		self.fail_pipeline(Exception("SIGINT"))
@@ -335,9 +401,9 @@ class Pypiper:
 	def exit_handler(self):
 		"""
 		This function I register with atexit to run whenever the script is completing.
-		A catch-all for uncaught exceptions...
+		A catch-all for uncaught exceptions, setting status flag file to failed.
 		"""
-		print("Exit handler")
+		#print("Exit handler")
 		if self.RUNNING_SUBPROCESS is not None:
 				self.kill_child(self.RUNNING_SUBPROCESS)
 		if self.STATUS != "completed":
@@ -345,30 +411,18 @@ class Pypiper:
 
 
 	def kill_child(self, child_pid):
+		'''
+		Pypiper spawns subprocesses. We need to kill them to exit gracefully,
+		in the event of a pipeline termination or interrupt signal.
+		By default, child processes are not automatically killed when python
+		terminates, so Pypiper must clean these up manually.
+		Given a process ID, this function just kills it.
+		'''
 		if child_pid is None:
 			pass
 		else:
-			print("Killing child process " + str(child_pid))
+			print("Pypyiper terminating spawned child process " + str(child_pid))
 			os.kill(child_pid, signal.SIGTERM)
-
-
-	def fail_pipeline(self, e):
-		"""
-		Stops the pipeline gracefully: sets the status flag to failed and skips the
-		normal pipeline completion procedure.
-		"""
-		self.set_status_flag("failed")
-		raise e
-
-
-	def stop_pipeline(self):
-		"""Set status flag to completed and record some time and memory statistics to the log file."""
-		self.set_status_flag("completed")
-		print ("Total elapsed time: " + str(self.time_elapsed(self.STARTTIME)))
-		# print ("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-		print ("Peak memory used: " + str(self.PEAKMEM / 1e6) + " GB")
-		self.report_result("Success", strftime("%m-%d %H:%M:%S"))
-		self.timestamp("### Pipeline completed at: ")
 
 
 	def memory_usage(self, pid='self', category="peak"):
