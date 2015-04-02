@@ -1,50 +1,45 @@
 #!/usr/env python
-
 """
-Pypiper is a python module with two components: 1) the Pypiper class, and 2) other toolkits with functions for more
-specific pipeline use-cases. The Pypiper class can be used to create a procedural pipeline in python.
+Pypiper is a python module with two components:
+1) the Pypiper class, and
+2) other toolkits with functions for more specific pipeline use-cases.
+The Pypiper class can be used to create a procedural pipeline in python.
 """
 
-import os
-import errno
+import os, sys, subprocess, errno
 import re
-import platform
-import sys
-# from subprocess import call
-import subprocess
-from time import sleep, time, strftime
-
-import atexit
-import signal
+import time
+import atexit, signal, platform
 
 class Pypiper:
-	'Base class for instantiating a pypiper pipeline object'
-	# Define pipeline-level variables to keep track of global state and some pipeline stats
-
-	PIPELINE_NAME = ""
-	PEAKMEM = 0         # memory high water mark
-	STARTTIME = time()
-	LAST_TIMESTAMP = STARTTIME  # time of the last call to timestamp()
-	STATUS = "initializing"
-	RUNNING_SUBPROCESS = None
-
-	# Some file paths:
-	PIPELINE_OUTFOLDER = ""
-	PIPELINE_STATS = ""
-	LOGFILE = ""  # required for termination signal code only.
-
-	# Some pipeline settings
-	OVERWRITE_LOCKS = False		# Should we ignore file locks and overwrite? (DANGEROUS)
-	FRESH_START = False
-
+	"""
+	Base class for instantiating a pypiper object
+	"""
 	def __init__(self, name, outfolder, args=None, overwrite_locks=False, fresh_start=False):
-		self.PIPELINE_NAME = name
-		self.PIPELINE_OUTFOLDER = os.path.join(outfolder, '')
-		self.LOGFILE = self.PIPELINE_OUTFOLDER + self.PIPELINE_NAME + "_log.md"
-		self.PIPELINE_STATS = self.PIPELINE_OUTFOLDER + self.PIPELINE_NAME + "_stats.txt"
+		# Define pipeline-level variables to keep track of global state and some pipeline stats
+		# Pipeline settings
+		self.pipeline_name = name
+		self.overwrite_locks = overwrite_locks
+		self.fresh_start = fresh_start
 
-		self.OVERWRITE_LOCKS = overwrite_locks
-		self.FRESH_START = fresh_start
+		# File paths:
+		self.pipeline_outfolder = os.path.join(outfolder, '')
+		self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
+		self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.txt"
+
+		# Pipeline status variables
+		self.peak_memory = 0         # memory high water mark
+		self.starttime = time.time()
+		self.last_timestamp = self.starttime  # time of the last call to timestamp()
+		self.status = "initializing"
+		self.running_subprocess = None
+
+		# Register handler functions to deal with interrupt and termination signals;
+		# If received, we would then clean up properly (set pipeline status to FAIL, etc).
+		atexit.register(self.exit_handler)
+		signal.signal(signal.SIGINT, self.signal_int_handler)
+		signal.signal(signal.SIGTERM, self.signal_term_handler)
+
 		self.start_pipeline(args)
 
 
@@ -54,20 +49,12 @@ class Pypiper:
 		You provide only the output directory (used for pipeline stats, log, and status flag files).
 		"""
 		# Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
-		self.STARTTIME = time()
-
-		# Register handler functions to deal with interrupt and termination signals;
-		# If received, we would then clean up properly (set pipeline status to FAIL, etc).
-		atexit.register(self.exit_handler)
-		signal.signal(signal.SIGINT, self.signal_int_handler)
-		signal.signal(signal.SIGTERM, self.signal_term_handler)
-
-		self.make_sure_path_exists(self.PIPELINE_OUTFOLDER)
+		self.make_sure_path_exists(self.pipeline_outfolder)
 
 		# Mirror every operation on sys.stdout to log file
 		sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
 		# a for append to file
-		tee = subprocess.Popen(["tee", "-a", self.LOGFILE], stdin=subprocess.PIPE)
+		tee = subprocess.Popen(["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE)
 		# In case this pipeline process is terminated with SIGTERM, make sure we kill this spawned process as well.
 		atexit.register(self.kill_child, tee.pid)
 		os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
@@ -109,27 +96,26 @@ class Pypiper:
 			argsDict = vars(args)
 			for arg in argsDict:
 				print(arg + ":\t\t" + str(argsDict[arg]))
-		print("Run outfolder:\t\t" + self.PIPELINE_OUTFOLDER)
+		print("Run outfolder:\t\t" + self.pipeline_outfolder)
 		print("################################################################################")
-
 		self.set_status_flag("running")
 
 
 	def set_status_flag(self, status):
-		prev_status = self.STATUS
+		prev_status = self.status
 		# Remove previous status flag file
-		flag_file = self.PIPELINE_OUTFOLDER + "/" + self.PIPELINE_NAME + "_" + prev_status + ".flag"
+		flag_file = self.pipeline_outfolder + "/" + self.pipeline_name + "_" + prev_status + ".flag"
 		try:
 			os.remove(os.path.join(flag_file))
 		except:
 			pass
 
 		# Set new status
-		self.STATUS = status
-		flag_file = self.PIPELINE_OUTFOLDER + "/" + self.PIPELINE_NAME + "_" + status + ".flag"
+		self.status = status
+		flag_file = self.pipeline_outfolder + "/" + self.pipeline_name + "_" + status + ".flag"
 		self.create_file(flag_file)
 
-		print ("Change status from " + prev_status + " to " + status)
+		print("Change status from " + prev_status + " to " + status)
 
 	###################################
 	# Process calling functions
@@ -157,12 +143,12 @@ class Pypiper:
 		# Default lock_name (if not provided) is based on the target file name,
 		# but placed in the parent pipeline outfolder, and not in a subfolder, if any.
 		if lock_name is None:
-			lock_name = target.replace(self.PIPELINE_OUTFOLDER, "").replace("/", "__")
+			lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
 
 		# Prepend "lock." to make it easy to find the lock files.
 		lock_name = "lock." + lock_name
-		lock_file = os.path.join(self.PIPELINE_OUTFOLDER, lock_name)
-		ret = 0
+		lock_file = os.path.join(self.pipeline_outfolder, lock_name)
+		process_return_code = 0
 		local_maxmem = 0
 
 		# The loop here is unlikely to be triggered, and is just a wrapper
@@ -173,8 +159,8 @@ class Pypiper:
 		while True:
 			##### Tests block
 			# Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
-			if os.path.isfile(lock_file) and self.OVERWRITE_LOCKS:
-				print ("Found lock file; overwriting this target...")
+			if os.path.isfile(lock_file) and self.overwrite_locks:
+				print("Found lock file; overwriting this target...")
 			# Scenario 2: Target doesn't exist (or is None); Run process, but wait for lock first
 			elif target is None or not (os.path.exists(target)):
 				self.wait_for_lock(lock_file)
@@ -194,17 +180,17 @@ class Pypiper:
 			# If you make it past theses tests, we should proceed to run the process.
 
 			if target is not None:
-				print ("Target to produce: " + target)
+				print("Target to produce: " + target)
 			else:
-				print ("Targetless command, running...")
+				print("Targetless command, running...")
 			try:
 				if isinstance(cmd, list):  # Handle command lists
 					for cmd_i in cmd:
 						list_ret, list_maxmem = self.callprint(cmd_i, shell)
 						local_maxmem = max(local_maxmem, list_maxmem)
-						ret = max(ret, list_ret)
+						process_return_code = max(process_return_code, list_ret)
 				else:  # Single command (most common)
-					ret, local_maxmem = self.callprint(cmd, shell)   # Run command
+					process_return_code, local_maxmem = self.callprint(cmd, shell)   # Run command
 			except Exception as e:
 				if not nofail:
 					self.fail_pipeline(e)
@@ -216,7 +202,7 @@ class Pypiper:
 			# If you make it to the end of the while loop, you're done
 			break
 
-		return ret
+		return process_return_code
 
 
 	def callprint(self, cmd, shell=False):
@@ -244,31 +230,33 @@ class Pypiper:
 		p = subprocess.Popen(cmd, shell=shell)
 
 		# Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
-		self.RUNNING_SUBPROCESS = p.pid
+		self.running_subprocess = p.pid
 		local_maxmem = -1
 		sleeptime = 5
 		while p.poll() == None:
 			if not shell:
 				local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
-				# print ("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
+				# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
 			sleep(sleeptime)
 			sleeptime = min(sleeptime + 5, 60)
 
 		# set self.maxmem
-		self.PEAKMEM = max(self.PEAKMEM, local_maxmem)
-		self.RUNNING_SUBPROCESS = None
+		self.peak_memory = max(self.peak_memory, local_maxmem)
+		self.running_subprocess = None
 
 		info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
-		info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
-		info += " Pipeline: " + str(self.PEAKMEM) + "b)"
-		print (info)
+		if not shell:
+			info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
+			info += " Pipeline: " + str(self.peak_memory) + "b)"
+
+		print(info)
 		if p.returncode != 0:
 			raise Exception("Process returned nonzero result.")
 		return [p.returncode, local_maxmem]
 
 
 	def wait_for_lock(self, lock_file):
-		'''Just sleep until the lock_file does not exist'''
+		"""Just sleep until the lock_file does not exist"""
 		sleeptime = 5
 		first_message_flag = False
 		dot_count = 0
@@ -280,8 +268,8 @@ class Pypiper:
 				sys.stdout.write(".")
 				dot_count = dot_count + 1
 				if dot_count % 60 == 0:
-					print ""  # linefeed
-			sleep(sleeptime)
+					print("")  # linefeed
+			time.sleep(sleeptime)
 			sleeptime = min(sleeptime + 5, 60)
 
 		if first_message_flag:
@@ -297,24 +285,24 @@ class Pypiper:
 		If you specify a HEADING by beginning the message with "###", it surrounds the message with newlines
 		for easier readability in the log file.
 		"""
-		message += " (" + strftime("%m-%d %H:%M:%S") + ")"
-		message += " elapsed:" + str(self.time_elapsed(self.LAST_TIMESTAMP))
+		message += " (" + time.strftime("%m-%d %H:%M:%S") + ")"
+		message += " elapsed:" + str(self.time_elapsed(self.last_timestamp))
 		message += " _TIME_"
 		if re.match("^###", message):
 			message = "\n" + message + "\n"
 		print(message)
-		LAST_TIMESTAMP = time()
+		last_timestamp = time()
 
 
 	def time_elapsed(self, time_since):
 		"""Returns the number of seconds that have elapsed since the time_since parameter"""
-		return round(time() - time_since, 2)
+		return round(time.time() - time_since, 2)
 
 
 	def report_result(self, key, value):
 		message = key + "\t " + str(value).strip()
 		print(message + "\t" + "_RES_")
-		with open(self.PIPELINE_STATS, "a") as myfile:
+		with open(self.pipeline_stats_file, "a") as myfile:
 			myfile.write(message + "\n")
 
 
@@ -355,10 +343,10 @@ class Pypiper:
 		It sets status flag to completed and records some time and memory statistics to the log file.
 		"""
 		self.set_status_flag("completed")
-		print ("Total elapsed time: " + str(self.time_elapsed(self.STARTTIME)))
-		# print ("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-		print ("Peak memory used: " + str(self.PEAKMEM / 1e6) + " GB")
-		self.report_result("Success", strftime("%m-%d %H:%M:%S"))
+		print("Total elapsed time: " + str(self.time_elapsed(self.starttime)))
+		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
+		print("Peak memory used: " + str(self.peak_memory / 1e6) + " GB")
+		self.report_result("Success", time.strftime("%m-%d %H:%M:%S"))
 		self.timestamp("### Pipeline completed at: ")
 
 
@@ -381,7 +369,7 @@ class Pypiper:
 		before the TERM error message, leading to a confusing log file.
 		"""
 		message = "Got SIGTERM; Failing gracefully..."
-		with open(self.LOGFILE, "a") as myfile:
+		with open(self.pipeline_log_file, "a") as myfile:
 			myfile.write(message + "\n")
 		self.fail_pipeline(Exception("SIGTERM"))
 		sys.exit(1)
@@ -392,7 +380,7 @@ class Pypiper:
 		For catching interrupt (Ctrl +C) signals. Fails gracefully.
 		"""
 		message = "Got SIGINT (Ctrl +C); Failing gracefully..."
-		with open(self.LOGFILE, "a") as myfile:
+		with open(self.pipeline_log_file, "a") as myfile:
 			myfile.write(message + "\n")
 		self.fail_pipeline(Exception("SIGINT"))
 		sys.exit(1)
@@ -404,20 +392,20 @@ class Pypiper:
 		A catch-all for uncaught exceptions, setting status flag file to failed.
 		"""
 		#print("Exit handler")
-		if self.RUNNING_SUBPROCESS is not None:
-				self.kill_child(self.RUNNING_SUBPROCESS)
-		if self.STATUS != "completed":
+		if self.running_subprocess is not None:
+				self.kill_child(self.running_subprocess)
+		if self.status != "completed":
 			self.set_status_flag("failed")
 
 
 	def kill_child(self, child_pid):
-		'''
+		"""
 		Pypiper spawns subprocesses. We need to kill them to exit gracefully,
 		in the event of a pipeline termination or interrupt signal.
 		By default, child processes are not automatically killed when python
 		terminates, so Pypiper must clean these up manually.
 		Given a process ID, this function just kills it.
-		'''
+		"""
 		if child_pid is None:
 			pass
 		else:
