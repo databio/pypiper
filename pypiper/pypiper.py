@@ -127,7 +127,7 @@ class Pypiper:
 	# Process calling functions
 	###################################
 
-	def call_lock(self, cmd, target=None, lock_name=None, shell=False, pass_failure=True):
+	def call_lock(self, cmd, target=None, lock_name=None, shell=False, nofail=False):
 		"""
 		The primary workhorse function of pypiper. This is the command execution function, which enforces
 		file-locking to enable restartability, and multiple pipelines using the same files. The function will
@@ -135,7 +135,7 @@ class Pypiper:
 		exists. If the output is to be created, it will first create a lock file to prevent other calls to call_lock
 		(for example, in parallel pipelines) from touching the file while it is being created.
 		It also record the memory of the process and provides some logging output.
-		@pass_failure Should the pipeline bail on a nonzero return from a process? Default:  True
+		@nofail Should the pipeline bail on a nonzero return from a process? Default:  False
 		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 		they will not cause the pipeline to bail out.
 		"""
@@ -174,11 +174,11 @@ class Pypiper:
 					else:  # Single command (most common)
 						ret, local_maxmem = self.callprint(cmd, shell)   # Run command
 				except Exception as e:
-					if (pass_failure):
+					if not nofail:
 						self.fail_pipeline(e)
 					else:
 						print(e)
-						print("Process failed, but pipeline is continuing because pass_failure=False")
+						print("Process failed, but pipeline is continuing because nofail=True")
 				os.remove(lock_file)        # Remove lock file
 			else:
 				if target is not None:
