@@ -15,27 +15,33 @@ import pypiper
 from pypiper import ngstk
 
 
-# Create a Pypiper instance (don't forget to name it!),
-# and then start the pipeline!
+# Create a Pypiper instance (don't forget to name it!), which starts the pipeline!
 
 mypiper = pypiper.Pypiper(name="sample_pipeline", outfolder="pipeline_output/")
-mypiper.start_pipeline()
 
-# Now just build command strings, and use the call_lock function
-# to execute them in order.
-
+# Now just build shell command strings, and use the call_lock function
+# to execute them in order. call_lock needs 2 things: a command, and the target file you are creating.
 
 # First, generate some random data
-# You must use shell=True here because of redirection (>), which
+
+# specify target file:
+tgt = "pipeline_output/test.out"
+
+# build the command
+cmd = "shuf -i 1-500000000 -n 100000000 > " + tgt
+
+#and run call_lock. You must use shell=True here because of redirection (>), which
 # is a shell process, and can't be run as a python subprocess.
-cmd = "shuf -i 1-500000000 -n 100000000 > pipeline_output/test.out"
-mypiper.call_lock(cmd, target="pipeline_output/test.out", shell=True)
+mypiper.call_lock(cmd, target=tgt, shell=True)
 
 # Now copy the data into a new file.
+# first specify target file and build command:
+tgt = "pipeline_output/copied.out"
+cmd = "cp pipeline_output/test.out " + tgt
+mypiper.call_lock(cmd, target=tgt)
 # No pipes or redirects, so this does not require shell function.
 # (this should be the most common use case).
-cmd = "cp pipeline_output/test.out pipeline_output/copied.out"
-mypiper.call_lock(cmd, target="pipeline_output/copied.out")
+
 
 # You can also string multiple commands together, which will execute
 # in order as a group to create the final target.

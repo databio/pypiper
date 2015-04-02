@@ -34,11 +34,13 @@ class Pypiper:
 	LOGFILE = ""  # required for termination signal code only.
 
 
-	def __init__(self, name, outfolder):
+	def __init__(self, name, outfolder, args=None):
 		self.PIPELINE_NAME = name
 		self.PIPELINE_OUTFOLDER = os.path.join(outfolder, '')
 		self.LOGFILE =  self.PIPELINE_OUTFOLDER + self.PIPELINE_NAME + "_log.md"
 		self.PIPELINE_STATS = self.PIPELINE_OUTFOLDER + self.PIPELINE_NAME + "_stats.txt"
+
+		self.start_pipeline(args)
 
 
 	def start_pipeline(self, args=None):
@@ -46,6 +48,7 @@ class Pypiper:
 		Do some setup, like tee output, print some diagnostics, create temp files.
 		You provide only the output directory (used for pipeline stats, log, and status flag files).
 		"""
+		# Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
 		self.STARTTIME = time()
 
 		# Register handler functions to deal with interrupt and termination signals;
