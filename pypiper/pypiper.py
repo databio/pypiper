@@ -17,8 +17,6 @@ from time import sleep, time, strftime
 import atexit
 import signal
 
-
-
 class Pypiper:
 	'Base class for instantiating a pypiper pipeline object'
 	# Define pipeline-level variables to keep track of global state and some pipeline stats
@@ -125,68 +123,9 @@ class Pypiper:
 
 		print ("Change status from " + prev_status + " to " + status)
 
-
-	def timestamp(self, message):
-		message += " (" + strftime("%m-%d %H:%M:%S") + ")"
-		message += " elapsed:" + str(self.time_elapsed(self.LAST_TIMESTAMP))
-		message += " _TIME_"
-		if re.match("^###", message):
-			message = "\n" + message + "\n"
-		print(message)
-		LAST_TIMESTAMP = time()
-
-
-	def report_result(self, key, value):
-		message = key + "\t " + str(value).strip()
-		print(message + "\t" + "_RES_")
-		with open(self.PIPELINE_STATS, "a") as myfile:
-			myfile.write(message + "\n")
-
-
-	def make_sure_path_exists(self, path):
-		try:
-			os.makedirs(path)
-		except OSError as exception:
-			if exception.errno != errno.EEXIST:
-				raise
-
-
-	def wait_for_lock(self, lock_file):
-		'''Just sleep until the lock_file does not exist'''
-		sleeptime = 5
-		first_message_flag = False
-		dot_count = 0
-		while os.path.isfile(lock_file):
-			if first_message_flag is False:
-				self.timestamp("Waiting for file lock: " + lock_file)
-				first_message_flag = True
-			else:
-				sys.stdout.write(".")
-				dot_count = dot_count + 1
-				if dot_count % 60 == 0:
-					print ""  # linefeed
-			sleep(sleeptime)
-			sleeptime = min(sleeptime + 5, 60)
-
-		if first_message_flag:
-			self.timestamp("File unlocked.")
-
-
-	def create_file(self, file):
-		''' An older function that could succumb to race conditions'''
-		with open(file, 'w') as fout:
-			fout.write('')
-
-
-	def create_file_racefree(self, file):
-		'''
-		This function will only succeed if this process actually
-		creates the file; if the file already exists, it will
-		raise an OSError
-		'''
-		write_lock_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
-		os.open(file, write_lock_flags)
-
+	###################################
+	# Process calling functions
+	###################################
 
 	def call_lock(self, cmd, target=None, lock_name=None, shell=False, pass_failure=True):
 		"""
@@ -287,7 +226,78 @@ class Pypiper:
 			raise Exception("Process returned nonzero result.")
 		return [p.returncode, local_maxmem]
 
-	####################################
+
+	def wait_for_lock(self, lock_file):
+		'''Just sleep until the lock_file does not exist'''
+		sleeptime = 5
+		first_message_flag = False
+		dot_count = 0
+		while os.path.isfile(lock_file):
+			if first_message_flag is False:
+				self.timestamp("Waiting for file lock: " + lock_file)
+				first_message_flag = True
+			else:
+				sys.stdout.write(".")
+				dot_count = dot_count + 1
+				if dot_count % 60 == 0:
+					print ""  # linefeed
+			sleep(sleeptime)
+			sleeptime = min(sleeptime + 5, 60)
+
+		if first_message_flag:
+			self.timestamp("File unlocked.")
+
+	###################################
+	# Logging functions
+	###################################
+
+	def timestamp(self, message):
+		message += " (" + strftime("%m-%d %H:%M:%S") + ")"
+		message += " elapsed:" + str(self.time_elapsed(self.LAST_TIMESTAMP))
+		message += " _TIME_"
+		if re.match("^###", message):
+			message = "\n" + message + "\n"
+		print(message)
+		LAST_TIMESTAMP = time()
+
+
+	def time_elapsed(self, time_since):
+		"""Returns the number of seconds that have elapsed since the time_since parameter"""
+		return round(time() - time_since, 2)
+
+
+	def report_result(self, key, value):
+		message = key + "\t " + str(value).strip()
+		print(message + "\t" + "_RES_")
+		with open(self.PIPELINE_STATS, "a") as myfile:
+			myfile.write(message + "\n")
+
+
+	def create_file(self, file):
+		''' An older function that could succumb to race conditions'''
+		with open(file, 'w') as fout:
+			fout.write('')
+
+
+	def create_file_racefree(self, file):
+		'''
+		This function will only succeed if this process actually
+		creates the file; if the file already exists, it will
+		raise an OSError
+		'''
+		write_lock_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+		os.open(file, write_lock_flags)
+
+
+	def make_sure_path_exists(self, path):
+		try:
+			os.makedirs(path)
+		except OSError as exception:
+			if exception.errno != errno.EEXIST:
+				raise
+
+
+	###################################
 	# Pipeline termination functions
 	###################################
 
@@ -346,11 +356,6 @@ class Pypiper:
 		"""
 		self.set_status_flag("failed")
 		raise e
-
-
-	def time_elapsed(self, time_since):
-		"""Returns the number of seconds that have elapsed since the time_since parameter"""
-		return round(time() - time_since, 2)
 
 
 	def stop_pipeline(self):
