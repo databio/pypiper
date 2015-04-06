@@ -70,6 +70,7 @@ class Pypiper:
 			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
 			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD", shell=True)
 			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD", shell=True)
+			gitvars['pypiper_dir'] = subprocess.check_output(os.path.dirname(os.path.realpath(__file__)))
 			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD", shell=True)
 			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD", shell=True)
 			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD", shell=True)
@@ -81,6 +82,7 @@ class Pypiper:
 		self.timestamp("Pipeline started at: ")
 		print("Compute host:\t\t" + platform.node())
 		print("Working dir : %s" % os.getcwd())
+		print("Git pypiper dir:\t\t" + gitvars['pypiper_dir'].strip())
 		print("Git pypiper version:\t\t" + gitvars['pypiper_hash'].strip())
 		print("Git pypiper date:\t\t" + gitvars['pypiper_date'].strip())
 		if (gitvars['pypiper_diff'] != ""):
@@ -156,25 +158,32 @@ class Pypiper:
 		# the current loop. If not, we wait again for it and then
 		# re-do the tests.
 
+		
 		while True:
 			##### Tests block
+			# Base case: Target exists.			# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
+			if os.path.isfile(target) and target is not None:
+				print("Target exists: " + target)
+				break # Do not run command
 			# Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
-			if os.path.isfile(lock_file) and self.overwrite_locks:
-				print("Found lock file; overwriting this target...")
-			# Scenario 2: Target doesn't exist (or is None); Run process, but wait for lock first
-			elif target is None or not (os.path.exists(target)):
-				self.wait_for_lock(lock_file)
+			if os.path.isfile(lock_file) 
+				if self.overwrite_locks:
+					print("Found lock file; overwriting this target...")
+				else: # don't overwite locks
+					self.wait_for_lock(lock_file)
+					# when it's done loop through again to try one more time (to see if the target exists now)
+					continue
+			# if you get to this point, the target doesn't exist, and the lock_file doesn't exist (or we should overwrite).
+			# create the lock (if you can)
+			if not self.overwrite_locks:
 				try:
 					self.create_file_racefree(lock_file)     # Create lock
 				except OSError as e:
 					if e.errno == errno.EEXIST:  # File already exists
 						print ("Lock file created after test! Looping again.")
 						continue  # Go back to start
-
-			# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
 			else:
-				print("Target exists: " + target)
-				break
+				self.create_file(lock_file)
 
 			##### End tests block
 			# If you make it past theses tests, we should proceed to run the process.
@@ -201,6 +210,7 @@ class Pypiper:
 
 			# If you make it to the end of the while loop, you're done
 			break
+
 
 		return process_return_code
 
