@@ -164,7 +164,7 @@ class Pypiper:
 		while True:
 			##### Tests block
 			# Base case: Target exists.			# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
-			if os.path.isfile(target) and target is not None:
+			if os.path.isfile(target) and target is not None and not os.path.isfile(lock_file):
 				print("Target exists: " + target)
 				break # Do not run command
 			# Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
