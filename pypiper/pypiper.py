@@ -70,10 +70,11 @@ class Pypiper:
 			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
 			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD", shell=True)
 			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD", shell=True)
-			gitvars['pypiper_dir'] = subprocess.check_output(os.path.dirname(os.path.realpath(__file__)))
+			gitvars['pypiper_dir'] = os.path.dirname(os.path.realpath(__file__))
 			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD", shell=True)
 			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD", shell=True)
 			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD", shell=True)
+			gitvars['pipe_dir'] = os.path.dirname(os.path.realpath(sys.argv[0]))
 		except Exception:
 			pass
 
@@ -87,6 +88,7 @@ class Pypiper:
 		print("Git pypiper date:\t\t" + gitvars['pypiper_date'].strip())
 		if (gitvars['pypiper_diff'] != ""):
 			print("Git pypiper diff: \t\t" + gitvars['pypiper_diff'].strip())
+		print("Git pipe dir:\t\t" + gitvars['pipe_dir'].strip())
 		print("Git pipeline version:\t\t" + gitvars['pipe_hash'].strip())
 		print("Git pipeline date:\t\t" + gitvars['pipe_date'].strip())
 		if (gitvars['pipe_diff'] != ""):
@@ -166,7 +168,7 @@ class Pypiper:
 				print("Target exists: " + target)
 				break # Do not run command
 			# Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
-			if os.path.isfile(lock_file) 
+			if os.path.isfile(lock_file):
 				if self.overwrite_locks:
 					print("Found lock file; overwriting this target...")
 				else: # don't overwite locks
