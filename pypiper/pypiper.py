@@ -368,6 +368,7 @@ class Pypiper:
 		It sets the status flag to failed and skips the	normal success completion procedure.
 		"""
 		self.set_status_flag("failed")
+		self.timestamp("### Pipeline failed at: ")
 		raise e
 
 
