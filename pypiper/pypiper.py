@@ -15,7 +15,7 @@ class Pypiper:
 	"""
 	Base class for instantiating a pypiper object
 	"""
-	def __init__(self, name, outfolder, args=None, overwrite_locks=False, fresh_start=False):
+	def __init__(self, name, outfolder, args=None, overwrite_locks=False, fresh_start=False, multi=False):
 		# Define pipeline-level variables to keep track of global state and some pipeline stats
 		# Pipeline settings
 		self.pipeline_name = name
@@ -33,6 +33,7 @@ class Pypiper:
 		self.last_timestamp = self.starttime  # time of the last call to timestamp()
 		self.status = "initializing"
 		self.running_subprocess = None
+		self.wait = True # turn off for debugging
 
 		# Register handler functions to deal with interrupt and termination signals;
 		# If received, we would then clean up properly (set pipeline status to FAIL, etc).
@@ -40,10 +41,10 @@ class Pypiper:
 		signal.signal(signal.SIGINT, self.signal_int_handler)
 		signal.signal(signal.SIGTERM, self.signal_term_handler)
 
-		self.start_pipeline(args)
+		self.start_pipeline(args, multi)
 
 
-	def start_pipeline(self, args=None):
+	def start_pipeline(self, args=None, multi=False):
 		"""
 		Do some setup, like tee output, print some diagnostics, create temp files.
 		You provide only the output directory (used for pipeline stats, log, and status flag files).
@@ -52,13 +53,14 @@ class Pypiper:
 		self.make_sure_path_exists(self.pipeline_outfolder)
 
 		# Mirror every operation on sys.stdout to log file
-		sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
-		# a for append to file
-		tee = subprocess.Popen(["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE)
-		# In case this pipeline process is terminated with SIGTERM, make sure we kill this spawned process as well.
-		atexit.register(self.kill_child, tee.pid)
-		os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
-		os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
+		if not multi:
+			sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
+			# a for append to file
+			tee = subprocess.Popen(["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE)
+			# In case this pipeline process is terminated with SIGTERM, make sure we kill this spawned process as well.
+			atexit.register(self.kill_child, tee.pid)
+			os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
+			os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
 
 		# Record the git version of the pipeline being run. This code gets:
 		# hash: the commit id of the last commit in this repo
@@ -229,7 +231,7 @@ class Pypiper:
 		cmd can also be a series (a Dict object) of multiple commands, which will be run in succession.
 		"""
 		# The Popen shell argument works like this:
-		# if shell=False, then we rormat the command (with split()) to be a list of command and its arguments.
+		# if shell=False, then we format the command (with split()) to be a list of command and its arguments.
 		# Split the command to use shell=False;
 		# leave it together to use shell=True;
 		print(cmd)
@@ -242,9 +244,14 @@ class Pypiper:
 		p = subprocess.Popen(cmd, shell=shell)
 
 		# Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
-		self.running_subprocess = p.pid
+		self.running_subprocess = p
 		local_maxmem = -1
-		sleeptime = 5
+		sleeptime = 3
+
+		if not self.wait:
+			print ("Not waiting for subprocess: " + str(p.pid))
+			return [0, -1]
+
 		while p.poll() == None:
 			if not shell:
 				local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
@@ -253,6 +260,31 @@ class Pypiper:
 			sleeptime = min(sleeptime + 5, 60)
 
 		# set self.maxmem
+		self.peak_memory = max(self.peak_memory, local_maxmem)
+		self.running_subprocess = None
+
+		info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
+		if not shell:
+			info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
+			info += " Pipeline: " + str(self.peak_memory) + "b)"
+
+		print(info)
+		if p.returncode != 0:
+			raise Exception("Process returned nonzero result.")
+		return [p.returncode, local_maxmem]
+
+
+	def wait_for_process(self, p, shell=False):
+		"""Debug function used in unit tests."""
+		local_maxmem = -1
+		sleeptime=3
+		while p.poll() == None:
+			if not shell:
+				local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
+				# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
+			time.sleep(sleeptime)
+			sleeptime = min(sleeptime + 5, 60)
+
 		self.peak_memory = max(self.peak_memory, local_maxmem)
 		self.running_subprocess = None
 
@@ -406,7 +438,7 @@ class Pypiper:
 		"""
 		#print("Exit handler")
 		if self.running_subprocess is not None:
-				self.kill_child(self.running_subprocess)
+				self.kill_child(self.running_subprocess.pid)
 		if self.status != "completed":
 			self.set_status_flag("failed")
 
