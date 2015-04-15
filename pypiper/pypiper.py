@@ -7,7 +7,7 @@ The Pypiper class can be used to create a procedural pipeline in python.
 """
 
 import os, sys, subprocess, errno
-import re
+import re, glob
 import time
 import atexit, signal, platform
 
@@ -41,6 +41,9 @@ class Pypiper:
 		signal.signal(signal.SIGINT, self.signal_int_handler)
 		signal.signal(signal.SIGTERM, self.signal_term_handler)
 
+		# Pypiper can keep track of intermediate files to clean up at the end
+		self.cleanup_list = []
+		self.cleanup_list_conditional = []
 		self.start_pipeline(args, multi)
 
 
@@ -246,13 +249,14 @@ class Pypiper:
 		# Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
 		self.running_subprocess = p
 		local_maxmem = -1
-		sleeptime = 3
+		sleeptime = .25
 
 		if not self.wait:
 			print ("Not waiting for subprocess: " + str(p.pid))
 			return [0, -1]
 
 		while p.poll() == None:
+			print(".")
 			if not shell:
 				local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
 				# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
@@ -277,7 +281,7 @@ class Pypiper:
 	def wait_for_process(self, p, shell=False):
 		"""Debug function used in unit tests."""
 		local_maxmem = -1
-		sleeptime=3
+		sleeptime=.5
 		while p.poll() == None:
 			if not shell:
 				local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
@@ -301,7 +305,7 @@ class Pypiper:
 
 	def wait_for_lock(self, lock_file):
 		"""Just sleep until the lock_file does not exist"""
-		sleeptime = 5
+		sleeptime = .5
 		first_message_flag = False
 		dot_count = 0
 		while os.path.isfile(lock_file):
@@ -314,7 +318,7 @@ class Pypiper:
 				if dot_count % 60 == 0:
 					print("")  # linefeed
 			time.sleep(sleeptime)
-			sleeptime = min(sleeptime + 5, 60)
+			sleeptime = min(sleeptime + 2.5, 60)
 
 		if first_message_flag:
 			self.timestamp("File unlocked.")
@@ -456,6 +460,39 @@ class Pypiper:
 		else:
 			print("Pypyiper terminating spawned child process " + str(child_pid))
 			os.kill(child_pid, signal.SIGTERM)
+
+	def cleanup_append(self, files, conditional=False):
+		if conditional:
+			self.cleanup_list_conditional.append(files)
+		else:
+			self.cleanup_list.append(files)
+
+
+	def cleanup(self):
+		print("Cleaning up cleanup list...")
+		for expr in self.cleanup_list:
+			try:
+				files = glob.glob(expr)
+				for file in files:
+					print(file + os.path.join(file))
+					os.remove(file)
+			except:
+				pass
+
+		# flag_files = glob.glob(self.pipeline_outfolder + "*.flag")
+		flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag") if not "completed" in os.path.basename(fn)]
+		if (len(flag_files) == 0):
+			print("Cleaning up conditional list...")
+			for expr in self.cleanup_list_conditional:
+				try:
+					files = glob.glob(expr)
+					for file in files:
+						os.remove(os.path.join(file))
+				except:
+					pass
+		else:
+			print("Flag file found. Not submitting: " + str([os.path.basename(i) for i in flag_files]))
+
 
 
 	def memory_usage(self, pid='self', category="peak"):

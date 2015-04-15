@@ -24,7 +24,7 @@ class PypiperTest(unittest.TestCase):
 		self.pp.stop_pipeline()
 		self.pp2.stop_pipeline()
 		print("Removing " + self.pp.pipeline_outfolder)
-		shutil.rmtree(self.pp.pipeline_outfolder)
+		#shutil.rmtree(self.pp.pipeline_outfolder)
 		#shutil.rmtree(self.pp2.pipeline_outfolder)
 		del self.pp
 
@@ -46,14 +46,14 @@ class PypiperTest(unittest.TestCase):
 		self.pp2.wait=False
 		self.pp.wait=False
 		sleep_lock = self.pp.pipeline_outfolder + "lock.sleep"
-		subprocess.Popen("sleep 5; rm " + sleep_lock, shell=True)
+		subprocess.Popen("sleep 2; rm " + sleep_lock, shell=True)
 		self.pp.create_file(sleep_lock)
 		print("Putting lock file: " + sleep_lock)
-		cmd = "sleep 5"
+		cmd = "echo hello"
 		stamp = time.time()
 		self.pp.call_lock(cmd, lock_name="sleep")
 		print("Elapsed: " + str(self.pp.time_elapsed(stamp)))
-		self.assertTrue(self.pp.time_elapsed(stamp) > 5)
+		self.assertTrue(self.pp.time_elapsed(stamp) > 2)
 		print("Wait for subprocess...")
 		self.pp.wait_for_process(self.pp.running_subprocess)
 		self.pp2.wait=True
@@ -73,6 +73,15 @@ class PypiperTest(unittest.TestCase):
 			lines = f.readlines()
 		self.assertEqual(lines, ['third\n'])
 
+		print("Test intermediate file cleanup...")
+		tgt1 = self.pp.pipeline_outfolder + "tgt1.temp"
+		tgt2 = self.pp.pipeline_outfolder + "tgt2.temp"
+		self.pp.call_lock("touch " + tgt1, tgt1)
+		self.pp.call_lock("touch " + tgt2, tgt2)
+		self.pp.cleanup_append(tgt1)
+		self.pp.cleanup()
+		self.assertFalse(os.path.isfile(tgt1))
+		self.assertTrue(os.path.isfile(tgt2))
 		# How to test waiting for locks?
 
 if __name__ == '__main__':
