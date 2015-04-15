@@ -391,6 +391,7 @@ class Pypiper:
 		It sets status flag to completed and records some time and memory statistics to the log file.
 		"""
 		self.set_status_flag("completed")
+		self.cleanup()
 		print("Total elapsed time: " + str(self.time_elapsed(self.starttime)))
 		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
 		print("Peak memory used: " + str(self.peak_memory / 1e6) + " GB")
@@ -461,38 +462,64 @@ class Pypiper:
 			print("Pypyiper terminating spawned child process " + str(child_pid))
 			os.kill(child_pid, signal.SIGTERM)
 
-	def cleanup_append(self, files, conditional=False):
+	def clean_add(self, regex, conditional=False):
+		'''
+		Add new files (a regex) to clean up when this pipeline completes successfully.
+		Intermediate files added herewill only be deleted upon success.
+		:param regex:  A unix-style regular expression that matches files to delete
+		(can also be a file name)
+		:param conditional: True means the files will only be deleted if no other
+		pipelines are currently running
+		'''
 		if conditional:
-			self.cleanup_list_conditional.append(files)
+			self.cleanup_list_conditional.append(regex)
 		else:
-			self.cleanup_list.append(files)
+			self.cleanup_list.append(regex)
+			# Remove it from the conditional list if added to the absolute list
+			while regex in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(regex)
 
 
 	def cleanup(self):
-		print("Cleaning up cleanup list...")
-		for expr in self.cleanup_list:
-			try:
-				files = glob.glob(expr)
-				for file in files:
-					print(file + os.path.join(file))
-					os.remove(file)
-			except:
-				pass
-
-		# flag_files = glob.glob(self.pipeline_outfolder + "*.flag")
-		flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag") if not "completed" in os.path.basename(fn)]
-		if (len(flag_files) == 0):
-			print("Cleaning up conditional list...")
-			for expr in self.cleanup_list_conditional:
+		'''
+		Cleans up (removes) intermediate files. You can register intermediate files, which will
+		be deleted automatically when the pipeline completes. This function deletes them, either
+		absolutely or conditionally.
+		:return:
+		'''
+		if len(self.cleanup_list) > 0:
+			print("Cleaning up flagged intermediate files...")
+			for expr in self.cleanup_list:
 				try:
+					# Expand regular expression
 					files = glob.glob(expr)
+					# Remove entry from cleanup list
+					while files in self.cleanup_list: self.cleanup_list.remove(files)
+					# and delete the files
 					for file in files:
+						print("rm: " + file)
 						os.remove(os.path.join(file))
 				except:
 					pass
-		else:
-			print("Flag file found. Not submitting: " + str([os.path.basename(i) for i in flag_files]))
 
+		if len(self.cleanup_list_conditional) > 0:
+			# flag_files = glob.glob(self.pipeline_outfolder + "*.flag")
+			flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag") if not "completed" in os.path.basename(fn) and not self.pipeline_name + "_running.flag" == os.path.basename(fn)]
+			if (len(flag_files) == 0):
+				print("Cleaning up conditional list...")
+				for expr in self.cleanup_list_conditional:
+					try:
+						files = glob.glob(expr)
+
+						while files in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(files)
+						for file in files:
+							print("rm: " + file)
+							os.remove(os.path.join(file))
+
+					except:
+						pass
+			else:
+				print("Conditional flag found: " + str([os.path.basename(i) for i in flag_files]))
+				print("These conditional files were left in place:" + str(self.cleanup_list_conditional))
 
 
 	def memory_usage(self, pid='self', category="peak"):
