@@ -256,7 +256,6 @@ class Pypiper:
 			return [0, -1]
 
 		while p.poll() == None:
-			print(".")
 			if not shell:
 				local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
 				# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
