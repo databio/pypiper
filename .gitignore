@@ -9,6 +9,7 @@
 results_pipeline/
 results_analysis
 resources/
+pipeline_output/
 
 # And all the file types you're interested in.
 !*.sh
