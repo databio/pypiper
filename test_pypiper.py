@@ -21,10 +21,10 @@ class PypiperTest(unittest.TestCase):
 
 	def tearDown(self):
 		print("Tearing down...")
-		self.pp.stop_pipeline()
+		#self.pp.stop_pipeline()
 		self.pp2.stop_pipeline()
 		print("Removing " + self.pp.pipeline_outfolder)
-		#shutil.rmtree(self.pp.pipeline_outfolder)
+		shutil.rmtree(self.pp.pipeline_outfolder)
 		#shutil.rmtree(self.pp2.pipeline_outfolder)
 		del self.pp
 
@@ -46,14 +46,14 @@ class PypiperTest(unittest.TestCase):
 		self.pp2.wait=False
 		self.pp.wait=False
 		sleep_lock = self.pp.pipeline_outfolder + "lock.sleep"
-		subprocess.Popen("sleep 2; rm " + sleep_lock, shell=True)
+		subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
 		self.pp.create_file(sleep_lock)
 		print("Putting lock file: " + sleep_lock)
 		cmd = "echo hello"
 		stamp = time.time()
 		self.pp.call_lock(cmd, lock_name="sleep")
 		print("Elapsed: " + str(self.pp.time_elapsed(stamp)))
-		self.assertTrue(self.pp.time_elapsed(stamp) > 2)
+		self.assertTrue(self.pp.time_elapsed(stamp) > 1)
 		print("Wait for subprocess...")
 		self.pp.wait_for_process(self.pp.running_subprocess)
 		self.pp2.wait=True
@@ -76,13 +76,41 @@ class PypiperTest(unittest.TestCase):
 		print("Test intermediate file cleanup...")
 		tgt1 = self.pp.pipeline_outfolder + "tgt1.temp"
 		tgt2 = self.pp.pipeline_outfolder + "tgt2.temp"
+		tgt3 = self.pp.pipeline_outfolder + "tgt3.temp"
+		tgt4 = self.pp.pipeline_outfolder + "tgt4.txt"
+		tgt5 = self.pp.pipeline_outfolder + "tgt5.txt"
+		tgt6 = self.pp.pipeline_outfolder + "tgt6.txt"
 		self.pp.call_lock("touch " + tgt1, tgt1)
 		self.pp.call_lock("touch " + tgt2, tgt2)
-		self.pp.cleanup_append(tgt1)
+		self.pp.call_lock("touch " + tgt3, tgt3)
+		self.pp.call_lock("touch " + tgt4, tgt4)
+		self.pp.call_lock("touch " + tgt5, tgt5)
+
+		self.pp.clean_add(self.pp.pipeline_outfolder + "*.temp")
+		self.pp.clean_add(tgt4)
+		self.pp.clean_add(tgt5, conditional=True)
 		self.pp.cleanup()
+
 		self.assertFalse(os.path.isfile(tgt1))
-		self.assertTrue(os.path.isfile(tgt2))
-		# How to test waiting for locks?
+		self.assertFalse(os.path.isfile(tgt2))
+		self.assertFalse(os.path.isfile(tgt3))
+		self.assertFalse(os.path.isfile(tgt4))
+
+		# Conditional delete should not delete tgt5
+		# while pp2 is running
+		self.assertTrue(os.path.isfile(tgt5))
+
+		# Stopping pp2 should cause tgt5 to be deleted
+		self.pp2.stop_pipeline()
+		self.pp.cleanup()
+		self.assertFalse(os.path.isfile(tgt5))
+
+		# cleanup should run on termination:
+		self.pp.call_lock("touch " + tgt6, tgt6)
+		self.pp.clean_add(tgt6, conditional=True)
+		self.pp.stop_pipeline()
+		self.assertFalse(os.path.isfile(tgt5))
+
 
 if __name__ == '__main__':
 	unittest.main()

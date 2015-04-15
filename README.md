@@ -25,6 +25,10 @@ Benefits of using PyPiper
 The workhorse of PyPiper is the `call_lock()` function. To see an example of a simple pipline, look at the `sample_pipeline.py` script in this repository.
 
 
+# Testing
+
+You can test pypiper by running `python test_pypiper.py`, which has some unit tests.
+
 Motivation
 ----------
 As I began to put together production-scale pipelines, I found a lot of relevant pipelining systems, but was universally disappointed. For my needs, they were all overly complex. I wanted something simple enough to quickly write and maintain a pipeline without having to learn a lot of new functions and conventions, but robust enough to handle requirements like restartability and memory usage monitoring. Everything related was either a pre-packaged pipeline for a defined purpose, or a heavy-duty development environment that was overkill for my needs. Both of these seemed to be targeted toward less experienced developers who sought structure, and neither fit my needs: I had a set of commands already in mind; I just needed a wrapper that could take that code and make it automatically restartable, logged, robust to crashing, easy to debug, and so forth.
