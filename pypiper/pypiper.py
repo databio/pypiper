@@ -26,6 +26,8 @@ class Pypiper:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
 		self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
 		self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.txt"
+		self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
+
 
 		# Pipeline status variables
 		self.peak_memory = 0         # memory high water mark
@@ -441,6 +443,13 @@ class Pypiper:
 		A catch-all for uncaught exceptions, setting status flag file to failed.
 		"""
 		#print("Exit handler")
+		# Make the cleanup file executable if it exists
+		if os.path.isfile(self.cleanup_file):
+			# Make the cleanup file self destruct.
+			with open(self.cleanup_file, "a") as myfile:
+				myfile.write("rm " + self.cleanup_file + "\n")
+			os.chmod(self.cleanup_file, 0755)
+
 		if self.running_subprocess is not None:
 				self.kill_child(self.running_subprocess.pid)
 		if self.status != "completed":
@@ -461,16 +470,25 @@ class Pypiper:
 			print("Pypyiper terminating spawned child process " + str(child_pid))
 			os.kill(child_pid, signal.SIGTERM)
 
-	def clean_add(self, regex, conditional=False):
+	def clean_add(self, regex, conditional=False, manual=False):
 		'''
-		Add new files (a regex) to clean up when this pipeline completes successfully.
-		Intermediate files added herewill only be deleted upon success.
+		Add files (or regexs) to a cleanup list, to delete when this pipeline completes successfully.
+		When making a call with call_lock that produces intermediate files that should be
+		deleted after the pipeline completes, you flag these files for deletion with this command.
+		Files added with clean_add will only be deleted upon success of the pipeline.
 		:param regex:  A unix-style regular expression that matches files to delete
 		(can also be a file name)
 		:param conditional: True means the files will only be deleted if no other
 		pipelines are currently running
 		'''
-		if conditional:
+		if manual:
+			try:
+				files = glob.glob(regex)
+				for file in files:
+					with open(self.cleanup_file, "a") as myfile:
+						myfile.write("rm " + file + "\n")
+			except: pass
+		elif conditional:
 			self.cleanup_list_conditional.append(regex)
 		else:
 			self.cleanup_list.append(regex)
@@ -508,7 +526,6 @@ class Pypiper:
 				for expr in self.cleanup_list_conditional:
 					try:
 						files = glob.glob(expr)
-
 						while files in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(files)
 						for file in files:
 							print("rm: " + file)
@@ -519,6 +536,14 @@ class Pypiper:
 			else:
 				print("Conditional flag found: " + str([os.path.basename(i) for i in flag_files]))
 				print("These conditional files were left in place:" + str(self.cleanup_list_conditional))
+				# Produce a cleanup script
+				for expr in self.cleanup_list_conditional:
+					try:
+						files = glob.glob(expr)
+						for file in files:
+							with open(self.cleanup_file, "a") as myfile:
+								myfile.write("rm " + file + "\n")
+					except: pass
 
 
 	def memory_usage(self, pid='self', category="peak"):

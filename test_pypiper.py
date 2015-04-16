@@ -24,7 +24,7 @@ class PypiperTest(unittest.TestCase):
 		#self.pp.stop_pipeline()
 		self.pp2.stop_pipeline()
 		print("Removing " + self.pp.pipeline_outfolder)
-		shutil.rmtree(self.pp.pipeline_outfolder)
+		#shutil.rmtree(self.pp.pipeline_outfolder)
 		#shutil.rmtree(self.pp2.pipeline_outfolder)
 		del self.pp
 
@@ -80,15 +80,16 @@ class PypiperTest(unittest.TestCase):
 		tgt4 = self.pp.pipeline_outfolder + "tgt4.txt"
 		tgt5 = self.pp.pipeline_outfolder + "tgt5.txt"
 		tgt6 = self.pp.pipeline_outfolder + "tgt6.txt"
-		self.pp.call_lock("touch " + tgt1, tgt1)
-		self.pp.call_lock("touch " + tgt2, tgt2)
-		self.pp.call_lock("touch " + tgt3, tgt3)
-		self.pp.call_lock("touch " + tgt4, tgt4)
-		self.pp.call_lock("touch " + tgt5, tgt5)
+		tgt8 = self.pp.pipeline_outfolder + "tgt8.cond"
+		tgt9 = self.pp.pipeline_outfolder + "tgt9.cond"
+
+		self.pp.call_lock("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5, lock_name="test")
+		self.pp.call_lock("touch " + tgt8 + " " + tgt9, lock_name="test")
 
 		self.pp.clean_add(self.pp.pipeline_outfolder + "*.temp")
 		self.pp.clean_add(tgt4)
 		self.pp.clean_add(tgt5, conditional=True)
+		self.pp.clean_add(self.pp.pipeline_outfolder +"*.cond", conditional=True)
 		self.pp.cleanup()
 
 		self.assertFalse(os.path.isfile(tgt1))
@@ -96,20 +97,38 @@ class PypiperTest(unittest.TestCase):
 		self.assertFalse(os.path.isfile(tgt3))
 		self.assertFalse(os.path.isfile(tgt4))
 
+		tgt7 = self.pp.pipeline_outfolder + "tgt7.txt"
+		self.pp.call_lock("touch " + tgt7, tgt7)
+		self.pp.clean_add(tgt7, manual=True)
+
+
+
 		# Conditional delete should not delete tgt5
 		# while pp2 is running
 		self.assertTrue(os.path.isfile(tgt5))
+		self.assertTrue(os.path.isfile(tgt8))
+		self.assertTrue(os.path.isfile(tgt9))
 
 		# Stopping pp2 should cause tgt5 to be deleted
 		self.pp2.stop_pipeline()
 		self.pp.cleanup()
 		self.assertFalse(os.path.isfile(tgt5))
+		self.assertFalse(os.path.isfile(tgt8))
+		self.assertFalse(os.path.isfile(tgt9))
+
+		# Manual clean should not clean
+		self.assertTrue(os.path.isfile(tgt7))
 
 		# cleanup should run on termination:
 		self.pp.call_lock("touch " + tgt6, tgt6)
 		self.pp.clean_add(tgt6, conditional=True)
 		self.pp.stop_pipeline()
 		self.assertFalse(os.path.isfile(tgt5))
+
+		# Manual clean should not clean even after pipeline stops
+		self.assertTrue(os.path.isfile(tgt7))
+
+
 
 
 if __name__ == '__main__':
