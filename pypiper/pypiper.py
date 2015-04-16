@@ -479,7 +479,9 @@ class Pypiper:
 		:param regex:  A unix-style regular expression that matches files to delete
 		(can also be a file name)
 		:param conditional: True means the files will only be deleted if no other
-		pipelines are currently running
+		pipelines are currently running; otherwise they are added to a manual cleanup script
+		called {pipeline_name}_cleanup.sh
+		:param manual: True means the files will just be added to a manual cleanup script
 		'''
 		if manual:
 			try:
