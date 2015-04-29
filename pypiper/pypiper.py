@@ -139,14 +139,14 @@ class Pypiper:
 		wait for the file lock if it exists, and not produce new output (by default) if the target output file already
 		exists. If the output is to be created, it will first create a lock file to prevent other calls to call_lock
 		(for example, in parallel pipelines) from touching the file while it is being created.
-		It also record the memory of the process and provides some logging output.
+		It also records the memory of the process and provides some logging output.
 		@nofail Should the pipeline bail on a nonzero return from a process? Default:  False
 		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 		they will not cause the pipeline to bail out.
 		"""
 
 		# The default lock name is based on the target name. Therefore, a targetless command that you want
-		# to lock must specificy a lock_name manually.
+		# to lock must specify a lock_name manually.
 		if target is None and lock_name is None:
 				raise Exception("You must provide either a target or a lock name.")
 
@@ -166,7 +166,7 @@ class Pypiper:
 		# to prevent race conditions; the lock_file must be created by
 		# the current loop. If not, we wait again for it and then
 		# re-do the tests.
-
+        # TODO: maybe output a message if when repeatedly going through the loop
 		
 		while True:
 			##### Tests block
@@ -174,6 +174,7 @@ class Pypiper:
 			if target is not None and os.path.isfile(target) and not os.path.isfile(lock_file):
 				print("Target exists: " + target)
 				break # Do not run command
+
 			# Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
 			if os.path.isfile(lock_file):
 				if self.overwrite_locks:
@@ -182,6 +183,7 @@ class Pypiper:
 					self.wait_for_lock(lock_file)
 					# when it's done loop through again to try one more time (to see if the target exists now)
 					continue
+
 			# if you get to this point, the target doesn't exist, and the lock_file doesn't exist (or we should overwrite).
 			# create the lock (if you can)
 			if not self.overwrite_locks:
@@ -207,19 +209,21 @@ class Pypiper:
 						list_ret, list_maxmem = self.callprint(cmd_i, shell)
 						local_maxmem = max(local_maxmem, list_maxmem)
 						process_return_code = max(process_return_code, list_ret)
+
 				else:  # Single command (most common)
 					process_return_code, local_maxmem = self.callprint(cmd, shell)   # Run command
+
 			except Exception as e:
 				if not nofail:
 					self.fail_pipeline(e)
 				else:
 					print(e)
 					print("Process failed, but pipeline is continuing because nofail=True")
+
 			os.remove(lock_file)        # Remove lock file
 
 			# If you make it to the end of the while loop, you're done
 			break
-
 
 		return process_return_code
 
