@@ -24,7 +24,7 @@ class PypiperTest(unittest.TestCase):
 		#self.pp.stop_pipeline()
 		self.pp2.stop_pipeline()
 		print("Removing " + self.pp.pipeline_outfolder)
-		#shutil.rmtree(self.pp.pipeline_outfolder)
+		shutil.rmtree(self.pp.pipeline_outfolder)
 		#shutil.rmtree(self.pp2.pipeline_outfolder)
 		del self.pp
 
@@ -82,6 +82,7 @@ class PypiperTest(unittest.TestCase):
 		tgt6 = self.pp.pipeline_outfolder + "tgt6.txt"
 		tgt8 = self.pp.pipeline_outfolder + "tgt8.cond"
 		tgt9 = self.pp.pipeline_outfolder + "tgt9.cond"
+		tgt10 = self.pp.pipeline_outfolder + "tgt10.txt"
 
 		self.pp.call_lock("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5, lock_name="test")
 		self.pp.call_lock("touch " + tgt8 + " " + tgt9, lock_name="test")
@@ -102,12 +103,14 @@ class PypiperTest(unittest.TestCase):
 		self.pp.clean_add(tgt7, manual=True)
 
 
+		self.pp.call_lock("touch " + tgt10, target=tgt10, clean=True)
 
 		# Conditional delete should not delete tgt5
 		# while pp2 is running
 		self.assertTrue(os.path.isfile(tgt5))
 		self.assertTrue(os.path.isfile(tgt8))
 		self.assertTrue(os.path.isfile(tgt9))
+		self.assertTrue(os.path.isfile(tgt10)) # auto cleanup
 
 		# Stopping pp2 should cause tgt5 to be deleted
 		self.pp2.stop_pipeline()
@@ -115,6 +118,7 @@ class PypiperTest(unittest.TestCase):
 		self.assertFalse(os.path.isfile(tgt5))
 		self.assertFalse(os.path.isfile(tgt8))
 		self.assertFalse(os.path.isfile(tgt9))
+		self.assertFalse(os.path.isfile(tgt10))
 
 		# Manual clean should not clean
 		self.assertTrue(os.path.isfile(tgt7))
