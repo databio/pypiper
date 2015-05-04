@@ -132,7 +132,7 @@ class Pypiper:
 	# Process calling functions
 	###################################
 
-	def call_lock(self, cmd, target=None, lock_name=None, shell=False, nofail=False):
+	def call_lock(self, cmd, target=None, lock_name=None, shell=False, nofail=False, clean=False):
 		"""
 		The primary workhorse function of pypiper. This is the command execution function, which enforces
 		file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
@@ -140,9 +140,10 @@ class Pypiper:
 		exists. If the output is to be created, it will first create a lock file to prevent other calls to call_lock
 		(for example, in parallel pipelines) from touching the file while it is being created.
 		It also records the memory of the process and provides some logging output.
-		@nofail Should the pipeline bail on a nonzero return from a process? Default:  False
+		:param nofail: Should the pipeline bail on a nonzero return from a process? Default:  False
 		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 		they will not cause the pipeline to bail out.
+		:param clean: True means the files will be automatically added to a auto cleanup list
 		"""
 
 		# The default lock name is based on the target name. Therefore, a targetless command that you want
@@ -170,7 +171,7 @@ class Pypiper:
 		
 		while True:
 			##### Tests block
-			# Base case: Target exists.			# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
+			# Base case: Target exists.	# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
 			if target is not None and os.path.isfile(target) and not os.path.isfile(lock_file):
 				print("Target exists: " + target)
 				break # Do not run command
@@ -212,6 +213,10 @@ class Pypiper:
 
 				else:  # Single command (most common)
 					process_return_code, local_maxmem = self.callprint(cmd, shell)   # Run command
+				# For temporary files, I automatically add them to the clean list,
+				# saving you a manual call to clean_add
+				if target is not None and clean:
+					self.clean_add(target)
 
 			except Exception as e:
 				if not nofail:
