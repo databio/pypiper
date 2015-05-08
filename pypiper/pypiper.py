@@ -204,26 +204,20 @@ class Pypiper:
 				print("Target to produce: " + target)
 			else:
 				print("Targetless command, running...")
-			try:
-				if isinstance(cmd, list):  # Handle command lists
-					for cmd_i in cmd:
-						list_ret, list_maxmem = self.callprint(cmd_i, shell)
-						local_maxmem = max(local_maxmem, list_maxmem)
-						process_return_code = max(process_return_code, list_ret)
 
-				else:  # Single command (most common)
-					process_return_code, local_maxmem = self.callprint(cmd, shell)   # Run command
-				# For temporary files, I automatically add them to the clean list,
-				# saving you a manual call to clean_add
-				if target is not None and clean:
-					self.clean_add(target)
+			if isinstance(cmd, list):  # Handle command lists
+				for cmd_i in cmd:
+					list_ret, list_maxmem = self.callprint(cmd_i, shell, nofail)
+					local_maxmem = max(local_maxmem, list_maxmem)
+					process_return_code = max(process_return_code, list_ret)
 
-			except Exception as e:
-				if not nofail:
-					self.fail_pipeline(e)
-				else:
-					print(e)
-					print("Process failed, but pipeline is continuing because nofail=True")
+			else:  # Single command (most common)
+				process_return_code, local_maxmem = self.callprint(cmd, shell, nofail)   # Run command
+
+			# For temporary files, you can specify a clean option to automatically add them to the clean list,
+			# saving you a manual call to clean_add
+			if target is not None and clean:
+				self.clean_add(target)
 
 			os.remove(lock_file)        # Remove lock file
 
@@ -233,7 +227,7 @@ class Pypiper:
 		return process_return_code
 
 
-	def callprint(self, cmd, shell=False):
+	def callprint(self, cmd, shell=False, nofail=False):
 		"""
 		Prints the command, and then executes it, then prints the memory use and return code of the command.
 
@@ -255,37 +249,53 @@ class Pypiper:
 			cmd = cmd.split()
 		# call(cmd, shell=shell) # old way (no memory profiling)
 
-		p = subprocess.Popen(cmd, shell=shell)
+		# Try to execute the command:
+		# Putting it in a try block enables us to catch exceptions from bad subprocess
+		# commands, as well as from valid commands that just fail
 
-		# Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
-		self.running_subprocess = p
+		returncode = -1 # set default return values for failed command
 		local_maxmem = -1
-		sleeptime = .25
+		try:
+			p = subprocess.Popen(cmd, shell=shell)
 
-		if not self.wait:
-			print ("Not waiting for subprocess: " + str(p.pid))
-			return [0, -1]
+			# Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
+			self.running_subprocess = p
 
-		while p.poll() == None:
+			sleeptime = .25
+
+			if not self.wait:
+				print ("Not waiting for subprocess: " + str(p.pid))
+				return [0, -1]
+
+			while p.poll() == None:
+				if not shell:
+					local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
+					# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
+				time.sleep(sleeptime)
+				sleeptime = min(sleeptime + 5, 60)
+
+			returncode = p.returncode
+			info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
 			if not shell:
-				local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
-				# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
-			time.sleep(sleeptime)
-			sleeptime = min(sleeptime + 5, 60)
+				info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
+				info += " Pipeline: " + str(self.peak_memory) + "b)"
 
-		# set self.maxmem
-		self.peak_memory = max(self.peak_memory, local_maxmem)
-		self.running_subprocess = None
+			print(info)
+			# set self.maxmem
+			self.peak_memory = max(self.peak_memory, local_maxmem)
+			self.running_subprocess = None
 
-		info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
-		if not shell:
-			info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
-			info += " Pipeline: " + str(self.peak_memory) + "b)"
+			if p.returncode != 0:
+				raise Exception("Subprocess returned nonzero result.")
 
-		print(info)
-		if p.returncode != 0:
-			raise Exception("Process returned nonzero result.")
-		return [p.returncode, local_maxmem]
+		except Exception as e:
+			if not nofail:
+				self.fail_pipeline(e)
+			else:
+				print(e)
+				print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
+
+		return [returncode, local_maxmem]
 
 
 	def wait_for_process(self, p, shell=False):
