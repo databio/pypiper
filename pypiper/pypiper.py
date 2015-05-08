@@ -226,6 +226,30 @@ class Pypiper:
 
 		return process_return_code
 
+	def checkprint(self, cmd, shell=False, nofail=False):
+		"""
+		A wrapper around subprocess.check_output() that also prints the command,
+		and can understand the nofail parameter. Just like callprint, but checks output. This is equivalent to
+		running subprocess.check_output() instead of subprocess.call().
+		"""
+		print(cmd)
+		if not shell:
+			if ("|" in cmd or ">" in cmd):
+				print("Should this command run in a shell instead of directly in a subprocess?")
+			cmd = cmd.split()
+
+		try:
+			returnvalue = subprocess.check_output(cmd, shell=shell)
+
+		except Exception as e:
+			if not nofail:
+				self.fail_pipeline(e)
+			else:
+				print(e)
+				print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
+
+		return returnvalue
+
 
 	def callprint(self, cmd, shell=False, nofail=False):
 		"""
