@@ -21,12 +21,16 @@ class PypiperTest(unittest.TestCase):
 
 	def tearDown(self):
 		print("Tearing down...")
-		#self.pp.stop_pipeline()
+		self.pp.stop_pipeline()
 		self.pp2.stop_pipeline()
+		self.pp3.stop_pipeline()
 		print("Removing " + self.pp.pipeline_outfolder)
 		shutil.rmtree(self.pp.pipeline_outfolder)
+		shutil.rmtree(self.pp3.pipeline_outfolder)
 		#shutil.rmtree(self.pp2.pipeline_outfolder)
 		del self.pp
+		del self.pp2
+		del self.pp3
 
 	def test_me(self):
 		print("Testing initialization...")
@@ -132,8 +136,20 @@ class PypiperTest(unittest.TestCase):
 		# Manual clean should not clean even after pipeline stops
 		self.assertTrue(os.path.isfile(tgt7))
 
+		print("Test failure and nofail options...")
+		self.pp3 = pypiper.Pypiper(name="sample_pipeline3", outfolder="pipeline_output3/", multi=True)
+
+		cmd = "thiscommandisbad"
+
+		#Should not raise an error
+		self.pp.call_lock(cmd, target=None, lock_name="badcommand", nofail=True)
+		self.pp.callprint(cmd, nofail=True)
+
+		with self.assertRaises(OSError):
+			self.pp.call_lock(cmd, target=None, lock_name="badcommand")
 
 
+		#subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
 
 if __name__ == '__main__':
 	unittest.main()
