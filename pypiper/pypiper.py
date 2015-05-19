@@ -551,6 +551,7 @@ class Pypiper:
 		if len(self.cleanup_list) > 0:
 			print("Cleaning up flagged intermediate files...")
 			for expr in self.cleanup_list:
+				print("Removing glob: " + expr)
 				try:
 					# Expand regular expression
 					files = glob.glob(expr)
@@ -558,7 +559,7 @@ class Pypiper:
 					while files in self.cleanup_list: self.cleanup_list.remove(files)
 					# and delete the files
 					for file in files:
-						print("rm: " + file)
+						print("rm " + file)
 						os.remove(os.path.join(file))
 				except:
 					pass
