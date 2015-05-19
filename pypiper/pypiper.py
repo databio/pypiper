@@ -569,11 +569,12 @@ class Pypiper:
 			if (len(flag_files) == 0):
 				print("Cleaning up conditional list...")
 				for expr in self.cleanup_list_conditional:
+					print("Removing glob: " + expr)
 					try:
 						files = glob.glob(expr)
 						while files in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(files)
 						for file in files:
-							print("rm: " + file)
+							print("rm " + file)
 							os.remove(os.path.join(file))
 
 					except:
