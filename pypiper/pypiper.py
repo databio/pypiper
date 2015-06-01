@@ -13,7 +13,16 @@ import atexit, signal, platform
 
 class Pypiper:
 	"""
-	Base class for instantiating a pypiper object
+	Base class for instantiating a Pypiper object
+	:param name: Choose a name for your pipeline; it's used to name the output files, flags, etc.
+	:param outfolder: Folder in which to store the results.
+	:param args: Optional args object from ArgumentParser; Pypiper will simply record these arguments from your script
+	:param overwrite_locks: Advanced debugging options; this will cause Pypiper to ignore locked files, enabling
+	you to restart a failed pipeline where it left off. Be careful, though, this invalidates the typical file locking
+	that enables multiple pipelines to run in parallel on the same intermediate files.
+	:param fresh_start: NOT IMPLEMENTED
+	:param multi: Enables running multiple pipelines in one script; or for interactive use. It simply disables the tee
+	of the output, so you won't get output logged to a file.
 	"""
 	def __init__(self, name, outfolder, args=None, overwrite_locks=False, fresh_start=False, multi=False):
 		# Define pipeline-level variables to keep track of global state and some pipeline stats
@@ -74,7 +83,7 @@ class Pypiper:
 
 		gitvars = {}
 		try:
-			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
+#			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
 			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD", shell=True)
 			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD", shell=True)
 			gitvars['pypiper_dir'] = os.path.dirname(os.path.realpath(__file__))
@@ -90,16 +99,27 @@ class Pypiper:
 		self.timestamp("Pipeline started at: ")
 		print("Compute host:\t\t" + platform.node())
 		print("Working dir : %s" % os.getcwd())
-		print("Git pypiper dir:\t\t" + gitvars['pypiper_dir'].strip())
-		print("Git pypiper version:\t\t" + gitvars['pypiper_hash'].strip())
-		print("Git pypiper date:\t\t" + gitvars['pypiper_date'].strip())
-		if (gitvars['pypiper_diff'] != ""):
-			print("Git pypiper diff: \t\t" + gitvars['pypiper_diff'].strip())
-		print("Git pipe dir:\t\t" + gitvars['pipe_dir'].strip())
-		print("Git pipeline version:\t\t" + gitvars['pipe_hash'].strip())
-		print("Git pipeline date:\t\t" + gitvars['pipe_date'].strip())
-		if (gitvars['pipe_diff'] != ""):
-			print("Git pipeline diff: \t\t" + gitvars['pipe_diff'].strip())
+
+		try:
+			print("Git pypiper dir:\t\t" + gitvars['pypiper_dir'].strip())
+			print("Git pypiper version:\t\t" + gitvars['pypiper_hash'].strip())
+			print("Git pypiper date:\t\t" + gitvars['pypiper_date'].strip())
+			if (gitvars['pypiper_diff'] != ""):
+				print("Git pypiper diff: \t\t" + gitvars['pypiper_diff'].strip())
+		except KeyError:
+			# If any of the keys aren't set, that's OK. It just means pypiper isn't being run from a git repo.
+			pass
+
+		try:
+			print("Git pipe dir:\t\t" + gitvars['pipe_dir'].strip())
+			print("Git pipeline version:\t\t" + gitvars['pipe_hash'].strip())
+			print("Git pipeline date:\t\t" + gitvars['pipe_date'].strip())
+			if (gitvars['pipe_diff'] != ""):
+				print("Git pipeline diff: \t\t" + gitvars['pipe_diff'].strip())
+		except KeyError:
+			# If any of the keys aren't set, that's OK. It just means the pipeline isn' a git repo.
+			pass
+
 		print("Python version:\t\t" + platform.python_version())
 		print("Cmd: " + str(" ".join(sys.argv)))
 		# Print all arguments (if any)
