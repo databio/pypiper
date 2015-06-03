@@ -28,7 +28,7 @@ mypiper = pypiper.Pypiper(name="sample_pipeline", outfolder="pipeline_output/")
 tgt = "pipeline_output/test.out"
 
 # build the command
-cmd = "shuf -i 1-500000000 -n 100000000 > " + tgt
+cmd = "shuf -i 1-500000000 -n 10000000 > " + tgt
 
 #and run call_lock. You must use shell=True here because of redirection (>), which
 # is a shell process, and can't be run as a python subprocess.
@@ -54,9 +54,9 @@ mypiper.call_lock([cmd1, cmd2], target="pipeline_output/touched.out")
 #cmd = "awk 'n < $0 {n=$0} END{print n}' pipeline_output/test.out"
 #mypiper.call_lock(cmd, "lock.max", shell=True)
 
-# Use report_result to print and log key-value pairs in the stats file:
-import subprocess
-last_entry = subprocess.check_output("tail -n 1 pipeline_output/copied.out", shell=True)
+# Use checkprint() to get the results of a command, and then use
+# report_result to print and log key-value pairs in the stats file:
+last_entry = mypiper.checkprint("tail -n 1 pipeline_output/copied.out", shell=True)
 mypiper.report_result("last_entry", last_entry)
 
 
