@@ -96,10 +96,15 @@ class Pypiper:
 
 		# Print out a header section in the pipeline log:
 		print("################################################################################")
-		self.timestamp("Pipeline started at: ")
+		print("##### [Pipeline run code and environment:]")
+		print("Cmd: " + str(" ".join(sys.argv)))
 		print("Compute host:\t\t" + platform.node())
 		print("Working dir : %s" % os.getcwd())
+		print("Run outfolder:\t\t" + self.pipeline_outfolder)
+		self.timestamp("Pipeline started at: ")
 
+		print("##### [Version log:]")
+		print("Python version:\t\t" + platform.python_version())
 		try:
 			print("Git pypiper dir:\t\t" + gitvars['pypiper_dir'].strip())
 			print("Git pypiper version:\t\t" + gitvars['pypiper_hash'].strip())
@@ -111,7 +116,7 @@ class Pypiper:
 			pass
 
 		try:
-			print("Git pipe dir:\t\t" + gitvars['pipe_dir'].strip())
+			print("Git pipeline dir:\t\t" + gitvars['pipe_dir'].strip())
 			print("Git pipeline version:\t\t" + gitvars['pipe_hash'].strip())
 			print("Git pipeline date:\t\t" + gitvars['pipe_date'].strip())
 			if (gitvars['pipe_diff'] != ""):
@@ -120,14 +125,13 @@ class Pypiper:
 			# If any of the keys aren't set, that's OK. It just means the pipeline isn' a git repo.
 			pass
 
-		print("Python version:\t\t" + platform.python_version())
-		print("Cmd: " + str(" ".join(sys.argv)))
+
 		# Print all arguments (if any)
+		print("##### [Arguments passed to pipeline:]")
 		if args is not None:
 			argsDict = vars(args)
 			for arg in argsDict:
-				print(arg + ":\t\t" + str(argsDict[arg]))
-		print("Run outfolder:\t\t" + self.pipeline_outfolder)
+				print("  * " + arg + ":\t\t" + str(argsDict[arg]))
 		print("################################################################################")
 		self.set_status_flag("running")
 
@@ -530,7 +534,7 @@ class Pypiper:
 		if child_pid is None:
 			pass
 		else:
-			print("Pypyiper terminating spawned child process " + str(child_pid))
+			print("Pypiper terminating spawned child process " + str(child_pid))
 			os.kill(child_pid, signal.SIGTERM)
 
 	def clean_add(self, regex, conditional=False, manual=False):
