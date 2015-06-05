@@ -91,6 +91,21 @@ class PypiperTest(unittest.TestCase):
 		self.pp.call_lock("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5, lock_name="test")
 		self.pp.call_lock("touch " + tgt8 + " " + tgt9, lock_name="test")
 
+		# In global manual_clean mode, even non-manual clean files should not be deleted:
+		self.pp.manual_clean=True
+		self.pp.clean_add(self.pp.pipeline_outfolder + "*.temp")
+		self.pp.clean_add(tgt4)
+		self.pp.clean_add(tgt5, conditional=True)
+		self.pp.clean_add(self.pp.pipeline_outfolder +"*.cond", conditional=True)
+		self.pp.cleanup()
+
+		self.assertTrue(os.path.isfile(tgt1))
+		self.assertTrue(os.path.isfile(tgt2))
+		self.assertTrue(os.path.isfile(tgt3))
+		self.assertTrue(os.path.isfile(tgt4))
+
+		# But in regular mode, they should be deleted:
+		self.pp.manual_clean=False
 		self.pp.clean_add(self.pp.pipeline_outfolder + "*.temp")
 		self.pp.clean_add(tgt4)
 		self.pp.clean_add(tgt5, conditional=True)
@@ -147,6 +162,8 @@ class PypiperTest(unittest.TestCase):
 
 		with self.assertRaises(OSError):
 			self.pp.call_lock(cmd, target=None, lock_name="badcommand")
+
+
 
 
 		#subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)

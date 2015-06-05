@@ -23,13 +23,16 @@ class Pypiper:
 	:param fresh_start: NOT IMPLEMENTED
 	:param multi: Enables running multiple pipelines in one script; or for interactive use. It simply disables the tee
 	of the output, so you won't get output logged to a file.
+	:param manual_clean: Overrides the pipeline's clean_add() manual parameters, to *never* clean up intermediate files
+	automatically. Useful for debugging; all cleanup files are added to the manual cleanup script.
 	"""
-	def __init__(self, name, outfolder, args=None, overwrite_locks=False, fresh_start=False, multi=False):
+	def __init__(self, name, outfolder, args=None, overwrite_locks=False, fresh_start=False, multi=False, manual_clean=False):
 		# Define pipeline-level variables to keep track of global state and some pipeline stats
 		# Pipeline settings
 		self.pipeline_name = name
 		self.overwrite_locks = overwrite_locks
 		self.fresh_start = fresh_start
+		self.manual_clean = manual_clean
 
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
@@ -57,6 +60,23 @@ class Pypiper:
 		self.cleanup_list_conditional = []
 		self.start_pipeline(args, multi)
 
+	@staticmethod
+	def add_pypiper_args(parser):
+		"""
+		Use this to take an ArgumentParser in your pipeline, and also parse default pypiper arguments
+		:param parser: an ArgumentParser object from your pipeline
+		:returns: A new ArgumentParser object, with default pypiper arguments added
+		"""
+		parser.add_argument('-R', '--recover', dest='recover', action='store_true',
+						default=False, help='Recover mode, overwrite locks')
+		parser.add_argument('-F', '--fresh-start', dest='fresh', action='store_true',
+						default=False, help='Fresh start mode, overwrite all')
+		parser.add_argument('-C', '--no-checks', dest='no_check', action='store_true',
+						default=False, help='Skip sanity checks')
+		parser.add_argument('-D', '--dirty', dest='dirty', action='store_true',
+						default=False, help='Make all cleanups manual') #Useful for debugging
+
+		return(parser)
 
 	def start_pipeline(self, args=None, multi=False):
 		"""
@@ -106,9 +126,9 @@ class Pypiper:
 		print("##### [Version log:]")
 		print("Python version:\t\t" + platform.python_version())
 		try:
-			print("Git pypiper dir:\t\t" + gitvars['pypiper_dir'].strip())
-			print("Git pypiper version:\t\t" + gitvars['pypiper_hash'].strip())
-			print("Git pypiper date:\t\t" + gitvars['pypiper_date'].strip())
+			print("Git pypiper dir".rjust(20) + ":\t" + gitvars['pypiper_dir'].strip())
+			print("Git pypiper version".rjust(20) + ":\t" + gitvars['pypiper_hash'].strip())
+			print("Git pypiper dat:".rjust(20) + ":\t" + gitvars['pypiper_date'].strip())
 			if (gitvars['pypiper_diff'] != ""):
 				print("Git pypiper diff: \t\t" + gitvars['pypiper_diff'].strip())
 		except KeyError:
@@ -116,11 +136,11 @@ class Pypiper:
 			pass
 
 		try:
-			print("Git pipeline dir:\t\t" + gitvars['pipe_dir'].strip())
-			print("Git pipeline version:\t\t" + gitvars['pipe_hash'].strip())
-			print("Git pipeline date:\t\t" + gitvars['pipe_date'].strip())
+			print("Git pipeline dir".rjust(20) + ":\t" + gitvars['pipe_dir'].strip())
+			print("Git pipeline version".rjust(20) + ":\t" + gitvars['pipe_hash'].strip())
+			print("Git pipeline date:".rjust(20) + ":\t" + gitvars['pipe_date'].strip())
 			if (gitvars['pipe_diff'] != ""):
-				print("Git pipeline diff: \t\t" + gitvars['pipe_diff'].strip())
+				print("Git pipeline diff".rjust(20) + ":\t" + gitvars['pipe_diff'].strip())
 		except KeyError:
 			# If any of the keys aren't set, that's OK. It just means the pipeline isn' a git repo.
 			pass
@@ -131,10 +151,9 @@ class Pypiper:
 		if args is not None:
 			argsDict = vars(args)
 			for arg in argsDict:
-				print("  * " + arg + ":\t\t" + str(argsDict[arg]))
+				print("* " + arg.rjust(20) + ":\t" + str(argsDict[arg]))
 		print("################################################################################")
 		self.set_status_flag("running")
-
 
 	def set_status_flag(self, status):
 		prev_status = self.status
@@ -550,6 +569,11 @@ class Pypiper:
 		called {pipeline_name}_cleanup.sh
 		:param manual: True means the files will just be added to a manual cleanup script
 		'''
+
+		if (self.manual_clean is True):
+			# Override the user-provided option and force manual cleanup.
+			manual = True
+
 		if manual:
 			try:
 				files = glob.glob(regex)
