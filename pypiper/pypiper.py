@@ -30,9 +30,9 @@ class Pypiper:
 		# Define pipeline-level variables to keep track of global state and some pipeline stats
 		# Pipeline settings
 		self.pipeline_name = name
-		self.overwrite_locks = overwrite_locks
+		self.overwrite_locks = args.overwrite_locks
 		self.fresh_start = fresh_start
-		self.manual_clean = manual_clean
+		self.manual_clean = args.dirty
 
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
@@ -75,7 +75,8 @@ class Pypiper:
 						default=False, help='Skip sanity checks')
 		parser.add_argument('-D', '--dirty', dest='dirty', action='store_true',
 						default=False, help='Make all cleanups manual') #Useful for debugging
-
+		parser.add_argument('-L', '--overwrite_locks', dest='overwrite_locks', action='store_true',
+						default=False, help='Overwrite locks') #Useful for debugging
 		return(parser)
 
 	def start_pipeline(self, args=None, multi=False):
