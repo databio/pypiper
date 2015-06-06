@@ -29,3 +29,6 @@ pipeline_output/
 
 #make sure to track .gitignore
 !.gitignore
+
+# Sphinx documentation - build folder
+doc/build/
