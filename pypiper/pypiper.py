@@ -1,4 +1,5 @@
 #!/usr/env python
+
 """
 Pypiper is a python module with two components:
 1) the Pypiper class, and
@@ -13,7 +14,8 @@ import atexit, signal, platform
 
 class Pypiper:
 	"""
-	Base class for instantiating a Pypiper object
+	Base class for instantiating a Pypiper object.
+
 	:param name: Choose a name for your pipeline; it's used to name the output files, flags, etc.
 	:param outfolder: Folder in which to store the results.
 	:param args: Optional args object from ArgumentParser; Pypiper will simply record these arguments from your script
@@ -184,10 +186,23 @@ class Pypiper:
 		exists. If the output is to be created, it will first create a lock file to prevent other calls to call_lock
 		(for example, in parallel pipelines) from touching the file while it is being created.
 		It also records the memory of the process and provides some logging output.
-		:param nofail: Should the pipeline bail on a nonzero return from a process? Default:  False
+
+		:param cmd: Bash command(s) to be run.
+		:type cmd: str or list
+		:param target: Output file to be produced. Optional.
+		:type target: str or None
+		:param lock_name: Name of lock file. Optional.
+		:type lock_name: str or None
+		:param shell: If command requires should be run in its own shell. Optional. Default: False.
+		:type shell: bool
+		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
 		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 		they will not cause the pipeline to bail out.
-		:param clean: True means the files will be automatically added to a auto cleanup list
+		:type nofail: bool
+		:param clean: True means the files will be automatically added to a auto cleanup list. Optional.
+		:type clean: bool
+		:returns: Return code of process. If a list of commands is passed, this is the maximum of all return codes for all commands.
+		:rtype: int
 		"""
 
 		# The default lock name is based on the target name. Therefore, a targetless command that you want
@@ -233,7 +248,7 @@ class Pypiper:
 			# create the lock (if you can)
 			if not self.overwrite_locks:
 				try:
-					self.create_file_racefree(lock_file)     # Create lock
+					self.create_file_racefree(lock_file)  # Create lock
 				except OSError as e:
 					if e.errno == errno.EEXIST:  # File already exists
 						print ("Lock file created after test! Looping again.")
@@ -256,14 +271,14 @@ class Pypiper:
 					process_return_code = max(process_return_code, list_ret)
 
 			else:  # Single command (most common)
-				process_return_code, local_maxmem = self.callprint(cmd, shell, nofail)   # Run command
+				process_return_code, local_maxmem = self.callprint(cmd, shell, nofail)  # Run command
 
 			# For temporary files, you can specify a clean option to automatically add them to the clean list,
 			# saving you a manual call to clean_add
 			if target is not None and clean:
 				self.clean_add(target)
 
-			os.remove(lock_file)        # Remove lock file
+			os.remove(lock_file)  # Remove lock file
 
 			# If you make it to the end of the while loop, you're done
 			break
@@ -275,6 +290,15 @@ class Pypiper:
 		A wrapper around subprocess.check_output() that also prints the command,
 		and can understand the nofail parameter. Just like callprint, but checks output. This is equivalent to
 		running subprocess.check_output() instead of subprocess.call().
+
+		:param cmd: Bash command(s) to be run.
+		:type cmd: str or list
+		:param shell: If command requires should be run in its own shell. Optional. Default: False.
+		:type shell: bool
+		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
+		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
+		they will not cause the pipeline to bail out.
+		:type nofail: bool
 		"""
 		print(cmd)
 		if not shell:
@@ -294,7 +318,6 @@ class Pypiper:
 
 		return returnvalue
 
-
 	def callprint(self, cmd, shell=False, nofail=False):
 		"""
 		Prints the command, and then executes it, then prints the memory use and return code of the command.
@@ -304,7 +327,16 @@ class Pypiper:
 		profiling. You should use shell=True if you require shell functions like redirects (>) or pipes (|), but this
 		will prevent the script from monitoring memory use.
 
-		cmd can also be a series (a Dict object) of multiple commands, which will be run in succession.
+		cmd can also be a series (a dict object) of multiple commands, which will be run in succession.
+
+		:param cmd: Bash command(s) to be run.
+		:type cmd: str or list
+		:param shell: If command requires should be run in its own shell. Optional. Default: False.
+		:type shell: bool
+		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
+		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
+		they will not cause the pipeline to bail out.
+		:type nofail: bool
 		"""
 		# The Popen shell argument works like this:
 		# if shell=False, then we format the command (with split()) to be a list of command and its arguments.
@@ -321,7 +353,7 @@ class Pypiper:
 		# Putting it in a try block enables us to catch exceptions from bad subprocess
 		# commands, as well as from valid commands that just fail
 
-		returncode = -1 # set default return values for failed command
+		returncode = -1  # set default return values for failed command
 		local_maxmem = -1
 		try:
 			p = subprocess.Popen(cmd, shell=shell)
@@ -335,7 +367,7 @@ class Pypiper:
 				print ("Not waiting for subprocess: " + str(p.pid))
 				return [0, -1]
 
-			while p.poll() == None:
+			while p.poll() is None:
 				if not shell:
 					local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
 					# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
@@ -365,12 +397,17 @@ class Pypiper:
 
 		return [returncode, local_maxmem]
 
-
 	def wait_for_process(self, p, shell=False):
-		"""Debug function used in unit tests."""
+		"""
+		Debug function used in unit tests.
+
+		:param p: A subprocess.Popen process.
+		:param shell: If command requires should be run in its own shell. Optional. Default: False.
+		:type shell: bool
+		"""
 		local_maxmem = -1
-		sleeptime=.5
-		while p.poll() == None:
+		sleeptime = .5
+		while p.poll() is None:
 			if not shell:
 				local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
 				# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
@@ -390,9 +427,13 @@ class Pypiper:
 			raise Exception("Process returned nonzero result.")
 		return [p.returncode, local_maxmem]
 
-
 	def wait_for_lock(self, lock_file):
-		"""Just sleep until the lock_file does not exist"""
+		"""
+		Just sleep until the lock_file does not exist.
+
+		:param lock_file: Lock file to wait upon.
+		:type lock_file: str
+		"""
 		sleeptime = .5
 		first_message_flag = False
 		dot_count = 0
@@ -420,6 +461,9 @@ class Pypiper:
 		Prints your given message, along with the current time, and time elapsed since the previous timestamp() call.
 		If you specify a HEADING by beginning the message with "###", it surrounds the message with newlines
 		for easier readability in the log file.
+
+		:param message: Message to timestamp.
+		:type message: str
 		"""
 		message += " (" + time.strftime("%m-%d %H:%M:%S") + ")"
 		message += " elapsed:" + str(self.time_elapsed(self.last_timestamp))
@@ -429,39 +473,56 @@ class Pypiper:
 		print(message)
 		self.last_timestamp = time.time()
 
-
 	def time_elapsed(self, time_since):
-		"""Returns the number of seconds that have elapsed since the time_since parameter"""
+		"""
+		Returns the number of seconds that have elapsed since the time_since parameter.
+
+		:param time_since: Time as a float given by time.time().
+		:type time_since: float
+		"""
 		return round(time.time() - time_since, 2)
 
-
 	def report_result(self, key, value):
+		"""
+		Writes a string to self.pipeline_stats_file.
+
+		:type key: str
+		"""
 		message = key + "\t " + str(value).strip()
 		print(message + "\t" + "_RES_")
 		with open(self.pipeline_stats_file, "a") as myfile:
 			myfile.write(message + "\n")
 
-
 	def create_file(self, file):
 		"""
 		Creates a file, but will not fail if the file already exists. (Vulnerable to race conditions).
 		Use this for cases where it doesn't matter if this process is the one that created the file.
+
+		:param file: File to create.
+		:type file: str
 		"""
 		with open(file, 'w') as fout:
 			fout.write('')
-
 
 	def create_file_racefree(self, file):
 		"""
 		Creates a file, but fails if the file already exists.
 		This function will thus only succeed if this process actually creates the file;
 		if the file already exists, it will	raise an OSError, solving race conditions.
+
+		:param file: File to create.
+		:type file: str
 		"""
 		write_lock_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
 		os.open(file, write_lock_flags)
 
-
 	def make_sure_path_exists(self, path):
+		"""
+		Creates all directories in a path if it does not exist. Raise exception otherwise.
+
+		:param path: Path to create.
+		:type path: str
+		"""
 		try:
 			os.makedirs(path)
 		except OSError as exception:
@@ -486,16 +547,17 @@ class Pypiper:
 		self.report_result("Success", time.strftime("%m-%d %H:%M:%S"))
 		self.timestamp("### Pipeline completed at: ")
 
-
 	def fail_pipeline(self, e):
 		"""
 		If the pipeline does not complete, this function will stop the pipeline gracefully.
 		It sets the status flag to failed and skips the	normal success completion procedure.
+
+		:param e: Exception to raise.
+		:type e: Exception
 		"""
 		self.set_status_flag("failed")
 		self.timestamp("### Pipeline failed at: ")
 		raise e
-
 
 	def signal_term_handler(self, signal, frame):
 		"""
@@ -512,7 +574,6 @@ class Pypiper:
 		self.fail_pipeline(Exception("SIGTERM"))
 		sys.exit(1)
 
-
 	def signal_int_handler(self, signal, frame):
 		"""
 		For catching interrupt (Ctrl +C) signals. Fails gracefully.
@@ -522,7 +583,6 @@ class Pypiper:
 			myfile.write(message + "\n")
 		self.fail_pipeline(Exception("SIGINT"))
 		sys.exit(1)
-
 
 	def exit_handler(self):
 		"""
@@ -542,7 +602,6 @@ class Pypiper:
 		if self.status != "completed":
 			self.set_status_flag("failed")
 
-
 	def kill_child(self, child_pid):
 		"""
 		Pypiper spawns subprocesses. We need to kill them to exit gracefully,
@@ -550,6 +609,9 @@ class Pypiper:
 		By default, child processes are not automatically killed when python
 		terminates, so Pypiper must clean these up manually.
 		Given a process ID, this function just kills it.
+
+		:param child_pid: Child process id.
+		:type child_pid: int
 		"""
 		if child_pid is None:
 			pass
@@ -558,20 +620,23 @@ class Pypiper:
 			os.kill(child_pid, signal.SIGTERM)
 
 	def clean_add(self, regex, conditional=False, manual=False):
-		'''
+		"""
 		Add files (or regexs) to a cleanup list, to delete when this pipeline completes successfully.
 		When making a call with call_lock that produces intermediate files that should be
 		deleted after the pipeline completes, you flag these files for deletion with this command.
 		Files added with clean_add will only be deleted upon success of the pipeline.
+
 		:param regex:  A unix-style regular expression that matches files to delete
-		(can also be a file name)
+		(can also be a file name).
+		:type regex: str
 		:param conditional: True means the files will only be deleted if no other
 		pipelines are currently running; otherwise they are added to a manual cleanup script
 		called {pipeline_name}_cleanup.sh
-		:param manual: True means the files will just be added to a manual cleanup script
-		'''
-
-		if (self.manual_clean is True):
+		:type conditional: bool
+		:param manual: True means the files will just be added to a manual cleanup script.
+		:type manual: bool
+		"""
+		if self.manual_clean:
 			# Override the user-provided option and force manual cleanup.
 			manual = True
 
@@ -581,7 +646,8 @@ class Pypiper:
 				for file in files:
 					with open(self.cleanup_file, "a") as myfile:
 						myfile.write("rm " + file + "\n")
-			except: pass
+			except:
+				pass
 		elif conditional:
 			self.cleanup_list_conditional.append(regex)
 		else:
@@ -589,14 +655,12 @@ class Pypiper:
 			# Remove it from the conditional list if added to the absolute list
 			while regex in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(regex)
 
-
 	def cleanup(self):
-		'''
+		"""
 		Cleans up (removes) intermediate files. You can register intermediate files, which will
 		be deleted automatically when the pipeline completes. This function deletes them, either
 		absolutely or conditionally.
-		:return:
-		'''
+		"""
 		if len(self.cleanup_list) > 0:
 			print("Cleaning up flagged intermediate files...")
 			for expr in self.cleanup_list:
@@ -626,7 +690,6 @@ class Pypiper:
 						for file in files:
 							print("rm " + file)
 							os.remove(os.path.join(file))
-
 					except:
 						pass
 			else:
@@ -639,11 +702,18 @@ class Pypiper:
 						for file in files:
 							with open(self.cleanup_file, "a") as myfile:
 								myfile.write("rm " + file + "\n")
-					except: pass
-
+					except:
+						pass
 
 	def memory_usage(self, pid='self', category="peak"):
-		"""Memory usage of the current process in kilobytes."""
+		"""
+		Memory usage of the current process in kilobytes.
+
+		:param pid:
+		:type pid: str
+		:param category:
+		:type category: str
+		"""
 		# Thanks Martin Geisler:
 		status = None
 		result = {'peak': 0, 'rss': 0}

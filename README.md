@@ -24,6 +24,8 @@ Benefits of using PyPiper
 
 The workhorse of PyPiper is the `call_lock()` function. To see an example of a simple pipline, look at the `sample_pipeline.py` script in this repository.
 
+# Documentation
+You can use `make` to generate the PyPiper documentation. Just change your working directory to `doc` and run `make` to see all available mediums the documentation can be generated in. *E.g.*: `make html`. The documnetation will be under `doc/build`.
 
 # Testing
 

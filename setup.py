@@ -10,4 +10,5 @@ setup(
     author_email='nsheffield@cemm.oeaw.ac.at, jklughammer@cemm.oeaw.ac.at',
     url='https://github.com/ComputationalEpigenetics/pypiper/',
     packages=['pypiper'],
+    zip_safe=False
 )
