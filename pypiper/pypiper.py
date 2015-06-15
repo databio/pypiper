@@ -28,13 +28,18 @@ class Pypiper:
 	:param manual_clean: Overrides the pipeline's clean_add() manual parameters, to *never* clean up intermediate files
 	automatically. Useful for debugging; all cleanup files are added to the manual cleanup script.
 	"""
-	def __init__(self, name, outfolder, args=None, overwrite_locks=False, fresh_start=False, multi=False, manual_clean=False):
+	def __init__(self, name, outfolder, args=None, multi=False):
+		params = { 'recover':False, 'manual_clean':False, 'fresh': False }
+		
+		if args is not None:
+			params.update(vars(args)) # need to use vars(...) to transform ArgumentParser's Namespace object into a normal dictionary
+
 		# Define pipeline-level variables to keep track of global state and some pipeline stats
 		# Pipeline settings
 		self.pipeline_name = name
-		self.overwrite_locks = args.overwrite_locks
-		self.fresh_start = fresh_start
-		self.manual_clean = args.dirty
+		self.overwrite_locks = params['recover']
+		self.fresh_start = params['fresh']
+		self.manual_clean = params['manual_clean']
 
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
