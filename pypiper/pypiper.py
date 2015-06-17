@@ -28,11 +28,19 @@ class Pypiper:
 	:param manual_clean: Overrides the pipeline's clean_add() manual parameters, to *never* clean up intermediate files
 	automatically. Useful for debugging; all cleanup files are added to the manual cleanup script.
 	"""
-	def __init__(self, name, outfolder, args=None, multi=False):
-		params = { 'recover':False, 'manual_clean':False, 'fresh': False }
+	def __init__(self, name, outfolder, args=None, multi=False,
+					manual_clean=False, recover=False, fresh=False):
+		# Params defines the set of options that could be updated via
+		# command line args to a pipeline run, that can be forwarded
+		# to Pypiper. If any pypiper arguments are passed
+		# (via add_pypiper_args()), these will override the constructor 		# defaults for these arguments.
+
+		params = { 'manual_clean':manual_clean, 'recover':recover, 
+					'fresh': fresh }
 		
 		if args is not None:
-			params.update(vars(args)) # need to use vars(...) to transform ArgumentParser's Namespace object into a normal dictionary
+			# vars(...) transforms ArgumentParser's Namespace into a dict
+			params.update(vars(args)) 
 
 		# Define pipeline-level variables to keep track of global state and some pipeline stats
 		# Pipeline settings
@@ -78,8 +86,6 @@ class Pypiper:
 						default=False, help='Recover mode, overwrite locks')
 		parser.add_argument('-F', '--fresh-start', dest='fresh', action='store_true',
 						default=False, help='Fresh start mode, overwrite all')
-		parser.add_argument('-C', '--no-checks', dest='no_check', action='store_true',
-						default=False, help='Skip sanity checks')
 		parser.add_argument('-D', '--dirty', dest='dirty', action='store_true',
 						default=False, help='Make all cleanups manual') #Useful for debugging
 		parser.add_argument('-L', '--overwrite_locks', dest='overwrite_locks', action='store_true',
