@@ -110,62 +110,68 @@ class Pypiper:
 			os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
 			os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
 
-		# Record the git version of the pipeline being run. This code gets:
+		# Record the git version of the pipeline and pypiper used. This gets (if it is in a git repo):
+		# dir: the directory where the code is stored
 		# hash: the commit id of the last commit in this repo
 		# date: the date of the last commit in this repo
 		# diff: a summary of any differences in the current (run) version vs. the committed version
 
+		# Wrapped in try blocks so that the code will not fail if the pipeline or pypiper are not git repositories
 		gitvars = {}
 		try:
-#			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
+			gitvars['pypiper_dir'] = os.path.dirname(os.path.realpath(__file__))
+			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
 			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD", shell=True)
 			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD", shell=True)
-			gitvars['pypiper_dir'] = os.path.dirname(os.path.realpath(__file__))
+		except Exception:
+			pass
+		try:
+			gitvars['pipe_dir'] = os.path.dirname(os.path.realpath(sys.argv[0]))
 			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD", shell=True)
 			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD", shell=True)
 			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD", shell=True)
-			gitvars['pipe_dir'] = os.path.dirname(os.path.realpath(sys.argv[0]))
 		except Exception:
 			pass
 
 		# Print out a header section in the pipeline log:
 		print("################################################################################")
 		print("##### [Pipeline run code and environment:]")
-		print("Cmd: " + str(" ".join(sys.argv)))
-		print("Compute host:\t\t" + platform.node())
-		print("Working dir : %s" % os.getcwd())
-		print("Run outfolder:\t\t" + self.pipeline_outfolder)
-		self.timestamp("Pipeline started at: ")
+		print("Command".rjust(20) + ":  " + str(" ".join(sys.argv)))
+		print("Compute host".rjust(20) + ":  " + platform.node())
+		print("Working dir".rjust(20) + ":  " + os.getcwd())
+		print("Outfolder".rjust(20) + ":  " + self.pipeline_outfolder)
 
-		print("##### [Version log:]")
-		print("Python version:\t\t" + platform.python_version())
+		self.timestamp("Pipeline started at".rjust(20) + ":  ")
+
+		print("\n##### [Version log:]")
+		print("Python version".rjust(20) + ":  " + platform.python_version())
 		try:
-			print("Git pypiper dir".rjust(20) + ":\t" + gitvars['pypiper_dir'].strip())
-			print("Git pypiper version".rjust(20) + ":\t" + gitvars['pypiper_hash'].strip())
-			print("Git pypiper dat:".rjust(20) + ":\t" + gitvars['pypiper_date'].strip())
+			print("Pypiper dir".rjust(20) + ":  " + gitvars['pypiper_dir'].strip())
+			print("Pypiper version".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
+			print("Pypiper date".rjust(20) + ":  " + gitvars['pypiper_date'].strip())
 			if (gitvars['pypiper_diff'] != ""):
-				print("Git pypiper diff: \t\t" + gitvars['pypiper_diff'].strip())
+				print("Pypiper diff".rjust(20) + ":  " + gitvars['pypiper_diff'].strip())
 		except KeyError:
 			# If any of the keys aren't set, that's OK. It just means pypiper isn't being run from a git repo.
 			pass
 
 		try:
-			print("Git pipeline dir".rjust(20) + ":\t" + gitvars['pipe_dir'].strip())
-			print("Git pipeline version".rjust(20) + ":\t" + gitvars['pipe_hash'].strip())
-			print("Git pipeline date:".rjust(20) + ":\t" + gitvars['pipe_date'].strip())
+			print("Pipeline dir".rjust(20) + ":  " + gitvars['pipe_dir'].strip())
+			print("Pipeline version".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
+			print("Pipeline date:".rjust(20) + ":  " + gitvars['pipe_date'].strip())
 			if (gitvars['pipe_diff'] != ""):
-				print("Git pipeline diff".rjust(20) + ":\t" + gitvars['pipe_diff'].strip())
+				print("Pipeline diff".rjust(20) + ":  " + gitvars['pipe_diff'].strip())
 		except KeyError:
 			# If any of the keys aren't set, that's OK. It just means the pipeline isn' a git repo.
 			pass
 
 
 		# Print all arguments (if any)
-		print("##### [Arguments passed to pipeline:]")
+		print("\n##### [Arguments passed to pipeline:]")
 		if args is not None:
 			argsDict = vars(args)
 			for arg in argsDict:
-				print("* " + arg.rjust(20) + ":\t" + str(argsDict[arg]))
+				print("* " + arg.rjust(20) + ":  " + str(argsDict[arg]))
 		print("################################################################################")
 		self.set_status_flag("running")
 
