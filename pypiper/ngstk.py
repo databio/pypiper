@@ -59,6 +59,10 @@ def merge_bams(input_bams, merged_bam, paths):
 
 
 def count_lines(file):
+	'''
+	Uses the command-line utility wc to count the number of lines in a file.
+	:param file: Filename
+	'''
 	x = subprocess.check_output("wc -l " + file + " | cut -f1 -d' '", shell=True)
 	return x
 
@@ -72,7 +76,9 @@ def count_lines(file):
 def count_unique_reads(file, paired_end):
 	'''
 	Sometimes alignment software puts multiple locations for a single read; if you just count
-	those reads, you will get an inaccurate count.
+	those reads, you will get an inaccurate count. This is _not_ the same as multimapping reads,
+	which may or may not be actually duplicated in the bam file (depending on the alignment
+	software).
 	This function counts each read only once.
 	This accounts for paired end or not for free because pairs have the same read name.
 	In this function, a paired-end read would count as 2 reads.
@@ -91,6 +97,13 @@ def count_unique_reads(file, paired_end):
 
 
 def count_unique_mapped_reads(file, paired_end):
+	'''
+	For a bam or sam file with paired or or single-end reads, returns the
+	number of mapped reads, counting each read only once, even if it appears
+	mapped at multiple locations.
+	:param file: Filename
+	:param paired_end: True/False paired end data
+	'''
 	if file.endswith("sam"):
 		param = "-S -F4"
 	if file.endswith("bam"):
@@ -103,8 +116,33 @@ def count_unique_mapped_reads(file, paired_end):
 		r2 = 0
 	return int(r1) + int(r2)
 
+def count_multimapping_reads(file, paired_end=True):
+	'''
+	Counts the number of reads that mapped to multiple locations. Warning:
+	currently, if the alignment software includes the reads at multiple locations, this function
+	will count those more than once. This function is for software that randomly assigns,
+	but flags reads as multimappers.
+	:param pared_end: This parameter is ignored; samtools automatically correctly responds depending
+	on the data in the bamfile. We leave the option here just for consistency, since all the other
+	counting functions require the parameter. This makes it easier to swap counting functions during
+	pipeline development.
+	'''
+	param = " -c -f256"
+	if file.endswith("sam"):
+		param += " -S"
+
+	return samtools_view(file, param=param)
+	
 
 def samtools_view(file, param, postpend=""):
+	'''
+	Runs samtools view on a file, with flexible parameters and post-processing. Used internally to implement
+	the various count_reads functions.
+	:param file: Filename
+	:param param: String of parameters to pass to samtools view
+	:param postpend: String to postpend to the samtools command; 
+	useful to add cut, sort, wc operations to the samtools view output.
+	'''
 	x = subprocess.check_output("samtools view " + param + " " + file + " " + postpend, shell=True)
 	return x
 
@@ -112,18 +150,21 @@ def samtools_view(file, param, postpend=""):
 def count_reads(file, paired_end=True):
 	'''
 	To do: remove the default paired_end option, you should be forced to specify.
-	Paired-end reads would count as 2 in this function
+	Paired-end reads count as 2 in this function.
+	For paired-end reads, this function assumes that the reads are split into 2 fastq files, 
+	therefore, to count the reads, it divides by 2 instead of 4. This will thus give an incorrect
+	result if your paired-end fastq files are in only a single file.	
 	'''
 	if file.endswith("bam"):
 		return samtools_view(file, param="-c")
+	if file.endswith("sam"):
+		return samtools_view(file, param="-c -S")
 	if file.endswith("fastq") or file.endswith("fq"):
 		x = count_lines(file)
 		if (paired_end):
 			return int(x) / 2
 		else:
 			return int(x) / 4
-	if file.endswith("sam"):
-		return samtools_view(file, param="-c -S")
 	return -1
 
 
@@ -132,6 +173,10 @@ def count_mapped_reads(file, paired_end=True):
 	Mapped_reads are not in fastq format, so this one doesn't need to accommodate fastq,
 	and therefore, doesn't require a paired-end parameter because it only uses samtools view.
 	Therefore, it's ok that it has a default parameter, since this is discarded.
+	:param pared_end: This parameter is ignored; samtools automatically correctly responds depending
+	on the data in the bamfile. We leave the option here just for consistency, since all the other
+	counting functions require the parameter. This makes it easier to swap counting functions during
+	pipeline development.
 	'''
 	if file.endswith("bam"):
 		return samtools_view(file, param="-c -F4")
