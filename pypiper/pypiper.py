@@ -136,31 +136,31 @@ class Pypiper:
 		# Print out a header section in the pipeline log:
 		print("################################################################################")
 		print("##### [Pipeline run code and environment:]")
-		print("Command".rjust(20) + ":  " + str(" ".join(sys.argv)))
-		print("Compute host".rjust(20) + ":  " + platform.node())
-		print("Working dir".rjust(20) + ":  " + os.getcwd())
-		print("Outfolder".rjust(20) + ":  " + self.pipeline_outfolder)
+		print("* " +"Command".rjust(20) + ":  " + str(" ".join(sys.argv)))
+		print("* " +"Compute host".rjust(20) + ":  " + platform.node())
+		print("* " +"Working dir".rjust(20) + ":  " + os.getcwd())
+		print("* " +"Outfolder".rjust(20) + ":  " + self.pipeline_outfolder)
 
-		self.timestamp("Pipeline started at".rjust(20) + ":  ")
+		self.timestamp("* " +"Pipeline started at".rjust(20) + ":  ")
 
 		print("\n##### [Version log:]")
-		print("Python version".rjust(20) + ":  " + platform.python_version())
+		print("* " +"Python version".rjust(20) + ":  " + platform.python_version())
 		try:
-			print("Pypiper dir".rjust(20) + ":  " + gitvars['pypiper_dir'].strip())
-			print("Pypiper version".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
-			print("Pypiper date".rjust(20) + ":  " + gitvars['pypiper_date'].strip())
+			print("* " +"Pypiper dir".rjust(20) + ":  " + gitvars['pypiper_dir'].strip())
+			print("* " +"Pypiper version".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
+			print("* " +"Pypiper date".rjust(20) + ":  " + gitvars['pypiper_date'].strip())
 			if (gitvars['pypiper_diff'] != ""):
-				print("Pypiper diff".rjust(20) + ":  " + gitvars['pypiper_diff'].strip())
+				print("* " +"Pypiper diff".rjust(20) + ":  " + gitvars['pypiper_diff'].strip())
 		except KeyError:
 			# If any of the keys aren't set, that's OK. It just means pypiper isn't being run from a git repo.
 			pass
 
 		try:
-			print("Pipeline dir".rjust(20) + ":  " + gitvars['pipe_dir'].strip())
-			print("Pipeline version".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
-			print("Pipeline date:".rjust(20) + ":  " + gitvars['pipe_date'].strip())
+			print("* " +"Pipeline dir".rjust(20) + ":  " + gitvars['pipe_dir'].strip())
+			print("* " +"Pipeline version".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
+			print("* " +"Pipeline date:".rjust(20) + ":  " + gitvars['pipe_date'].strip())
 			if (gitvars['pipe_diff'] != ""):
-				print("Pipeline diff".rjust(20) + ":  " + gitvars['pipe_diff'].strip())
+				print("* " +"Pipeline diff".rjust(20) + ":  " + gitvars['pipe_diff'].strip())
 		except KeyError:
 			# If any of the keys aren't set, that's OK. It just means the pipeline isn' a git repo.
 			pass
@@ -560,7 +560,7 @@ class Pypiper:
 		self.cleanup()
 		print("Total elapsed time: " + str(self.time_elapsed(self.starttime)))
 		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-		print("Peak memory used: " + str(self.peak_memory / 1e6) + " GB")
+		print("Peak memory used: " + str(self.peak_memory / 1e9) + " GB")
 		self.report_result("Success", time.strftime("%m-%d %H:%M:%S"))
 		self.timestamp("### Pipeline completed at: ")
 
