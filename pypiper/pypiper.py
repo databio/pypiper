@@ -53,6 +53,7 @@ class Pypiper:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
 		self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
 		self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.txt"
+		self.pipeline_commands_file = self.pipeline_outfolder + self.pipeline_name + "_commands.sh"
 		self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
 
 
@@ -162,7 +163,7 @@ class Pypiper:
 			if (gitvars['pipe_diff'] != ""):
 				print("* " +"Pipeline diff".rjust(20) + ":  " + gitvars['pipe_diff'].strip())
 		except KeyError:
-			# If any of the keys aren't set, that's OK. It just means the pipeline isn' a git repo.
+			# It is ok if keys aren't set, it means the pipeline isn't a git repo.
 			pass
 
 
@@ -317,7 +318,7 @@ class Pypiper:
 		they will not cause the pipeline to bail out.
 		:type nofail: bool
 		"""
-		print(cmd)
+		self.report_command(cmd)
 		if not shell:
 			if ("|" in cmd or ">" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
@@ -359,7 +360,7 @@ class Pypiper:
 		# if shell=False, then we format the command (with split()) to be a list of command and its arguments.
 		# Split the command to use shell=False;
 		# leave it together to use shell=True;
-		print(cmd)
+		self.report_command(cmd)
 		if not shell:
 			if ("|" in cmd or ">" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
@@ -509,6 +510,17 @@ class Pypiper:
 		print(message + "\t" + "_RES_")
 		with open(self.pipeline_stats_file, "a") as myfile:
 			myfile.write(message + "\n")
+
+	def report_command(self, cmd):
+		"""
+		Writes a command to self.pipeline_commands_file.
+
+		:type cmd: str
+		"""
+		print(cmd)
+		with open(self.pipeline_commands_file, "a") as myfile:
+			myfile.write(cmd + "\n\n")
+
 
 	def create_file(self, file):
 		"""
