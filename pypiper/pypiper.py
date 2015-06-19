@@ -135,7 +135,7 @@ class Pypiper:
 			pass
 
 		# Print out a header section in the pipeline log:
-		print("################################################################################")
+		print("----------------------------------------")
 		print("##### [Pipeline run code and environment:]")
 		print("* " +"Command".rjust(20) + ":  " + str(" ".join(sys.argv)))
 		print("* " +"Compute host".rjust(20) + ":  " + platform.node())
@@ -173,7 +173,7 @@ class Pypiper:
 			argsDict = vars(args)
 			for arg in argsDict:
 				print("* " + arg.rjust(20) + ":  " + str(argsDict[arg]))
-		print("################################################################################")
+		print("\n----------------------------------------\n")
 		self.set_status_flag("running")
 
 	def set_status_flag(self, status):
@@ -190,7 +190,7 @@ class Pypiper:
 		flag_file = self.pipeline_outfolder + "/" + self.pipeline_name + "_" + status + ".flag"
 		self.create_file(flag_file)
 
-		print("Change status from " + prev_status + " to " + status)
+		print("\nChange status from " + prev_status + " to " + status)
 
 	###################################
 	# Process calling functions
@@ -201,7 +201,8 @@ class Pypiper:
 		The primary workhorse function of pypiper. This is the command execution function, which enforces
 		file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
 		wait for the file lock if it exists, and not produce new output (by default) if the target output file already
-		exists. If the output is to be created, it will first create a lock file to prevent other calls to call_lock
+		exists. If the output is to be cr#
+[Peated, it will first create a lock file to prevent other calls to call_lock
 		(for example, in parallel pipelines) from touching the file while it is being created.
 		It also records the memory of the process and provides some logging output.
 
@@ -250,7 +251,7 @@ class Pypiper:
 			##### Tests block
 			# Base case: Target exists.	# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
 			if target is not None and os.path.isfile(target) and not os.path.isfile(lock_file):
-				print("Target exists: " + target)
+				print("\nTarget exists: `" + target + "`")
 				break # Do not run command
 
 			# Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
@@ -278,9 +279,9 @@ class Pypiper:
 			# If you make it past theses tests, we should proceed to run the process.
 
 			if target is not None:
-				print("Target to produce: " + target)
+				print("\nTarget to produce: `" + target + "`")
 			else:
-				print("Targetless command, running...")
+				print("\nTargetless command, running...")
 
 			if isinstance(cmd, list):  # Handle command lists
 				for cmd_i in cmd:
@@ -373,6 +374,7 @@ class Pypiper:
 
 		returncode = -1  # set default return values for failed command
 		local_maxmem = -1
+		print("<pre>")
 		try:
 			p = subprocess.Popen(cmd, shell=shell)
 
@@ -397,7 +399,7 @@ class Pypiper:
 			if not shell:
 				info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
 				info += " Pipeline: " + str(self.peak_memory) + "b)"
-
+			print("</pre>")
 			print(info)
 			# set self.maxmem
 			self.peak_memory = max(self.peak_memory, local_maxmem)
@@ -440,7 +442,7 @@ class Pypiper:
 			info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
 			info += " Pipeline: " + str(self.peak_memory) + "b)"
 
-		print(info)
+		print(info + "\n")
 		if p.returncode != 0:
 			raise Exception("Process returned nonzero result.")
 		return [p.returncode, local_maxmem]
@@ -506,10 +508,11 @@ class Pypiper:
 
 		:type key: str
 		"""
-		message = key + "\t " + str(value).strip()
-		print(message + "\t" + "_RES_")
+		messageRaw = key + "\t " + str(value).strip()
+		messageMarkdown = "> `" + key + "`\t" + str(value).strip() + "\t" + "_RES_"
+		print(messageMarkdown)
 		with open(self.pipeline_stats_file, "a") as myfile:
-			myfile.write(message + "\n")
+			myfile.write(messageRaw + "\n")
 
 	def report_command(self, cmd):
 		"""
@@ -517,7 +520,7 @@ class Pypiper:
 
 		:type cmd: str
 		"""
-		print(cmd)
+		print("> `" + cmd + "`\n")
 		with open(self.pipeline_commands_file, "a") as myfile:
 			myfile.write(cmd + "\n\n")
 
@@ -570,11 +573,12 @@ class Pypiper:
 		"""
 		self.set_status_flag("completed")
 		self.cleanup()
-		print("Total elapsed time: " + str(self.time_elapsed(self.starttime)))
-		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-		print("Peak memory used: " + str(self.peak_memory / 1e9) + " GB")
 		self.report_result("Success", time.strftime("%m-%d %H:%M:%S"))
-		self.timestamp("### Pipeline completed at: ")
+		print("\n##### [Epilogue:]")
+		print("* " + "Total elapsed time".rjust(20) + ":  " + str(self.time_elapsed(self.starttime)))
+		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
+		print("* " + "Peak memory used".rjust(20) + ":  " + str(self.peak_memory / 1e9) + " GB")
+		self.timestamp("* Pipeline completed at: ".rjust(20))
 
 	def fail_pipeline(self, e):
 		"""
@@ -645,7 +649,7 @@ class Pypiper:
 		if child_pid is None:
 			pass
 		else:
-			print("Pypiper terminating spawned child process " + str(child_pid))
+			print("\nPypiper terminating spawned child process " + str(child_pid))
 			os.kill(child_pid, signal.SIGTERM)
 
 	def clean_add(self, regex, conditional=False, manual=False):
@@ -691,9 +695,9 @@ class Pypiper:
 		absolutely or conditionally.
 		"""
 		if len(self.cleanup_list) > 0:
-			print("Cleaning up flagged intermediate files...")
+			print("\nCleaning up flagged intermediate files...")
 			for expr in self.cleanup_list:
-				print("Removing glob: " + expr)
+				print("\nRemoving glob: " + expr)
 				try:
 					# Expand regular expression
 					files = glob.glob(expr)
@@ -701,7 +705,7 @@ class Pypiper:
 					while files in self.cleanup_list: self.cleanup_list.remove(files)
 					# and delete the files
 					for file in files:
-						print("rm " + file)
+						print("`rm " + file + "`")
 						os.remove(os.path.join(file))
 				except:
 					pass
@@ -710,9 +714,9 @@ class Pypiper:
 			# flag_files = glob.glob(self.pipeline_outfolder + "*.flag")
 			flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag") if not "completed" in os.path.basename(fn) and not self.pipeline_name + "_running.flag" == os.path.basename(fn)]
 			if (len(flag_files) == 0):
-				print("Cleaning up conditional list...")
+				print("\nCleaning up conditional list...")
 				for expr in self.cleanup_list_conditional:
-					print("Removing glob: " + expr)
+					print("\nRemoving glob: " + expr)
 					try:
 						files = glob.glob(expr)
 						while files in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(files)
@@ -722,15 +726,15 @@ class Pypiper:
 					except:
 						pass
 			else:
-				print("Conditional flag found: " + str([os.path.basename(i) for i in flag_files]))
-				print("These conditional files were left in place:" + str(self.cleanup_list_conditional))
+				print("\nConditional flag found: " + str([os.path.basename(i) for i in flag_files]))
+				print("\nThese conditional files were left in place:" + str(self.cleanup_list_conditional))
 				# Produce a cleanup script
 				for expr in self.cleanup_list_conditional:
 					try:
 						files = glob.glob(expr)
 						for file in files:
 							with open(self.cleanup_file, "a") as myfile:
-								myfile.write("rm " + file + "\n")
+								myfile.write("`rm " + file + "`\n")
 					except:
 						pass
 
