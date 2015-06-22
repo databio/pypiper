@@ -89,8 +89,6 @@ class Pypiper:
 						default=False, help='Fresh start mode, overwrite all')
 		parser.add_argument('-D', '--dirty', dest='dirty', action='store_true',
 						default=False, help='Make all cleanups manual') #Useful for debugging
-		parser.add_argument('-L', '--overwrite_locks', dest='overwrite_locks', action='store_true',
-						default=False, help='Overwrite locks') #Useful for debugging
 		return(parser)
 
 	def start_pipeline(self, args=None, multi=False):
@@ -374,8 +372,11 @@ class Pypiper:
 
 		returncode = -1  # set default return values for failed command
 		local_maxmem = -1
-		print("<pre>")
+
 		try:
+			# Capture the subprocess output in <pre> tags to make it format nicely
+			# if the markdown log file is displayed as HTML.
+			print("<pre>")
 			p = subprocess.Popen(cmd, shell=shell)
 
 			# Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
@@ -384,6 +385,7 @@ class Pypiper:
 			sleeptime = .25
 
 			if not self.wait:
+				print("</pre>")
 				print ("Not waiting for subprocess: " + str(p.pid))
 				return [0, -1]
 
@@ -399,6 +401,7 @@ class Pypiper:
 			if not shell:
 				info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
 				info += " Pipeline: " + str(self.peak_memory) + "b)"
+			# Close the preformat tag for markdown output
 			print("</pre>")
 			print(info)
 			# set self.maxmem
@@ -631,7 +634,9 @@ class Pypiper:
 			os.chmod(self.cleanup_file, 0755)
 
 		if self.running_subprocess is not None:
-				self.kill_child(self.running_subprocess.pid)
+			self.kill_child(self.running_subprocess.pid)
+			# Close the preformat tag that we opened when the process was spawned.
+			print("</pre>")
 		if self.status != "completed":
 			self.set_status_flag("failed")
 
