@@ -87,7 +87,7 @@ class Pypiper:
 						default=False, help='Recover mode, overwrite locks')
 		parser.add_argument('-F', '--fresh-start', dest='fresh', action='store_true',
 						default=False, help='Fresh start mode, overwrite all')
-		parser.add_argument('-D', '--dirty', dest='dirty', action='store_true',
+		parser.add_argument('-D', '--dirty', dest='manual_clean', action='store_true',
 						default=False, help='Make all cleanups manual') #Useful for debugging
 		return(parser)
 
