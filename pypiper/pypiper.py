@@ -102,12 +102,31 @@ class Pypiper:
 		# Mirror every operation on sys.stdout to log file
 		if not multi:
 			sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
+
+			# Before creating the subprocess, we use the signal module to ignore TERM and INT signals;
+			# The subprocess will inheret these settings, so it won't be terminated by INT or TERM
+			# automatically; but instead, I will clean up this process in the signal handler functions.
+			# This is required because otherwise, the tee is terminated early, before I have a chance to
+			# print some final output, and so those things don't end up in the log files because the tee
+			# subprocess is dead.
+			signal.signal(signal.SIGINT, signal.SIG_IGN)
+			signal.signal(signal.SIGINT, signal.SIG_IGN)
 			# a for append to file
 			tee = subprocess.Popen(["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE)
+
+			# Reset the signal handlers after spawning that process
+			signal.signal(signal.SIGINT, self.signal_int_handler)
+			signal.signal(signal.SIGTERM, self.signal_term_handler)
 			# In case this pipeline process is terminated with SIGTERM, make sure we kill this spawned process as well.
 			atexit.register(self.kill_child, tee.pid)
 			os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
 			os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
+
+		# A future possibility to avoid this tee, is to use a Tee class; this works for anything printed here
+		# by pypiper, but can't tee the subprocess output. For this, it would require using threading to
+		# simultaneously capture and display subprocess output. I shelve this for now and stick with the tee option.
+		# sys.stdout = Tee(self.pipeline_log_file)
+
 
 		# Record the git version of the pipeline and pypiper used. This gets (if it is in a git repo):
 		# dir: the directory where the code is stored
@@ -243,7 +262,7 @@ class Pypiper:
 		# to prevent race conditions; the lock_file must be created by
 		# the current loop. If not, we wait again for it and then
 		# re-do the tests.
-        # TODO: maybe output a message if when repeatedly going through the loop
+		# TODO: maybe output a message if when repeatedly going through the loop
 		
 		while True:
 			##### Tests block
@@ -334,6 +353,7 @@ class Pypiper:
 				print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
 
 		return returnvalue
+
 
 	def callprint(self, cmd, shell=False, nofail=False):
 		"""
@@ -591,6 +611,12 @@ class Pypiper:
 		:param e: Exception to raise.
 		:type e: Exception
 		"""
+		# Take care of any active running subprocess
+		if self.running_subprocess is not None:
+			self.kill_child(self.running_subprocess.pid)
+			self.running_subprocess = None
+			# Close the preformat tag that we opened when the process was spawned.
+			print("</pre>")
 		self.set_status_flag("failed")
 		self.timestamp("### Pipeline failed at: ")
 		raise e
@@ -625,7 +651,7 @@ class Pypiper:
 		This function I register with atexit to run whenever the script is completing.
 		A catch-all for uncaught exceptions, setting status flag file to failed.
 		"""
-		#print("Exit handler")
+		# print("Exit handler")
 		# Make the cleanup file executable if it exists
 		if os.path.isfile(self.cleanup_file):
 			# Make the cleanup file self destruct.
@@ -633,12 +659,11 @@ class Pypiper:
 				myfile.write("rm " + self.cleanup_file + "\n")
 			os.chmod(self.cleanup_file, 0755)
 
-		if self.running_subprocess is not None:
-			self.kill_child(self.running_subprocess.pid)
-			# Close the preformat tag that we opened when the process was spawned.
-			print("</pre>")
-		if self.status != "completed":
-			self.set_status_flag("failed")
+		# If the pipeline hasn't completed successfully, or already been marked
+		# as failed, then mark it as failed now.
+		if self.status != "failed" and self.status != "completed":
+			# self.set_status_flag("failed")
+			self.fail_pipeline(Exception("Unknown exit failure"))
 
 	def kill_child(self, child_pid):
 		"""
@@ -655,6 +680,7 @@ class Pypiper:
 			pass
 		else:
 			print("\nPypiper terminating spawned child process " + str(child_pid))
+			#sys.stdout.flush()
 			os.kill(child_pid, signal.SIGTERM)
 
 	def clean_add(self, regex, conditional=False, manual=False):
@@ -770,3 +796,20 @@ class Pypiper:
 			if status is not None:
 				status.close()
 		return result[category]
+
+
+class Tee(object):
+	def __init__(self, log_file):
+		self.file = open(log_file, "a")
+		self.stdout = sys.stdout
+		sys.stdout = self
+	def __del__(self):
+		sys.stdout = self.stdout
+		self.file.close()
+	def write(self, data):
+		self.file.write(data)
+		self.stdout.write(data)
+		self.file.flush()
+		self.stdout.flush()
+	def fileno(self):
+		return(self.stdout.fileno())
