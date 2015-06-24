@@ -185,7 +185,12 @@ def count_mapped_reads(file, paired_end=True):
 	return -1
 
 
+
 def sam_conversions(sam, depth=True):
+	'''
+	Convert sam files to bam files, then sort and index them for later use.
+	:param depth: also calculate coverage over each position
+	'''
 	cmd = "samtools view -bS " + sam + " > " + sam.replace(".sam", ".bam") + "\n"
 	cmd += "samtools sort " + sam.replace(".sam", ".bam") + " " + sam.replace(".sam", "_sorted") + "\n"
 	cmd += "samtools index " + sam.replace(".sam", "_sorted.bam") + "\n"
@@ -196,6 +201,10 @@ def sam_conversions(sam, depth=True):
 
 
 def bam_conversions(bam, depth=True):
+	'''
+	Sort and index bam files for later use.
+	:param depth: also calculate coverage over each position
+	'''
 	cmd = "samtools view -h " + bam + " > " + bam.replace(".bam", ".sam") + "\n"
 	cmd += "samtools sort " + bam + " " + bam.replace(".bam", "_sorted") + "\n"
 	cmd += "samtools index " + bam.replace(".bam", "_sorted.bam") + "\n"
