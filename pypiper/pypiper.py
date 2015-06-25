@@ -602,7 +602,7 @@ class Pypiper:
 		print("\n##### [Epilogue:]")
 		print("* " + "Total elapsed time".rjust(20) + ":  " + str(self.time_elapsed(self.starttime)))
 		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-		print("* " + "Peak memory used".rjust(20) + ":  " + str(self.peak_memory / 1e9) + " GB")
+		print("* " + "Peak memory used".rjust(20) + ":  " + str(self.peak_memory / 1e6) + " GB")
 		self.timestamp("* Pipeline completed at: ".rjust(20))
 
 	def fail_pipeline(self, e):
