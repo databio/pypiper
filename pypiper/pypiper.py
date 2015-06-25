@@ -22,7 +22,9 @@ class Pypiper:
 	:param overwrite_locks: Advanced debugging options; this will cause Pypiper to ignore locked files, enabling
 	you to restart a failed pipeline where it left off. Be careful, though, this invalidates the typical file locking
 	that enables multiple pipelines to run in parallel on the same intermediate files.
-	:param fresh_start: NOT IMPLEMENTED
+	:param fresh: NOT IMPLEMENTED
+	:param recover: Specify recover mode, to overwrite lock files. If pypiper encounters a locked
+	target, it will ignore the lock, and recompute this step. Useful to restart a failed pipeline.
 	:param multi: Enables running multiple pipelines in one script; or for interactive use. It simply disables the tee
 	of the output, so you won't get output logged to a file.
 	:param manual_clean: Overrides the pipeline's clean_add() manual parameters, to *never* clean up intermediate files
@@ -464,8 +466,8 @@ class Pypiper:
 
 		info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
 		if not shell:
-			info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
-			info += " Pipeline: " + str(self.peak_memory) + "b)"
+			info += " Peak memory: (Process: " + str(local_maxmem) + "kB;"
+			info += " Pipeline: " + str(self.peak_memory) + "kB)"
 
 		print(info + "\n")
 		if p.returncode != 0:
@@ -773,7 +775,7 @@ class Pypiper:
 					except:
 						pass
 
-	def memory_usage(self, pid='self', category="peak"):
+	def memory_usage(self, pid='self', category="hwm"):
 		"""
 		Memory usage of the current process in kilobytes.
 
@@ -784,7 +786,7 @@ class Pypiper:
 		"""
 		# Thanks Martin Geisler:
 		status = None
-		result = {'peak': 0, 'rss': 0}
+		result = {'peak': 0, 'rss': 0, 'hwm':0}
 		try:
 			# This will only work on systems with a /proc file system
 			# (like Linux).
@@ -799,6 +801,7 @@ class Pypiper:
 		finally:
 			if status is not None:
 				status.close()
+		#print(result[category])
 		return result[category]
 
 

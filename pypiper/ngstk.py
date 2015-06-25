@@ -40,6 +40,8 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths):
 		cmd += " F2=" + out_fastq_pre + "_R2.fastq"
 
 	cmd += " INCLUDE_NON_PF_READS=true"
+	cmd += " QUIET=true"
+	cmd += " VERBOSITY=ERROR"
 	return cmd
 
 
