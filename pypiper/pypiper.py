@@ -118,7 +118,7 @@ class Pypiper:
 			signal.signal(signal.SIGINT, self.signal_int_handler)
 			signal.signal(signal.SIGTERM, self.signal_term_handler)
 			# In case this pipeline process is terminated with SIGTERM, make sure we kill this spawned process as well.
-			atexit.register(self.kill_child, tee.pid)
+			atexit.register(self.kill_child_process, tee.pid)
 			os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
 			os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
 
@@ -152,9 +152,10 @@ class Pypiper:
 			pass
 
 		# Print out a header section in the pipeline log:
+		# Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
 		print("----------------------------------------")
 		print("##### [Pipeline run code and environment:]")
-		print("* " +"Command".rjust(20) + ":  " + str(" ".join(sys.argv)))
+		print("* " +"Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv))) + "`"
 		print("* " +"Compute host".rjust(20) + ":  " + platform.node())
 		print("* " +"Working dir".rjust(20) + ":  " + os.getcwd())
 		print("* " +"Outfolder".rjust(20) + ":  " + self.pipeline_outfolder)
@@ -164,7 +165,7 @@ class Pypiper:
 		print("\n##### [Version log:]")
 		print("* " +"Python version".rjust(20) + ":  " + platform.python_version())
 		try:
-			print("* " +"Pypiper dir".rjust(20) + ":  " + gitvars['pypiper_dir'].strip())
+			print("* " +"Pypiper dir".rjust(20) + ":  "  + "`" + gitvars['pypiper_dir'].strip() + "`")
 			print("* " +"Pypiper version".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
 			print("* " +"Pypiper date".rjust(20) + ":  " + gitvars['pypiper_date'].strip())
 			if (gitvars['pypiper_diff'] != ""):
@@ -174,7 +175,7 @@ class Pypiper:
 			pass
 
 		try:
-			print("* " +"Pipeline dir".rjust(20) + ":  " + gitvars['pipe_dir'].strip())
+			print("* " +"Pipeline dir".rjust(20) + ":  " + "`" + gitvars['pipe_dir'].strip() + "`")
 			print("* " +"Pipeline version".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
 			print("* " +"Pipeline date:".rjust(20) + ":  " + gitvars['pipe_date'].strip())
 			if (gitvars['pipe_diff'] != ""):
@@ -189,7 +190,8 @@ class Pypiper:
 		if args is not None:
 			argsDict = vars(args)
 			for arg in argsDict:
-				print("* " + arg.rjust(20) + ":  " + str(argsDict[arg]))
+				arg_print = "`" + arg + "`"
+				print("* " + arg_print.rjust(20) + ":  " + "`" + str(argsDict[arg]) + "`")
 		print("\n----------------------------------------\n")
 		self.set_status_flag("running")
 
@@ -613,12 +615,14 @@ class Pypiper:
 		"""
 		# Take care of any active running subprocess
 		if self.running_subprocess is not None:
-			self.kill_child(self.running_subprocess.pid)
+			pid_to_kill = self.running_subprocess.pid
 			self.running_subprocess = None
 			# Close the preformat tag that we opened when the process was spawned.
 			print("</pre>")
-		self.set_status_flag("failed")
-		self.timestamp("### Pipeline failed at: ")
+			self.kill_child_process(pid_to_kill)
+		if self.status != "failed":  #and self.status != "completed":
+			self.set_status_flag("failed")
+			self.timestamp("### Pipeline failed at: ")
 		raise e
 
 	def signal_term_handler(self, signal, frame):
@@ -661,11 +665,11 @@ class Pypiper:
 
 		# If the pipeline hasn't completed successfully, or already been marked
 		# as failed, then mark it as failed now.
-		if self.status != "failed" and self.status != "completed":
-			# self.set_status_flag("failed")
+
+		if self.status != "completed":
 			self.fail_pipeline(Exception("Unknown exit failure"))
 
-	def kill_child(self, child_pid):
+	def kill_child_process(self, child_pid):
 		"""
 		Pypiper spawns subprocesses. We need to kill them to exit gracefully,
 		in the event of a pipeline termination or interrupt signal.
