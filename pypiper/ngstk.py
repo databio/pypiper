@@ -18,7 +18,7 @@ def make_sure_path_exists(path):
 
 
 def markDuplicates(paths, aligned_file, out_file, metrics_file, remove_duplicates="True"):
-	cmd = "java -jar "
+	cmd = "java -Xmx2000m -jar "
 	cmd += os.path.join(paths.picard_dir, "MarkDuplicates.jar")
 	cmd += " INPUT=" + aligned_file
 	cmd += " OUTPUT=" + out_file
@@ -31,7 +31,7 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths):
 	make_sure_path_exists(os.path.dirname(out_fastq_pre))
 	# Build commands:
 
-	cmd = "java -jar "
+	cmd = "java -Xmx2000m -jar "
 	cmd += os.path.join(paths.picard_dir, "SamToFastq.jar")
 	cmd += " I=" + bam_file
 	cmd += " F=" + out_fastq_pre + "_R1.fastq"
