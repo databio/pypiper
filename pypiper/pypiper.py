@@ -93,6 +93,17 @@ class Pypiper:
 						default=False, help='Make all cleanups manual') #Useful for debugging
 		return(parser)
 
+
+	def ignore_interrupts(self):
+		'''
+		Ignore interrupt and termination signals. Used as a pre-execution function (preexec_fn)
+		For subprocess.Popen calls that Pyper will retain control over (meaning I will clean
+		these processes up manually).
+		'''
+		signal.signal(signal.SIGINT, signal.SIG_IGN)
+		signal.signal(signal.SIGTERM, signal.SIG_IGN)
+
+
 	def start_pipeline(self, args=None, multi=False):
 		"""
 		Do some setup, like tee output, print some diagnostics, create temp files.
@@ -106,19 +117,19 @@ class Pypiper:
 			sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
 
 			# Before creating the subprocess, we use the signal module to ignore TERM and INT signals;
-			# The subprocess will inheret these settings, so it won't be terminated by INT or TERM
+			# The subprocess will inherit these settings, so it won't be terminated by INT or TERM
 			# automatically; but instead, I will clean up this process in the signal handler functions.
 			# This is required because otherwise, the tee is terminated early, before I have a chance to
 			# print some final output, and so those things don't end up in the log files because the tee
 			# subprocess is dead.
-			signal.signal(signal.SIGINT, signal.SIG_IGN)
-			signal.signal(signal.SIGINT, signal.SIG_IGN)
+
 			# a for append to file
-			tee = subprocess.Popen(["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE)
+			tee = subprocess.Popen(["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE,
+								   preexec_fn=self.ignore_interrupts)
 
 			# Reset the signal handlers after spawning that process
-			signal.signal(signal.SIGINT, self.signal_int_handler)
-			signal.signal(signal.SIGTERM, self.signal_term_handler)
+			# signal.signal(signal.SIGINT, self.signal_int_handler)
+			# signal.signal(signal.SIGTERM, self.signal_term_handler)
 			# In case this pipeline process is terminated with SIGTERM, make sure we kill this spawned process as well.
 			atexit.register(self.kill_child_process, tee.pid)
 			os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
@@ -423,8 +434,8 @@ class Pypiper:
 			returncode = p.returncode
 			info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
 			if not shell:
-				info += " Peak memory: (Process: " + str(local_maxmem) + "b;"
-				info += " Pipeline: " + str(self.peak_memory) + "b)"
+				info += " Peak memory: (Process: " + str(local_maxmem) + "kB;"
+				info += " Pipeline: " + str(self.peak_memory) + "kB)"
 			# Close the preformat tag for markdown output
 			print("</pre>")
 			print(info)
@@ -668,7 +679,7 @@ class Pypiper:
 		# If the pipeline hasn't completed successfully, or already been marked
 		# as failed, then mark it as failed now.
 
-		if self.status != "completed":
+		if self.status != "completed" and self.status != "failed":
 			self.fail_pipeline(Exception("Unknown exit failure"))
 
 	def kill_child_process(self, child_pid):
