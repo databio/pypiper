@@ -349,6 +349,7 @@ def skewer(inputFastq1, outputPrefix, outputFastq1, trimLog, cpus, adapters, inp
 	cmds = list()
 
 	cmd1 = "skewer --quiet"
+	cmd1 += " -f sanger"
 	cmd1 += " -t {0}".format(cpus)
 	cmd1 += " -m {0}".format(mode)
 	cmd1 += " -x {0}".format(adapters)
@@ -611,9 +612,10 @@ def plotInsertSizesFit(bam, plot):
 	plt.savefig(plot, bbox_inches="tight")
 
 
-def bamToBigWig(inputBam, outputBigWig, genomeSizes, genome, tagmented=False):
+def bamToBigWig(inputBam, outputBigWig, genomeSizes, genome, tagmented=False, scale=False):
 	import os
 	import re
+	import subprocess
 
 	# TODO:
 	# addjust fragment length dependent on read size and real fragment size
@@ -625,10 +627,17 @@ def bamToBigWig(inputBam, outputBigWig, genomeSizes, genome, tagmented=False):
 	if not tagmented:
 		cmd1 += " bedtools slop -i stdin -g {0} -s -l 0 -r 130 |".format(genomeSizes)
 		cmd1 += " fix_bedfile_genome_boundaries.py {0} |".format(genome)
-	else:
-		cmd1 = "bedtools bamtobed -i {0} |".format(inputBam)
-		cmd1 += " get5primePosition.py |"
-	cmd1 += " genomeCoverageBed -i stdin -bg -g {0} > {1}.cov".format(genomeSizes, transientFile)
+	cmd1 += " genomeCoverageBed {0}{1}-bg -g {2} -i stdin > {3}.cov".format(
+			"-5 " if tagmented else "",
+			"-scale {0} ".format(totalReads) if scale else "",
+			genomeSizes,
+			transientFile
+		)
+
+	"""sum=$(awk '{sum += $4} END {print sum}' {0} )""".format(transientFile)
+
+	"""awk -v sum="$sum" ' OFS="\t" { $4 = ($4 / sum) * 1000000; print }' public_html/chipmentation/bigWig/${NAME}.bedgraph \
+	> public_html/chipmentation/normalized/${NAME}.normalized.bedgraph"""
 
 	cmd2 = "bedGraphToBigWig {0}.cov {1} {2}".format(transientFile, genomeSizes, outputBigWig)
 	# remove cov file
