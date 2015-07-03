@@ -636,10 +636,10 @@ def bamToBigWig(inputBam, outputBigWig, genomeSizes, genome, tagmented=False, sc
 			transientFile
 		)
 
-	"""sum=$(awk '{sum += $4} END {print sum}' {0} )""".format(transientFile)
+	# """sum=$(awk '{sum += $4} END {print sum}' {0} )""".format(transientFile)
 
-	"""awk -v sum="$sum" ' OFS="\t" { $4 = ($4 / sum) * 1000000; print }' public_html/chipmentation/bigWig/${NAME}.bedgraph \
-	> public_html/chipmentation/normalized/${NAME}.normalized.bedgraph"""
+	# """awk -v sum="$sum" ' OFS="\t" { $4 = ($4 / sum) * 1000000; print }' public_html/chipmentation/bigWig/${NAME}.bedgraph \
+	# > public_html/chipmentation/normalized/${NAME}.normalized.bedgraph"""
 
 	cmd2 = "bedGraphToBigWig {0}.cov {1} {2}".format(transientFile, genomeSizes, outputBigWig)
 	# remove cov file
