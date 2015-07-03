@@ -355,19 +355,21 @@ def skewer(inputFastq1, outputPrefix, outputFastq1, trimLog, cpus, adapters, inp
 	cmd1 += " -x {0}".format(adapters)
 	cmd1 += " -o {0}".format(outputPrefix)
 	cmd1 += " {0}".format(inputFastq1)
-	if inputFastq2 is not None:
+	if inputFastq2 is None:
+		cmds.append(cmd1)
+	else:
 		cmd1 += " {0}".format(inputFastq2)
 		cmds.append(cmd1)
 
-	if inputFastq2 is not None:
+	if inputFastq2 is None:
+		cmd2 = "mv {0} {1}".format(outputPrefix + "-trimmed.fastq", outputFastq1)
+		cmds.append(cmd2)
+	else:
 		cmd2 = "mv {0} {1}".format(outputPrefix + "-trimmed-pair1.fastq", outputFastq1)
 		cmds.append(cmd2)
 
 		cmd3 = "mv {0} {1}".format(outputPrefix + "-trimmed-pair2.fastq", outputFastq2)
 		cmds.append(cmd3)
-	else:
-		cmd2 = "mv {0} {1}".format(outputPrefix + "-trimmed.fastq", outputFastq1)
-		cmds.append(cmd2)
 
 	cmd4 = "mv {0} {1}".format(outputPrefix + "-trimmed.log", trimLog)
 	cmds.append(cmd4)
