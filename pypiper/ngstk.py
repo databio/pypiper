@@ -529,9 +529,9 @@ def getFragmentSizes(bam):
 	return np.array(fragSizes)
 
 
-def plotInsertSizesFit(bam, plot):
+def plotInsertSizesFit(bam, plot, outputCSV, maxInsert=1500, smallestInsert=30):
 	"""
-	Mostly from here:
+	Heavy inspiration from here:
 	https://github.com/dbrg77/ATAC/blob/master/ATAC_seq_read_length_curve_fitting.ipynb
 	"""
 	try:
@@ -539,56 +539,70 @@ def plotInsertSizesFit(bam, plot):
 		import numpy as np
 		import matplotlib.mlab as mlab
 		from scipy.optimize import curve_fit
+		from scipy.integrate import simps
 		import matplotlib.pyplot as plt
 	except:
 		return
 
-	def getFragmentSizes(bam):
+	try:
+		import seaborn as sns
+		sns.set_style("whitegrid")
+	except:
+		pass
+
+	def getFragmentSizes(bam, maxInsert=1500):
 		fragSizes = list()
 
 		bam = pysam.Samfile(bam, 'rb')
 
-		for read in bam:
-			if read.tlen < 1500:
+		for i, read in enumerate(bam):
+			if read.tlen < maxInsert:
 				fragSizes.append(read.tlen)
 		bam.close()
 
 		return np.array(fragSizes)
 
-	def expo(x, q, r):
-		"""
-		Exponential fuction.
-		"""
-		return q * np.exp(-r * x)
-
 	def mixtureFunction(x, *p):
 		"""
-		Mixture function with six gaussian (nucleosome reads) and one exponential function (nucleosome-free reads).
+		Mixture function to model four gaussian (nucleosomal) and one exponential (nucleosome-free) distributions.
 		"""
-		m1, s1, w1, m2, s2, w2, m3, s3, w3, m4, s4, w4, m5, s5, w5, m6, s6, w6, q, r = p
+		m1, s1, w1, m2, s2, w2, m3, s3, w3, m4, s4, w4, q, r = p
+		nfr = expo(x, 2.9e-02, 2.8e-02)
+		nfr[:smallestInsert] = 0
+
 		return (mlab.normpdf(x, m1, s1) * w1 +
 				mlab.normpdf(x, m2, s2) * w2 +
 				mlab.normpdf(x, m3, s3) * w3 +
 				mlab.normpdf(x, m4, s4) * w4 +
-				mlab.normpdf(x, m5, s5) * w5 +
-				mlab.normpdf(x, m6, s6) * w6 +
-				q * np.exp(-r * x))
+				nfr)
+
+	def expo(x, q, r):
+		"""
+		Exponential function.
+		"""
+		return q * np.exp(-r * x)
 
 	# get fragment sizes
 	fragSizes = getFragmentSizes(bam)
 
 	# bin
-	numBins = np.linspace(0, 1500, 1501)
-	y, scatter_x = np.histogram(fragSizes, numBins, normed=1)
+	numBins = np.linspace(0, maxInsert, maxInsert + 1)
+	y, scatter_x = np.histogram(fragSizes, numBins, density=1)
 	# get the mid-point of each bin
 	x = (scatter_x[:-1] + scatter_x[1:]) / 2
 
 	# Parameters are empirical, need to check
-	paramGuess = [200, 50, 0.7, 400, 50, 0.15, 600, 50, 0.1, 800, 55, 0.045, 1000, 60, 0.015, 1200, 60, 0.007, 0.03616429, 0.02297901]
+	paramGuess = [
+		200, 50, 0.7,  # gaussians
+		400, 50, 0.15,
+		600, 50, 0.1,
+		800, 55, 0.045,
+		2.9e-02, 2.8e-02  # exponential
+	]
 
-	popt3, pcov3 = curve_fit(mixtureFunction, x[51:], y[51:], p0=paramGuess, maxfev=100000)
+	popt3, pcov3 = curve_fit(mixtureFunction, x[smallestInsert:], y[smallestInsert:], p0=paramGuess, maxfev=100000)
 
-	m1, s1, w1, m2, s2, w2, m3, s3, w3, m4, s4, w4, m5, s5, w5, m6, s6, w6, q, r = popt3
+	m1, s1, w1, m2, s2, w2, m3, s3, w3, m4, s4, w4, q, r = popt3
 
 	# Plot
 	plt.figure(figsize=(12, 12))
@@ -601,20 +615,43 @@ def plotInsertSizesFit(bam, plot):
 	plt.plot(x, mlab.normpdf(x, m2, s2) * w2, 'g-', lw=1.5, label="2nd nucleosome")
 	plt.plot(x, mlab.normpdf(x, m3, s3) * w3, 'b-', lw=1.5, label="3rd nucleosome")
 	plt.plot(x, mlab.normpdf(x, m4, s4) * w4, 'c-', lw=1.5, label="4th nucleosome")
-	plt.plot(x, mlab.normpdf(x, m5, s5) * w5, 'm-', lw=1.5, label="5th nucleosome")
-	plt.plot(x, mlab.normpdf(x, m6, s6) * w6, 'y-', lw=1.5, label="6th nucleosome")
 
 	# Plot nucleosome-free fit
-	plt.plot(x, expo(x, 6.93385577e-02, 3.34278108e-02), 'k-', lw=1.5, label="nucleosome-free")
+	nfr = expo(x, 2.9e-02, 2.8e-02)
+	nfr[:smallestInsert] = 0
+	plt.plot(x, nfr, 'k-', lw=1.5, label="nucleosome-free")
 
 	# Plot sum of fits
 	ys = mixtureFunction(x, *popt3)
 	plt.plot(x, ys, 'k--', lw=3.5, label="fit sum")
 
+	plt.legend()
+	plt.xlabel("Fragment size (bp)")
+	plt.ylabel("Density")
 	plt.savefig(plot, bbox_inches="tight")
 
+	# Integrate curves and get areas under curve
+	areas = [
+		["fraction", "area under curve", "max density"],
+		["Nucleosome-free fragments", simps(nfr), max(nfr)],
+		["1st nucleosome", simps(mlab.normpdf(x, m1, s1) * w1), max(mlab.normpdf(x, m1, s1) * w1)],
+		["2nd nucleosome", simps(mlab.normpdf(x, m2, s2) * w1), max(mlab.normpdf(x, m2, s2) * w2)],
+		["3rd nucleosome", simps(mlab.normpdf(x, m3, s3) * w1), max(mlab.normpdf(x, m3, s3) * w3)],
+		["4th nucleosome", simps(mlab.normpdf(x, m4, s4) * w1), max(mlab.normpdf(x, m4, s4) * w4)]
+	]
 
-def bamToBigWig(inputBam, outputBigWig, genomeSizes, genome, tagmented=False, scale=False):
+	try:    
+		import csv
+
+		with open(outputCSV, "w") as f:
+			writer = csv.writer(f)
+			writer.writerows(areas)
+	except:
+		pass
+
+
+
+def bamToBigWig(inputBam, outputBigWig, genomeSizes, genome, tagmented=False, normalize=False):
 	import os
 	import re
 	import subprocess
@@ -623,31 +660,34 @@ def bamToBigWig(inputBam, outputBigWig, genomeSizes, genome, tagmented=False, sc
 	# addjust fragment length dependent on read size and real fragment size
 	# (right now it asssumes 50bp reads with 180bp fragments)
 
+	cmds = list()
+
 	transientFile = os.path.abspath(re.sub("\.bigWig", "", outputBigWig))
 
 	cmd1 = "bedtools bamtobed -i {0} |".format(inputBam)
 	if not tagmented:
 		cmd1 += " bedtools slop -i stdin -g {0} -s -l 0 -r 130 |".format(genomeSizes)
 		cmd1 += " fix_bedfile_genome_boundaries.py {0} |".format(genome)
-	cmd1 += " genomeCoverageBed {0}{1}-bg -g {2} -i stdin > {3}.cov".format(
+	cmd1 += " genomeCoverageBed {0}-bg -g {1} -i stdin > {2}.cov".format(
 			"-5 " if tagmented else "",
-			"-scale {0} ".format(totalReads) if scale else "",
 			genomeSizes,
 			transientFile
 		)
+	cmds.append(cmd1)
 
-	# """sum=$(awk '{sum += $4} END {print sum}' {0} )""".format(transientFile)
+	if normalize:
+		cmds.append("""awk 'NR==FNR{{sum+= $4; next}}{{ $4 = ($4 / sum) * 1000000; print}}' {0}.cov {0}.cov > {0}.normalized.cov""".format(transientFile))
 
-	# """awk -v sum="$sum" ' OFS="\t" { $4 = ($4 / sum) * 1000000; print }' public_html/chipmentation/bigWig/${NAME}.bedgraph \
-	# > public_html/chipmentation/normalized/${NAME}.normalized.bedgraph"""
+	cmds.append("bedGraphToBigWig {0}{1}.cov {2} {3}".format(transientFile, ".normalized" if normalize else "", genomeSizes, outputBigWig))
+	
+	# remove tmp files
+	cmds.append("if [[ -s {0}.cov ]]; then rm {0}.cov; fi".format(transientFile))
+	cmds.append("if [[ -s {0}.normalized.cov ]]; then rm {0}.normalized.cov; fi".format(transientFile))
 
-	cmd2 = "bedGraphToBigWig {0}.cov {1} {2}".format(transientFile, genomeSizes, outputBigWig)
-	# remove cov file
-	cmd3 = "if [[ -s {0}.cov ]]; then rm {0}.cov; fi".format(transientFile)
+	cmds.append("chmod 755 {0}".format(outputBigWig))
 
-	cmd4 = "chmod 755 {0}".format(outputBigWig)
+	return cmds
 
-	return [cmd1, cmd2, cmd3, cmd4]
 
 
 def addTrackToHub(sampleName, trackURL, trackHub, colour, fivePrime=""):
@@ -807,6 +847,178 @@ def centerPeaksOnMotifs(peakFile, genome, windowWidth, motifFile, outputBed):
 	cmd += " fix_bedfile_genome_boundaries.py {0} | sortBed > {1}".format(genome, outputBed)
 
 	return cmd
+
+
+def getReadType(bamFile, n=10):
+    """
+    Gets the read type (single, paired) and length of bam file.
+
+    :param bamFile: Bam file to determine read attributes.
+    :type bamFile: str
+    :param n: Number of lines to read from bam file.
+    :type n: int
+    :returns: tuple of (readType=string, readLength=int).
+    :rtype: tuple
+    """
+    import subprocess
+    from collections import Counter
+
+    try:
+        p = subprocess.Popen(['samtools', 'view', bamFile], stdout=subprocess.PIPE)
+
+        # Count paired alignments
+        paired = 0
+        readLength = Counter()
+        while n > 0:
+            line = p.stdout.next().split("\t")
+            flag = int(line[1])
+            readLength[len(line[9])] += 1
+            if 1 & flag:  # check decimal flag contains 1 (paired)
+                paired += 1
+            n -= 1
+        p.kill()
+    except:
+        print("Cannot read provided bam file.")
+        raise
+
+    # Get most abundant read readLength
+    readLength = sorted(readLength)[-1]
+
+    # If at least half is paired, return True
+    if paired > (n / 2):
+        return ("PE", readLength)
+    else:
+        return ("SE", readLength)
+
+
+def parseBowtieStats(statsFile):
+    """
+    Parses Bowtie2 stats file, returns series with values.
+
+    :param statsFile: Bowtie2 output file with alignment statistics.
+    :type statsFile: str
+    """
+    import pandas as pd
+    import re
+
+    stats = pd.Series(index=["readCount", "unpaired", "unaligned", "unique", "multiple", "alignmentRate"])
+
+    try:
+        with open(statsFile) as handle:
+            content = handle.readlines()  # list of strings per line
+    except:
+        return stats
+
+    # total reads
+    try:
+        line = [i for i in range(len(content)) if " reads; of these:" in content[i]][0]
+        stats["readCount"] = re.sub("\D.*", "", content[line])
+        if 7 > len(content) > 2:
+            line = [i for i in range(len(content)) if "were unpaired; of these:" in content[i]][0]
+            stats["unpaired"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+        else:
+            line = [i for i in range(len(content)) if "were paired; of these:" in content[i]][0]
+            stats["unpaired"] = stats["readCount"] - int(re.sub("\D", "", re.sub("\(.*", "", content[line])))
+        line = [i for i in range(len(content)) if "aligned 0 times" in content[i]][0]
+        stats["unaligned"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+        line = [i for i in range(len(content)) if "aligned exactly 1 time" in content[i]][0]
+        stats["unique"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+        line = [i for i in range(len(content)) if "aligned >1 times" in content[i]][0]
+        stats["multiple"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+        line = [i for i in range(len(content)) if "overall alignment rate" in content[i]][0]
+        stats["alignmentRate"] = re.sub("\%.*", "", content[line]).strip()
+    except IndexError:
+        pass
+    return stats
+
+
+def parseDuplicateStats(statsFile):
+    """
+    Parses sambamba markdup output, returns series with values.
+
+    :param statsFile: sambamba output file with duplicate statistics.
+    :type statsFile: str
+    """
+    import pandas as pd
+    import re
+
+    series = pd.Series()
+
+    try:
+        with open(statsFile) as handle:
+            content = handle.readlines()  # list of strings per line
+    except:
+        return series
+
+    try:
+        line = [i for i in range(len(content)) if "single ends (among them " in content[i]][0]
+        series["single-ends"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+        line = [i for i in range(len(content)) if " end pairs...   done in " in content[i]][0]
+        series["paired-ends"] = re.sub("\D", "", re.sub("\.\.\..*", "", content[line]))
+        line = [i for i in range(len(content)) if " duplicates, sorting the list...   done in " in content[i]][0]
+        series["duplicates"] = re.sub("\D", "", re.sub("\.\.\..*", "", content[line]))
+    except IndexError:
+        pass
+    return series
+
+
+def parseQC(sampleName, qcFile):
+    """
+    Parses QC table produced by phantompeakqualtools (spp) and returns sample quality metrics.
+
+    :param sampleName: Sample name.
+    :type sampleName: str
+    :param qcFile: phantompeakqualtools output file sample quality measurements.
+    :type qcFile: str
+    """
+    import pandas as pd
+
+    series = pd.Series()
+    try:
+        with open(qcFile) as handle:
+            line = handle.readlines()[0].strip().split("\t")  # list of strings per line
+        series["NSC"] = line[-3]
+        series["RSC"] = line[-2]
+        series["qualityTag"] = line[-1]
+    except:
+        pass
+    return series
+
+
+def getPeakNumber(sample):
+    """
+    Counts number of peaks from a sample's peak file.
+
+    :param sample: A Sample object with the "peaks" attribute.
+    :type sampleName: pipelines.Sample
+    """
+    import subprocess
+    import re
+
+    proc = subprocess.Popen(["wc", "-l", sample.peaks], stdout=subprocess.PIPE)
+    out, err = proc.communicate()
+    sample["peakNumber"] = re.sub("\D.*", "", out)
+
+    return sample
+
+
+def getFRiP(sample):
+    """
+    Calculates the fraction of reads in peaks for a given sample.
+
+    :param sample: A Sample object with the "peaks" attribute.
+    :type sampleName: pipelines.Sample
+    """
+    import re
+    import pandas as pd
+
+    with open(sample.frip, "r") as handle:
+        content = handle.readlines()
+
+    readsInPeaks = int(re.sub("\D", "", content[0]))
+    mappedReads = sample["readCount"] - sample["unaligned"]
+
+    return pd.Series(readsInPeaks / mappedReads, index="FRiP")
 
 
 # The folowing functions are very specific to me (Andre)
