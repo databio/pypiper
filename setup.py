@@ -17,18 +17,12 @@ except ImportError:
     if sys.version_info < (2, 7):
         extra['dependencies'] = ['argparse']
 
-version = re.search(
-    '^__version__\s*=\s*"(.*)"',
-    open('pipelines/pipelines.py').read(),
-    re.M
-    ).group(1)
-
 setup(
     name='pypiper',
-    packages=['pypiper']
-    version=version,
+    packages=['pypiper'],
+    version='0.1',
     description='A lightweight python toolkit for gluing together restartable, robust command line pipelines',
     author='Nathan Sheffield, Johanna Klughammer, ',
     author_email='nsheffield@cemm.oeaw.ac.at, jklughammer@cemm.oeaw.ac.at',
-    url='https://github.com/ComputationalEpigenetics/pypiper/',
+    url='https://github.com/ComputationalEpigenetics/pypiper/'
 )
