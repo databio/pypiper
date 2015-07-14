@@ -47,7 +47,7 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths):
 
 def merge_bams(input_bams, merged_bam, paths):
 	if not len(input_bams) > 1:
-		print "No merge required"
+		print("No merge required")
 		return 0
 
 	print("Merging multiple bams: " + str(input_bams))

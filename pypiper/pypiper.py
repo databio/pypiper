@@ -674,7 +674,7 @@ class Pypiper:
 			# Make the cleanup file self destruct.
 			with open(self.cleanup_file, "a") as myfile:
 				myfile.write("rm " + self.cleanup_file + "\n")
-			os.chmod(self.cleanup_file, 0755)
+			os.chmod(self.cleanup_file, 0o755)
 
 		# If the pipeline hasn't completed successfully, or already been marked
 		# as failed, then mark it as failed now.
