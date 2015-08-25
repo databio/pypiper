@@ -54,6 +54,7 @@ class Pypiper:
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
 		self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
+		self.pipeline_profile_file = self.pipeline_outfolder + self.pipeline_name + "_profile.md"
 		self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.txt"
 		self.pipeline_commands_file = self.pipeline_outfolder + self.pipeline_name + "_commands.sh"
 		self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
@@ -64,6 +65,9 @@ class Pypiper:
 		self.starttime = time.time()
 		self.last_timestamp = self.starttime  # time of the last call to timestamp()
 		self.status = "initializing"
+		self.proc_name = None
+		self.proc_lock_name = None
+		self.proc_start_time = None
 		self.running_subprocess = None
 		self.wait = True # turn off for debugging
 
@@ -268,6 +272,7 @@ class Pypiper:
 			lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
 
 		# Prepend "lock." to make it easy to find the lock files.
+		self.proc_lock_name = lock_name
 		lock_name = "lock." + lock_name
 		lock_file = os.path.join(self.pipeline_outfolder, lock_name)
 		process_return_code = 0
@@ -395,6 +400,8 @@ class Pypiper:
 		# Split the command to use shell=False;
 		# leave it together to use shell=True;
 		self.report_command(cmd)
+		#self.proc_name = cmd[0] + " " + cmd[1]
+		self.proc_name = "".join(cmd).split()[0]
 		if not shell:
 			if ("|" in cmd or ">" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
@@ -412,6 +419,7 @@ class Pypiper:
 			# Capture the subprocess output in <pre> tags to make it format nicely
 			# if the markdown log file is displayed as HTML.
 			print("<pre>")
+			self.proc_start_time = time.time()
 			p = subprocess.Popen(cmd, shell=shell)
 
 			# Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
@@ -441,7 +449,11 @@ class Pypiper:
 			print(info)
 			# set self.maxmem
 			self.peak_memory = max(self.peak_memory, local_maxmem)
+			#report process profile
+			self.report_profile(self.proc_name, self.proc_lock_name, time.time() - self.proc_start_time, local_maxmem )
 			self.running_subprocess = None
+			self.proc_lock_name = None
+			self.proc_start_time = None
 
 			if p.returncode != 0:
 				raise Exception("Subprocess returned nonzero result.")
@@ -540,6 +552,20 @@ class Pypiper:
 		"""
 		return round(time.time() - time_since, 2)
 
+
+	def report_profile(self, command, lock_name , elapsed_time, memory):
+		"""
+		Writes a string to self.pipeline_profile_file.
+
+		:type key: str
+		"""
+		messageRaw = command + "\t " + lock_name + "\t" + str(round(elapsed_time, 2)) + "\t " + str(memory)
+		#messageMarkdown = "> `" + command + "`\t" + str(elapsed_time).strip() + "\t " + str(memory).strip() + "\t" + "_PROF_"
+		#print(messageMarkdown)
+		with open(self.pipeline_profile_file, "a") as myfile:
+			myfile.write(messageRaw + "\n")
+
+
 	def report_result(self, key, value):
 		"""
 		Writes a string to self.pipeline_stats_file.
@@ -632,6 +658,10 @@ class Pypiper:
 			self.running_subprocess = None
 			# Close the preformat tag that we opened when the process was spawned.
 			print("</pre>")
+			#record profile of any running processes before killing
+			elapsed_time = time.time() - self.proc_start_time
+			self.report_profile(self.proc_name, self.proc_lock_name, elapsed_time, self.peak_memory)
+
 			self.kill_child_process(pid_to_kill)
 		if self.status != "failed":  #and self.status != "completed":
 			self.set_status_flag("failed")
