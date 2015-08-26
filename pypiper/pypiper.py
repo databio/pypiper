@@ -559,7 +559,7 @@ class Pypiper:
 
 		:type key: str
 		"""
-		messageRaw = command + "\t " + lock_name + "\t" + str(round(elapsed_time, 2)) + "\t " + str(memory)
+		messageRaw = str(command) + "\t " + str(lock_name) + "\t" + str(round(elapsed_time, 2)) + "\t " + str(memory)
 		#messageMarkdown = "> `" + command + "`\t" + str(elapsed_time).strip() + "\t " + str(memory).strip() + "\t" + "_PROF_"
 		#print(messageMarkdown)
 		with open(self.pipeline_profile_file, "a") as myfile:
