@@ -85,7 +85,8 @@ class Pypiper:
 	@staticmethod
 	def add_pypiper_args(parser):
 		"""
-		Use this to take an ArgumentParser in your pipeline, and also parse default pypiper arguments
+		Use this to take an ArgumentParser in your pipeline, and also parse 
+		default pypiper arguments
 		:param parser: an ArgumentParser object from your pipeline
 		:returns: A new ArgumentParser object, with default pypiper arguments added
 		"""
@@ -100,9 +101,9 @@ class Pypiper:
 
 	def ignore_interrupts(self):
 		'''
-		Ignore interrupt and termination signals. Used as a pre-execution function (preexec_fn)
-		For subprocess.Popen calls that Pyper will retain control over (meaning I will clean
-		these processes up manually).
+		Ignore interrupt and termination signals. Used as a pre-execution
+		function (preexec_fn) for subprocess.Popen calls that Pyper will retain
+		control over (meaning I will clean these processes up manually).
 		'''
 		signal.signal(signal.SIGINT, signal.SIG_IGN)
 		signal.signal(signal.SIGTERM, signal.SIG_IGN)
