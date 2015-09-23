@@ -37,6 +37,12 @@ command cmd = "shuf -i 1-500000000 -n 10000000 > " + target
 pipeline.call_lock(command, target)
 ```
 
+Now string together whatever commands your pipeline requires, and then at the end, terminate the pipeline so it gets flagged as successfully completed:
+
+```
+pipeline.stop_pipeline()
+```
+
 That's it! By running this command through `call_lock()` instead of directly in bash, you get a robust, logged, restartable pipeline manager for free! To see an example of a simple pipline, look at the [sample_pipeline.py](sample_pipeline.py) script in this repository. This tutorial will just show you how to construct a command and pass it to `pypiper.call_lock()`
 
 
