@@ -24,15 +24,15 @@ The target user of PyPiper is a computational scientist comfortable on the comma
 Using pypiper is simple. First, import pypiper, and then create a new pipeline object:
 
 ```{python}
-import pypiper
-
-pipeline = pypiper.Pypiper(name="my_pipieline", outfolder="pipeline_output")
+import pypiper, os
+outfolder = "pipeline_output/" # Choose a folder for your results
+pipeline = pypiper.Pypiper(name="my_pipieline", outfolder=outfolder)
 ```
 
 Now, the workhorse of PyPiper is the `call_lock()` function. Essentially, you just create a shell command as a string in python, and then pass it to `call_lock()`. 
 
 ```
-target = "outfile.txt"
+target = os.path.join(outfolder, "outfile.txt")
 command cmd = "shuf -i 1-500000000 -n 10000000 > " + target
 pipeline.call_lock(command, target)
 ```
