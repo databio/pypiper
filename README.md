@@ -1,11 +1,15 @@
 # PyPiper
-A lightweight python toolkit for gluing together restartable, robust command line pipelines
+A lightweight python toolkit for gluing together restartable, robust command line pipelines.
+
+The public-facing permalink for the project is http://databio.com/pypiper. The source code, tutorials, are hosted at http://github.com/epigen/pypiper.
 
 # Introduction
 
-PyPiper helps you produce pipelines.
+PyPiper helps you produce pipelines. 
 
 The target user of PyPiper is a computational scientist comfortable on the command line, who has something like a `bash` script that would benefit from a layer of "handling code". PyPiper helps you convert that set of shell commands into a production-scale workflow, automatically handling the annoying details to make your pipeline robust and restartable, with minimal learning curve.
+
+Pypiper *does not* handle any sort of cluster job submission, resource requesting, or parallel dependency management. You can use your current setup for those things, and use Pypiper just to produce a robust, restartable, and logged procedural pipeline.
 
 # Benefits of using PyPiper
 
@@ -45,9 +49,20 @@ pipeline.stop_pipeline()
 
 That's it! By running this command through `call_lock()` instead of directly in bash, you get a robust, logged, restartable pipeline manager for free! To see an example of a simple pipline, look at the [sample_pipeline.py](sample_pipeline.py) script in this repository. This tutorial will just show you how to construct a command and pass it to `pypiper.call_lock()`.
 
+# Outputs
 
-# Documentation
-You can use `make` to generate the PyPiper documentation. Just change your working directory to `doc` and run `make` to see all available mediums the documentation can be generated in. *E.g.*: `make html`. The documnetation will be under `doc/build`.
+Assume you name your pipeline `PIPE` (by passing name="PIPE" to the Pypiper constructor), by default, Pypiper will produce the following outputs automatically (in additional to any output created by the actual pipeline commands you run):
+
+* `PIPE_log.md` - all output sent to screen is automatically logged to this file, including versions, start and stop time, compute host, and other details.
+* `PIPE_stats.md` - any results reported using `report_result()` are saved as key-value pairs in this file, for easy parsing (we also have a post-pipeline script to aggregate these results into a summary table).
+* `PIPE_status.flag` - As the pipeline runs, it produces a flag in the output directory, which can be either `PIPE_running.flag`, `PIPE_failed.flag`, or `PIPE_completed.flag`. These flags make it easy to assess the current state of running pipelines for individual samples, and for many samples in a project simultaneously (the `flagCheck.sh` script produces a summary of all pipeline runs in an output folder).
+* `PIPE_profile.md` - A profile log file that provides, for every process run by the pipeline, 3 items: 1) the process name; 2) the clock time taken by the process; and 3) the high water mark memory used by the process. This file makes it easy to profile pipelines for memory and time resources.
+* `PIPE_commands.md` - Pypiper produces a log file containing all the commands run by the pipeline, verbatim. These are also included in the main log.
+
+Multiple pipelines can easily be run on the same sample, using the same output folder (and possibly sharing intermediate files), as the result outputs will be identifiable by the `PIPE` identifier.
+
+# Technical Documentation
+You can use `make` to generate the PyPiper documentation. Just change your working directory to `doc` and run `make` to see available documentation formats *e.g.*: `make html`. The documentation will be produced under `doc/build`.
 
 # Testing
 
@@ -65,5 +80,13 @@ Since Pypiper runs all your commands from within python (using the `subprocess` 
 As I began to put together production-scale pipelines, I found a lot of relevant pipelining systems, but was universally disappointed. For my needs, they were all overly complex. I wanted something simple enough to quickly write and maintain a pipeline without having to learn a lot of new functions and conventions, but robust enough to handle requirements like restartability and memory usage monitoring. Everything related was either a pre-packaged pipeline for a defined purpose, or a heavy-duty development environment that was overkill for my needs. Both of these seemed to be targeted toward less experienced developers who sought structure, and neither fit my needs: I had a set of commands already in mind; I just needed a wrapper that could take that code and make it automatically restartable, logged, robust to crashing, easy to debug, and so forth.
 
 If you need a full-blown environment that can do everything, look elsewhere. Pypiper's strength is its simplicity. If all you want is a shell-like script, but now with the power of python, and restartability, then Pypiper is for you.
+
+### Other software
+
+If Pypiper is not for you, check out some of these other pipelining frameworks:
+
+* bpipe
+* Anduril
+* Ruffus
 
 
