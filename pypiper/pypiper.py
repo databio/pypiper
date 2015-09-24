@@ -159,6 +159,7 @@ class Pypiper:
 			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
 			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD", shell=True)
 			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD", shell=True)
+			gitvars['pypiper_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git branch | grep '*'", shell=True)
 		except Exception:
 			pass
 		try:
@@ -166,6 +167,7 @@ class Pypiper:
 			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD", shell=True)
 			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD", shell=True)
 			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD", shell=True)
+			gitvars['pipe_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git branch | grep '*'", shell=True)
 		except Exception:
 			pass
 
@@ -185,6 +187,7 @@ class Pypiper:
 		try:
 			print("* " +"Pypiper dir".rjust(20) + ":  "  + "`" + gitvars['pypiper_dir'].strip() + "`")
 			print("* " +"Pypiper version".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
+			print("* " +"Pypiper branch".rjust(20) + ":  " + gitvars['pypiper_branch'].strip())
 			print("* " +"Pypiper date".rjust(20) + ":  " + gitvars['pypiper_date'].strip())
 			if (gitvars['pypiper_diff'] != ""):
 				print("* " +"Pypiper diff".rjust(20) + ":  " + gitvars['pypiper_diff'].strip())
@@ -195,6 +198,7 @@ class Pypiper:
 		try:
 			print("* " +"Pipeline dir".rjust(20) + ":  " + "`" + gitvars['pipe_dir'].strip() + "`")
 			print("* " +"Pipeline version".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
+			print("* " +"Pipeline branch".rjust(20) + ":  " + gitvars['pipe_branch'].strip())
 			print("* " +"Pipeline date:".rjust(20) + ":  " + gitvars['pipe_date'].strip())
 			if (gitvars['pipe_diff'] != ""):
 				print("* " +"Pipeline diff".rjust(20) + ":  " + gitvars['pipe_diff'].strip())
