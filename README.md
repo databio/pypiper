@@ -69,6 +69,10 @@ Assume you name your pipeline `PIPE` (by passing name="PIPE" to the Pypiper cons
 
 Multiple pipelines can easily be run on the same sample, using the same output folder (and possibly sharing intermediate files), as the result outputs will be identifiable by the `PIPE` identifier.
 
+# Toolkits
+
+An optional feature of pypiper is the accompanying toolkits, such as the next-gen sequencing toolkit, [ngstk](pypiper/ngstk.py), which simply provides some convenient helper functions to create common commands, like converting from file formats (_e.g._ bam to fastq), merging files (_e.g._ merge_bams), counting reads, etc. These make it faster to design bioinformatics pipelines in Pypiper, but are entirely optional. Contributions of additional toolkits or functions in an existing toolkit are welcome.
+
 # Technical Documentation
 You can use `make` to generate the PyPiper documentation. Just change your working directory to `doc` and run `make` to see available documentation formats *e.g.*: `make html`. The documentation will be produced under `doc/build`.
 
