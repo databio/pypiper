@@ -1,39 +1,39 @@
-# PyPiper
+# Pypiper
 A lightweight python toolkit for gluing together restartable, robust command line pipelines.
 
 The public-facing permalink for the project is http://databio.com/pypiper. The source code, tutorials, are hosted at http://github.com/epigen/pypiper.
 
 # Introduction
 
-PyPiper helps you produce pipelines. 
+Pypiper helps you produce pipelines. 
 
-The target user of PyPiper is a computational scientist comfortable on the command line, who has something like a `bash` script that would benefit from a layer of "handling code". PyPiper helps you convert that set of shell commands into a production-scale workflow, automatically handling the annoying details to make your pipeline robust and restartable, with minimal learning curve.
+The target user of Pypiper is a computational scientist comfortable on the command line, who has something like a `bash` script that would benefit from a layer of "handling code". Pypiper helps you convert that set of shell commands into a production-scale workflow, automatically handling the annoying details to make your pipeline robust and restartable, with minimal learning curve.
 
 Pypiper *does not* handle any sort of cluster job submission, resource requesting, or parallel dependency management. You can use your current setup for those things, and use Pypiper just to produce a robust, restartable, and logged procedural pipeline.
 
-# Benefits of using PyPiper
+# Benefits of using Pypiper
 
 * Restartability - Commands check for their targets and only run if the target needs to be created, much like a `makefile`, making the pipeline pick up where it left off in case it needs to be restarted or extended.
 * Pipeline integrity protection - PyPiper uses file locking to ensure that multiple pipeline runs will not interfere with one another -- even if the steps are identical and produce the same files. One run will seemless wait for the other, making it possible to share steps seemlessly across pipelines.
 * Memory use monitoring - Processes are polled for high water mark memory use, allowing you to more accurately guage your future memory requirements.
-* Easy job status monitoring - PyPiper uses status flags to make it possible to assess the current state (`running`, `failed`, or `completed`) of hundreds of jobs simultaneously.
-* Robust error handling - PyPiper closes pipelines gracefully on interrupt or termination signals, converting the status to `failed`.
-* Logging - PyPiper automatically records the output of your pipeline and its subprocesses, and provides copious information on pipeline initiation, as well as easy timestamping.
-* Easy result reports - PyPiper provides functions to put key-value pairs into an easy-to-parse stats file, making it easy to summarize your pipeline results.
-* Simplicity - It should only take you 15 minutes to run your first pipeline. The basic documentation is just a few pages long. The codebase itself is also only hundreds of lines of code, making it very lightweight.
+* Easy job status monitoring - Pypiper uses status flag files to make it possible to assess the current state (`running`, `failed`, or `completed`) of hundreds of jobs simultaneously.
+* Robust error handling - Pypiper closes pipelines gracefully on interrupt or termination signals, converting the status to `failed`. By default, a process that returns a nonzero value halts the pipeline, unlike in bash, where by default the pipeline would continue using an incomplete or failed result. This behavior can be overridden as desired with a single parameter.
+* Logging - Pypiper automatically records the output of your pipeline and its subprocesses, and provides copious information on pipeline initiation, as well as easy timestamping.
+* Easy result reports - Pypiper provides functions to put key-value pairs into an easy-to-parse stats file, making it easy to summarize your pipeline results.
+* Simplicity - It should only take you 15 minutes to run your first pipeline. The basic documentation is just a few pages long. The codebase itself is also only a few thousand lines of code, making it very lightweight.
 
 
 # Your first pipeline
 
-Using pypiper is simple. First, import pypiper, and then create a new pipeline object:
+Using Pypiper is simple. First, import pypiper, and then create a new Pypiper object:
 
 ```{python}
 import pypiper, os
 outfolder = "pipeline_output/" # Choose a folder for your results
-pipeline = pypiper.Pypiper(name="my_pipieline", outfolder=outfolder)
+pipeline = pypiper.Pypiper(name="my_pipeline", outfolder=outfolder)
 ```
 
-Now, the workhorse of PyPiper is the `call_lock()` function. Essentially, you just create a shell command as a string in python, and then pass it to `call_lock()`. 
+Now, the workhorse of Pypiper is the `call_lock()` function. Essentially, you just create a shell command as a string in python, and then pass it to `call_lock()`. 
 
 ```
 target = os.path.join(outfolder, "outfile.txt")
@@ -47,7 +47,15 @@ There's more information about `shell=True` processes below. Now string together
 pipeline.stop_pipeline()
 ```
 
-That's it! By running this command through `call_lock()` instead of directly in bash, you get a robust, logged, restartable pipeline manager for free! To see an example of a simple pipline, look at the [sample_pipeline.py](sample_pipeline.py) script in this repository. This tutorial will just show you how to construct a command and pass it to `pypiper.call_lock()`.
+That's it! By running this command through `call_lock()` instead of directly in bash, you get a robust, logged, restartable pipeline manager for free!
+
+# Tutorials
+
+To see an example of a simple pipline, look in the `example_pipelines` folder in this respository, which are thoroughly commented to act as vignettes. This is the best way to learn how to use Pyipiper.
+
+* [example_pipelines/basic.py](example_pipelines/basic.py) - How to construct a command and use `call_lock()`.
+* `example_pipelines/advanced.py` (under construction) - A tutorial demonstrating some more advanced features.
+* `example_pipelines/bioinformatics.py` (under construction) - A tutorial showing some bioinformatics use cases.
 
 # Outputs
 
