@@ -3,10 +3,11 @@
 
 # First, make sure you can import the pypiper package in some way
 # Here I just add the path to a cloned repo before importing.
+# You don't have to do this if you're using an installed version of pypiper.
 
 import os
 
-pypiper_dir = "/home/nsheffield/uncorrupted/pypiper"
+pypiper_dir = "/home/nsheffield/repo/pypiper"
 os.sys.path.insert(0,pypiper_dir)
 
 import pypiper
@@ -17,7 +18,7 @@ from pypiper import ngstk
 
 # Create a Pypiper instance (don't forget to name it!), which starts the pipeline!
 
-mypiper = pypiper.Pypiper(name="sample_pipeline", outfolder="pipeline_output/")
+mypiper = pypiper.Pypiper(name="BASIC", outfolder="pipeline_output/")
 
 # Now just build shell command strings, and use the call_lock function
 # to execute them in order. call_lock needs 2 things: a command, and the target file you are creating.
@@ -30,7 +31,7 @@ tgt = "pipeline_output/test.out"
 # build the command
 cmd = "shuf -i 1-500000000 -n 10000000 > " + tgt
 
-#and run call_lock. You must use shell=True here because of redirection (>), which
+# and run call_lock. You must use shell=True here because of redirection (>), which
 # is a shell process, and can't be run as a python subprocess.
 mypiper.call_lock(cmd, target=tgt, shell=True)
 
@@ -63,3 +64,4 @@ mypiper.report_result("last_entry", last_entry)
 # Now, stop the pipeline to complete gracefully.
 mypiper.stop_pipeline()
 
+# Observe your outputs in the pipeline_output folder to see what you've created.
