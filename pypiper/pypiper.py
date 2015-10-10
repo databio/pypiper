@@ -217,6 +217,17 @@ class Pypiper:
 		print("\n----------------------------------------\n")
 		self.set_status_flag("running")
 
+		# Record the start in PIPE_profile and PIPE_commands output files so we
+		# can trace which run they belong to
+
+		with open(self.pipeline_commands_file, "a") as myfile:
+			myfile.write("# Pipeline started at " + time.strftime("%m-%d %H:%M:%S", time.localtime(self.starttime)) + "\n\n")
+
+		with open(self.pipeline_profile_file, "a") as myfile:
+			myfile.write("# Pipeline started at " + time.strftime("%m-%d %H:%M:%S", time.localtime(self.starttime)) + "\n\n")
+
+
+
 	def set_status_flag(self, status):
 		prev_status = self.status
 		# Remove previous status flag file
