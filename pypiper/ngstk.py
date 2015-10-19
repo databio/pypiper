@@ -122,6 +122,7 @@ def count_unique_mapped_reads(file, paired_end):
 def count_flag_reads(file, flag, paired_end=True):
 	'''
 	Counts the number of reads with the specified flag.
+        :param flag: sam flag value to be read
 	:param paired_end: This parameter is ignored; samtools automatically correctly responds depending
 	on the data in the bamfile. We leave the option here just for consistency, since all the other
 	counting functions require the parameter. This makes it easier to swap counting functions during
@@ -131,7 +132,7 @@ def count_flag_reads(file, flag, paired_end=True):
 	if file.endswith("sam"):
 		param += " -S"
 
-	return int(samtools_view(file, param=param))
+	return samtools_view(file, param=param)
 
 
 def count_multimapping_reads(file, paired_end=True):
@@ -145,7 +146,7 @@ def count_multimapping_reads(file, paired_end=True):
 	counting functions require the parameter. This makes it easier to swap counting functions during
 	pipeline development.
 	'''
-	return count_flag_reads(file, 256, paired_end)
+	return int(count_flag_reads(file, 256, paired_end))
 
 
 def count_fail_reads(file, paired_end=True):
@@ -156,7 +157,7 @@ def count_fail_reads(file, paired_end=True):
 	counting functions require the parameter. This makes it easier to swap counting functions during
 	pipeline development.
 	'''
-	return count_flag_reads(file, 512, paired_end)
+	return int(count_flag_reads(file, 512, paired_end))
 	
 
 def samtools_view(file, param, postpend=""):
