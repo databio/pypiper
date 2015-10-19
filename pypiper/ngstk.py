@@ -118,22 +118,45 @@ def count_unique_mapped_reads(file, paired_end):
 		r2 = 0
 	return int(r1) + int(r2)
 
+
+def count_flag_reads(file, flag, paired_end=True):
+	'''
+	Counts the number of reads with the specified flag.
+	:param paired_end: This parameter is ignored; samtools automatically correctly responds depending
+	on the data in the bamfile. We leave the option here just for consistency, since all the other
+	counting functions require the parameter. This makes it easier to swap counting functions during
+	pipeline development.
+	'''
+	param = " -c -f" +str(flag)
+	if file.endswith("sam"):
+		param += " -S"
+
+	return int(samtools_view(file, param=param))
+
+
 def count_multimapping_reads(file, paired_end=True):
 	'''
 	Counts the number of reads that mapped to multiple locations. Warning:
 	currently, if the alignment software includes the reads at multiple locations, this function
 	will count those more than once. This function is for software that randomly assigns,
 	but flags reads as multimappers.
-	:param pared_end: This parameter is ignored; samtools automatically correctly responds depending
+	:param paired_end: This parameter is ignored; samtools automatically correctly responds depending
 	on the data in the bamfile. We leave the option here just for consistency, since all the other
 	counting functions require the parameter. This makes it easier to swap counting functions during
 	pipeline development.
 	'''
-	param = " -c -f256"
-	if file.endswith("sam"):
-		param += " -S"
+	return count_flag_reads(file, 256, paired_end)
 
-	return samtools_view(file, param=param)
+
+def count_fail_reads(file, paired_end=True):
+	'''
+	Counts the number of reads that failed platform/vendor quality checks.
+	:param paired_end: This parameter is ignored; samtools automatically correctly responds depending
+	on the data in the bamfile. We leave the option here just for consistency, since all the other
+	counting functions require the parameter. This makes it easier to swap counting functions during
+	pipeline development.
+	'''
+	return count_flag_reads(file, 512, paired_end)
 	
 
 def samtools_view(file, param, postpend=""):
