@@ -37,12 +37,12 @@ class Pypiper:
 		# to Pypiper. If any pypiper arguments are passed
 		# (via add_pypiper_args()), these will override the constructor 		# defaults for these arguments.
 
-		params = { 'manual_clean':manual_clean, 'recover':recover, 
+		params = { 'manual_clean':manual_clean, 'recover':recover,
 					'fresh': fresh }
-		
+
 		if args is not None:
 			# vars(...) transforms ArgumentParser's Namespace into a dict
-			params.update(vars(args)) 
+			params.update(vars(args))
 
 		# Define pipeline-level variables to keep track of global state and some pipeline stats
 		# Pipeline settings
@@ -54,8 +54,8 @@ class Pypiper:
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
 		self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
-		self.pipeline_profile_file = self.pipeline_outfolder + self.pipeline_name + "_profile.md"
-		self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.txt"
+		self.pipeline_profile_file = self.pipeline_outfolder + self.pipeline_name + "_profile.tsv"
+		self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.tsv"
 		self.pipeline_commands_file = self.pipeline_outfolder + self.pipeline_name + "_commands.sh"
 		self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
 
@@ -85,7 +85,7 @@ class Pypiper:
 	@staticmethod
 	def add_pypiper_args(parser):
 		"""
-		Use this to take an ArgumentParser in your pipeline, and also parse 
+		Use this to take an ArgumentParser in your pipeline, and also parse
 		default pypiper arguments
 		:param parser: an ArgumentParser object from your pipeline
 		:returns: A new ArgumentParser object, with default pypiper arguments added
@@ -299,7 +299,7 @@ class Pypiper:
 		# the current loop. If not, we wait again for it and then
 		# re-do the tests.
 		# TODO: maybe output a message if when repeatedly going through the loop
-		
+
 		while True:
 			##### Tests block
 			# Base case: Target exists.	# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
