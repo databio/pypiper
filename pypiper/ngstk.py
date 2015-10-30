@@ -124,7 +124,7 @@ def count_multimapping_reads(file, paired_end=True):
 	currently, if the alignment software includes the reads at multiple locations, this function
 	will count those more than once. This function is for software that randomly assigns,
 	but flags reads as multimappers.
-	:param pared_end: This parameter is ignored; samtools automatically correctly responds depending
+	:param paired_end: This parameter is ignored; samtools automatically correctly responds depending
 	on the data in the bamfile. We leave the option here just for consistency, since all the other
 	counting functions require the parameter. This makes it easier to swap counting functions during
 	pipeline development.
@@ -134,7 +134,17 @@ def count_multimapping_reads(file, paired_end=True):
 		param += " -S"
 
 	return samtools_view(file, param=param)
-	
+
+def count_uniquelymapping_reads(file, paired_end=True):
+	'''
+	Counts the number of reads that mapped to a unique position.
+	:param paired_end: This parameter is ignored.
+	'''
+	param = " -c -F256"
+	if file.endswith("sam"):
+		param += " -S"
+
+	return samtools_view(file, param=param)
 
 def samtools_view(file, param, postpend=""):
 	'''
@@ -142,7 +152,7 @@ def samtools_view(file, param, postpend=""):
 	the various count_reads functions.
 	:param file: Filename
 	:param param: String of parameters to pass to samtools view
-	:param postpend: String to postpend to the samtools command; 
+	:param postpend: String to postpend to the samtools command;
 	useful to add cut, sort, wc operations to the samtools view output.
 	'''
 	x = subprocess.check_output("samtools view " + param + " " + file + " " + postpend, shell=True)
@@ -153,9 +163,9 @@ def count_reads(file, paired_end=True):
 	'''
 	To do: remove the default paired_end option, you should be forced to specify.
 	Paired-end reads count as 2 in this function.
-	For paired-end reads, this function assumes that the reads are split into 2 fastq files, 
+	For paired-end reads, this function assumes that the reads are split into 2 fastq files,
 	therefore, to count the reads, it divides by 2 instead of 4. This will thus give an incorrect
-	result if your paired-end fastq files are in only a single file.	
+	result if your paired-end fastq files are in only a single file.
 	'''
 	if file.endswith("bam"):
 		return samtools_view(file, param="-c")
@@ -640,7 +650,7 @@ def plotInsertSizesFit(bam, plot, outputCSV, maxInsert=1500, smallestInsert=30):
 		["4th nucleosome", simps(mlab.normpdf(x, m4, s4) * w1), max(mlab.normpdf(x, m4, s4) * w4)]
 	]
 
-	try:    
+	try:
 		import csv
 
 		with open(outputCSV, "w") as f:
@@ -678,7 +688,7 @@ def bamToBigWig(inputBam, outputBigWig, genomeSizes, genome, tagmented=False, no
 		cmds.append("""awk 'NR==FNR{{sum+= $4; next}}{{ $4 = ($4 / sum) * 1000000; print}}' {0}.cov {0}.cov > {0}.normalized.cov""".format(transientFile))
 
 	cmds.append("bedGraphToBigWig {0}{1}.cov {2} {3}".format(transientFile, ".normalized" if normalize else "", genomeSizes, outputBigWig))
-	
+
 	# remove tmp files
 	cmds.append("if [[ -s {0}.cov ]]; then rm {0}.cov; fi".format(transientFile))
 	if normalize:
@@ -784,7 +794,7 @@ def macs2CallPeaks(treatmentBam, outputDir, sampleName, genome, controlBam=None,
 def macs2CallPeaksATACSeq(treatmentBam, outputDir, sampleName, genome):
 
 	sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
-	
+
 	cmd = "macs2 callpeak -t {0}".format(treatmentBam)
 	cmd += " --nomodel --extsize 147 -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 
