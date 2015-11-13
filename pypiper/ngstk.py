@@ -9,6 +9,27 @@ import errno
 # #######################################################################################
 # in here is stuff that will be used by multiple pipelines.
 
+
+# In the pkipelines:
+# ngstk = NGSTK(paths)
+# ngstk.bam_to_fastq(arguments NOT REQUIRING PATHS OBJECT)
+
+class Container():
+	pass
+
+class NGSTk(Object):
+	def __init__(paths):
+		self.paths = Container()
+		# Start with defaults: (to just use the version in the path)
+		self.paths.java = "java"
+		...
+		...
+		# Add any given paths to this object's paths atrribute
+	
+	def add_path(paths):
+		# Loop through the provided paths and add them to self.paths
+		
+		
 def make_sure_path_exists(path):
 	try:
 		os.makedirs(path)
@@ -31,6 +52,7 @@ def bam_to_fastq(bam_file, out_fastq_pre, paired_end, paths):
 	make_sure_path_exists(os.path.dirname(out_fastq_pre))
 	# Build commands:
 
+	#cmd = self.paths.java  + "-Xmx2G -jar " #"java -Xmx2000m -jar "
 	cmd = "java -Xmx2000m -jar "
 	cmd += os.path.join(paths.picard_dir, "SamToFastq.jar")
 	cmd += " I=" + bam_file
