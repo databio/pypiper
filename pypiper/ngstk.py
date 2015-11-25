@@ -12,109 +12,13 @@ import errno
 
 # HOW TO USE IN PIPELINES:
 # from pypiper import ngstk
-# myngstk = ngstk.NGSTk(paths)
-# myngstk.bam_to_fastq(arguments NOT REQUIRING PATHS OBJECT)
-
-class Container():
-	pass
+# myngstk = ngstk.NGSTk(config.tools)
+# myngstk.bam_to_fastq(arguments NOT REQUIRING config.tools OBJECT)
 
 class NGSTk():
 
-	def __init__(self, paths):
-
-		self.paths = Container()
-
-		if hasattr(paths, 'python'):
-			self.paths.python = str(paths.python)
-		else:
-			self.paths.python = "python"
-
-		if hasattr(paths, 'java'):
-			self.paths.java = str(paths.java)
-		else:
-			self.paths.java = "java"
-
-		if hasattr(paths, 'Rscript'):
-			self.paths.Rscript = str(paths.Rscript)
-		else:
-			self.paths.Rscript = "Rscript"
-
-		if hasattr(paths, 'picard_jar'):
-			self.paths.picard_jar = str(paths.picard_jar)
-		else:
-			self.paths.picard_jar = "/cm/shared/apps/picard-tools/1.140/picard.jar"
-
-		if hasattr(paths, 'trimmomatic_jar'):
-			self.paths.trimmomatic_jar = str(paths.trimmomatic_jar)
-		else:
-			self.paths.trimmomatic_jar = "/cm/shared/apps/trimmomatic/0.32/trimmomatic-0.32.jar"
-
-		if hasattr(paths, 'samtools'):
-			self.paths.samtools = str(paths.samtools)
-		else:
-			self.paths.samtools = "samtools"
-
-		if hasattr(paths, 'fastqc'):
-			self.paths.fastqc = str(paths.fastqc)
-		else:
-			self.paths.fastqc = "fastqc"
-
-		if hasattr(paths, 'bowtie1'):
-			self.paths.bowtie1 = str(paths.bowtie1)
-		else:
-			self.paths.bowtie1 = "bowtie1"
-
-		if hasattr(paths, 'bowtie2'):
-			self.paths.bowtie2 = str(paths.bowtie2)
-		else:
-			self.paths.bowtie2 = "bowtie2"
-
-		if hasattr(paths, 'tophat'):
-			self.paths.tophat = str(paths.tophat)
-		else:
-			self.paths.tophat = "tophat"
-
-		if hasattr(paths, 'tophat2'):
-			self.paths.tophat2 = str(paths.tophat2)
-		else:
-			self.paths.tophat2 = "tophat2"
-
-		if hasattr(paths, 'sambamba'):
-			self.paths.sambamba = str(paths.sambamba)
-		else:
-			self.paths.sambamba = "sambamba"
-
-		if hasattr(paths, 'bedtools'):
-			self.paths.bedtools = str(paths.bedtools)
-		else:
-			self.paths.bedtools = "bedtools"
-
-		if hasattr(paths, 'kallisto'):
-			self.paths.kallisto = str(paths.kallisto)
-		else:
-			self.paths.kallisto = "kallisto"
-
-		if hasattr(paths, 'macs2'):
-			self.paths.macs2 = str(paths.macs2)
-		else:
-			self.paths.macs2 = "macs2"
-
-		if hasattr(paths, 'skewer'):
-			self.paths.skewer = str(paths.skewer)
-		else:
-			self.paths.skewer = "skewer"
-
-		if hasattr(paths, 'genomeCoverageBed'):
-			self.paths.genomeCoverageBed = str(paths.genomeCoverageBed)
-		else:
-			self.paths.genomeCoverageBed = "genomeCoverageBed"
-
-		if hasattr(paths, 'bedGraphToBigWig'):
-			self.paths.bedGraphToBigWig = str(paths.bedGraphToBigWig)
-		else:
-			self.paths.bedGraphToBigWig = "bedGraphToBigWig"
-
-
+	def __init__(self, config):
+		self.config = config
 
 	def make_sure_path_exists(self, path):
 		try:
@@ -125,7 +29,7 @@ class NGSTk():
 
 
 	def markDuplicates(self, aligned_file, out_file, metrics_file, remove_duplicates="True"):
-		cmd = self.paths.java + " -Xmx2g -jar " + self.paths.picard_jar + " MarkDuplicates"
+		cmd = self.config.tools.java + " -Xmx2g -jar " + self.config.tools.picard + " MarkDuplicates"
 		cmd += " INPUT=" + aligned_file
 		cmd += " OUTPUT=" + out_file
 		cmd += " METRICS_FILE=" + metrics_file
@@ -135,7 +39,7 @@ class NGSTk():
 
 	def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
 		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
-		cmd = self.paths.java + " -Xmx2g -jar " + self.paths.picard_jar + " SamToFastq"
+		cmd = self.config.tools.java + " -Xmx2g -jar " + self.config.tools.picard + " SamToFastq"
 		cmd += " I=" + bam_file
 		cmd += " F=" + out_fastq_pre + "_R1.fastq"
 		if paired_end:
@@ -153,7 +57,7 @@ class NGSTk():
 
 		print("Merging multiple bams: " + str(input_bams))
 		input_string = " INPUT=" + " INPUT=".join(input_bams)
-		cmd = self.paths.java + " -Xmx2g -jar " + self.paths.picard_jar + " MergeSamFiles"
+		cmd = self.config.tools.java + " -Xmx2g -jar " + self.config.tools.picard + " MergeSamFiles"
 		cmd += input_string
 		cmd += " OUTPUT=" + merged_bam
 		cmd += " ASSUME_SORTED=TRUE"
@@ -279,7 +183,7 @@ class NGSTk():
 		:param postpend: String to postpend to the samtools command;
 		useful to add cut, sort, wc operations to the samtools view output.
 		'''
-		x = subprocess.check_output(self.paths.samtools + " view " + param + " " + fileName + " " + postpend, shell=True)
+		x = subprocess.check_output(self.config.tools.samtools + " view " + param + " " + fileName + " " + postpend, shell=True)
 		return x
 
 
@@ -327,11 +231,11 @@ class NGSTk():
 		Convert sam files to bam files, then sort and index them for later use.
 		:param depth: also calculate coverage over each position
 		'''
-		cmd = self.paths.samtools + " view -bS " + sam + " > " + sam.replace(".sam", ".bam") + "\n"
-		cmd += self.paths.samtools + " sort " + sam.replace(".sam", ".bam") + " " + sam.replace(".sam", "_sorted") + "\n"
-		cmd += self.paths.samtools + " index " + sam.replace(".sam", "_sorted.bam") + "\n"
+		cmd = self.config.tools.samtools + " view -bS " + sam + " > " + sam.replace(".sam", ".bam") + "\n"
+		cmd += self.config.tools.samtools + " sort " + sam.replace(".sam", ".bam") + " " + sam.replace(".sam", "_sorted") + "\n"
+		cmd += self.config.tools.samtools + " index " + sam.replace(".sam", "_sorted.bam") + "\n"
 		if depth:
-			cmd += self.paths.samtools + " depth " + sam.replace(".sam", "_sorted.bam") + " > " + sam.replace(".sam","_sorted.depth") + "\n"
+			cmd += self.config.tools.samtools + " depth " + sam.replace(".sam", "_sorted.bam") + " > " + sam.replace(".sam","_sorted.depth") + "\n"
 		return cmd
 
 
@@ -340,23 +244,23 @@ class NGSTk():
 		Sort and index bam files for later use.
 		:param depth: also calculate coverage over each position
 		'''
-		cmd = self.paths.samtools + " view -h " + bam + " > " + bam.replace(".bam", ".sam") + "\n"
-		cmd += self.paths.samtools + " sort " + bam + " " + bam.replace(".bam", "_sorted") + "\n"
-		cmd += self.paths.samtools + " index " + bam.replace(".bam", "_sorted.bam") + "\n"
+		cmd = self.config.tools.samtools + " view -h " + bam + " > " + bam.replace(".bam", ".sam") + "\n"
+		cmd += self.config.tools.samtools + " sort " + bam + " " + bam.replace(".bam", "_sorted") + "\n"
+		cmd += self.config.tools.samtools + " index " + bam.replace(".bam", "_sorted.bam") + "\n"
 		if depth:
-			cmd += self.paths.samtools + " depth " + bam.replace(".bam", "_sorted.bam") + " > " + bam.replace(".bam", "_sorted.depth") + "\n"
+			cmd += self.config.tools.samtools + " depth " + bam.replace(".bam", "_sorted.bam") + " > " + bam.replace(".bam", "_sorted.depth") + "\n"
 		return cmd
 
 
 	def fastqc(self, bam, outputDir):
 		"""Call fastqc on a bam file."""
-		cmd = self.paths.fastqc + " --noextract --outdir " + outputDir + " " + bam
+		cmd = self.config.tools.fastqc + " --noextract --outdir " + outputDir + " " + bam
 		return cmd
 
 
 	def samtools_index(self, bam):
 		"""Index a bam file."""
-		cmd = self.paths.samtools + " index {0}".format(bam)
+		cmd = self.config.tools.samtools + " index {0}".format(bam)
 		return cmd
 
 
@@ -411,7 +315,7 @@ class NGSTk():
 
 
 	def mergeBams(self, inputBams, outputBam):
-		cmd = self.paths.java + " -Xmx2g -jar " + self.paths.picard_jar + " MergeSamFiles"
+		cmd = self.config.tools.java + " -Xmx2g -jar " + self.config.tools.picard + " MergeSamFiles"
 		cmd += " USE_THREADING=TRUE"
 		cmd += " " + (" ".join(["INPUT=%s"] * len(inputBams))) % tuple(inputBams)
 		cmd += " OUTPUT={0}".format(outputBam)
@@ -421,14 +325,14 @@ class NGSTk():
 	def fastQC(self, inputBam, outputDir, sampleName):
 		import os
 		initial = os.path.splitext(os.path.basename(inputBam))[0]
-		cmd1 = self.paths.fastqc + " --noextract --outdir {0} {1}".format(outputDir, inputBam)
+		cmd1 = self.config.tools.fastqc + " --noextract --outdir {0} {1}".format(outputDir, inputBam)
 		cmd2 = "mv {0}_fastqc.html {1}_fastqc.html".format(os.path.join(outputDir, initial), os.path.join(outputDir, sampleName))
 		cmd3 = "mv {0}_fastqc.zip {1}_fastqc.zip".format(os.path.join(outputDir, initial), os.path.join(outputDir, sampleName))
 		return [cmd1, cmd2, cmd3]
 
 
 	def bam2fastq(self, inputBam, outputFastq, outputFastq2=None, unpairedFastq=None):
-		cmd = self.paths.java + " -Xmx4g -jar " + self.paths.picard_jar + " SamToFastq"
+		cmd = self.config.tools.java + " -Xmx4g -jar " + self.config.tools.picard + " SamToFastq"
 		cmd += " INPUT={0}".format(inputBam)
 		cmd += " FASTQ={0}".format(outputFastq)
 		if outputFastq2 is not None and unpairedFastq is not None:
@@ -443,7 +347,7 @@ class NGSTk():
 
 		PE = False if inputFastq2 is None else True
 		pe = "PE" if PE else "SE"
-		cmd = self.paths.java + " -Xmx4g -jar " + self.paths.trimmomatic
+		cmd = self.config.tools.java + " -Xmx4g -jar " + self.config.tools.trimmomatic
 		cmd += " {0} -threads {1} -trimlog {2} {3}".format(pe, cpus, log, inputFastq1)
 		if PE:
 			cmd += " {0}".format(inputFastq2)
@@ -462,7 +366,7 @@ class NGSTk():
 		PE = False if inputFastq2 is None else True
 		mode = "pe" if PE else "any"
 		cmds = list()
-		cmd1 = self.paths.java + " --quiet"
+		cmd1 = self.config.tools.java + " --quiet"
 		cmd1 += " -f sanger"
 		cmd1 += " -t {0}".format(cpus)
 		cmd1 += " -m {0}".format(mode)
@@ -491,7 +395,7 @@ class NGSTk():
 		import re
 		outputBam = re.sub("\.bam$", "", outputBam)
 		# Admits 2000bp-long fragments (--maxins option)
-		cmd = self.paths.bowtie2 + " --very-sensitive -p {0}".format(cpus)
+		cmd = self.config.tools.bowtie2 + " --very-sensitive -p {0}".format(cpus)
 		cmd += " -x {0}".format(genomeIndex)
 		cmd += " --met-file {0}".format(metrics)
 		if inputFastq2 is None:
@@ -507,7 +411,7 @@ class NGSTk():
 	def topHatMap(self, inputFastq, outDir, genome, transcriptome, cpus):
 		# TODO:
 		# Allow paired input
-		cmd = self.paths.tophat + " --GTF {0} --b2-L 15 --library-type fr-unstranded --mate-inner-dist 120".format(transcriptome)
+		cmd = self.config.tools.tophat + " --GTF {0} --b2-L 15 --library-type fr-unstranded --mate-inner-dist 120".format(transcriptome)
 		cmd += " --max-multihits 100 --no-coverage-search"
 		cmd += " --num-threads {0} --output-dir {1} {2} {3}".format(cpus, outDir, genome, inputFastq)
 		return cmd
@@ -517,21 +421,21 @@ class NGSTk():
 		import re
 		transientFile = re.sub("\.bam$", "", outputBam) + ".dups.nosort.bam"
 		outputBam = re.sub("\.bam$", "", outputBam)
-		cmd1 = self.paths.java + " -Xmx4g -jar  `which MarkDuplicates.jar`"
+		cmd1 = self.config.tools.java + " -Xmx4g -jar  `which MarkDuplicates.jar`"
 		cmd1 += " INPUT={0}".format(inputBam)
 		cmd1 += " OUTPUT={0}".format(transientFile)
 		cmd1 += " METRICS_FILE={0}".format(metricsFile)
 		cmd1 += " VALIDATION_STRINGENCY=LENIENT"
 		cmd1 += " TMP_DIR={0}".format(tempDir)
 		# Sort bam file with marked duplicates
-		cmd2 = self.paths.samtools + " sort {0} {1}".format(transientFile, outputBam)
+		cmd2 = self.config.tools.samtools + " sort {0} {1}".format(transientFile, outputBam)
 		# Remove transient file
 		cmd3 = "if [[ -s {0} ]]; then rm {0}; fi".format(transientFile)
 		return [cmd1, cmd2, cmd3]
 
 
 	def removeDuplicates(self, inputBam, outputBam, cpus=16):
-		cmd = self.paths.sambamba + " markdup -t {0} -r {1} {2}".format(cpus, inputBam, outputBam)
+		cmd = self.config.tools.sambamba + " markdup -t {0} -r {1} {2}".format(cpus, inputBam, outputBam)
 		return cmd
 
 
@@ -542,15 +446,15 @@ class NGSTk():
 		"""
 		import re
 		nodups = re.sub("\.bam$", "", outputBam) + ".nodups.nofilter.bam"
-		cmd1 = self.paths.sambamba + " markdup -t {0} -r --compression-level=0 {1} {2} 2> {3}".format(cpus, inputBam, nodups, metricsFile)
-		cmd2 = self.paths.sambamba + ' view -t {0} -f bam --valid'.format(cpus)
+		cmd1 = self.config.tools.sambamba + " markdup -t {0} -r --compression-level=0 {1} {2} 2> {3}".format(cpus, inputBam, nodups, metricsFile)
+		cmd2 = self.config.tools.sambamba + ' view -t {0} -f bam --valid'.format(cpus)
 		if paired:
 			cmd2 += ' -F "not (unmapped or mate_is_unmapped) and proper_pair'
 		else:
 			cmd2 += ' -F "not unmapped'
 		cmd2 += ' and not (secondary_alignment or supplementary) and mapping_quality >= {0}"'.format(Q)
 		cmd2 += ' {0} |'.format(nodups)
-		cmd2 += self.paths.sambamba + " sort -t {0} /dev/stdin -o {1}".format(cpus, outputBam)
+		cmd2 += self.config.tools.sambamba + " sort -t {0} /dev/stdin -o {1}".format(cpus, outputBam)
 		cmd3 = "if [[ -s {0} ]]; then rm {0}; fi".format(nodups)
 		cmd4 = "if [[ -s {0} ]]; then rm {0}; fi".format(nodups + ".bai")
 		return [cmd1, cmd2, cmd3, cmd4]
@@ -559,29 +463,29 @@ class NGSTk():
 	def shiftReads(self, inputBam, genome, outputBam):
 		import re
 		outputBam = re.sub("\.bam$", "", outputBam)
-		cmd = self.paths.samtools + " view -h {0} |".format(inputBam)
+		cmd = self.config.tools.samtools + " view -h {0} |".format(inputBam)
 		cmd += " shift_reads.py {0} |".format(genome)
-		cmd += " " + self.paths.samtools + " view -S -b - |"
-		cmd += " " + self.paths.samtools + " sort - {0}".format(outputBam)
+		cmd += " " + self.config.tools.samtools + " view -S -b - |"
+		cmd += " " + self.config.tools.samtools + " sort - {0}".format(outputBam)
 		return cmd
 
 
 	def sortIndexBam(self, inputBam, outputBam):
 		import re
 		tmpBam = re.sub("\.bam", ".sorted", inputBam)
-		cmd1 = self.paths.samtools + " sort {0} {1}".format(inputBam, tmpBam)
+		cmd1 = self.config.tools.samtools + " sort {0} {1}".format(inputBam, tmpBam)
 		cmd2 = "mv {0}.bam {1}".format(tmpBam, outputBam)
-		cmd3 = self.paths.samtools + " index {0}".format(outputBam)
+		cmd3 = self.config.tools.samtools + " index {0}".format(outputBam)
 		return [cmd1, cmd2, cmd3]
 
 
 	def indexBam(self, inputBam):
-		cmd = self.paths.samtools + " index {0}".format(inputBam)
+		cmd = self.config.tools.samtools + " index {0}".format(inputBam)
 		return cmd
 
 
 	def peakTools(self, inputBam, output, plot, cpus):
-		cmd = self.paths.Rscript + " `which run_spp.R` -rf -savp -savp={0} -s=0:5:500 -c={1} -out={2}".format(plot, inputBam, output)
+		cmd = self.config.tools.Rscript + " `which run_spp.R` -rf -savp -savp={0} -s=0:5:500 -c={1} -out={2}".format(plot, inputBam, output)
 		return cmd
 
 
@@ -722,11 +626,11 @@ class NGSTk():
 		# (right now it asssumes 50bp reads with 180bp fragments)
 		cmds = list()
 		transientFile = os.path.abspath(re.sub("\.bigWig", "", outputBigWig))
-		cmd1 = self.paths.bedtools + " bamtobed -i {0} |".format(inputBam)
+		cmd1 = self.config.tools.bedtools + " bamtobed -i {0} |".format(inputBam)
 		if not tagmented:
-			cmd1 += " " + self.paths.bedtools + " slop -i stdin -g {0} -s -l 0 -r 130 |".format(genomeSizes)
+			cmd1 += " " + self.config.tools.bedtools + " slop -i stdin -g {0} -s -l 0 -r 130 |".format(genomeSizes)
 			cmd1 += " fix_bedfile_genome_boundaries.py {0} |".format(genome)
-		cmd1 += " " + self.paths.genomeCoverageBed + " {0}-bg -g {1} -i stdin > {2}.cov".format(
+		cmd1 += " " + self.config.tools.genomeCoverageBed + " {0}-bg -g {1} -i stdin > {2}.cov".format(
 				"-5 " if tagmented else "",
 				genomeSizes,
 				transientFile
@@ -734,7 +638,7 @@ class NGSTk():
 		cmds.append(cmd1)
 		if normalize:
 			cmds.append("""awk 'NR==FNR{{sum+= $4; next}}{{ $4 = ($4 / sum) * 1000000; print}}' {0}.cov {0}.cov > {0}.normalized.cov""".format(transientFile))
-		cmds.append(self.paths.bedGraphToBigWig + " {0}{1}.cov {2} {3}".format(transientFile, ".normalized" if normalize else "", genomeSizes, outputBigWig))
+		cmds.append(self.config.tools.bedGraphToBigWig + " {0}{1}.cov {2} {3}".format(transientFile, ".normalized" if normalize else "", genomeSizes, outputBigWig))
 		# remove tmp files
 		cmds.append("if [[ -s {0}.cov ]]; then rm {0}.cov; fi".format(transientFile))
 		if normalize:
@@ -775,24 +679,24 @@ class NGSTk():
 
 
 	def kallisto(self, inputFastq, outputDir, outputBam, transcriptomeIndex, cpus, inputFastq2=None, size=180, b=200):
-		cmd1 = self.paths.kallisto + " quant --bias --pseudobam -b {0} -l {1} -i {2} -o {3} -t {4}".format(b, size, transcriptomeIndex, outputDir, cpus)
+		cmd1 = self.config.tools.kallisto + " quant --bias --pseudobam -b {0} -l {1} -i {2} -o {3} -t {4}".format(b, size, transcriptomeIndex, outputDir, cpus)
 		if inputFastq2 is None:
 			cmd1 += " --single {0}".format(inputFastq)
 		else:
 			cmd1 += " {0} {1}".format(inputFastq, inputFastq2)
-		cmd1 += " | " + self.paths.samtools + " view -Sb - > {0}".format(outputBam)
-		cmd2 = self.paths.kallisto + " h5dump -o {0} {0}/abundance.h5".format(outputDir)
+		cmd1 += " | " + self.config.tools.samtools + " view -Sb - > {0}".format(outputBam)
+		cmd2 = self.config.tools.kallisto + " h5dump -o {0} {0}/abundance.h5".format(outputDir)
 		return [cmd1, cmd2]
 
 
 	def genomeWideCoverage(self, inputBam, genomeWindows, output):
-		cmd = self.paths.bedtools + " coverage -abam -counts -a {0} -b {1} > {2}".format(inputBam, genomeWindows, output)
+		cmd = self.config.tools.bedtools + " coverage -abam -counts -a {0} -b {1} > {2}".format(inputBam, genomeWindows, output)
 		return cmd
 
 
 	def calculateFRiP(self, inputBam, inputBed, output):
 		cmd = "cut -f 1,2,3 {0} |".format(inputBed)
-		cmd += self.paths.bedtools + " coverage -counts -abam {0} -b - |".format(inputBam)
+		cmd += self.config.tools.bedtools + " coverage -counts -abam {0} -b - |".format(inputBam)
 		cmd += " awk '{{sum+=$4}} END {{print sum}}' > {0}".format(output)
 		return cmd
 
@@ -800,7 +704,7 @@ class NGSTk():
 	def macs2CallPeaks(self, treatmentBam, outputDir, sampleName, genome, controlBam=None, broad=False):
 		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
 		if not broad:
-			cmd = self.paths.macs2 + " callpeak -t {0}".format(treatmentBam)
+			cmd = self.config.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 			if controlBam is not None:
 				cmd += " -c {0}".format(controlBam)
 			cmd += " --bw 200 -g {0} -n {0} --outdir {0}".format(sizes[genome], sampleName, outputDir)
@@ -808,7 +712,7 @@ class NGSTk():
 		else:
 			# Parameter setting for broad factors according to Nature Protocols (2012)
 			# Vol.7 No.9 1728-1740 doi:10.1038/nprot.2012.101 Protocol (D) for H3K36me3
-			cmd = self.paths.macs2 + " callpeak -t {0}".format(treatmentBam)
+			cmd = self.config.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 			if controlBam is not None:
 				cmd += " -c {0}".format(controlBam)
 			cmd += " --broad --nomodel --extsize 73 --pvalue 1e-3 -g {0} -n {1} --outdir {2}".format(
@@ -819,7 +723,7 @@ class NGSTk():
 
 	def macs2CallPeaksATACSeq(self, treatmentBam, outputDir, sampleName, genome):
 		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
-		cmd = self.paths.macs2 + " callpeak -t {0}".format(treatmentBam)
+		cmd = self.config.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 		cmd += " --nomodel --extsize 147 -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 		return cmd
 
@@ -827,7 +731,7 @@ class NGSTk():
 	def macs2PlotModel(self, sampleName, outputDir):
 		import os
 		# run macs r script
-		cmd1 = self.paths.Rscript + " {0}/{1}_model.r".format(os.getcwd(), sampleName)
+		cmd1 = self.config.tools.Rscript + " {0}/{1}_model.r".format(os.getcwd(), sampleName)
 		# move to sample dir
 		cmd2 = "mv {0}/{1}_model.pdf {2}/{1}_model.pdf".format(os.getcwd(), sampleName, outputDir)
 		return [cmd1, cmd2]
@@ -835,25 +739,25 @@ class NGSTk():
 
 	def sppCallPeaks(self, treatmentBam, controlBam, treatmentName, controlName, outputDir, broad, cpus):
 		broad = "TRUE" if broad else "FALSE"
-		cmd = self.paths.Rscript + " `which spp_peak_calling.R` {0} {1} {2} {3} {4} {5} {6}".format(
+		cmd = self.config.tools.Rscript + " `which spp_peak_calling.R` {0} {1} {2} {3} {4} {5} {6}".format(
 			treatmentBam, controlBam, treatmentName, controlName, broad, cpus, outputDir
 		)
 		return cmd
 
 
 	def bamToBed(self, inputBam, outputBed):
-		cmd = self.paths.bedtools + " bamtobed -i {0} > {1}".format(inputBam, outputBed)
+		cmd = self.config.tools.bedtools + " bamtobed -i {0} > {1}".format(inputBam, outputBed)
 		return cmd
 
 
 	def zinbaCallPeaks(self, treatmentBed, controlBed, cpus, tagmented=False):
 		fragmentLength = 80 if tagmented else 180
-		cmd = self.paths.Rscript + " `which zinba.R` -l {0} -t {1} -c {2}".format(fragmentLength, treatmentBed, controlBed)
+		cmd = self.config.tools.Rscript + " `which zinba.R` -l {0} -t {1} -c {2}".format(fragmentLength, treatmentBed, controlBed)
 		return cmd
 
 
 	def filterPeaksMappability(self, peaks, alignability, filteredPeaks):
-		cmd = self.paths.bedtools + " intersect -wa -u -f 1"
+		cmd = self.config.tools.bedtools + " intersect -wa -u -f 1"
 		cmd += " -a {0} -b {1} > {2} ".format(peaks, alignability, filteredPeaks)
 		return cmd
 
@@ -892,7 +796,7 @@ class NGSTk():
 		import subprocess
 		from collections import Counter
 		try:
-			p = subprocess.Popen([self.paths.samtools, 'view', bamFile], stdout=subprocess.PIPE)
+			p = subprocess.Popen([self.config.tools.samtools, 'view', bamFile], stdout=subprocess.PIPE)
 			# Count paired alignments
 			paired = 0
 			readLength = Counter()
@@ -1036,7 +940,7 @@ class NGSTk():
 	def peakAnalysis(self, inputBam, peakFile, plotsDir, windowWidth, fragmentsize,
 					 genome, n_clusters, strand_specific, duplicates):
 		import os
-		cmd = self.paths.python + " {0}/lib/peaks_analysis.py {1} {2} {3}".format(
+		cmd = self.config.tools.python + " {0}/lib/peaks_analysis.py {1} {2} {3}".format(
 			os.path.abspath(os.path.dirname(os.path.realpath(__file__))),
 			inputBam, peakFile, plotsDir
 		)
@@ -1053,7 +957,7 @@ class NGSTk():
 	def tssAnalysis(self, inputBam, tssFile, plotsDir, windowWidth, fragmentsize, genome,
 					n_clusters, strand_specific, duplicates):
 		import os
-		cmd = self.paths.python + " {0}/lib/tss_analysis.py {1} {2} {3}".format(
+		cmd = self.config.tools.python + " {0}/lib/tss_analysis.py {1} {2} {3}".format(
 			os.path.abspath(os.path.dirname(os.path.realpath(__file__))),
 			inputBam, tssFile, plotsDir
 		)
@@ -1073,7 +977,7 @@ class NGSTk():
 
 	def plotCorrelations(self, inputCoverage, plotsDir):
 		import os
-		cmd = self.paths.python + " {2}/lib/correlations.py {0} {1}".format(
+		cmd = self.config.tools.python + " {2}/lib/correlations.py {0} {1}".format(
 			plotsDir,
 			" ".join(["%s"] * len(inputCoverage)) % tuple(inputCoverage),
 			os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
@@ -1083,9 +987,8 @@ class NGSTk():
 
 	def diffBind(self, inputCSV, jobName, plotsDir):
 		import os
-		cmd = self.paths.Rscript + " {3}/lib/diffBind_analysis.R {0} {1} {2}".format(
+		cmd = self.config.tools.Rscript + " {3}/lib/diffBind_analysis.R {0} {1} {2}".format(
 			inputCSV, jobName, plotsDir,
 			os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 		)
 		return cmd
-

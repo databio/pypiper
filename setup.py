@@ -24,5 +24,5 @@ setup(
     description='A lightweight python toolkit for gluing together restartable, robust command line pipelines',
     author='Nathan Sheffield, Johanna Klughammer, ',
     author_email='nathan@code.databio.org, jklughammer@cemm.oeaw.ac.at',
-    url='https://github.com/ComputationalEpigenetics/pypiper/'
+    url='https://github.com/epigen/pypiper/'
 )
