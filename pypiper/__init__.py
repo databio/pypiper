@@ -1,1 +1,2 @@
-from pypiper import Pypiper
+from pypiper import *
+from ngstk import *

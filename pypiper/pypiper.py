@@ -12,9 +12,33 @@ import re, glob
 import time
 import atexit, signal, platform
 
-class Pypiper:
+class AttributeDict(object):
 	"""
-	Base class for instantiating a Pypiper object.
+	A class to convert a nested Dictionary into an object with key-values
+	accessibly using attribute notation (AttributeDict.attribute) instead of
+	key notation (Dict["key"]). This class recursively sets Dicts to objects,
+	allowing you to recurse down nested dicts (like: AttributeDict.attr.attr)
+	"""
+	def __init__(self, **entries):
+		self.add_entries(**entries)
+
+	def add_entries(self, **entries):
+		for key, value in entries.items():
+			if type(value) is dict:
+				self.__dict__[key] = AttributeDict(**value)
+			else:
+				self.__dict__[key] = value
+
+	def __getitem__(self, key):
+		"""
+		Provides dict-style access to attributes
+		"""
+		return getattr(self, key)
+
+
+class PipelineManager(object):
+	"""
+	Base class for instantiating a PipelineManager object, they head class of Pypiper
 
 	:param name: Choose a name for your pipeline; it's used to name the output files, flags, etc.
 	:param outfolder: Folder in which to store the results.
@@ -35,11 +59,14 @@ class Pypiper:
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
 		# to Pypiper. If any pypiper arguments are passed
-		# (via add_pypiper_args()), these will override the constructor 		# defaults for these arguments.
+		# (via add_pypiper_args()), these will override the constructor
+		# defaults for these arguments.
 
+		# Establish default params
 		params = { 'manual_clean':manual_clean, 'recover':recover,
 					'fresh': fresh }
 
+		# Update them with any passed via 'args'
 		if args is not None:
 			# vars(...) transforms ArgumentParser's Namespace into a dict
 			params.update(vars(args))
@@ -61,7 +88,7 @@ class Pypiper:
 
 
 		# Pipeline status variables
-		self.peak_memory = 0         # memory high water mark
+		self.peak_memory = 0  # memory high water mark
 		self.starttime = time.time()
 		self.last_timestamp = self.starttime  # time of the last call to timestamp()
 		self.status = "initializing"
@@ -82,21 +109,23 @@ class Pypiper:
 		self.cleanup_list_conditional = []
 		self.start_pipeline(args, multi)
 
-	@staticmethod
-	def add_pypiper_args(parser):
-		"""
-		Use this to take an ArgumentParser in your pipeline, and also parse
-		default pypiper arguments
-		:param parser: an ArgumentParser object from your pipeline
-		:returns: A new ArgumentParser object, with default pypiper arguments added
-		"""
-		parser.add_argument('-R', '--recover', dest='recover', action='store_true',
-						default=False, help='Recover mode, overwrite locks')
-		parser.add_argument('-F', '--fresh-start', dest='fresh', action='store_true',
-						default=False, help='Fresh start mode, overwrite all')
-		parser.add_argument('-D', '--dirty', dest='manual_clean', action='store_true',
-						default=False, help='Make all cleanups manual') #Useful for debugging
-		return(parser)
+		# Handle config file if it exists
+
+		# Read YAML config file
+		self.config = None
+		if not os.path.isabs(args.config_file):
+			# Set the path to an absolute path, relative to pipeline script
+			default_config_abs = os.path.join(os.path.dirname(sys.argv[0]), args.config_file)
+			if os.path.isfile(default_config_abs):
+				args.config_file = default_config_abs
+			else:
+				args.config_file = None
+
+			if (args.config_file):
+				with open(args.config_file, 'r') as config_file:
+					import yaml
+					config = yaml.load(config_file)
+					self.config = AttributeDict(**config)
 
 
 	def ignore_interrupts(self):
@@ -130,7 +159,7 @@ class Pypiper:
 
 			# a for append to file
 			tee = subprocess.Popen(["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE,
-								   preexec_fn=self.ignore_interrupts)
+								preexec_fn=self.ignore_interrupts)
 
 			# Reset the signal handlers after spawning that process
 			# signal.signal(signal.SIGINT, self.signal_int_handler)
@@ -199,7 +228,7 @@ class Pypiper:
 			print("* " +"Pipeline dir".rjust(20) + ":  " + "`" + gitvars['pipe_dir'].strip() + "`")
 			print("* " +"Pipeline version".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
 			print("* " +"Pipeline branch".rjust(20) + ":  " + gitvars['pipe_branch'].strip())
-			print("* " +"Pipeline date:".rjust(20) + ":  " + gitvars['pipe_date'].strip())
+			print("* " +"Pipeline date".rjust(20) + ":  " + gitvars['pipe_date'].strip())
 			if (gitvars['pipe_diff'] != ""):
 				print("* " +"Pipeline diff".rjust(20) + ":  " + gitvars['pipe_diff'].strip())
 		except KeyError:
@@ -248,7 +277,7 @@ class Pypiper:
 	# Process calling functions
 	###################################
 
-	def call_lock(self, cmd, target=None, lock_name=None, shell=False, nofail=False, clean=False):
+	def run(self, cmd, target=None, lock_name=None, shell=False, nofail=False, clean=False, follow=None):
 		"""
 		The primary workhorse function of pypiper. This is the command execution function, which enforces
 		file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
@@ -345,10 +374,15 @@ class Pypiper:
 			else:  # Single command (most common)
 				process_return_code, local_maxmem = self.callprint(cmd, shell, nofail)  # Run command
 
-			# For temporary files, you can specify a clean option to automatically add them to the clean list,
-			# saving you a manual call to clean_add
+			# For temporary files, you can specify a clean option to automatically
+			# add them to the clean list, saving you a manual call to clean_add
 			if target is not None and clean:
 				self.clean_add(target)
+
+			if hasattr(follow, '__call__'):
+				# Run the follow function
+				print("Follow:")
+				follow()
 
 			os.remove(lock_file)  # Remove lock file
 
@@ -772,8 +806,7 @@ class Pypiper:
 				files = glob.glob(regex)
 				for file in files:
 					with open(self.cleanup_file, "a") as myfile:
-						if os.path.isfile(file): myfile.write("rm " + file + "\n")
-						elif os.path.isdir(file): myfile.write("rmdir " + file + "\n")
+						myfile.write("rm " + file + "\n")
 			except:
 				pass
 		elif conditional:
@@ -800,12 +833,8 @@ class Pypiper:
 					while files in self.cleanup_list: self.cleanup_list.remove(files)
 					# and delete the files
 					for file in files:
-						if os.path.isfile(file):
-							print("`rm " + file + "`")
-							os.remove(os.path.join(file))
-						elif os.path.isdir(file):
-							print("`rmdir " + file + "`")
-							os.rmdir(os.path.join(file))
+						print("`rm " + file + "`")
+						os.remove(os.path.join(file))
 				except:
 					pass
 
@@ -820,12 +849,8 @@ class Pypiper:
 						files = glob.glob(expr)
 						while files in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(files)
 						for file in files:
-							if os.path.isfile(file):
-								print("`rm " + file + "`")
-								os.remove(os.path.join(file))
-							elif os.path.isdir(file):
-								print("`rmdir " + file + "`")
-								os.rmdir(os.path.join(file))
+							print("rm " + file)
+							os.remove(os.path.join(file))
 					except:
 						pass
 			else:
@@ -837,8 +862,7 @@ class Pypiper:
 						files = glob.glob(expr)
 						for file in files:
 							with open(self.cleanup_file, "a") as myfile:
-								if os.path.isfile(file): myfile.write("`rm " + file + "`\n")
-								elif os.path.isdir(file): myfile.write("`rmdir " + file + "`\n")
+								myfile.write("`rm " + file + "`\n")
 					except:
 						pass
 
@@ -887,3 +911,73 @@ class Tee(object):
 		self.stdout.flush()
 	def fileno(self):
 		return(self.stdout.fileno())
+
+
+# @staticmethod
+def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=False, all_args=False):
+	"""
+	Use this to take an ArgumentParser in your pipeline, and also parse
+	default pypiper arguments
+	:param parser: an ArgumentParser object from your pipeline
+	:param looper_args: Adds additional arguments to standardize a
+		common interfact to looper.py.
+	:returns: A new ArgumentParser object, with default pypiper arguments added
+	"""
+
+	# Basic pypiper arguments actually used by pypiper
+	parser.add_argument('-R', '--recover', dest='recover', action='store_true',
+		default=False, help='Recover mode, overwrite locks')
+	parser.add_argument('-F', '--fresh-start', dest='fresh', action='store_true',
+		default=False, help='Fresh start mode, overwrite all')
+	parser.add_argument('-D', '--dirty', dest='manual_clean', action='store_true',
+		default=False, help='Make all cleanups manual') #Useful for debugging
+
+
+	# Additional arguments *not* used by pypiper, but added for convenience
+	# to create a standard interface (optional)
+
+	if (all_args):
+		looper_args = True
+		common_args = True
+		ngs_args = True
+
+	if (looper_args):
+		# Arguments to optimize the intervace to looper
+		# Default config
+		default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
+		parser.add_argument("-C", "--config", dest = "config_file", type = str,
+			help = "pipeline config file in YAML format; relative paths are \
+			considered relative to the pipeline script. \
+			defaults to " + default_config,
+			required = False, default = default_config, metavar = "CONFIG_FILE")
+		parser.add_argument("-O", "--output_parent", dest = "output_parent", type = str,
+			help = "parent output directory of the project (required). The sample_name \
+			argument will be appended to this folder for output",
+			required = True, metavar = "PARENT_OUTPUT_FOLDER")
+		# output_parent was previously called project_root
+		parser.add_argument("-P", "--cores", dest = "cores", type = str,
+			help = "number of cores to use for parallel processes",
+			required = False, default = 1, metavar = "NUMBER_OF_CORES")
+
+	if (common_args):
+		# Arguments typically used in every pipeline
+		parser.add_argument("-I", "--input", dest = "input", type = str, nargs = "+",
+			help = "one or more input files (required)",
+			required = True, metavar = "INPUT_FILES")
+		# input was previously called unmapped_bam
+
+		parser.add_argument("-S", "--sample_name", dest = "sample_name", type = str,
+			help = "unique name for output subfolder and files (required)",
+			required = False, metavar = "SAMPLE_NAME")
+
+	if (ngs_args):
+		# Common arguments specific to NGS pipelines
+		parser.add_argument("-G", "--genome", dest = "genome_assembly", type = str,
+			help = "identifier for genome assempbly (required)",
+			required = True)
+
+		parser.add_argument("-Q", "--single_or_paired", dest = "single_or_paired", type = str,
+			help = "single or paired end? default: single",
+			required = False, default="single")
+
+	return(parser)
