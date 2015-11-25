@@ -25,41 +25,41 @@ Pypiper *does not* handle any sort of cluster job submission, resource requestin
 
 # Your first pipeline
 
-Using Pypiper is simple. First, import pypiper, and then create a new Pypiper object:
+Using Pypiper is simple. First, import pypiper, and then create a new PipelineManager object:
 
 ```{python}
 import pypiper, os
 outfolder = "pipeline_output/" # Choose a folder for your results
-pipeline = pypiper.Pypiper(name="my_pipeline", outfolder=outfolder)
+pipeline = pypiper.PipelineManager(name="my_pipeline", outfolder=outfolder)
 ```
 
-Now, the workhorse of Pypiper is the `call_lock()` function. Essentially, you just create a shell command as a string in python, and then pass it to `call_lock()`. 
+Now, the workhorse of PipelineManager is the `run()` function. Essentially, you just create a shell command as a string in python, and then pass it and its output to `run()`. 
 
 ```
 target = os.path.join(outfolder, "outfile.txt")
 command cmd = "shuf -i 1-500000000 -n 10000000 > " + target
-pipeline.call_lock(command, target, shell=True)
+pipeline.run(command, target, shell=True)
 ```
 
-There's more information about `shell=True` processes below. Now string together whatever commands your pipeline requires, and then at the end, terminate the pipeline so it gets flagged as successfully completed:
+The target is the final output file created by your command. You can also leave it empty (pass `None`) if there is no output. Now string together whatever commands your pipeline requires, and then at the end, terminate the pipeline so it gets flagged as successfully completed:
 
 ```
 pipeline.stop_pipeline()
 ```
 
-That's it! By running this command through `call_lock()` instead of directly in bash, you get a robust, logged, restartable pipeline manager for free!
+That's it! By running this command through `run()` instead of directly in bash, you get a robust, logged, restartable pipeline manager for free! There's more information about `shell=True` processes below.
 
 # Tutorials
 
 To see an example of a simple pipline, look in the `example_pipelines` folder in this respository, which are thoroughly commented to act as vignettes. This is the best way to learn how to use Pyipiper.
 
-* [example_pipelines/basic.py](example_pipelines/basic.py) - How to construct a command and use `call_lock()`.
+* [example_pipelines/basic.py](example_pipelines/basic.py) - How to construct a command and use `run()`.
 * `example_pipelines/advanced.py` (under construction) - A tutorial demonstrating some more advanced features.
 * `example_pipelines/bioinformatics.py` (under construction) - A tutorial showing some bioinformatics use cases.
 
 # Outputs
 
-Assume you name your pipeline `PIPE` (by passing name="PIPE" to the Pypiper constructor), by default, Pypiper will produce the following outputs automatically (in additional to any output created by the actual pipeline commands you run):
+Assume you name your pipeline `PIPE` (by `passing name="PIPE"` to the PipelineManager constructor), by default, Pypiper will produce the following outputs automatically (in additional to any output created by the actual pipeline commands you run):
 
 * `PIPE_log.md` - all output sent to screen is automatically logged to this file, including versions, start and stop time, compute host, and other details.
 * `PIPE_stats.md` - any results reported using `report_result()` are saved as key-value pairs in this file, for easy parsing (we also have a post-pipeline script to aggregate these results into a summary table).
@@ -74,7 +74,7 @@ Multiple pipelines can easily be run on the same sample, using the same output f
 An optional feature of pypiper is the accompanying toolkits, such as the next-gen sequencing toolkit, [ngstk](pypiper/ngstk.py), which simply provides some convenient helper functions to create common commands, like converting from file formats (_e.g._ bam to fastq), merging files (_e.g._ merge_bams), counting reads, etc. These make it faster to design bioinformatics pipelines in Pypiper, but are entirely optional. Contributions of additional toolkits or functions in an existing toolkit are welcome.
 
 # Technical Documentation
-You can use `make` to generate the PyPiper documentation. Just change your working directory to `doc` and run `make` to see available documentation formats *e.g.*: `make html`. The documentation will be produced under `doc/build`.
+You can use `make` to generate the Pypiper documentation. Just change your working directory to `doc` and run `make` to see available documentation formats *e.g.*: `make html`. The documentation will be produced under `doc/build`.
 
 # Testing
 
@@ -82,7 +82,7 @@ You can test pypiper by running `python test_pypiper.py`, which has some unit te
 
 # Python process types: Shell vs direct
 
-Since Pypiper runs all your commands from within python (using the `subprocess` python module), you need to be aware of the two types of processes that `subprocess` can handle: Shell process and direct processes. Choosing between the two is as simple as specifying `shell=True` (the default is a direct subprocess) to `call_lock()`, which is directly passed on as the `shell` parameter to `subprocess.Popen()`. The difference is that Python runs the process either as a subprocess directly from within python, or it first spawns a shell, and then runs the subprocess in the shell. When should you use these?
+Since Pypiper runs all your commands from within python (using the `subprocess` python module), you need to be aware of the two types of processes that `subprocess` can handle: Shell process and direct processes. Choosing between the two is as simple as specifying `shell=True` (the default is a direct subprocess) to `run()`, which is directly passed on as the `shell` parameter to `subprocess.Popen()`. The difference is that Python runs the process either as a subprocess directly from within python, or it first spawns a shell, and then runs the subprocess in the shell. When should you use these?
 
 **Direct process**: For most use cases, you should simply use a direct subprocess (the default) -- this has the advantage of enabling Python to monitor the memory use of the subprocess, because Python retains control over it. This is considered by the community to be the preferable way of running subprocesses in Python.
 
