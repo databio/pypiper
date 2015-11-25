@@ -3,6 +3,12 @@ A lightweight python toolkit for gluing together restartable, robust command lin
 
 The public-facing permalink for the project is http://databio.org/pypiper. The source code, tutorials, are hosted at http://github.com/epigen/pypiper.
 
+# Install
+
+```
+pip install --user https://github.com/epigen/pypiper/zipball/master
+```
+
 # Introduction
 
 Pypiper helps you produce pipelines. 
