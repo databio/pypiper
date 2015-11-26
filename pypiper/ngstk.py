@@ -190,7 +190,7 @@ class NGSTk(AttributeDict):
 		:param postpend: String to postpend to the samtools command;
 		useful to add cut, sort, wc operations to the samtools view output.
 		'''
-		x = subprocess.check_output(self.samtools + " view " + param + " " + fileName + " " + postpend, shell=True)
+		x = subprocess.check_output(self.tools.samtools + " view " + param + " " + fileName + " " + postpend, shell=True)
 		return x
 
 
@@ -238,11 +238,11 @@ class NGSTk(AttributeDict):
 		Convert sam files to bam files, then sort and index them for later use.
 		:param depth: also calculate coverage over each position
 		'''
-		cmd = self.samtools + " view -bS " + sam + " > " + sam.replace(".sam", ".bam") + "\n"
-		cmd += self.samtools + " sort " + sam.replace(".sam", ".bam") + " " + sam.replace(".sam", "_sorted") + "\n"
-		cmd += self.samtools + " index " + sam.replace(".sam", "_sorted.bam") + "\n"
+		cmd = self.tools.samtools + " view -bS " + sam + " > " + sam.replace(".sam", ".bam") + "\n"
+		cmd += self.tools.samtools + " sort " + sam.replace(".sam", ".bam") + " " + sam.replace(".sam", "_sorted") + "\n"
+		cmd += self.tools.samtools + " index " + sam.replace(".sam", "_sorted.bam") + "\n"
 		if depth:
-			cmd += self.samtools + " depth " + sam.replace(".sam", "_sorted.bam") + " > " + sam.replace(".sam","_sorted.depth") + "\n"
+			cmd += self.tools.samtools + " depth " + sam.replace(".sam", "_sorted.bam") + " > " + sam.replace(".sam","_sorted.depth") + "\n"
 		return cmd
 
 
@@ -251,23 +251,23 @@ class NGSTk(AttributeDict):
 		Sort and index bam files for later use.
 		:param depth: also calculate coverage over each position
 		'''
-		cmd = self.samtools + " view -h " + bam + " > " + bam.replace(".bam", ".sam") + "\n"
-		cmd += self.samtools + " sort " + bam + " " + bam.replace(".bam", "_sorted") + "\n"
-		cmd += self.samtools + " index " + bam.replace(".bam", "_sorted.bam") + "\n"
+		cmd = self.tools.samtools + " view -h " + bam + " > " + bam.replace(".bam", ".sam") + "\n"
+		cmd += self.tools.samtools + " sort " + bam + " " + bam.replace(".bam", "_sorted") + "\n"
+		cmd += self.tools.samtools + " index " + bam.replace(".bam", "_sorted.bam") + "\n"
 		if depth:
-			cmd += self.samtools + " depth " + bam.replace(".bam", "_sorted.bam") + " > " + bam.replace(".bam", "_sorted.depth") + "\n"
+			cmd += self.tools.samtools + " depth " + bam.replace(".bam", "_sorted.bam") + " > " + bam.replace(".bam", "_sorted.depth") + "\n"
 		return cmd
 
 
 	def fastqc(self, bam, outputDir):
 		"""Call fastqc on a bam file."""
-		cmd = self.fastqc + " --noextract --outdir " + outputDir + " " + bam
+		cmd = self.tools.fastqc + " --noextract --outdir " + outputDir + " " + bam
 		return cmd
 
 
 	def samtools_index(self, bam):
 		"""Index a bam file."""
-		cmd = self.samtools + " index {0}".format(bam)
+		cmd = self.tools.samtools + " index {0}".format(bam)
 		return cmd
 
 
@@ -332,7 +332,7 @@ class NGSTk(AttributeDict):
 	def fastQC(self, inputBam, outputDir, sampleName):
 		import os
 		initial = os.path.splitext(os.path.basename(inputBam))[0]
-		cmd1 = self.fastqc + " --noextract --outdir {0} {1}".format(outputDir, inputBam)
+		cmd1 = self.tools.fastqc + " --noextract --outdir {0} {1}".format(outputDir, inputBam)
 		cmd2 = "mv {0}_fastqc.html {1}_fastqc.html".format(os.path.join(outputDir, initial), os.path.join(outputDir, sampleName))
 		cmd3 = "mv {0}_fastqc.zip {1}_fastqc.zip".format(os.path.join(outputDir, initial), os.path.join(outputDir, sampleName))
 		return [cmd1, cmd2, cmd3]
@@ -354,7 +354,7 @@ class NGSTk(AttributeDict):
 
 		PE = False if inputFastq2 is None else True
 		pe = "PE" if PE else "SE"
-		cmd = self.tools.java + " -Xmx4g -jar " + self.trimmomatic
+		cmd = self.tools.java + " -Xmx4g -jar " + self.tools.trimmomatic
 		cmd += " {0} -threads {1} -trimlog {2} {3}".format(pe, cpus, log, inputFastq1)
 		if PE:
 			cmd += " {0}".format(inputFastq2)
@@ -402,7 +402,7 @@ class NGSTk(AttributeDict):
 		import re
 		outputBam = re.sub("\.bam$", "", outputBam)
 		# Admits 2000bp-long fragments (--maxins option)
-		cmd = self.bowtie2 + " --very-sensitive -p {0}".format(cpus)
+		cmd = self.tools.bowtie2 + " --very-sensitive -p {0}".format(cpus)
 		cmd += " -x {0}".format(genomeIndex)
 		cmd += " --met-file {0}".format(metrics)
 		if inputFastq2 is None:
@@ -418,7 +418,7 @@ class NGSTk(AttributeDict):
 	def topHatMap(self, inputFastq, outDir, genome, transcriptome, cpus):
 		# TODO:
 		# Allow paired input
-		cmd = self.tophat + " --GTF {0} --b2-L 15 --library-type fr-unstranded --mate-inner-dist 120".format(transcriptome)
+		cmd = self.tools.tophat + " --GTF {0} --b2-L 15 --library-type fr-unstranded --mate-inner-dist 120".format(transcriptome)
 		cmd += " --max-multihits 100 --no-coverage-search"
 		cmd += " --num-threads {0} --output-dir {1} {2} {3}".format(cpus, outDir, genome, inputFastq)
 		return cmd
@@ -435,14 +435,14 @@ class NGSTk(AttributeDict):
 		cmd1 += " VALIDATION_STRINGENCY=LENIENT"
 		cmd1 += " TMP_DIR={0}".format(tempDir)
 		# Sort bam file with marked duplicates
-		cmd2 = self.samtools + " sort {0} {1}".format(transientFile, outputBam)
+		cmd2 = self.tools.samtools + " sort {0} {1}".format(transientFile, outputBam)
 		# Remove transient file
 		cmd3 = "if [[ -s {0} ]]; then rm {0}; fi".format(transientFile)
 		return [cmd1, cmd2, cmd3]
 
 
 	def removeDuplicates(self, inputBam, outputBam, cpus=16):
-		cmd = self.sambamba + " markdup -t {0} -r {1} {2}".format(cpus, inputBam, outputBam)
+		cmd = self.tools.sambamba + " markdup -t {0} -r {1} {2}".format(cpus, inputBam, outputBam)
 		return cmd
 
 
@@ -453,15 +453,15 @@ class NGSTk(AttributeDict):
 		"""
 		import re
 		nodups = re.sub("\.bam$", "", outputBam) + ".nodups.nofilter.bam"
-		cmd1 = self.sambamba + " markdup -t {0} -r --compression-level=0 {1} {2} 2> {3}".format(cpus, inputBam, nodups, metricsFile)
-		cmd2 = self.sambamba + ' view -t {0} -f bam --valid'.format(cpus)
+		cmd1 = self.tools.sambamba + " markdup -t {0} -r --compression-level=0 {1} {2} 2> {3}".format(cpus, inputBam, nodups, metricsFile)
+		cmd2 = self.tools.sambamba + ' view -t {0} -f bam --valid'.format(cpus)
 		if paired:
 			cmd2 += ' -F "not (unmapped or mate_is_unmapped) and proper_pair'
 		else:
 			cmd2 += ' -F "not unmapped'
 		cmd2 += ' and not (secondary_alignment or supplementary) and mapping_quality >= {0}"'.format(Q)
 		cmd2 += ' {0} |'.format(nodups)
-		cmd2 += self.sambamba + " sort -t {0} /dev/stdin -o {1}".format(cpus, outputBam)
+		cmd2 += self.tools.sambamba + " sort -t {0} /dev/stdin -o {1}".format(cpus, outputBam)
 		cmd3 = "if [[ -s {0} ]]; then rm {0}; fi".format(nodups)
 		cmd4 = "if [[ -s {0} ]]; then rm {0}; fi".format(nodups + ".bai")
 		return [cmd1, cmd2, cmd3, cmd4]
@@ -470,29 +470,29 @@ class NGSTk(AttributeDict):
 	def shiftReads(self, inputBam, genome, outputBam):
 		import re
 		outputBam = re.sub("\.bam$", "", outputBam)
-		cmd = self.samtools + " view -h {0} |".format(inputBam)
+		cmd = self.tools.samtools + " view -h {0} |".format(inputBam)
 		cmd += " shift_reads.py {0} |".format(genome)
-		cmd += " " + self.samtools + " view -S -b - |"
-		cmd += " " + self.samtools + " sort - {0}".format(outputBam)
+		cmd += " " + self.tools.samtools + " view -S -b - |"
+		cmd += " " + self.tools.samtools + " sort - {0}".format(outputBam)
 		return cmd
 
 
 	def sortIndexBam(self, inputBam, outputBam):
 		import re
 		tmpBam = re.sub("\.bam", ".sorted", inputBam)
-		cmd1 = self.samtools + " sort {0} {1}".format(inputBam, tmpBam)
+		cmd1 = self.tools.samtools + " sort {0} {1}".format(inputBam, tmpBam)
 		cmd2 = "mv {0}.bam {1}".format(tmpBam, outputBam)
-		cmd3 = self.samtools + " index {0}".format(outputBam)
+		cmd3 = self.tools.samtools + " index {0}".format(outputBam)
 		return [cmd1, cmd2, cmd3]
 
 
 	def indexBam(self, inputBam):
-		cmd = self.samtools + " index {0}".format(inputBam)
+		cmd = self.tools.samtools + " index {0}".format(inputBam)
 		return cmd
 
 
 	def peakTools(self, inputBam, output, plot, cpus):
-		cmd = self.Rscript + " `which run_spp.R` -rf -savp -savp={0} -s=0:5:500 -c={1} -out={2}".format(plot, inputBam, output)
+		cmd = self.tools.Rscript + " `which run_spp.R` -rf -savp -savp={0} -s=0:5:500 -c={1} -out={2}".format(plot, inputBam, output)
 		return cmd
 
 
@@ -633,11 +633,11 @@ class NGSTk(AttributeDict):
 		# (right now it asssumes 50bp reads with 180bp fragments)
 		cmds = list()
 		transientFile = os.path.abspath(re.sub("\.bigWig", "", outputBigWig))
-		cmd1 = self.bedtools + " bamtobed -i {0} |".format(inputBam)
+		cmd1 = self.tools.bedtools + " bamtobed -i {0} |".format(inputBam)
 		if not tagmented:
-			cmd1 += " " + self.bedtools + " slop -i stdin -g {0} -s -l 0 -r 130 |".format(genomeSizes)
+			cmd1 += " " + self.tools.bedtools + " slop -i stdin -g {0} -s -l 0 -r 130 |".format(genomeSizes)
 			cmd1 += " fix_bedfile_genome_boundaries.py {0} |".format(genome)
-		cmd1 += " " + self.genomeCoverageBed + " {0}-bg -g {1} -i stdin > {2}.cov".format(
+		cmd1 += " " + self.tools.genomeCoverageBed + " {0}-bg -g {1} -i stdin > {2}.cov".format(
 				"-5 " if tagmented else "",
 				genomeSizes,
 				transientFile
@@ -645,7 +645,7 @@ class NGSTk(AttributeDict):
 		cmds.append(cmd1)
 		if normalize:
 			cmds.append("""awk 'NR==FNR{{sum+= $4; next}}{{ $4 = ($4 / sum) * 1000000; print}}' {0}.cov {0}.cov > {0}.normalized.cov""".format(transientFile))
-		cmds.append(self.bedGraphToBigWig + " {0}{1}.cov {2} {3}".format(transientFile, ".normalized" if normalize else "", genomeSizes, outputBigWig))
+		cmds.append(self.tools.bedGraphToBigWig + " {0}{1}.cov {2} {3}".format(transientFile, ".normalized" if normalize else "", genomeSizes, outputBigWig))
 		# remove tmp files
 		cmds.append("if [[ -s {0}.cov ]]; then rm {0}.cov; fi".format(transientFile))
 		if normalize:
@@ -686,24 +686,24 @@ class NGSTk(AttributeDict):
 
 
 	def kallisto(self, inputFastq, outputDir, outputBam, transcriptomeIndex, cpus, inputFastq2=None, size=180, b=200):
-		cmd1 = self.kallisto + " quant --bias --pseudobam -b {0} -l {1} -i {2} -o {3} -t {4}".format(b, size, transcriptomeIndex, outputDir, cpus)
+		cmd1 = self.tools.kallisto + " quant --bias --pseudobam -b {0} -l {1} -i {2} -o {3} -t {4}".format(b, size, transcriptomeIndex, outputDir, cpus)
 		if inputFastq2 is None:
 			cmd1 += " --single {0}".format(inputFastq)
 		else:
 			cmd1 += " {0} {1}".format(inputFastq, inputFastq2)
-		cmd1 += " | " + self.samtools + " view -Sb - > {0}".format(outputBam)
-		cmd2 = self.kallisto + " h5dump -o {0} {0}/abundance.h5".format(outputDir)
+		cmd1 += " | " + self.tools.samtools + " view -Sb - > {0}".format(outputBam)
+		cmd2 = self.tools.kallisto + " h5dump -o {0} {0}/abundance.h5".format(outputDir)
 		return [cmd1, cmd2]
 
 
 	def genomeWideCoverage(self, inputBam, genomeWindows, output):
-		cmd = self.bedtools + " coverage -abam -counts -a {0} -b {1} > {2}".format(inputBam, genomeWindows, output)
+		cmd = self.tools.bedtools + " coverage -abam -counts -a {0} -b {1} > {2}".format(inputBam, genomeWindows, output)
 		return cmd
 
 
 	def calculateFRiP(self, inputBam, inputBed, output):
 		cmd = "cut -f 1,2,3 {0} |".format(inputBed)
-		cmd += self.bedtools + " coverage -counts -abam {0} -b - |".format(inputBam)
+		cmd += self.tools.bedtools + " coverage -counts -abam {0} -b - |".format(inputBam)
 		cmd += " awk '{{sum+=$4}} END {{print sum}}' > {0}".format(output)
 		return cmd
 
@@ -711,7 +711,7 @@ class NGSTk(AttributeDict):
 	def macs2CallPeaks(self, treatmentBam, outputDir, sampleName, genome, controlBam=None, broad=False):
 		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
 		if not broad:
-			cmd = self.macs2 + " callpeak -t {0}".format(treatmentBam)
+			cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 			if controlBam is not None:
 				cmd += " -c {0}".format(controlBam)
 			cmd += " --bw 200 -g {0} -n {0} --outdir {0}".format(sizes[genome], sampleName, outputDir)
@@ -719,7 +719,7 @@ class NGSTk(AttributeDict):
 		else:
 			# Parameter setting for broad factors according to Nature Protocols (2012)
 			# Vol.7 No.9 1728-1740 doi:10.1038/nprot.2012.101 Protocol (D) for H3K36me3
-			cmd = self.macs2 + " callpeak -t {0}".format(treatmentBam)
+			cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 			if controlBam is not None:
 				cmd += " -c {0}".format(controlBam)
 			cmd += " --broad --nomodel --extsize 73 --pvalue 1e-3 -g {0} -n {1} --outdir {2}".format(
@@ -730,7 +730,7 @@ class NGSTk(AttributeDict):
 
 	def macs2CallPeaksATACSeq(self, treatmentBam, outputDir, sampleName, genome):
 		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
-		cmd = self.macs2 + " callpeak -t {0}".format(treatmentBam)
+		cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 		cmd += " --nomodel --extsize 147 -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 		return cmd
 
@@ -738,7 +738,7 @@ class NGSTk(AttributeDict):
 	def macs2PlotModel(self, sampleName, outputDir):
 		import os
 		# run macs r script
-		cmd1 = self.Rscript + " {0}/{1}_model.r".format(os.getcwd(), sampleName)
+		cmd1 = self.tools.Rscript + " {0}/{1}_model.r".format(os.getcwd(), sampleName)
 		# move to sample dir
 		cmd2 = "mv {0}/{1}_model.pdf {2}/{1}_model.pdf".format(os.getcwd(), sampleName, outputDir)
 		return [cmd1, cmd2]
@@ -746,25 +746,25 @@ class NGSTk(AttributeDict):
 
 	def sppCallPeaks(self, treatmentBam, controlBam, treatmentName, controlName, outputDir, broad, cpus):
 		broad = "TRUE" if broad else "FALSE"
-		cmd = self.Rscript + " `which spp_peak_calling.R` {0} {1} {2} {3} {4} {5} {6}".format(
+		cmd = self.tools.Rscript + " `which spp_peak_calling.R` {0} {1} {2} {3} {4} {5} {6}".format(
 			treatmentBam, controlBam, treatmentName, controlName, broad, cpus, outputDir
 		)
 		return cmd
 
 
 	def bamToBed(self, inputBam, outputBed):
-		cmd = self.bedtools + " bamtobed -i {0} > {1}".format(inputBam, outputBed)
+		cmd = self.tools.bedtools + " bamtobed -i {0} > {1}".format(inputBam, outputBed)
 		return cmd
 
 
 	def zinbaCallPeaks(self, treatmentBed, controlBed, cpus, tagmented=False):
 		fragmentLength = 80 if tagmented else 180
-		cmd = self.Rscript + " `which zinba.R` -l {0} -t {1} -c {2}".format(fragmentLength, treatmentBed, controlBed)
+		cmd = self.tools.Rscript + " `which zinba.R` -l {0} -t {1} -c {2}".format(fragmentLength, treatmentBed, controlBed)
 		return cmd
 
 
 	def filterPeaksMappability(self, peaks, alignability, filteredPeaks):
-		cmd = self.bedtools + " intersect -wa -u -f 1"
+		cmd = self.tools.bedtools + " intersect -wa -u -f 1"
 		cmd += " -a {0} -b {1} > {2} ".format(peaks, alignability, filteredPeaks)
 		return cmd
 
@@ -803,7 +803,7 @@ class NGSTk(AttributeDict):
 		import subprocess
 		from collections import Counter
 		try:
-			p = subprocess.Popen([self.samtools, 'view', bamFile], stdout=subprocess.PIPE)
+			p = subprocess.Popen([self.tools.samtools, 'view', bamFile], stdout=subprocess.PIPE)
 			# Count paired alignments
 			paired = 0
 			readLength = Counter()
@@ -947,7 +947,7 @@ class NGSTk(AttributeDict):
 	def peakAnalysis(self, inputBam, peakFile, plotsDir, windowWidth, fragmentsize,
 					 genome, n_clusters, strand_specific, duplicates):
 		import os
-		cmd = self.python + " {0}/lib/peaks_analysis.py {1} {2} {3}".format(
+		cmd = self.tools.python + " {0}/lib/peaks_analysis.py {1} {2} {3}".format(
 			os.path.abspath(os.path.dirname(os.path.realpath(__file__))),
 			inputBam, peakFile, plotsDir
 		)
@@ -964,7 +964,7 @@ class NGSTk(AttributeDict):
 	def tssAnalysis(self, inputBam, tssFile, plotsDir, windowWidth, fragmentsize, genome,
 					n_clusters, strand_specific, duplicates):
 		import os
-		cmd = self.python + " {0}/lib/tss_analysis.py {1} {2} {3}".format(
+		cmd = self.tools.python + " {0}/lib/tss_analysis.py {1} {2} {3}".format(
 			os.path.abspath(os.path.dirname(os.path.realpath(__file__))),
 			inputBam, tssFile, plotsDir
 		)
@@ -984,7 +984,7 @@ class NGSTk(AttributeDict):
 
 	def plotCorrelations(self, inputCoverage, plotsDir):
 		import os
-		cmd = self.python + " {2}/lib/correlations.py {0} {1}".format(
+		cmd = self.tools.python + " {2}/lib/correlations.py {0} {1}".format(
 			plotsDir,
 			" ".join(["%s"] * len(inputCoverage)) % tuple(inputCoverage),
 			os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
@@ -994,7 +994,7 @@ class NGSTk(AttributeDict):
 
 	def diffBind(self, inputCSV, jobName, plotsDir):
 		import os
-		cmd = self.Rscript + " {3}/lib/diffBind_analysis.R {0} {1} {2}".format(
+		cmd = self.tools.Rscript + " {3}/lib/diffBind_analysis.R {0} {1} {2}".format(
 			inputCSV, jobName, plotsDir,
 			os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 		)
