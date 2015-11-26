@@ -11,30 +11,7 @@ import os, sys, subprocess, errno
 import re, glob
 import time
 import atexit, signal, platform
-
-class AttributeDict(object):
-	"""
-	A class to convert a nested Dictionary into an object with key-values
-	accessibly using attribute notation (AttributeDict.attribute) instead of
-	key notation (Dict["key"]). This class recursively sets Dicts to objects,
-	allowing you to recurse down nested dicts (like: AttributeDict.attr.attr)
-	"""
-	def __init__(self, **entries):
-		self.add_entries(**entries)
-
-	def add_entries(self, **entries):
-		for key, value in entries.items():
-			if type(value) is dict:
-				self.__dict__[key] = AttributeDict(**value)
-			else:
-				self.__dict__[key] = value
-
-	def __getitem__(self, key):
-		"""
-		Provides dict-style access to attributes
-		"""
-		return getattr(self, key)
-
+from AttributeDict import AttributeDict
 
 class PipelineManager(object):
 	"""
@@ -125,7 +102,7 @@ class PipelineManager(object):
 				with open(args.config_file, 'r') as config_file:
 					import yaml
 					config = yaml.load(config_file)
-					self.config = AttributeDict(**config)
+					self.config = AttributeDict(config, default=True)
 
 
 	def ignore_interrupts(self):
@@ -282,8 +259,7 @@ class PipelineManager(object):
 		The primary workhorse function of pypiper. This is the command execution function, which enforces
 		file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
 		wait for the file lock if it exists, and not produce new output (by default) if the target output file already
-		exists. If the output is to be cr#
-[Peated, it will first create a lock file to prevent other calls to call_lock
+		exists. If the output is to be created, it will first create a lock file to prevent other calls to run
 		(for example, in parallel pipelines) from touching the file while it is being created.
 		It also records the memory of the process and provides some logging output.
 
@@ -783,7 +759,7 @@ class PipelineManager(object):
 	def clean_add(self, regex, conditional=False, manual=False):
 		"""
 		Add files (or regexs) to a cleanup list, to delete when this pipeline completes successfully.
-		When making a call with call_lock that produces intermediate files that should be
+		When making a call with run that produces intermediate files that should be
 		deleted after the pipeline completes, you flag these files for deletion with this command.
 		Files added with clean_add will only be deleted upon success of the pipeline.
 
@@ -854,12 +830,8 @@ class PipelineManager(object):
 						files = glob.glob(expr)
 						while files in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(files)
 						for file in files:
-							if os.path.isfile(file):
-								print("rm " + file)
-								os.remove(os.path.join(file))
-							elif os.path.isdir(file):
-								print("`rmdir " + file + "`")
-								os.rmdir(os.path.join(file))
+							print("rm " + file)
+							os.remove(os.path.join(file))
 					except:
 						pass
 			else:
@@ -871,8 +843,7 @@ class PipelineManager(object):
 						files = glob.glob(expr)
 						for file in files:
 							with open(self.cleanup_file, "a") as myfile:
-								if os.path.isfile(file): myfile.write("`rm " + file + "`\n")
-								elif os.path.isdir(file): myfile.write("`rmdir " + file + "`\n")
+								myfile.write("`rm " + file + "`\n")
 					except:
 						pass
 
