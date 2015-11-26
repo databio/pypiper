@@ -834,7 +834,8 @@ class PipelineManager(object):
 					while files in self.cleanup_list: self.cleanup_list.remove(files)
 					# and delete the files
 					for file in files:
-						print("`rm " + file + "`")
+						if os.path.isfile(file):
+							print("`rm " + file + "`")
 							os.remove(os.path.join(file))
 						elif os.path.isdir(file):
 							print("`rmdir " + file + "`")
