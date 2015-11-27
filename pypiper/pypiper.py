@@ -830,8 +830,12 @@ class PipelineManager(object):
 						files = glob.glob(expr)
 						while files in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(files)
 						for file in files:
-							print("rm " + file)
-							os.remove(os.path.join(file))
+							if os.path.isfile(file):
+								print("`rm " + file + "`")
+								os.remove(os.path.join(file))
+							elif os.path.isdir(file):
+								print("`rmdir " + file + "`")
+								os.rmdir(os.path.join(file))
 					except:
 						pass
 			else:
@@ -843,7 +847,8 @@ class PipelineManager(object):
 						files = glob.glob(expr)
 						for file in files:
 							with open(self.cleanup_file, "a") as myfile:
-								myfile.write("`rm " + file + "`\n")
+								if os.path.isfile(file): myfile.write("rm " + file + "\n")
+								elif os.path.isdir(file): myfile.write("rmdir " + file + "\n")
 					except:
 						pass
 
