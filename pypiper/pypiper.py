@@ -949,7 +949,7 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		# Arguments typically used in every pipeline
 		parser.add_argument("-I", "--input", dest = "input", type = str, nargs = "+",
 			help = "one or more input files (required)",
-			required = True, metavar = "INPUT_FILES")
+			required = False, metavar = "INPUT_FILES")
 		# input was previously called unmapped_bam
 
 		parser.add_argument("-S", "--sample_name", dest = "sample_name", type = str,
@@ -960,7 +960,7 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		# Common arguments specific to NGS pipelines
 		parser.add_argument("-G", "--genome", dest = "genome_assembly", type = str,
 			help = "identifier for genome assempbly (required)",
-			required = True)
+			required = False)
 
 		parser.add_argument("-Q", "--single_or_paired", dest = "single_or_paired", type = str,
 			help = "single or paired end? default: single",
