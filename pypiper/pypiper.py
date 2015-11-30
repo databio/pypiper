@@ -931,12 +931,12 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		# Arguments to optimize the intervace to looper
 		# Default config
 		default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
-		parser.add_argument("-C", "--config", dest = "config_file", type = str,
+		parser.add_argument("-C", "--config", dest = "config-file", type = str,
 			help = "pipeline config file in YAML format; relative paths are \
 			considered relative to the pipeline script. \
 			defaults to " + default_config,
 			required = False, default = default_config, metavar = "CONFIG_FILE")
-		parser.add_argument("-O", "--output_parent", dest = "output_parent", type = str,
+		parser.add_argument("-O", "--output-parent", dest = "output_parent", type = str,
 			help = "parent output directory of the project (required). The sample_name \
 			argument will be appended to this folder for output",
 			required = True, metavar = "PARENT_OUTPUT_FOLDER")
@@ -952,7 +952,7 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 			required = False, metavar = "INPUT_FILES")
 		# input was previously called unmapped_bam
 
-		parser.add_argument("-S", "--sample_name", dest = "sample_name", type = str,
+		parser.add_argument("-S", "--sample-name", dest = "sample_name", type = str,
 			help = "unique name for output subfolder and files (required)",
 			required = False, metavar = "SAMPLE_NAME")
 
@@ -962,7 +962,7 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 			help = "identifier for genome assempbly (required)",
 			required = False)
 
-		parser.add_argument("-Q", "--single_or_paired", dest = "single_or_paired", type = str,
+		parser.add_argument("-Q", "--single-or-paired", dest = "single_or_paired", type = str,
 			help = "single or paired end? default: single",
 			required = False, default="single")
 
