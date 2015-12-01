@@ -90,19 +90,20 @@ class PipelineManager(object):
 
 		# Read YAML config file
 		self.config = None
-		if not os.path.isabs(args.config_file):
-			# Set the path to an absolute path, relative to pipeline script
-			default_config_abs = os.path.join(os.path.dirname(sys.argv[0]), args.config_file)
-			if os.path.isfile(default_config_abs):
-				args.config_file = default_config_abs
-			else:
-				args.config_file = None
+		if args:
+			if args.config_file is not None and not os.path.isabs(args.config_file):
+				# Set the path to an absolute path, relative to pipeline script
+				default_config_abs = os.path.join(os.path.dirname(sys.argv[0]), args.config_file)
+				if os.path.isfile(default_config_abs):
+					args.config_file = default_config_abs
+				else:
+					args.config_file = None
 
-			if (args.config_file):
-				with open(args.config_file, 'r') as config_file:
-					import yaml
-					config = yaml.load(config_file)
-					self.config = AttributeDict(config, default=True)
+				if (args.config_file):
+					with open(args.config_file, 'r') as config_file:
+						import yaml
+						config = yaml.load(config_file)
+						self.config = AttributeDict(config, default=True)
 
 
 	def ignore_interrupts(self):
