@@ -932,7 +932,7 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		# Arguments to optimize the intervace to looper
 		# Default config
 		default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
-		parser.add_argument("-C", "--config", dest = "config-file", type = str,
+		parser.add_argument("-C", "--config", dest = "config_file", type = str,
 			help = "pipeline config file in YAML format; relative paths are \
 			considered relative to the pipeline script. \
 			defaults to " + default_config,
