@@ -1,4 +1,4 @@
-#!/usr/env python
+#!/usr/bin/env python
 """
 These are unit tests for the Pypiper class. Run with
 python test_pypiper.py
@@ -16,8 +16,8 @@ class PypiperTest(unittest.TestCase):
 	def setUp(self):
 		print("Setting up...")
 		# Create a fixture
-		self.pp = pypiper.Pypiper(name="sample_pipeline", outfolder="pipeline_output/", multi=True)
-		self.pp2 = pypiper.Pypiper(name="sample_pipeline2", outfolder="pipeline_output/", multi=True)
+		self.pp = pypiper.PipelineManager(name="sample_pipeline", outfolder="pipeline_output/", multi=True)
+		self.pp2 = pypiper.PipelineManager(name="sample_pipeline2", outfolder="pipeline_output/", multi=True)
 
 	def tearDown(self):
 		print("Tearing down...")
@@ -55,7 +55,7 @@ class PypiperTest(unittest.TestCase):
 		print("Putting lock file: " + sleep_lock)
 		cmd = "echo hello"
 		stamp = time.time()
-		self.pp.call_lock(cmd, lock_name="sleep")
+		self.pp.run(cmd, lock_name="sleep")
 		print("Elapsed: " + str(self.pp.time_elapsed(stamp)))
 		self.assertTrue(self.pp.time_elapsed(stamp) > 1)
 		print("Wait for subprocess...")
@@ -65,14 +65,14 @@ class PypiperTest(unittest.TestCase):
 
 		print("Make sure the pipeline respects files already existing...")
 		target = self.pp.pipeline_outfolder + "tgt"
-		self.pp.call_lock("echo first > " + target, target, shell=True)
-		self.pp.call_lock("echo second > " + target, target, shell=True) # Should not run
+		self.pp.run("echo first > " + target, target, shell=True)
+		self.pp.run("echo second > " + target, target, shell=True) # Should not run
 		with open(target) as f:
 			lines = f.readlines()
 		self.assertEqual(lines, ['first\n'])
 
 		print("Execute a targetless command...")
-		self.pp.call_lock("echo third > " + target, target=None, lock_name="test", shell=True) #
+		self.pp.run("echo third > " + target, target=None, lock_name="test", shell=True) #
 		with open(target) as f:
 			lines = f.readlines()
 		self.assertEqual(lines, ['third\n'])
@@ -88,8 +88,8 @@ class PypiperTest(unittest.TestCase):
 		tgt9 = self.pp.pipeline_outfolder + "tgt9.cond"
 		tgt10 = self.pp.pipeline_outfolder + "tgt10.txt"
 
-		self.pp.call_lock("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5, lock_name="test")
-		self.pp.call_lock("touch " + tgt8 + " " + tgt9, lock_name="test")
+		self.pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5, lock_name="test")
+		self.pp.run("touch " + tgt8 + " " + tgt9, lock_name="test")
 
 		# In global manual_clean mode, even non-manual clean files should not be deleted:
 		self.pp.manual_clean=True
@@ -118,11 +118,11 @@ class PypiperTest(unittest.TestCase):
 		self.assertFalse(os.path.isfile(tgt4))
 
 		tgt7 = self.pp.pipeline_outfolder + "tgt7.txt"
-		self.pp.call_lock("touch " + tgt7, tgt7)
+		self.pp.run("touch " + tgt7, tgt7)
 		self.pp.clean_add(tgt7, manual=True)
 
 
-		self.pp.call_lock("touch " + tgt10, target=tgt10, clean=True)
+		self.pp.run("touch " + tgt10, target=tgt10, clean=True)
 
 		# Conditional delete should not delete tgt5
 		# while pp2 is running
@@ -143,7 +143,7 @@ class PypiperTest(unittest.TestCase):
 		self.assertTrue(os.path.isfile(tgt7))
 
 		# cleanup should run on termination:
-		self.pp.call_lock("touch " + tgt6, tgt6)
+		self.pp.run("touch " + tgt6, tgt6)
 		self.pp.clean_add(tgt6, conditional=True)
 		self.pp.stop_pipeline()
 		self.assertFalse(os.path.isfile(tgt5))
@@ -152,16 +152,16 @@ class PypiperTest(unittest.TestCase):
 		self.assertTrue(os.path.isfile(tgt7))
 
 		print("Test failure and nofail options...")
-		self.pp3 = pypiper.Pypiper(name="sample_pipeline3", outfolder="pipeline_output3/", multi=True)
+		self.pp3 = pypiper.PipelineManager(name="sample_pipeline3", outfolder="pipeline_output3/", multi=True)
 
 		cmd = "thiscommandisbad"
 
 		#Should not raise an error
-		self.pp.call_lock(cmd, target=None, lock_name="badcommand", nofail=True)
+		self.pp.run(cmd, target=None, lock_name="badcommand", nofail=True)
 		self.pp.callprint(cmd, nofail=True)
 
 		with self.assertRaises(OSError):
-			self.pp.call_lock(cmd, target=None, lock_name="badcommand")
+			self.pp.run(cmd, target=None, lock_name="badcommand")
 
 
 
