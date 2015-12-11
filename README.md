@@ -9,6 +9,12 @@ The public-facing permalink for the project is http://databio.org/pypiper. The s
 pip install --user https://github.com/epigen/pypiper/zipball/master
 ```
 
+Update with:
+
+```
+pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master
+```
+
 # Introduction
 
 Pypiper helps you produce pipelines. 
