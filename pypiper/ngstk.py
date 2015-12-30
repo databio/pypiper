@@ -325,6 +325,21 @@ class NGSTk(AttributeDict):
 		cmd3 = "mv {0}_fastqc.zip {1}_fastqc.zip".format(os.path.join(outputDir, initial), os.path.join(outputDir, sampleName))
 		return [cmd1, cmd2, cmd3]
 
+	def preseq_curve(bam_file, output_prefix):
+		return """
+		preseq c_curve -B -P -o {0}.yield.txt {1}
+		""".format(output_prefix, bam_file)
+
+	def preseq_extrapolate(bam_file, output_prefix):
+		return """
+		preseq lc_extrap -v -B -P -e 1e+9 -o {0}.future_yield.txt {1}
+		""".format(output_prefix, bam_file)
+
+	def preseq_coverage(bam_file, output_prefix):
+		return """
+		preseq gc_extrap -o {0}.future_coverage.txt {1}
+		""".format(output_prefix, bam_file)
+
 	def bam2fastq(self, inputBam, outputFastq, outputFastq2=None, unpairedFastq=None):
 		cmd = self.tools.java + " -Xmx4g -jar " + self.tools.picard + " SamToFastq"
 		cmd += " INPUT={0}".format(inputBam)
@@ -471,15 +486,6 @@ class NGSTk(AttributeDict):
 	def peakTools(self, inputBam, output, plot, cpus):
 		cmd = self.tools.Rscript + " `which run_spp.R` -rf -savp -savp={0} -s=0:5:500 -c={1} -out={2}".format(plot, inputBam, output)
 		return cmd
-
-	def qc(self):
-		"""
-		$PRESEQ c_curve -B $PROJECTDIR/mapped/$SAMPLE_NAME.trimmed.bowtie2.sorted.shifted.dup.bam \
-		-o $PROJECTDIR/mapped/$SAMPLE_NAME_qc_c_curve.txt
-		$PRESEQ lc_extrap -e 1e8 -s 2e6 -B $PROJECTDIR/mapped/$SAMPLE_NAME.trimmed.bowtie2.sorted.shifted.dup.bam \
-		-o $PROJECTDIR/mapped/$SAMPLE_NAME_qc_lc_extrap.txt
-		"""
-		raise NotImplementedError("Function not implemented yet.")
 
 	def getFragmentSizes(self, bam):
 		try:
