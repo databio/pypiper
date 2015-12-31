@@ -3,7 +3,7 @@
 import os
 import subprocess
 import errno
-from AttributeDict import AttributeDict
+from AttributeDict import AttributeDict as _AttributeDict
 
 # Path variables
 # #######################################################################################
@@ -15,7 +15,7 @@ from AttributeDict import AttributeDict
 # myngstk = ngstk.NGSTk(config_file)
 # myngstk.bam_to_fastq(arguments NOT REQUIRING config.tools OBJECT)
 
-class NGSTk(AttributeDict):
+class NGSTk(_AttributeDict):
 	"""
 	Class to hold functions to build command strings used during pipeline runs.
 	Object is instantiated with a string of a path to a yaml `pipeline config file`.
@@ -325,17 +325,17 @@ class NGSTk(AttributeDict):
 		cmd3 = "mv {0}_fastqc.zip {1}_fastqc.zip".format(os.path.join(outputDir, initial), os.path.join(outputDir, sampleName))
 		return [cmd1, cmd2, cmd3]
 
-	def preseq_curve(bam_file, output_prefix):
+	def preseq_curve(self, bam_file, output_prefix):
 		return """
 		preseq c_curve -B -P -o {0}.yield.txt {1}
 		""".format(output_prefix, bam_file)
 
-	def preseq_extrapolate(bam_file, output_prefix):
+	def preseq_extrapolate(self, bam_file, output_prefix):
 		return """
 		preseq lc_extrap -v -B -P -e 1e+9 -o {0}.future_yield.txt {1}
 		""".format(output_prefix, bam_file)
 
-	def preseq_coverage(bam_file, output_prefix):
+	def preseq_coverage(self, bam_file, output_prefix):
 		return """
 		preseq gc_extrap -o {0}.future_coverage.txt {1}
 		""".format(output_prefix, bam_file)

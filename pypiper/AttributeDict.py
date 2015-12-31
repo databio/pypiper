@@ -15,7 +15,7 @@ class AttributeDict(object):
 		if no .java attribute were found.
 		"""
 		self.add_entries(entries, default)
-		self.return_defaults=default
+		self.return_defaults = default
 
 	def add_entries(self, entries, default=False):
 		for key, value in entries.items():
