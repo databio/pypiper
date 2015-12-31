@@ -11,35 +11,46 @@ from AttributeDict import AttributeDict as _AttributeDict
 
 
 # HOW TO USE IN PIPELINES:
-# from pypiper import ngstk
-# myngstk = ngstk.NGSTk(config_file)
-# myngstk.bam_to_fastq(arguments NOT REQUIRING config.tools OBJECT)
+# from pypiper import ngstk as tk
+# tk = ngstk.NGSTk(config_file)
+# tk.bam_to_fastq(arguments NOT REQUIRING config.tools OBJECT)
 
 class NGSTk(_AttributeDict):
 	"""
 	Class to hold functions to build command strings used during pipeline runs.
-	Object is instantiated with a string of a path to a yaml `pipeline config file`.
+	Object can be instantiated with a string of a path to a yaml `pipeline config file`.
 	Since NGSTk inherits from `AttributeDict`, the passed config file and its elements \
 	will be accessible through the NGSTk object as attributes under `config` (e.g. \
-	`NGSTk.config.tools.java`).
+	`NGSTk.tools.java`). In case no `config_file` argument is passed, all commands will
+	be returned assuming the tool is in the user's $PATH.
 
 	Example:
-	from pypiper.ngstk import NGSTk
-	myngstk = NGSTk("pipeline_config_file")
-	myngstk.bam_to_fastq(arguments NOT REQUIRING config.tools OBJECT)
+	> from pypiper.ngstk import NGSTk as tk
+	> tk = NGSTk()
+	> tk.samtools_index("sample.bam")
+		samtools index sample.bam
 
-	:param config_file: Path to pipeline yaml config file.
+	Sample example using a configuration file (custom executable location):
+	> from pypiper.ngstk import NGSTk
+	> tk = NGSTk("pipeline_config_file")
+	> tk.samtools_index("sample.bam")
+		/home/.local/samtools/bin/samtools index sample.bam
+
+	:param config_file: Path to pipeline yaml config file (optional).
 	:type config_file: str
 	"""
 
-	def __init__(self, config_file):
+	def __init__(self, config_file=None):
 		# parse yaml into the project's attributes
 		# self.add_entries(**config)
 
-		with open(config_file, 'r') as config_file:
+		if config_file is None:
+			super(NGSTk, self).__init__({}, default=True)
+		else:
 			import yaml
-			config = yaml.load(config_file)
-		super(NGSTk, self).__init__(config, default=True)
+			with open(config_file, 'r') as config_file:
+				config = yaml.load(config_file)
+			super(NGSTk, self).__init__(config, default=True)
 
 	def make_sure_path_exists(self, path):
 		try:

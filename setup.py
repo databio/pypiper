@@ -22,6 +22,7 @@ setup(
     version=pypiper.__version__,
     description='A lightweight python toolkit for gluing together restartable, robust command line pipelines',
     author='Nathan Sheffield, Johanna Klughammer, Andre Rendeiro',
-    author_email='nathan@code.databio.org, jklughammer@cemm.oeaw.ac.at',
-    url='https://github.com/epigen/pypiper/'
+    author_email='nathan@code.databio.org, jklughammer@cemm.oeaw.ac.at, arendeiro@cemm.oeaw.ac.at',
+    url='https://github.com/epigen/pypiper/',
+    **extra
 )
