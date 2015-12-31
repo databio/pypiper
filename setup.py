@@ -1,8 +1,7 @@
 #! /usr/bin/env python
 
 import sys
-import re
-import os
+import pypiper
 
 extra = {}
 
@@ -20,9 +19,9 @@ except ImportError:
 setup(
     name='pypiper',
     packages=['pypiper'],
-    version='0.1',
+    version=pypiper.__version__,
     description='A lightweight python toolkit for gluing together restartable, robust command line pipelines',
-    author='Nathan Sheffield, Johanna Klughammer, ',
+    author='Nathan Sheffield, Johanna Klughammer, Andre Rendeiro',
     author_email='nathan@code.databio.org, jklughammer@cemm.oeaw.ac.at',
     url='https://github.com/epigen/pypiper/'
 )
