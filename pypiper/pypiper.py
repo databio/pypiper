@@ -13,6 +13,7 @@ import time
 import atexit, signal, platform
 from AttributeDict import AttributeDict
 
+
 class PipelineManager(object):
 	"""
 	Base class for instantiating a PipelineManager object, they head class of Pypiper
@@ -30,9 +31,11 @@ class PipelineManager(object):
 	of the output, so you won't get output logged to a file.
 	:param manual_clean: Overrides the pipeline's clean_add() manual parameters, to *never* clean up intermediate files
 	automatically. Useful for debugging; all cleanup files are added to the manual cleanup script.
+
 	"""
-	def __init__(self, name, outfolder, args=None, multi=False,
-					manual_clean=False, recover=False, fresh=False):
+	def __init__(
+		self, name, outfolder, args=None, multi=False,
+		manual_clean=False, recover=False, fresh=False):
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
 		# to Pypiper. If any pypiper arguments are passed
@@ -40,8 +43,9 @@ class PipelineManager(object):
 		# defaults for these arguments.
 
 		# Establish default params
-		params = { 'manual_clean':manual_clean, 'recover':recover,
-					'fresh': fresh }
+		params = {
+			'manual_clean': manual_clean, 'recover': recover,
+			'fresh': fresh}
 
 		# Update them with any passed via 'args'
 		if args is not None:
@@ -63,7 +67,6 @@ class PipelineManager(object):
 		self.pipeline_commands_file = self.pipeline_outfolder + self.pipeline_name + "_commands.sh"
 		self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
 
-
 		# Pipeline status variables
 		self.peak_memory = 0  # memory high water mark
 		self.starttime = time.time()
@@ -73,7 +76,7 @@ class PipelineManager(object):
 		self.proc_lock_name = None
 		self.proc_start_time = None
 		self.running_subprocess = None
-		self.wait = True # turn off for debugging
+		self.wait = True  # turn off for debugging
 
 		# Register handler functions to deal with interrupt and termination signals;
 		# If received, we would then clean up properly (set pipeline status to FAIL, etc).
@@ -105,16 +108,14 @@ class PipelineManager(object):
 						config = yaml.load(config_file)
 						self.config = AttributeDict(config, default=True)
 
-
 	def ignore_interrupts(self):
-		'''
+		"""
 		Ignore interrupt and termination signals. Used as a pre-execution
 		function (preexec_fn) for subprocess.Popen calls that Pyper will retain
 		control over (meaning I will clean these processes up manually).
-		'''
+		"""
 		signal.signal(signal.SIGINT, signal.SIG_IGN)
 		signal.signal(signal.SIGTERM, signal.SIG_IGN)
-
 
 	def start_pipeline(self, args=None, multi=False):
 		"""
@@ -136,8 +137,9 @@ class PipelineManager(object):
 			# subprocess is dead.
 
 			# a for append to file
-			tee = subprocess.Popen(["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE,
-								preexec_fn=self.ignore_interrupts)
+			tee = subprocess.Popen(
+				["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE,
+				preexec_fn=self.ignore_interrupts)
 
 			# Reset the signal handlers after spawning that process
 			# signal.signal(signal.SIGINT, self.signal_int_handler)
@@ -151,7 +153,6 @@ class PipelineManager(object):
 		# by pypiper, but can't tee the subprocess output. For this, it would require using threading to
 		# simultaneously capture and display subprocess output. I shelve this for now and stick with the tee option.
 		# sys.stdout = Tee(self.pipeline_log_file)
-
 
 		# Record the git version of the pipeline and pypiper used. This gets (if it is in a git repo):
 		# dir: the directory where the code is stored
@@ -182,37 +183,36 @@ class PipelineManager(object):
 		# Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
 		print("----------------------------------------")
 		print("##### [Pipeline run code and environment:]")
-		print("* " +"Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv))) + "`"
-		print("* " +"Compute host".rjust(20) + ":  " + platform.node())
-		print("* " +"Working dir".rjust(20) + ":  " + os.getcwd())
-		print("* " +"Outfolder".rjust(20) + ":  " + self.pipeline_outfolder)
+		print("* " + "Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv))) + "`"
+		print("* " + "Compute host".rjust(20) + ":  " + platform.node())
+		print("* " + "Working dir".rjust(20) + ":  " + os.getcwd())
+		print("* " + "Outfolder".rjust(20) + ":  " + self.pipeline_outfolder)
 
-		self.timestamp("* " +"Pipeline started at".rjust(20) + ":  ")
+		self.timestamp("* " + "Pipeline started at".rjust(20) + ":  ")
 
 		print("\n##### [Version log:]")
-		print("* " +"Python version".rjust(20) + ":  " + platform.python_version())
+		print("* " + "Python version".rjust(20) + ":  " + platform.python_version())
 		try:
-			print("* " +"Pypiper dir".rjust(20) + ":  "  + "`" + gitvars['pypiper_dir'].strip() + "`")
-			print("* " +"Pypiper version".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
-			print("* " +"Pypiper branch".rjust(20) + ":  " + gitvars['pypiper_branch'].strip())
-			print("* " +"Pypiper date".rjust(20) + ":  " + gitvars['pypiper_date'].strip())
+			print("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
+			print("* " + "Pypiper version".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
+			print("* " + "Pypiper branch".rjust(20) + ":  " + gitvars['pypiper_branch'].strip())
+			print("* " + "Pypiper date".rjust(20) + ":  " + gitvars['pypiper_date'].strip())
 			if (gitvars['pypiper_diff'] != ""):
-				print("* " +"Pypiper diff".rjust(20) + ":  " + gitvars['pypiper_diff'].strip())
+				print("* " + "Pypiper diff".rjust(20) + ":  " + gitvars['pypiper_diff'].strip())
 		except KeyError:
 			# If any of the keys aren't set, that's OK. It just means pypiper isn't being run from a git repo.
 			pass
 
 		try:
-			print("* " +"Pipeline dir".rjust(20) + ":  " + "`" + gitvars['pipe_dir'].strip() + "`")
-			print("* " +"Pipeline version".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
-			print("* " +"Pipeline branch".rjust(20) + ":  " + gitvars['pipe_branch'].strip())
-			print("* " +"Pipeline date".rjust(20) + ":  " + gitvars['pipe_date'].strip())
+			print("* " + "Pipeline dir".rjust(20) + ":  " + "`" + gitvars['pipe_dir'].strip() + "`")
+			print("* " + "Pipeline version".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
+			print("* " + "Pipeline branch".rjust(20) + ":  " + gitvars['pipe_branch'].strip())
+			print("* " + "Pipeline date".rjust(20) + ":  " + gitvars['pipe_date'].strip())
 			if (gitvars['pipe_diff'] != ""):
-				print("* " +"Pipeline diff".rjust(20) + ":  " + gitvars['pipe_diff'].strip())
+				print("* " + "Pipeline diff".rjust(20) + ":  " + gitvars['pipe_diff'].strip())
 		except KeyError:
 			# It is ok if keys aren't set, it means the pipeline isn't a git repo.
 			pass
-
 
 		# Print all arguments (if any)
 		print("\n##### [Arguments passed to pipeline:]")
@@ -232,8 +232,6 @@ class PipelineManager(object):
 
 		with open(self.pipeline_profile_file, "a") as myfile:
 			myfile.write("# Pipeline started at " + time.strftime("%m-%d %H:%M:%S", time.localtime(self.starttime)) + "\n\n")
-
-
 
 	def set_status_flag(self, status):
 		prev_status = self.status
@@ -311,13 +309,13 @@ class PipelineManager(object):
 			# Base case: Target exists.	# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
 			if target is not None and os.path.isfile(target) and not os.path.isfile(lock_file):
 				print("\nTarget exists: `" + target + "`")
-				break # Do not run command
+				break  # Do not run command
 
 			# Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
 			if os.path.isfile(lock_file):
 				if self.overwrite_locks:
 					print("Found lock file; overwriting this target...")
-				else: # don't overwite locks
+				else:  # don't overwite locks
 					self.wait_for_lock(lock_file)
 					# when it's done loop through again to try one more time (to see if the target exists now)
 					continue
@@ -401,7 +399,6 @@ class PipelineManager(object):
 
 		return returnvalue
 
-
 	def callprint(self, cmd, shell=False, nofail=False):
 		"""
 		Prints the command, and then executes it, then prints the memory use and return code of the command.
@@ -427,7 +424,7 @@ class PipelineManager(object):
 		# Split the command to use shell=False;
 		# leave it together to use shell=True;
 		self.report_command(cmd)
-		#self.proc_name = cmd[0] + " " + cmd[1]
+		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
 		if not shell:
 			if ("|" in cmd or ">" in cmd):
@@ -476,8 +473,8 @@ class PipelineManager(object):
 			print(info)
 			# set self.maxmem
 			self.peak_memory = max(self.peak_memory, local_maxmem)
-			#report process profile
-			self.report_profile(self.proc_name, self.proc_lock_name, time.time() - self.proc_start_time, local_maxmem )
+			# report process profile
+			self.report_profile(self.proc_name, self.proc_lock_name, time.time() - self.proc_start_time, local_maxmem)
 			self.running_subprocess = None
 			self.proc_lock_name = None
 			self.proc_start_time = None
@@ -579,7 +576,6 @@ class PipelineManager(object):
 		"""
 		return round(time.time() - time_since, 2)
 
-
 	def report_profile(self, command, lock_name , elapsed_time, memory):
 		"""
 		Writes a string to self.pipeline_profile_file.
@@ -587,11 +583,10 @@ class PipelineManager(object):
 		:type key: str
 		"""
 		messageRaw = str(command) + "\t " + str(lock_name) + "\t" + str(round(elapsed_time, 2)) + "\t " + str(memory)
-		#messageMarkdown = "> `" + command + "`\t" + str(elapsed_time).strip() + "\t " + str(memory).strip() + "\t" + "_PROF_"
-		#print(messageMarkdown)
+		# messageMarkdown = "> `" + command + "`\t" + str(elapsed_time).strip() + "\t " + str(memory).strip() + "\t" + "_PROF_"
+		# print(messageMarkdown)
 		with open(self.pipeline_profile_file, "a") as myfile:
 			myfile.write(messageRaw + "\n")
-
 
 	def report_result(self, key, value):
 		"""
@@ -614,7 +609,6 @@ class PipelineManager(object):
 		print("> `" + cmd + "`\n")
 		with open(self.pipeline_commands_file, "a") as myfile:
 			myfile.write(cmd + "\n\n")
-
 
 	def create_file(self, file):
 		"""
@@ -652,7 +646,6 @@ class PipelineManager(object):
 			if exception.errno != errno.EEXIST:
 				raise
 
-
 	###################################
 	# Pipeline termination functions
 	###################################
@@ -685,12 +678,12 @@ class PipelineManager(object):
 			self.running_subprocess = None
 			# Close the preformat tag that we opened when the process was spawned.
 			print("</pre>")
-			#record profile of any running processes before killing
+			# record profile of any running processes before killing
 			elapsed_time = time.time() - self.proc_start_time
 			self.report_profile(self.proc_name, self.proc_lock_name, elapsed_time, self.peak_memory)
 
 			self.kill_child_process(pid_to_kill)
-		if self.status != "failed":  #and self.status != "completed":
+		if self.status != "failed":  # and self.status != "completed":
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
 		raise e
@@ -754,7 +747,7 @@ class PipelineManager(object):
 			pass
 		else:
 			print("\nPypiper terminating spawned child process " + str(child_pid))
-			#sys.stdout.flush()
+			# sys.stdout.flush()
 			os.kill(child_pid, signal.SIGTERM)
 
 	def clean_add(self, regex, conditional=False, manual=False):
@@ -822,7 +815,7 @@ class PipelineManager(object):
 
 		if len(self.cleanup_list_conditional) > 0:
 			# flag_files = glob.glob(self.pipeline_outfolder + "*.flag")
-			flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag") if not "completed" in os.path.basename(fn) and not self.pipeline_name + "_running.flag" == os.path.basename(fn)]
+			flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag") if "completed" not in os.path.basename(fn) and not self.pipeline_name + "_running.flag" == os.path.basename(fn)]
 			if (len(flag_files) == 0):
 				print("\nCleaning up conditional list...")
 				for expr in self.cleanup_list_conditional:
@@ -864,7 +857,7 @@ class PipelineManager(object):
 		"""
 		# Thanks Martin Geisler:
 		status = None
-		result = {'peak': 0, 'rss': 0, 'hwm':0}
+		result = {'peak': 0, 'rss': 0, 'hwm': 0}
 		try:
 			# This will only work on systems with a /proc file system
 			# (like Linux).
@@ -879,7 +872,7 @@ class PipelineManager(object):
 		finally:
 			if status is not None:
 				status.close()
-		#print(result[category])
+		# print(result[category])
 		return result[category]
 
 
@@ -888,14 +881,17 @@ class Tee(object):
 		self.file = open(log_file, "a")
 		self.stdout = sys.stdout
 		sys.stdout = self
+
 	def __del__(self):
 		sys.stdout = self.stdout
 		self.file.close()
+
 	def write(self, data):
 		self.file.write(data)
 		self.stdout.write(data)
 		self.file.flush()
 		self.stdout.flush()
+
 	def fileno(self):
 		return(self.stdout.fileno())
 
@@ -912,13 +908,15 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 	"""
 
 	# Basic pypiper arguments actually used by pypiper
-	parser.add_argument('-R', '--recover', dest='recover', action='store_true',
+	parser.add_argument(
+		'-R', '--recover', dest='recover', action='store_true',
 		default=False, help='Recover mode, overwrite locks')
-	parser.add_argument('-F', '--fresh-start', dest='fresh', action='store_true',
+	parser.add_argument(
+		'-F', '--fresh-start', dest='fresh', action='store_true',
 		default=False, help='Fresh start mode, overwrite all')
-	parser.add_argument('-D', '--dirty', dest='manual_clean', action='store_true',
-		default=False, help='Make all cleanups manual') #Useful for debugging
-
+	parser.add_argument(
+		'-D', '--dirty', dest='manual_clean', action='store_true',
+		default=False, help='Make all cleanups manual')  # Useful for debugging
 
 	# Additional arguments *not* used by pypiper, but added for convenience
 	# to create a standard interface (optional)
@@ -932,39 +930,46 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		# Arguments to optimize the intervace to looper
 		# Default config
 		default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
-		parser.add_argument("-C", "--config", dest = "config_file", type = str,
-			help = "pipeline config file in YAML format; relative paths are \
+		parser.add_argument(
+			"-C", "--config", dest="config_file", type=str,
+			help="pipeline config file in YAML format; relative paths are \
 			considered relative to the pipeline script. \
 			defaults to " + default_config,
-			required = False, default = default_config, metavar = "CONFIG_FILE")
-		parser.add_argument("-O", "--output-parent", dest = "output_parent", type = str,
-			help = "parent output directory of the project (required). The sample_name \
+			required=False, default=default_config, metavar="CONFIG_FILE")
+		parser.add_argument(
+			"-O", "--output-parent", dest="output_parent", type=str,
+			help="parent output directory of the project (required). The sample_name \
 			argument will be appended to this folder for output",
-			required = True, metavar = "PARENT_OUTPUT_FOLDER")
+			required=True, metavar="PARENT_OUTPUT_FOLDER")
 		# output_parent was previously called project_root
-		parser.add_argument("-P", "--cores", dest = "cores", type = str,
-			help = "number of cores to use for parallel processes",
-			required = False, default = 1, metavar = "NUMBER_OF_CORES")
+		parser.add_argument(
+			"-P", "--cores", dest="cores", type=str,
+			help="number of cores to use for parallel processes",
+			required=False, default=1, metavar="NUMBER_OF_CORES")
 
 	if (common_args):
 		# Arguments typically used in every pipeline
-		parser.add_argument("-I", "--input", dest = "input", type = str, nargs = "+",
-			help = "one or more input files (required)",
-			required = False, metavar = "INPUT_FILES")
+		parser.add_argument(
+			"-I", "--input", dest="input", type=str, nargs="+",
+			help="one or more input files (required)",
+			required=False, metavar="INPUT_FILES")
 		# input was previously called unmapped_bam
 
-		parser.add_argument("-S", "--sample-name", dest = "sample_name", type = str,
-			help = "unique name for output subfolder and files (required)",
-			required = False, metavar = "SAMPLE_NAME")
+		parser.add_argument(
+			"-S", "--sample-name", dest="sample_name", type=str,
+			help="unique name for output subfolder and files (required)",
+			required=False, metavar="SAMPLE_NAME")
 
 	if (ngs_args):
 		# Common arguments specific to NGS pipelines
-		parser.add_argument("-G", "--genome", dest = "genome_assembly", type = str,
-			help = "identifier for genome assempbly (required)",
-			required = False)
+		parser.add_argument(
+			"-G", "--genome", dest="genome_assembly", type=str,
+			help="identifier for genome assempbly (required)",
+			required=False)
 
-		parser.add_argument("-Q", "--single-or-paired", dest = "single_or_paired", type = str,
-			help = "single or paired end? default: single",
-			required = False, default="single")
+		parser.add_argument(
+			"-Q", "--single-or-paired", dest="single_or_paired", type=str,
+			help="single or paired end? default: single",
+			required=False, default="single")
 
 	return(parser)
