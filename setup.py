@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 import sys
-import pypiper
 
 extra = {}
 
@@ -16,10 +15,12 @@ except ImportError:
     if sys.version_info < (2, 7):
         extra['dependencies'] = ['argparse']
 
+version = open("VERSION").read().strip()
+
 setup(
     name='pypiper',
     packages=['pypiper'],
-    version=pypiper.__version__,
+    version=version,
     description='A lightweight python toolkit for gluing together restartable, robust command line pipelines',
     author='Nathan Sheffield, Johanna Klughammer, Andre Rendeiro',
     author_email='nathan@code.databio.org, jklughammer@cemm.oeaw.ac.at, arendeiro@cemm.oeaw.ac.at',

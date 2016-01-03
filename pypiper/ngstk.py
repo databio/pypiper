@@ -32,7 +32,7 @@ class NGSTk(_AttributeDict):
 
 	Sample example using a configuration file (custom executable location):
 	> from pypiper.ngstk import NGSTk
-	> tk = NGSTk("pipeline_config_file")
+	> tk = NGSTk("pipeline_config_file.yaml")
 	> tk.samtools_index("sample.bam")
 		/home/.local/samtools/bin/samtools index sample.bam
 
