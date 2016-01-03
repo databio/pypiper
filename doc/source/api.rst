@@ -8,7 +8,6 @@ pypiper.PipelineManager
 -----------------------
 
 .. currentmodule:: pypiper.pypiper.PipelineManager
-
 .. autosummary::
    callprint
    checkprint
@@ -40,7 +39,6 @@ pypiper.ngstk
 -----------------------
 
 .. currentmodule:: pypiper.ngstk.NGSTk
-
 .. autosummary::
    addTrackToHub
    AnnotatePeaks
@@ -112,6 +110,9 @@ pypiper.ngstk
 
 Definitions
 -----------------------
+
+.. automodule:: pypiper
+   :members:
 
 .. automodule:: pypiper.pypiper
    :members:

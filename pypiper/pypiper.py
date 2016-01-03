@@ -22,16 +22,15 @@ class PipelineManager(object):
 	:param outfolder: Folder in which to store the results.
 	:param args: Optional args object from ArgumentParser; Pypiper will simply record these arguments from your script
 	:param overwrite_locks: Advanced debugging options; this will cause Pypiper to ignore locked files, enabling
-	you to restart a failed pipeline where it left off. Be careful, though, this invalidates the typical file locking
-	that enables multiple pipelines to run in parallel on the same intermediate files.
+		you to restart a failed pipeline where it left off. Be careful, though, this invalidates the typical file locking
+		that enables multiple pipelines to run in parallel on the same intermediate files.
 	:param fresh: NOT IMPLEMENTED
 	:param recover: Specify recover mode, to overwrite lock files. If pypiper encounters a locked
-	target, it will ignore the lock, and recompute this step. Useful to restart a failed pipeline.
+		target, it will ignore the lock, and recompute this step. Useful to restart a failed pipeline.
 	:param multi: Enables running multiple pipelines in one script; or for interactive use. It simply disables the tee
-	of the output, so you won't get output logged to a file.
+		of the output, so you won't get output logged to a file.
 	:param manual_clean: Overrides the pipeline's clean_add() manual parameters, to *never* clean up intermediate files
-	automatically. Useful for debugging; all cleanup files are added to the manual cleanup script.
-
+		automatically. Useful for debugging; all cleanup files are added to the manual cleanup script.
 	"""
 	def __init__(
 		self, name, outfolder, args=None, multi=False,
@@ -271,8 +270,8 @@ class PipelineManager(object):
 		:param shell: If command requires should be run in its own shell. Optional. Default: False.
 		:type shell: bool
 		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
-		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
-		they will not cause the pipeline to bail out.
+			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
+			they will not cause the pipeline to bail out.
 		:type nofail: bool
 		:param clean: True means the files will be automatically added to a auto cleanup list. Optional.
 		:type clean: bool
@@ -377,8 +376,8 @@ class PipelineManager(object):
 		:param shell: If command requires should be run in its own shell. Optional. Default: False.
 		:type shell: bool
 		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
-		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
-		they will not cause the pipeline to bail out.
+			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
+			they will not cause the pipeline to bail out.
 		:type nofail: bool
 		"""
 		self.report_command(cmd)
@@ -415,8 +414,8 @@ class PipelineManager(object):
 		:param shell: If command requires should be run in its own shell. Optional. Default: False.
 		:type shell: bool
 		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
-		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
-		they will not cause the pipeline to bail out.
+			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
+			they will not cause the pipeline to bail out.
 		:type nofail: bool
 		"""
 		# The Popen shell argument works like this:
@@ -576,7 +575,7 @@ class PipelineManager(object):
 		"""
 		return round(time.time() - time_since, 2)
 
-	def report_profile(self, command, lock_name , elapsed_time, memory):
+	def report_profile(self, command, lock_name, elapsed_time, memory):
 		"""
 		Writes a string to self.pipeline_profile_file.
 
@@ -758,11 +757,11 @@ class PipelineManager(object):
 		Files added with clean_add will only be deleted upon success of the pipeline.
 
 		:param regex:  A unix-style regular expression that matches files to delete
-		(can also be a file name).
+			(can also be a file name).
 		:type regex: str
 		:param conditional: True means the files will only be deleted if no other
-		pipelines are currently running; otherwise they are added to a manual cleanup script
-		called {pipeline_name}_cleanup.sh
+			pipelines are currently running; otherwise they are added to a manual cleanup script
+			called {pipeline_name}_cleanup.sh
 		:type conditional: bool
 		:param manual: True means the files will just be added to a manual cleanup script.
 		:type manual: bool
@@ -900,10 +899,11 @@ class Tee(object):
 def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=False, all_args=False):
 	"""
 	Use this to take an ArgumentParser in your pipeline, and also parse
-	default pypiper arguments
+	default pypiper arguments.
+
 	:param parser: an ArgumentParser object from your pipeline
 	:param looper_args: Adds additional arguments to standardize a
-		common interfact to looper.py.
+		common interface to looper.py.
 	:returns: A new ArgumentParser object, with default pypiper arguments added
 	"""
 
