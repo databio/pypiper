@@ -1,7 +1,10 @@
 # Pypiper
+
+[![Documentation Status](https://readthedocs.org/projects/pypiper/badge/?version=latest)](http://pypiper.readthedocs.org/en/latest/?badge=latest)
+
 A lightweight python toolkit for gluing together restartable, robust command line pipelines.
 
-The public-facing permalink for the project is http://databio.org/pypiper. The source code, tutorials, are hosted at http://github.com/epigen/pypiper.
+The public-facing permalink for the project is http://databio.org/pypiper. Documentation is in [Read the Docs](http://pypiper.readthedocs.org/). Source code is hosted at http://github.com/epigen/pypiper.
 
 # Install
 
