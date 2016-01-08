@@ -6,22 +6,14 @@
 # You don't have to do this if you're using an installed version of pypiper.
 
 import os
-
-pypiper_dir = "/home/nsheffield/repo/pypiper"
-os.sys.path.insert(0,pypiper_dir)
-
 import pypiper
 
-# Import any supplemental modules, if you'd like
-from pypiper import ngstk
+# Create a PipelineManager instance (don't forget to name it!), which starts the pipeline!
 
+mypiper = pypiper.PipelineManager(name="BASIC", outfolder="pipeline_output/")
 
-# Create a Pypiper instance (don't forget to name it!), which starts the pipeline!
-
-mypiper = pypiper.Pypiper(name="BASIC", outfolder="pipeline_output/")
-
-# Now just build shell command strings, and use the run function
-# to execute them in order. run needs 2 things: a command, and the target file you are creating.
+# Now just build shell command strings, and use the run function to execute them
+# in order. run needs 2 things: a command, and the target file you are creating.
 
 # First, generate some random data
 

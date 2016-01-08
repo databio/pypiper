@@ -20,16 +20,16 @@ pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master
 
 # Introduction
 
-Pypiper helps you produce pipelines. 
+Pypiper helps you produce pipelines.
 
 The target user of Pypiper is a computational scientist comfortable on the command line, who has something like a `bash` script that would benefit from a layer of "handling code". Pypiper helps you convert that set of shell commands into a production-scale workflow, automatically handling the annoying details to make your pipeline robust and restartable, with minimal learning curve.
 
-Pypiper *does not* handle any sort of cluster job submission, resource requesting, or parallel dependency management. You can use your current setup for those things, and use Pypiper just to produce a robust, restartable, and logged procedural pipeline.
+Pypiper *does not* handle any sort of cluster job submission, resource requesting, or parallel dependency management (other than node-threaded parallelism inherent in your commands). You can use your current setup for those things, and use Pypiper just to produce a robust, restartable, and logged procedural pipeline.
 
 # Benefits of using Pypiper
 
 * Restartability - Commands check for their targets and only run if the target needs to be created, much like a `makefile`, making the pipeline pick up where it left off in case it needs to be restarted or extended.
-* Pipeline integrity protection - PyPiper uses file locking to ensure that multiple pipeline runs will not interfere with one another -- even if the steps are identical and produce the same files. One run will seemless wait for the other, making it possible to share steps seemlessly across pipelines.
+* Pipeline integrity protection - Pypiper uses file locking to ensure that multiple pipeline runs will not interfere with one another -- even if the steps are identical and produce the same files. One run will seemless wait for the other, making it possible to share steps seemlessly across pipelines.
 * Memory use monitoring - Processes are polled for high water mark memory use, allowing you to more accurately guage your future memory requirements.
 * Easy job status monitoring - Pypiper uses status flag files to make it possible to assess the current state (`running`, `failed`, or `completed`) of hundreds of jobs simultaneously.
 * Robust error handling - Pypiper closes pipelines gracefully on interrupt or termination signals, converting the status to `failed`. By default, a process that returns a nonzero value halts the pipeline, unlike in bash, where by default the pipeline would continue using an incomplete or failed result. This behavior can be overridden as desired with a single parameter.
@@ -48,7 +48,7 @@ outfolder = "pipeline_output/" # Choose a folder for your results
 pipeline = pypiper.PipelineManager(name="my_pipeline", outfolder=outfolder)
 ```
 
-Now, the workhorse of PipelineManager is the `run()` function. Essentially, you just create a shell command as a string in python, and then pass it and its output to `run()`. 
+Now, the workhorse of PipelineManager is the `run()` function. Essentially, you just create a shell command as a string in python, and then pass it and its target output to `run()`.
 
 ```
 target = os.path.join(outfolder, "outfile.txt")
@@ -86,14 +86,14 @@ Multiple pipelines can easily be run on the same sample, using the same output f
 
 # Toolkits
 
-An optional feature of pypiper is the accompanying toolkits, such as the next-gen sequencing toolkit, [ngstk](pypiper/ngstk.py), which simply provides some convenient helper functions to create common commands, like converting from file formats (_e.g._ bam to fastq), merging files (_e.g._ merge_bams), counting reads, etc. These make it faster to design bioinformatics pipelines in Pypiper, but are entirely optional. Contributions of additional toolkits or functions in an existing toolkit are welcome.
+An optional feature of pypiper is the accompanying toolkits, such as the next-gen sequencing toolkit, [ngstk](pypiper/ngstk.py), which simply provides some convenient helper functions to create common commands, like converting from file formats (_e.g._ `bam_to_fastq()`), merging files (_e.g._ `merge_bams()`), counting reads, etc. These make it faster to design bioinformatics pipelines in Pypiper, but are entirely optional. Contributions of additional toolkits or functions to an existing toolkit are welcome.
 
 # Technical Documentation
-You can use `make` to generate the Pypiper documentation. Just change your working directory to `doc` and run `make` to see available documentation formats *e.g.*: `make html`. The documentation will be produced under `doc/build`.
+You can use `make` to generate the Pypiper documentation. Just change your working directory to `doc` and run `make` to see available documentation formats *e.g.*: `make html`. The documentation will be created under `doc/build`.
 
 # Testing
 
-You can test pypiper by running `python test_pypiper.py`, which has some unit tests.
+You can test Pypiper by running `python test_pypiper.py`, which has some unit tests.
 
 # Python process types: Shell vs direct
 
@@ -115,5 +115,3 @@ If Pypiper is not for you, check out some of these other pipelining frameworks:
 * bpipe
 * Anduril
 * Ruffus
-
-
