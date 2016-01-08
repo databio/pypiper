@@ -37,6 +37,8 @@ class NGSTk(_AttributeDict):
 		# parse yaml into the project's attributes
 		# self.add_entries(**config)
 
+		self.java_mem = "4g"
+
 		if config_file is None:
 			super(NGSTk, self).__init__({}, default=True)
 		else:
@@ -44,6 +46,12 @@ class NGSTk(_AttributeDict):
 			with open(config_file, 'r') as config_file:
 				config = yaml.load(config_file)
 			super(NGSTk, self).__init__(config, default=True)
+
+
+	def set_java_mem(self, java_mem):
+		"Set the java memory to use"
+		self.java_mem = java_mem
+
 
 	def make_sure_path_exists(self, path):
 		try:
@@ -53,7 +61,8 @@ class NGSTk(_AttributeDict):
 				raise
 
 	def markDuplicates(self, aligned_file, out_file, metrics_file, remove_duplicates="True"):
-		cmd = self.tools.java + " -Xmx2g -jar " + self.tools.picard + " MarkDuplicates"
+		cmd = self.tools.java + " -Xmx" + self.java_mem
+		cmd += " -jar " + self.tools.picard + " MarkDuplicates"
 		cmd += " INPUT=" + aligned_file
 		cmd += " OUTPUT=" + out_file
 		cmd += " METRICS_FILE=" + metrics_file
@@ -62,7 +71,8 @@ class NGSTk(_AttributeDict):
 
 	def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
 		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
-		cmd = self.tools.java + " -Xmx2g -jar " + self.tools.picard + " SamToFastq"
+		cmd = self.tools.java + " -Xmx" + self.java_mem
+		cmd += " -jar " + self.tools.picard + " SamToFastq"
 		cmd += " I=" + bam_file
 		cmd += " F=" + out_fastq_pre + "_R1.fastq"
 		if paired_end:
@@ -79,7 +89,8 @@ class NGSTk(_AttributeDict):
 
 		print("Merging multiple bams: " + str(input_bams))
 		input_string = " INPUT=" + " INPUT=".join(input_bams)
-		cmd = self.tools.java + " -Xmx2g -jar " + self.tools.picard + " MergeSamFiles"
+		cmd = self.tools.java + " -Xmx" + self.java_mem
+		cmd += " -jar " + self.tools.picard + " MergeSamFiles"
 		cmd += input_string
 		cmd += " OUTPUT=" + merged_bam
 		cmd += " ASSUME_SORTED=TRUE"
@@ -315,7 +326,8 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def mergeBams(self, inputBams, outputBam):
-		cmd = self.tools.java + " -Xmx2g -jar " + self.tools.picard + " MergeSamFiles"
+		cmd = self.tools.java + " -Xmx" + self.java_mem
+		cmd += " -jar " + self.tools.picard + " MergeSamFiles"
 		cmd += " USE_THREADING=TRUE"
 		cmd += " " + (" ".join(["INPUT=%s"] * len(inputBams))) % tuple(inputBams)
 		cmd += " OUTPUT={0}".format(outputBam)
@@ -345,7 +357,8 @@ class NGSTk(_AttributeDict):
 		""".format(output_prefix, bam_file)
 
 	def bam2fastq(self, inputBam, outputFastq, outputFastq2=None, unpairedFastq=None):
-		cmd = self.tools.java + " -Xmx4g -jar " + self.tools.picard + " SamToFastq"
+		cmd = self.tools.java + " -Xmx" + self.java_mem
+		cmd += " -jar " + self.tools.picard + " SamToFastq"
 		cmd += " INPUT={0}".format(inputBam)
 		cmd += " FASTQ={0}".format(outputFastq)
 		if outputFastq2 is not None and unpairedFastq is not None:
@@ -360,7 +373,8 @@ class NGSTk(_AttributeDict):
 
 		PE = False if inputFastq2 is None else True
 		pe = "PE" if PE else "SE"
-		cmd = self.tools.java + " -Xmx4g -jar " + self.tools.trimmomatic
+		cmd = self.tools.java + " -Xmx" + self.java_mem
+		cmd += " -jar " + self.tools.trimmomatic
 		cmd += " {0} -threads {1} -trimlog {2} {3}".format(pe, cpus, log, inputFastq1)
 		if PE:
 			cmd += " {0}".format(inputFastq2)
@@ -430,7 +444,8 @@ class NGSTk(_AttributeDict):
 		import re
 		transientFile = re.sub("\.bam$", "", outputBam) + ".dups.nosort.bam"
 		outputBam = re.sub("\.bam$", "", outputBam)
-		cmd1 = self.tools.java + " -Xmx4g -jar  `which MarkDuplicates.jar`"
+		cmd1 = self.tools.java + " -Xmx" + self.java_mem
+		cmd1 += " -jar  `which MarkDuplicates.jar`"
 		cmd1 += " INPUT={0}".format(inputBam)
 		cmd1 += " OUTPUT={0}".format(transientFile)
 		cmd1 += " METRICS_FILE={0}".format(metricsFile)
