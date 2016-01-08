@@ -20,8 +20,8 @@ from pypiper import ngstk
 
 mypiper = pypiper.Pypiper(name="BASIC", outfolder="pipeline_output/")
 
-# Now just build shell command strings, and use the call_lock function
-# to execute them in order. call_lock needs 2 things: a command, and the target file you are creating.
+# Now just build shell command strings, and use the run function
+# to execute them in order. run needs 2 things: a command, and the target file you are creating.
 
 # First, generate some random data
 
@@ -31,15 +31,15 @@ tgt = "pipeline_output/test.out"
 # build the command
 cmd = "shuf -i 1-500000000 -n 10000000 > " + tgt
 
-# and run call_lock. You must use shell=True here because of redirection (>), which
+# and run run. You must use shell=True here because of redirection (>), which
 # is a shell process, and can't be run as a python subprocess.
-mypiper.call_lock(cmd, target=tgt, shell=True)
+mypiper.run(cmd, target=tgt, shell=True)
 
 # Now copy the data into a new file.
 # first specify target file and build command:
 tgt = "pipeline_output/copied.out"
 cmd = "cp pipeline_output/test.out " + tgt
-mypiper.call_lock(cmd, target=tgt)
+mypiper.run(cmd, target=tgt)
 # No pipes or redirects, so this does not require shell function.
 # (this should be the most common use case).
 
@@ -48,12 +48,12 @@ mypiper.call_lock(cmd, target=tgt)
 # in order as a group to create the final target.
 cmd1 = "sleep 5"
 cmd2 = "touch pipeline_output/touched.out"
-mypiper.call_lock([cmd1, cmd2], target="pipeline_output/touched.out")
+mypiper.run([cmd1, cmd2], target="pipeline_output/touched.out")
 
 # A command without a target will run every time.
 # Find the biggest line
 #cmd = "awk 'n < $0 {n=$0} END{print n}' pipeline_output/test.out"
-#mypiper.call_lock(cmd, "lock.max", shell=True)
+#mypiper.run(cmd, "lock.max", shell=True)
 
 # Use checkprint() to get the results of a command, and then use
 # report_result to print and log key-value pairs in the stats file:
