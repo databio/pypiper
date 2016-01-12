@@ -163,18 +163,18 @@ class PipelineManager(object):
 		gitvars = {}
 		try:
 			gitvars['pypiper_dir'] = os.path.dirname(os.path.realpath(__file__))
-			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD", shell=True)
-			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD", shell=True)
-			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD", shell=True)
-			gitvars['pypiper_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git branch | grep '*'", shell=True)
+			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD 2>\\dev\\null", shell=True)
+			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD 2>\\dev\\null", shell=True)
+			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD 2>\\dev\\null", shell=True)
+			gitvars['pypiper_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git branch | grep '*' 2>\\dev\\null", shell=True)
 		except Exception:
 			pass
 		try:
 			gitvars['pipe_dir'] = os.path.dirname(os.path.realpath(sys.argv[0]))
-			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD", shell=True)
-			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD", shell=True)
-			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD", shell=True)
-			gitvars['pipe_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git branch | grep '*'", shell=True)
+			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD 2>\\dev\\null", shell=True)
+			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD 2>\\dev\\null", shell=True)
+			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD 2>\\dev\\null", shell=True)
+			gitvars['pipe_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git branch | grep '*' 2>\\dev\\null", shell=True)
 		except Exception:
 			pass
 
@@ -685,6 +685,7 @@ class PipelineManager(object):
 		if self.status != "failed":  # and self.status != "completed":
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
+
 		raise e
 
 	def signal_term_handler(self, signal, frame):
