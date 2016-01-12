@@ -102,8 +102,17 @@ class NGSTk(_AttributeDict):
 		Uses the command-line utility wc to count the number of lines in a file.
 		:param file: Filename
 		"""
-		x = subprocess.check_output("wc -l " + fileName + " | cut -f1 -d' '", shell=True)
+		x = subprocess.check_output("wc -l " + fileName + " | cut -f1 -d' '", shell = True)
 		return x
+
+	def get_chrs_from_bam(self, fileName):
+		"""
+		Uses samtools to grab the chromosomes from the header that are contained
+		in this bam file.
+		"""
+		x = subprocess.check_output(self.tools.samtools + " view -H " + fileName + " | grep '^@SQ' | cut -f2| sed s'/SN://'", shell = True)
+		# Chromosomes will be separated by newlines; split into list to return
+		return x.split()
 
 	###################################
 	# Read counting functions
