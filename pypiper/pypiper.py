@@ -656,6 +656,7 @@ class PipelineManager(object):
 		"""
 		self.set_status_flag("completed")
 		self.cleanup()
+		self.report_result("Time", str(self.time_elapsed(self.starttime)))
 		self.report_result("Success", time.strftime("%m-%d %H:%M:%S"))
 		print("\n##### [Epilogue:]")
 		print("* " + "Total elapsed time".rjust(20) + ":  " + str(self.time_elapsed(self.starttime)))
