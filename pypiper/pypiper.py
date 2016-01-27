@@ -91,21 +91,38 @@ class PipelineManager(object):
 		# Handle config file if it exists
 
 		# Read YAML config file
-		self.config = None
-		if args:
-			if args.config_file is not None and not os.path.isabs(args.config_file):
-				# Set the path to an absolute path, relative to pipeline script
-				default_config_abs = os.path.join(os.path.dirname(sys.argv[0]), args.config_file)
-				if os.path.isfile(default_config_abs):
-					args.config_file = default_config_abs
-				else:
-					args.config_file = None
+		config_to_load = None  # start with nothing
 
-				if (args.config_file):
-					with open(args.config_file, 'r') as config_file:
-						import yaml
-						config = yaml.load(config_file)
-						self.config = AttributeDict(config, default=True)
+		if args and args.config_file is not None:
+			if os.path.isabs(args.config_file):
+				# Absolute custom config file specified
+				if os.path.isfile(args.config_file):
+					config_to_load = args.config_file
+				else:
+					print("Can't find custom config file: " + args.config_file)
+			else: 
+				# Relative custom config file specified
+				# Set path to be relative to pipeline script
+				abs_config = os.path.join(os.path.dirname(sys.argv[0]), args.config_file)
+				if os.path.isfile(abs_config):
+					config_to_load = abs_config
+				else:
+					print("Can't find custom config file: " + abs_config)
+		else:
+			# No custom config file specified. Check for default
+			default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
+			if os.path.isfile(default_config):
+				config_to_load = default_config
+
+		# Finally load the config we found.
+		if config_to_load is not None:
+			with open(config_to_load, 'r') as config_file:
+				import yaml
+				config = yaml.load(args.config_file)
+				self.config = AttributeDict(config, default=True)
+		else:
+			self.config = None
+
 
 	def ignore_interrupts(self):
 		"""
@@ -908,7 +925,7 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		common interface to looper.py.
 	:returns: A new ArgumentParser object, with default pypiper arguments added
 	"""
-
+	
 	# Basic pypiper arguments actually used by pypiper
 	parser.add_argument(
 		'-R', '--recover', dest='recover', action='store_true',
@@ -929,9 +946,10 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		ngs_args = True
 
 	if (looper_args):
-		# Arguments to optimize the intervace to looper
-		# Default config
+		# Default config: name of the pipeline with .yaml extension
 		default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
+
+		# Arguments to optimize the intervace to looper
 		parser.add_argument(
 			"-C", "--config", dest="config_file", type=str,
 			help="pipeline config file in YAML format; relative paths are \
