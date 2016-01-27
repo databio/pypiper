@@ -118,7 +118,7 @@ class PipelineManager(object):
 		if config_to_load is not None:
 			with open(config_to_load, 'r') as config_file:
 				import yaml
-				config = yaml.load(args.config_file)
+				config = yaml.load(config_file)
 				self.config = AttributeDict(config, default=True)
 		else:
 			self.config = None
