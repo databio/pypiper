@@ -91,6 +91,8 @@ class PipelineManager(object):
 		# Handle config file if it exists
 
 		# Read YAML config file
+		# TODO: This section should become a function, so toolkits can use it
+		# to locate a config file.
 		config_to_load = None  # start with nothing
 
 		if args and args.config_file is not None:
@@ -117,6 +119,9 @@ class PipelineManager(object):
 		# Finally load the config we found.
 		if config_to_load is not None:
 			with open(config_to_load, 'r') as config_file:
+				# Set the args to the new config file, so it can be used
+				# later to pass to, for example, toolkits
+				args.config_file = config_to_load
 				import yaml
 				config = yaml.load(config_file)
 				self.config = AttributeDict(config, default=True)
