@@ -30,7 +30,7 @@ Documentation
 *************
 Pypiper's documentation is at http://pypiper.readthedocs.org/.
 
-You can generate the documentation yourself, using ``make``. Just change your working directory to `doc` and run `make` to see available documentation formats *e.g.*: `make html`. The documentation will be produced under ``doc/build``.
+You can generate the documentation using ``sphinx <http://www.sphinx-doc.org/en/stable/install.html>``. With sphinx installed, just change your working directory to `doc` and run `make` to see available documentation formats *e.g.*: `make html`. The documentation will be produced under ``doc/build``.
 
 Testing
 *************

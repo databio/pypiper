@@ -479,7 +479,7 @@ class PipelineManager(object):
 
 			while p.poll() is None:
 				if not shell:
-					local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
+					local_maxmem = max(local_maxmem, self.memory_usage(p.pid)/1e6)
 					# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
 				time.sleep(sleeptime)
 				sleeptime = min(sleeptime + 5, 60)
@@ -487,8 +487,8 @@ class PipelineManager(object):
 			returncode = p.returncode
 			info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
 			if not shell:
-				info += " Peak memory: (Process: " + str(local_maxmem) + "kB;"
-				info += " Pipeline: " + str(self.peak_memory) + "kB)"
+				info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
+				info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
 			# Close the preformat tag for markdown output
 			print("</pre>")
 			print(info)
@@ -524,7 +524,7 @@ class PipelineManager(object):
 		sleeptime = .5
 		while p.poll() is None:
 			if not shell:
-				local_maxmem = max(local_maxmem, self.memory_usage(p.pid))
+				local_maxmem = max(local_maxmem, self.memory_usage(p.pid) / 1e6)
 				# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
 			time.sleep(sleeptime)
 			sleeptime = min(sleeptime + 5, 60)
@@ -534,8 +534,8 @@ class PipelineManager(object):
 
 		info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
 		if not shell:
-			info += " Peak memory: (Process: " + str(local_maxmem) + "kB;"
-			info += " Pipeline: " + str(self.peak_memory) + "kB)"
+			info += " Peak memory: (Process: " + str(round(local_maxmem,3)) + "GB;"
+			info += " Pipeline: " + str(round(self.peak_memory,3)) + "GB)"
 
 		print(info + "\n")
 		if p.returncode != 0:
@@ -683,7 +683,7 @@ class PipelineManager(object):
 		print("\n##### [Epilogue:]")
 		print("* " + "Total elapsed time".rjust(20) + ":  " + str(self.time_elapsed(self.starttime)))
 		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-		print("* " + "Peak memory used".rjust(20) + ":  " + str(self.peak_memory / 1e6) + " GB")
+		print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
 		self.timestamp("* Pipeline completed at: ".rjust(20))
 
 	def fail_pipeline(self, e):
