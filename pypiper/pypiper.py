@@ -34,7 +34,9 @@ class PipelineManager(object):
 	"""
 	def __init__(
 		self, name, outfolder, args=None, multi=False,
-		manual_clean=False, recover=False, fresh=False):
+		manual_clean=False, recover=False, fresh=False,
+		cores=1, mem="1g",
+		config_file=None, output_parent=None):
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
 		# to Pypiper. If any pypiper arguments are passed
@@ -43,8 +45,13 @@ class PipelineManager(object):
 
 		# Establish default params
 		params = {
-			'manual_clean': manual_clean, 'recover': recover,
-			'fresh': fresh}
+			'manual_clean': manual_clean,
+			'recover': recover,
+			'fresh': fresh,
+			'config_file': config_file,
+			'output_parent': output_parent,
+			'cores': cores,
+			'mem': mem}
 
 		# Update them with any passed via 'args'
 		if args is not None:
@@ -57,6 +64,9 @@ class PipelineManager(object):
 		self.overwrite_locks = params['recover']
 		self.fresh_start = params['fresh']
 		self.manual_clean = params['manual_clean']
+		self.cores = params['cores']
+		self.mem = params['mem']
+		self.output_parent = params['output_parent']
 
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
@@ -972,7 +982,7 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 			help="number of cores to use for parallel processes",
 			required=False, default=1, metavar="NUMBER_OF_CORES")
 		parser.add_argument(
-			"-M", "--memory", dest="memory", type=str,
+			"-M", "--mem", dest="mem", type=str,
 			help="Memory string for processes that accept memory limits (like java)",
 			required=False, default="4g", metavar="MEMORY_LIMIT")
 
