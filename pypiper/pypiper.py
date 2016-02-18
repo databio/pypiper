@@ -971,6 +971,10 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 			"-P", "--cores", dest="cores", type=str,
 			help="number of cores to use for parallel processes",
 			required=False, default=1, metavar="NUMBER_OF_CORES")
+		parser.add_argument(
+			"-M", "--memory", dest="memory", type=str,
+			help="Memory string for processes that accept memory limits (like java)",
+			required=False, default="4g", metavar="MEMORY_LIMIT")
 
 	if (common_args):
 		# Arguments typically used in every pipeline
