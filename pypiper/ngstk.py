@@ -49,7 +49,7 @@ class NGSTk(_AttributeDict):
 
 		# Set a default java memory parameter if not provided
 		# It would be set to "mem" because of the 'default' setting for attributeDict
-		is not hasattr(self.parameters.java, "mem") or if self.parameters.java.mem == "mem":
+		if not hasattr(self.parameters.java, "mem") or self.parameters.java.mem == "mem":
 			self.parameters.java.mem = "4g"
 
 
