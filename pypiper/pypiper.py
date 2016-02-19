@@ -65,8 +65,10 @@ class PipelineManager(object):
 		self.fresh_start = params['fresh']
 		self.manual_clean = params['manual_clean']
 		self.cores = params['cores']
-		self.mem = params['mem']
 		self.output_parent = params['output_parent']
+		# For now, we assume the memory is in megabytes.
+		# this could become customizable if necessary
+		self.mem = params['mem'] + "m"
 
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
