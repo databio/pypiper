@@ -84,7 +84,7 @@ class NGSTk(_AttributeDict):
 		cmd += " VERBOSITY=ERROR"
 		return cmd
 
-	def merge_bams(self, input_bams, merged_bam):
+	def merge_bams(self, input_bams, merged_bam, in_sorted="TRUE"):
 		if not len(input_bams) > 1:
 			print("No merge required")
 			return 0
@@ -95,7 +95,7 @@ class NGSTk(_AttributeDict):
 		cmd += " -jar " + self.tools.picard + " MergeSamFiles"
 		cmd += input_string
 		cmd += " OUTPUT=" + merged_bam
-		cmd += " ASSUME_SORTED=TRUE"
+		cmd += " ASSUME_SORTED=" + str(in_sorted)
 		cmd += " CREATE_INDEX=TRUE"
 		return(cmd)
 
