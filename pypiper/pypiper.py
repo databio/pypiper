@@ -35,7 +35,7 @@ class PipelineManager(object):
 	def __init__(
 		self, name, outfolder, args=None, multi=False,
 		manual_clean=False, recover=False, fresh=False,
-		cores=1, mem="1g",
+		cores=1, mem="1000",
 		config_file=None, output_parent=None):
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
@@ -316,7 +316,7 @@ class PipelineManager(object):
 		# The default lock name is based on the target name. Therefore, a targetless command that you want
 		# to lock must specify a lock_name manually.
 		if target is None and lock_name is None:
-				raise Exception("You must provide either a target or a lock name.")
+				raise Exception("You must provide either a target or a lock_name.")
 
 		# Create lock file:
 		# Default lock_name (if not provided) is based on the target file name,
