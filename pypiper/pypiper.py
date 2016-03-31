@@ -34,7 +34,9 @@ class PipelineManager(object):
 	"""
 	def __init__(
 		self, name, outfolder, args=None, multi=False,
-		manual_clean=False, recover=False, fresh=False):
+		manual_clean=False, recover=False, fresh=False,
+		cores=1, mem="1000",
+		config_file=None, output_parent=None):
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
 		# to Pypiper. If any pypiper arguments are passed
@@ -43,8 +45,13 @@ class PipelineManager(object):
 
 		# Establish default params
 		params = {
-			'manual_clean': manual_clean, 'recover': recover,
-			'fresh': fresh}
+			'manual_clean': manual_clean,
+			'recover': recover,
+			'fresh': fresh,
+			'config_file': config_file,
+			'output_parent': output_parent,
+			'cores': cores,
+			'mem': mem}
 
 		# Update them with any passed via 'args'
 		if args is not None:
@@ -57,6 +64,11 @@ class PipelineManager(object):
 		self.overwrite_locks = params['recover']
 		self.fresh_start = params['fresh']
 		self.manual_clean = params['manual_clean']
+		self.cores = params['cores']
+		self.output_parent = params['output_parent']
+		# For now, we assume the memory is in megabytes.
+		# this could become customizable if necessary
+		self.mem = params['mem'] + "m"
 
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
@@ -304,7 +316,7 @@ class PipelineManager(object):
 		# The default lock name is based on the target name. Therefore, a targetless command that you want
 		# to lock must specify a lock_name manually.
 		if target is None and lock_name is None:
-				raise Exception("You must provide either a target or a lock name.")
+				raise Exception("You must provide either a target or a lock_name.")
 
 		# Create lock file:
 		# Default lock_name (if not provided) is based on the target file name,
@@ -971,6 +983,10 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 			"-P", "--cores", dest="cores", type=str,
 			help="number of cores to use for parallel processes",
 			required=False, default=1, metavar="NUMBER_OF_CORES")
+		parser.add_argument(
+			"-M", "--mem", dest="mem", type=str,
+			help="Memory string for processes that accept memory limits (like java)",
+			required=False, default="4g", metavar="MEMORY_LIMIT")
 
 	if (common_args):
 		# Arguments typically used in every pipeline
