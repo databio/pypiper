@@ -8,11 +8,10 @@ pypiper.PipelineManager
     :members:
 
 
-
 pypiper.NGSTk
 -----------------------
 
 .. automodule:: pypiper.ngstk.NGSTk
     :members:
-.. autosummary::
+
 
