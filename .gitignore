@@ -23,8 +23,7 @@ pipeline_output/
 !*README.txt*
 !*readme.md*
 !*README.md*
-
-
+!*.rst
 !*.xlsx
 
 #make sure to track .gitignore
