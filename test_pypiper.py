@@ -51,7 +51,7 @@ class PypiperTest(unittest.TestCase):
 		self.pp.wait=False
 		sleep_lock = self.pp.pipeline_outfolder + "lock.sleep"
 		subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
-		self.pp.create_file(sleep_lock)
+		self.pp._create_file(sleep_lock)
 		print("Putting lock file: " + sleep_lock)
 		cmd = "echo hello"
 		stamp = time.time()
@@ -59,7 +59,7 @@ class PypiperTest(unittest.TestCase):
 		print("Elapsed: " + str(self.pp.time_elapsed(stamp)))
 		self.assertTrue(self.pp.time_elapsed(stamp) > 1)
 		print("Wait for subprocess...")
-		self.pp.wait_for_process(self.pp.running_subprocess)
+		self.pp._wait_for_process(self.pp.running_subprocess)
 		self.pp2.wait=True
 		self.pp.wait=True
 
@@ -97,7 +97,7 @@ class PypiperTest(unittest.TestCase):
 		self.pp.clean_add(tgt4)
 		self.pp.clean_add(tgt5, conditional=True)
 		self.pp.clean_add(self.pp.pipeline_outfolder +"*.cond", conditional=True)
-		self.pp.cleanup()
+		self.pp._cleanup()
 
 		self.assertTrue(os.path.isfile(tgt1))
 		self.assertTrue(os.path.isfile(tgt2))
@@ -110,7 +110,7 @@ class PypiperTest(unittest.TestCase):
 		self.pp.clean_add(tgt4)
 		self.pp.clean_add(tgt5, conditional=True)
 		self.pp.clean_add(self.pp.pipeline_outfolder +"*.cond", conditional=True)
-		self.pp.cleanup()
+		self.pp._cleanup()
 
 		self.assertFalse(os.path.isfile(tgt1))
 		self.assertFalse(os.path.isfile(tgt2))
@@ -133,7 +133,7 @@ class PypiperTest(unittest.TestCase):
 
 		# Stopping pp2 should cause tgt5 to be deleted
 		self.pp2.stop_pipeline()
-		self.pp.cleanup()
+		self.pp._cleanup()
 		self.assertFalse(os.path.isfile(tgt5))
 		self.assertFalse(os.path.isfile(tgt8))
 		self.assertFalse(os.path.isfile(tgt9))
