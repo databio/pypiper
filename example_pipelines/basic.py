@@ -1,19 +1,23 @@
 #!/usr/bin/python2.7
 """Getting Started: A simple sample pipeline built using pypiper."""
 
-# First, make sure you can import the pypiper package in some way
-# Here I just add the path to a cloned repo before importing.
-# You don't have to do this if you're using an installed version of pypiper.
+# This is a runnable example. You can run it to see what the output
+# looks like.
+
+# First, make sure you can import the pypiper package
 
 import os
 import pypiper
 
-# Create a PipelineManager instance (don't forget to name it!), which starts the pipeline!
+# Create a PipelineManager instance (don't forget to name it!)
+# This starts the pipeline.
 
-mypiper = pypiper.PipelineManager(name="BASIC", outfolder="pipeline_output/")
+mypiper = pypiper.PipelineManager(name="BASIC",
+	outfolder="pipeline_output/")
 
-# Now just build shell command strings, and use the run function to execute them
-# in order. run needs 2 things: a command, and the target file you are creating.
+# Now just build shell command strings, and use the run function
+# to execute them in order. run needs 2 things: a command, and the
+# target file you are creating.
 
 # First, generate some random data
 
@@ -23,8 +27,9 @@ tgt = "pipeline_output/test.out"
 # build the command
 cmd = "shuf -i 1-500000000 -n 10000000 > " + tgt
 
-# and run run. You must use shell=True here because of redirection (>), which
-# is a shell process, and can't be run as a python subprocess.
+# and run with run(). You must use shell=True here because of 
+# redirection (>), which is a shell process, and therefore can't be run
+# as a python subprocess.
 mypiper.run(cmd, target=tgt, shell=True)
 
 # Now copy the data into a new file.
@@ -48,12 +53,14 @@ mypiper.run([cmd1, cmd2], target="pipeline_output/touched.out")
 #mypiper.run(cmd, "lock.max", shell=True)
 
 # Use checkprint() to get the results of a command, and then use
-# report_result to print and log key-value pairs in the stats file:
-last_entry = mypiper.checkprint("tail -n 1 pipeline_output/copied.out", shell=True)
+# report_result() to print and log key-value pairs in the stats file:
+last_entry = mypiper.checkprint("tail -n 1 pipeline_output/copied.out",
+	shell=True)
 mypiper.report_result("last_entry", last_entry)
 
 
 # Now, stop the pipeline to complete gracefully.
 mypiper.stop_pipeline()
 
-# Observe your outputs in the pipeline_output folder to see what you've created.
+# Observe your outputs in the pipeline_output folder 
+# to see what you've created.

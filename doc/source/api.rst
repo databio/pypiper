@@ -1,7 +1,6 @@
 API
 ===
 
-
 pypiper.PipelineManager
 -----------------------
 .. automodule:: pypiper.pypiper
@@ -11,7 +10,7 @@ pypiper.PipelineManager
 pypiper.NGSTk
 -----------------------
 
-.. automodule:: pypiper.ngstk.NGSTk
+.. automodule:: pypiper.ngstk
     :members:
 
 

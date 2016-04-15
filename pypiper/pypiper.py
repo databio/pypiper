@@ -2,9 +2,9 @@
 
 """
 Pypiper is a python module with two components:
-1) the Pypiper class, and
-2) other toolkits with functions for more specific pipeline use-cases.
-The Pypiper class can be used to create a procedural pipeline in python.
+1) the PipelineManager class, and
+2) other toolkits (currently just NGSTk) with functions for more specific pipeline use-cases.
+The PipelineManager class can be used to create a procedural pipeline in python.
 """
 
 import os, sys, subprocess, errno
@@ -16,7 +16,7 @@ from AttributeDict import AttributeDict
 
 class PipelineManager(object):
 	"""
-	Base class for instantiating a PipelineManager object, they head class of Pypiper
+	Base class for instantiating a PipelineManager object, the main class of Pypiper
 
 	:param name: Choose a name for your pipeline; it's used to name the output files, flags, etc.
 	:param outfolder: Folder in which to store the results.
@@ -91,9 +91,9 @@ class PipelineManager(object):
 
 		# Register handler functions to deal with interrupt and termination signals;
 		# If received, we would then clean up properly (set pipeline status to FAIL, etc).
-		atexit.register(self.exit_handler)
-		signal.signal(signal.SIGINT, self.signal_int_handler)
-		signal.signal(signal.SIGTERM, self.signal_term_handler)
+		atexit.register(self._exit_handler)
+		signal.signal(signal.SIGINT, self._signal_int_handler)
+		signal.signal(signal.SIGTERM, self._signal_term_handler)
 
 		# Pypiper can keep track of intermediate files to clean up at the end
 		self.cleanup_list = []
@@ -141,7 +141,7 @@ class PipelineManager(object):
 			self.config = None
 
 
-	def ignore_interrupts(self):
+	def _ignore_interrupts(self):
 		"""
 		Ignore interrupt and termination signals. Used as a pre-execution
 		function (preexec_fn) for subprocess.Popen calls that Pyper will retain
@@ -152,7 +152,7 @@ class PipelineManager(object):
 
 	def start_pipeline(self, args=None, multi=False):
 		"""
-		Do some setup, like tee output, print some diagnostics, create temp files.
+		Initialize setup. Do some setup, like tee output, print some diagnostics, create temp files.
 		You provide only the output directory (used for pipeline stats, log, and status flag files).
 		"""
 		# Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
@@ -172,13 +172,13 @@ class PipelineManager(object):
 			# a for append to file
 			tee = subprocess.Popen(
 				["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE,
-				preexec_fn=self.ignore_interrupts)
+				preexec_fn=self._ignore_interrupts)
 
 			# Reset the signal handlers after spawning that process
-			# signal.signal(signal.SIGINT, self.signal_int_handler)
-			# signal.signal(signal.SIGTERM, self.signal_term_handler)
+			# signal.signal(signal.SIGINT, self._signal_int_handler)
+			# signal.signal(signal.SIGTERM, self._signal_term_handler)
 			# In case this pipeline process is terminated with SIGTERM, make sure we kill this spawned process as well.
-			atexit.register(self.kill_child_process, tee.pid)
+			atexit.register(self._kill_child_process, tee.pid)
 			os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
 			os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
 
@@ -278,7 +278,7 @@ class PipelineManager(object):
 		# Set new status
 		self.status = status
 		flag_file = self.pipeline_outfolder + "/" + self.pipeline_name + "_" + status + ".flag"
-		self.create_file(flag_file)
+		self._create_file(flag_file)
 
 		print("\nChange status from " + prev_status + " to " + status)
 
@@ -288,8 +288,8 @@ class PipelineManager(object):
 
 	def run(self, cmd, target=None, lock_name=None, shell=False, nofail=False, clean=False, follow=None):
 		"""
-		The primary workhorse function of pypiper. This is the command execution function, which enforces
-		file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
+		Runs a command. The primary workhorse function of PipelineManager. This is the command execution function, which enforces
+		racefree file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
 		wait for the file lock if it exists, and not produce new output (by default) if the target output file already
 		exists. If the output is to be created, it will first create a lock file to prevent other calls to run
 		(for example, in parallel pipelines) from touching the file while it is being created.
@@ -357,13 +357,13 @@ class PipelineManager(object):
 			# create the lock (if you can)
 			if not self.overwrite_locks:
 				try:
-					self.create_file_racefree(lock_file)  # Create lock
+					self._create_file_racefree(lock_file)  # Create lock
 				except OSError as e:
 					if e.errno == errno.EEXIST:  # File already exists
 						print ("Lock file created after test! Looping again.")
 						continue  # Go back to start
 			else:
-				self.create_file(lock_file)
+				self._create_file(lock_file)
 
 			##### End tests block
 			# If you make it past theses tests, we should proceed to run the process.
@@ -491,7 +491,7 @@ class PipelineManager(object):
 
 			while p.poll() is None:
 				if not shell:
-					local_maxmem = max(local_maxmem, self.memory_usage(p.pid)/1e6)
+					local_maxmem = max(local_maxmem, self._memory_usage(p.pid)/1e6)
 					# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
 				time.sleep(sleeptime)
 				sleeptime = min(sleeptime + 5, 60)
@@ -524,7 +524,7 @@ class PipelineManager(object):
 
 		return [returncode, local_maxmem]
 
-	def wait_for_process(self, p, shell=False):
+	def _wait_for_process(self, p, shell=False):
 		"""
 		Debug function used in unit tests.
 
@@ -536,7 +536,7 @@ class PipelineManager(object):
 		sleeptime = .5
 		while p.poll() is None:
 			if not shell:
-				local_maxmem = max(local_maxmem, self.memory_usage(p.pid) / 1e6)
+				local_maxmem = max(local_maxmem, self._memory_usage(p.pid) / 1e6)
 				# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
 			time.sleep(sleeptime)
 			sleeptime = min(sleeptime + 5, 60)
@@ -643,7 +643,7 @@ class PipelineManager(object):
 		with open(self.pipeline_commands_file, "a") as myfile:
 			myfile.write(cmd + "\n\n")
 
-	def create_file(self, file):
+	def _create_file(self, file):
 		"""
 		Creates a file, but will not fail if the file already exists. (Vulnerable to race conditions).
 		Use this for cases where it doesn't matter if this process is the one that created the file.
@@ -654,7 +654,7 @@ class PipelineManager(object):
 		with open(file, 'w') as fout:
 			fout.write('')
 
-	def create_file_racefree(self, file):
+	def _create_file_racefree(self, file):
 		"""
 		Creates a file, but fails if the file already exists.
 		This function will thus only succeed if this process actually creates the file;
@@ -685,11 +685,14 @@ class PipelineManager(object):
 
 	def stop_pipeline(self):
 		"""
-		The normal pipeline completion function, to be run by the user at the end of the script.
-		It sets status flag to completed and records some time and memory statistics to the log file.
+		Terminates the pipeline.
+
+		The normal pipeline completion function, to be run by the pipeline
+		at the end of the script. It sets status flag to completed and records 
+		some time and memory statistics to the log file.
 		"""
 		self.set_status_flag("completed")
-		self.cleanup()
+		self._cleanup()
 		self.report_result("Time", str(self.time_elapsed(self.starttime)))
 		self.report_result("Success", time.strftime("%m-%d %H:%M:%S"))
 		print("\n##### [Epilogue:]")
@@ -716,14 +719,14 @@ class PipelineManager(object):
 			elapsed_time = time.time() - self.proc_start_time
 			self.report_profile(self.proc_name, self.proc_lock_name, elapsed_time, self.peak_memory)
 
-			self.kill_child_process(pid_to_kill)
+			self._kill_child_process(pid_to_kill)
 		if self.status != "failed":  # and self.status != "completed":
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
 
 		raise e
 
-	def signal_term_handler(self, signal, frame):
+	def _signal_term_handler(self, signal, frame):
 		"""
 		TERM signal handler function: this function is run if the process receives a termination signal (TERM).
 		This may be invoked, for example, by SLURM if the job exceeds its memory or time limits.
@@ -738,7 +741,7 @@ class PipelineManager(object):
 		self.fail_pipeline(Exception("SIGTERM"))
 		sys.exit(1)
 
-	def signal_int_handler(self, signal, frame):
+	def _signal_int_handler(self, signal, frame):
 		"""
 		For catching interrupt (Ctrl +C) signals. Fails gracefully.
 		"""
@@ -748,7 +751,7 @@ class PipelineManager(object):
 		self.fail_pipeline(Exception("SIGINT"))
 		sys.exit(1)
 
-	def exit_handler(self):
+	def _exit_handler(self):
 		"""
 		This function I register with atexit to run whenever the script is completing.
 		A catch-all for uncaught exceptions, setting status flag file to failed.
@@ -767,7 +770,7 @@ class PipelineManager(object):
 		if self.status != "completed" and self.status != "failed":
 			self.fail_pipeline(Exception("Unknown exit failure"))
 
-	def kill_child_process(self, child_pid):
+	def _kill_child_process(self, child_pid):
 		"""
 		Pypiper spawns subprocesses. We need to kill them to exit gracefully,
 		in the event of a pipeline termination or interrupt signal.
@@ -822,11 +825,14 @@ class PipelineManager(object):
 			# Remove it from the conditional list if added to the absolute list
 			while regex in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(regex)
 
-	def cleanup(self):
+	def _cleanup(self):
 		"""
-		Cleans up (removes) intermediate files. You can register intermediate files, which will
-		be deleted automatically when the pipeline completes. This function deletes them, either
-		absolutely or conditionally.
+		Cleans up (removes) intermediate files.
+
+		You can register intermediate files, which will be deleted automatically
+		when the pipeline completes. This function deletes them,
+		either absolutely or conditionally. It is run automatically when the
+		pipeline succeeds, so you shouldn't need to call it from a pipeline.
 		"""
 		if len(self.cleanup_list) > 0:
 			print("\nCleaning up flagged intermediate files...")
@@ -881,13 +887,13 @@ class PipelineManager(object):
 					except:
 						pass
 
-	def memory_usage(self, pid='self', category="hwm"):
+	def _memory_usage(self, pid='self', category="hwm"):
 		"""
-		Memory usage of the current process in kilobytes.
+		Memory usage of the process in kilobytes.
 
-		:param pid:
+		:param pid: Process ID of process to check
 		:type pid: str
-		:param category:
+		:param category: Memory type to check. 'hwm' for high water mark.
 		:type category: str
 		"""
 		# Thanks Martin Geisler:
@@ -934,6 +940,8 @@ class Tee(object):
 # @staticmethod
 def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=False, all_args=False):
 	"""
+	Static method to add default automatic args to an ArgumentParser.
+
 	Use this to take an ArgumentParser in your pipeline, and also parse
 	default pypiper arguments.
 
