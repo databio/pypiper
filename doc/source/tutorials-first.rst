@@ -10,18 +10,21 @@ Using pypiper is simple. First, import pypiper, specify an output folder, and cr
 	outfolder = "pipeline_output/" # Choose a folder for your results
 	pipeline = pypiper.PipelineManager(name="my_pipeline", outfolder=outfolder)
 
-Now, the workhorse of ``PipelineManager`` is the ``run()`` function. Essentially, you just create a shell command as a string in python, and then pass it and its target (a file it creates) to ``run()``. 
+This creates your ``outfolder`` and places a flag called ``my_pipeline_running.flag`` in the folder. It also initializes the log file (``my_pipeline_log.md``) with statistics such as time of starting, compute node, software versions, command-line parameters, etc.
+
+Now, the workhorse of ``PipelineManager`` is the ``run()`` function. Essentially, you just create a shell command as a string in python, and then pass it and its target (a file it creates) to ``run()``. The target is the final output file created by your command.
 
 .. code-block:: python
 
+	# our command will produce this output file
 	target = os.path.join(outfolder, "outfile.txt")
 	command cmd = "shuf -i 1-500000000 -n 10000000 > " + target
 	pipeline.run(command, target, shell=True)
 
 
-The target is the final output file created by your command. You can also leave it empty (pass ``None``) if there is no output. Now string together whatever commands your pipeline requires!
+The ``command`` is the only required argument to ``run()``. You can leave ``target`` empty (pass ``None``). If you *do* specify a target, the command will only be run if the target file does not already exist. If you *do not* specify a target, the command will be run every time the pipeline is run. 
 
-At the end, terminate the pipeline so it gets flagged as successfully completed:
+Now string together whatever commands your pipeline requires! At the end, terminate the pipeline so it gets flagged as successfully completed:
 
 .. code-block:: python
 
