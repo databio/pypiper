@@ -13,6 +13,7 @@ import time
 import atexit, signal, platform
 from AttributeDict import AttributeDict
 
+import shlex # for splitting commands like a shell does
 
 class PipelineManager(object):
 	"""
@@ -429,7 +430,8 @@ class PipelineManager(object):
 			if ("|" in cmd or ">" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
 		
-			cmd = cmd.split()
+			#cmd = cmd.split()
+			cmd = shlex.split(cmd)
 		# else: # if shell: # do nothing (cmd is not split)
 			
 
@@ -482,7 +484,8 @@ class PipelineManager(object):
 		if not shell:
 			if ("|" in cmd or ">" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
-			cmd = cmd.split()
+			#cmd = cmd.split()
+			cmd = shlex.split(cmd)
 		# call(cmd, shell=shell) # old way (no memory profiling)
 
 		# Try to execute the command:
