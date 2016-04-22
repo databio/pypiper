@@ -286,7 +286,7 @@ class PipelineManager(object):
 	# Process calling functions
 	###################################
 
-	def run(self, cmd, target=None, lock_name=None, shell=False, nofail=False, clean=False, follow=None):
+	def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, clean=False, follow=None):
 		"""
 		Runs a command. The primary workhorse function of PipelineManager. This is the command execution function, which enforces
 		racefree file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
@@ -295,19 +295,19 @@ class PipelineManager(object):
 		(for example, in parallel pipelines) from touching the file while it is being created.
 		It also records the memory of the process and provides some logging output.
 
-		:param cmd: Bash command(s) to be run.
+		:param cmd: Shell command(s) to be run.
 		:type cmd: str or list
 		:param target: Output file to be produced. Optional.
 		:type target: str or None
 		:param lock_name: Name of lock file. Optional.
 		:type lock_name: str or None
-		:param shell: If command requires should be run in its own shell. Optional. Default: False.
+		:param shell: If command requires should be run in its own shell. Optional. Default: "guess" -- run will try to determine if the command requires a shell.
 		:type shell: bool
 		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
 			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 			they will not cause the pipeline to bail out.
 		:type nofail: bool
-		:param clean: True means the files will be automatically added to a auto cleanup list. Optional.
+		:param clean: True means the target file will be automatically added to a auto cleanup list. Optional.
 		:type clean: bool
 		:returns: Return code of process. If a list of commands is passed, this is the maximum of all return codes for all commands.
 		:rtype: int
@@ -399,15 +399,18 @@ class PipelineManager(object):
 
 		return process_return_code
 
-	def checkprint(self, cmd, shell=False, nofail=False):
+	def checkprint(self, cmd, shell="guess", nofail=False):
 		"""
 		A wrapper around subprocess.check_output() that also prints the command,
-		and can understand the nofail parameter. Just like callprint, but checks output. This is equivalent to
+		and can understand the nofail parameter. Just like callprint, but checks 			output. This is equivalent to
 		running subprocess.check_output() instead of subprocess.call().
 
 		:param cmd: Bash command(s) to be run.
 		:type cmd: str or list
-		:param shell: If command requires should be run in its own shell. Optional. Default: False.
+		:param shell: If command requires should be run in its own shell. Optional. 		Default: "guess" -- `run()` will 
+		try to guess if the command should be run in a shell (based on the 
+		presence of a pipe (|) or redirect (>), To force a process to run as
+		a direct subprocess, set `shell` to False; to force a shell, set True.
 		:type shell: bool
 		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
 			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
@@ -415,10 +418,20 @@ class PipelineManager(object):
 		:type nofail: bool
 		"""
 		self.report_command(cmd)
+
+		if shell == "guess":
+			if ("|" in cmd or ">" in cmd):
+				shell = True
+			else:
+				shell = False
+
 		if not shell:
 			if ("|" in cmd or ">" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
+		
 			cmd = cmd.split()
+		# else: # if shell: # do nothing (cmd is not split)
+			
 
 		try:
 			returnvalue = subprocess.check_output(cmd, shell=shell)
@@ -432,7 +445,7 @@ class PipelineManager(object):
 
 		return returnvalue
 
-	def callprint(self, cmd, shell=False, nofail=False):
+	def callprint(self, cmd, shell="guess", nofail=False):
 		"""
 		Prints the command, and then executes it, then prints the memory use and return code of the command.
 
@@ -459,6 +472,13 @@ class PipelineManager(object):
 		self.report_command(cmd)
 		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
+
+		if shell == "guess":
+			if ("|" in cmd or ">" in cmd):
+				shell = True
+			else:
+				shell = False
+
 		if not shell:
 			if ("|" in cmd or ">" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
