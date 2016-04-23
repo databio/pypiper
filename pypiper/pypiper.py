@@ -26,6 +26,8 @@ class PipelineManager(object):
 		you to restart a failed pipeline where it left off. Be careful, though, this invalidates the typical file locking
 		that enables multiple pipelines to run in parallel on the same intermediate files.
 	:param fresh: NOT IMPLEMENTED
+	:param follow: Force run all follow functions, even if the preceeding command is not run.
+		By default, follow functions are only run if the preceeding command is run.
 	:param recover: Specify recover mode, to overwrite lock files. If pypiper encounters a locked
 		target, it will ignore the lock, and recompute this step. Useful to restart a failed pipeline.
 	:param multi: Enables running multiple pipelines in one script; or for interactive use. It simply disables the tee
@@ -36,6 +38,7 @@ class PipelineManager(object):
 	def __init__(
 		self, name, outfolder, args=None, multi=False,
 		manual_clean=False, recover=False, fresh=False,
+		force_follow=False,
 		cores=1, mem="1000",
 		config_file=None, output_parent=None):
 		# Params defines the set of options that could be updated via
@@ -49,6 +52,7 @@ class PipelineManager(object):
 			'manual_clean': manual_clean,
 			'recover': recover,
 			'fresh': fresh,
+			'force_follow': force_follow,
 			'config_file': config_file,
 			'output_parent': output_parent,
 			'cores': cores,
@@ -64,6 +68,7 @@ class PipelineManager(object):
 		self.pipeline_name = name
 		self.overwrite_locks = params['recover']
 		self.fresh_start = params['fresh']
+		self.force_follow = params['force_follow']
 		self.manual_clean = params['manual_clean']
 		self.cores = params['cores']
 		self.output_parent = params['output_parent']
@@ -348,6 +353,13 @@ class PipelineManager(object):
 			# Base case: Target exists.	# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
 			if target is not None and os.path.isfile(target) and not os.path.isfile(lock_file):
 				print("\nTarget exists: `" + target + "`")
+
+				# Normally we don't run the follow, but if you want to force...
+				if self.force_follow and hasattr(follow, '__call__'):
+					# Run the follow function
+					print("Follow:")
+					follow_result = follow()
+					
 				break  # Do not run command
 
 			# Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
@@ -1024,11 +1036,15 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		'-R', '--recover', dest='recover', action='store_true',
 		default=False, help='Recover mode, overwrite locks')
 	parser.add_argument(
-		'-F', '--fresh-start', dest='fresh', action='store_true',
+		'-N', '--new-start', dest='fresh', action='store_true',
 		default=False, help='Fresh start mode, overwrite all')
 	parser.add_argument(
 		'-D', '--dirty', dest='manual_clean', action='store_true',
 		default=False, help='Make all cleanups manual')  # Useful for debugging
+	parser.add_argument(
+		'-F', '--follow', dest='force_follow', action='store_true',
+		default=False, help='Run all follow commands, even if command is not run')  # Recalculating stats
+
 
 	# Additional arguments *not* used by pypiper, but added for convenience
 	# to create a standard interface (optional)
