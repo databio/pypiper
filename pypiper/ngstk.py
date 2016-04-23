@@ -220,8 +220,7 @@ class NGSTk(_AttributeDict):
 				self.pm.report_result("PF_reads", str(pf_reads))
 			if fastq_reads != int(raw_reads):
 				raise Exception("Fastq conversion error? Number of reads doesn't match unaligned bam")
-			return True
-
+			return fastq_reads
 
 		return temp_func
 
