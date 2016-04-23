@@ -18,11 +18,11 @@ Now, the workhorse of ``PipelineManager`` is the ``run()`` function. Essentially
 
 	# our command will produce this output file
 	target = os.path.join(outfolder, "outfile.txt")
-	command cmd = "shuf -i 1-500000000 -n 10000000 > " + target
-	pipeline.run(command, target, shell=True)
+	cmd = "shuf -i 1-500000000 -n 10000000 > " + target
+	pipeline.run(command, target)
 
 
-The ``command`` is the only required argument to ``run()``. You can leave ``target`` empty (pass ``None``). If you *do* specify a target, the command will only be run if the target file does not already exist. If you *do not* specify a target, the command will be run every time the pipeline is run. 
+The command (``cmd``) is the only required argument to ``run()``. You can leave ``target`` empty (pass ``None``). If you **do** specify a target, the command will only be run if the target file does not already exist. If you **do not** specify a target, the command will be run every time the pipeline is run. 
 
 Now string together whatever commands your pipeline requires! At the end, terminate the pipeline so it gets flagged as successfully completed:
 
@@ -32,7 +32,4 @@ Now string together whatever commands your pipeline requires! At the end, termin
 
 That's it! By running commands through ``run()`` instead of directly in bash, you get a robust, logged, restartable pipeline manager for free!
 
-There's more information about ``shell=True`` later.
-
-To see an example of a simple pipline, look in the `example_pipelines` folder in this respository, which are thoroughly commented to act as vignettes. This is the best way to learn how to use Pyipiper.
-
+To see an example of a simple pipline, look in the `example_pipelines` folder in this respository (also listed here under tutorials), which are thoroughly commented to act as vignettes. This is the best way to learn how to use Pyipiper.

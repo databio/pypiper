@@ -90,6 +90,9 @@ class PipelineManager(object):
 		self.running_subprocess = None
 		self.wait = True  # turn off for debugging
 
+		# In-memory holder for report_results
+		self.stats_dict = {}
+
 		# Register handler functions to deal with interrupt and termination signals;
 		# If received, we would then clean up properly (set pipeline status to FAIL, etc).
 		atexit.register(self._exit_handler)
@@ -338,6 +341,8 @@ class PipelineManager(object):
 		# re-do the tests.
 		# TODO: maybe output a message if when repeatedly going through the loop
 
+		follow_result = None
+
 		while True:
 			##### Tests block
 			# Base case: Target exists.	# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
@@ -391,20 +396,23 @@ class PipelineManager(object):
 			if hasattr(follow, '__call__'):
 				# Run the follow function
 				print("Follow:")
-				follow()
+				follow_result = follow()
 
 			os.remove(lock_file)  # Remove lock file
 
 			# If you make it to the end of the while loop, you're done
 			break
 
+		# Bad idea: don't return follow_result; it seems nice but nothing else
+		# in your pipeline can depend on this since it won't be run if that command 		# isn't required because target exists.
 		return process_return_code
 
 	def checkprint(self, cmd, shell="guess", nofail=False):
 		"""
-		A wrapper around subprocess.check_output() that also prints the command,
-		and can understand the nofail parameter. Just like callprint, but checks 			output. This is equivalent to
-		running subprocess.check_output() instead of subprocess.call().
+		Just like callprint, but checks output -- so you can get a variable
+		in python corresponding to the return value of the command you call.
+		This is equivalent to running subprocess.check_output() 
+		instead of subprocess.call().
 
 		:param cmd: Bash command(s) to be run.
 		:type cmd: str or list
@@ -449,7 +457,8 @@ class PipelineManager(object):
 
 	def callprint(self, cmd, shell="guess", nofail=False):
 		"""
-		Prints the command, and then executes it, then prints the memory use and return code of the command.
+		Prints the command, and then executes it, then prints the memory use and
+		return code of the command.
 
 		Uses python's subprocess.Popen() to execute the given command. The shell argument is simply
 		passed along to Popen(). You should use shell=False (default) where possible, because this enables memory
@@ -650,6 +659,8 @@ class PipelineManager(object):
 
 		:type key: str
 		"""
+		# keep the value in memory:
+		self.stats_dict[key] = str(value).strip()
 		messageRaw = key + "\t " + str(value).strip()
 		messageMarkdown = "> `" + key + "`\t" + str(value).strip() + "\t" + "_RES_"
 		print(messageMarkdown)
@@ -701,6 +712,40 @@ class PipelineManager(object):
 		except OSError as exception:
 			if exception.errno != errno.EEXIST:
 				raise
+
+	###################################
+	# Pipeline stats calculation helpers
+	###################################
+
+
+	def _refresh_stats(self):
+		"""
+		Loads up the stats sheet created for this pipeline run and reads
+		those stats into memory
+		"""
+
+		with open(self.pipeline_stats_file, "rb") as stat_file:
+			for line in stat_file:
+				key, value  = line.split('\t')
+				self.stats_dict[key] = value.strip()
+
+
+
+	def get_stat(self, key):
+		"""
+		Returns a stats key reported by this pipeline.
+		"""
+
+		if self.stats_dict.has_key(key):
+			return (self.stats_dict[key])
+		else:
+			self._refresh_stats()
+			if self.stats_dict.has_key(key):
+				return (self.stats_dict[key])
+			else:
+				print("Error: Missing stat: " + key + ". Can't report result")
+				return None
+
 
 	###################################
 	# Pipeline termination functions

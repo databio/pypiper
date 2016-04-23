@@ -76,3 +76,27 @@ Since Pypiper runs all your commands from within python (using the `subprocess` 
 
 You can force Pypiper to use one or the other by specifying ``shell=True`` or ``shell=False`` to the ``run`` function. By default Pypiper will try to guess: if your command contains any of the shell process characters ("*", "|", or ">"), it will be run in a shell. Otherwise, it will be run as a direct subprocess.
 
+Harvesting statistics
+*************
+
+Pypiper has a neat function called ``get_stat`` that lets you retrieve any value you've reported with ``report_result`` so you could use it to calculate statistics elsewhere in the pipeline. It will retrieve this either from memory, if the calculation of that result happened during the current pipeline run, or from the ``_stats.tsv`` file if the result was reported by an earlier run (or even another pipeline). So you could in theory calculate statistics based on results across pipelines.
+
+An example for how to use this is how we handle calculating the alignment rate in an NGS pipeline:
+
+.. code-block:: python
+
+	x = myngstk.count_mapped_reads(bamfile, args.paired_end)
+	pm.report_result("Aligned_reads", x)
+	rr = float(pm.get_stat("Raw_reads"))
+	pm.report_result("Alignment_rate", round((rr * 100 / float(x), 3))
+
+Here, we use ``get_stat`` to grab a result that we reported previously (with ``report_result``), when we counted the number of ``Raw_reads``. We need this after the alignment to calculate the alignment rate. Later, now that we've reported ``Alignment_rate``, you could harvest this stat again for use with ``pm.get_stat("Alignment_rate")``. This is useful because you could put this block of code in a ``follow`` statement so it may not be executed, but you can still grab a reported result like this even if the execution happened outside of the current pipeline run; you'd only have to do the calculation once.
+
+
+
+
+
+
+
+
+
