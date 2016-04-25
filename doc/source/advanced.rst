@@ -1,6 +1,14 @@
 Advanced
 =========================
 
+The ``follow`` argument
+*************
+*Follow functions* let you couple functions to run commands; the functions will only be run if the command is run. This lets you avoid running unnecessary processes repeatedly in the even that you restart your pipeline multiple times (for instance, while debugging later steps in the pipeline).
+
+One of the really useful things in pypiper is that you can pass a python function (we call a "follow function") along in your call to ``run``, and python will call this *follow function* if and only if it runs your command. This is useful for data checks to make sure processes did what you expect. A good example is file conversions; after you convert from one format into another, it's good practice to make sure the conversion completed and you have the same number of lines, or whatever, in the final file. Pypiper's command locking mechanism solves most of this problem, but there are still lots of times you'd like to run a function but only once, right after the command that produced it runs. For example, just counting the number of lines in a file after producing it. You don't need to re-run the counting every time you restart the pipeline, which will skip that step since it is complete. 
+
+
+
 Pipeline command-line arguments
 *************
 To take full advantage of Pypiper (make your pipeline recoverable, etc.), you need to add command-line options to the ``PipelineManager``. Use the typical Python `argparse module <https://docs.python.org/2/library/argparse.html>`_,  add Pypiper args to it (with ``add_pypiper_args()``), and then pass this to your `PipelineManager`.
@@ -92,7 +100,7 @@ An example for how to use this is how we handle calculating the alignment rate i
 
 Here, we use ``get_stat`` to grab a result that we reported previously (with ``report_result``), when we counted the number of ``Raw_reads``. We need this after the alignment to calculate the alignment rate. Later, now that we've reported ``Alignment_rate``, you could harvest this stat again for use with ``pm.get_stat("Alignment_rate")``. This is useful because you could put this block of code in a ``follow`` statement so it may not be executed, but you can still grab a reported result like this even if the execution happened outside of the current pipeline run; you'd only have to do the calculation once.
 
-
+Any statistics you report like this will be available in summaries made using built-in summary scripts.
 
 
 
