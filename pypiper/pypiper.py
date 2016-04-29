@@ -13,6 +13,7 @@ import time
 import atexit, signal, platform
 from AttributeDict import AttributeDict
 
+import shlex # for splitting commands like a shell does
 
 class PipelineManager(object):
 	"""
@@ -25,6 +26,8 @@ class PipelineManager(object):
 		you to restart a failed pipeline where it left off. Be careful, though, this invalidates the typical file locking
 		that enables multiple pipelines to run in parallel on the same intermediate files.
 	:param fresh: NOT IMPLEMENTED
+	:param follow: Force run all follow functions, even if the preceeding command is not run.
+		By default, follow functions are only run if the preceeding command is run.
 	:param recover: Specify recover mode, to overwrite lock files. If pypiper encounters a locked
 		target, it will ignore the lock, and recompute this step. Useful to restart a failed pipeline.
 	:param multi: Enables running multiple pipelines in one script; or for interactive use. It simply disables the tee
@@ -35,6 +38,7 @@ class PipelineManager(object):
 	def __init__(
 		self, name, outfolder, args=None, multi=False,
 		manual_clean=False, recover=False, fresh=False,
+		force_follow=False,
 		cores=1, mem="1000",
 		config_file=None, output_parent=None):
 		# Params defines the set of options that could be updated via
@@ -48,6 +52,7 @@ class PipelineManager(object):
 			'manual_clean': manual_clean,
 			'recover': recover,
 			'fresh': fresh,
+			'force_follow': force_follow,
 			'config_file': config_file,
 			'output_parent': output_parent,
 			'cores': cores,
@@ -63,6 +68,7 @@ class PipelineManager(object):
 		self.pipeline_name = name
 		self.overwrite_locks = params['recover']
 		self.fresh_start = params['fresh']
+		self.force_follow = params['force_follow']
 		self.manual_clean = params['manual_clean']
 		self.cores = params['cores']
 		self.output_parent = params['output_parent']
@@ -88,6 +94,9 @@ class PipelineManager(object):
 		self.proc_start_time = None
 		self.running_subprocess = None
 		self.wait = True  # turn off for debugging
+
+		# In-memory holder for report_results
+		self.stats_dict = {}
 
 		# Register handler functions to deal with interrupt and termination signals;
 		# If received, we would then clean up properly (set pipeline status to FAIL, etc).
@@ -286,7 +295,7 @@ class PipelineManager(object):
 	# Process calling functions
 	###################################
 
-	def run(self, cmd, target=None, lock_name=None, shell=False, nofail=False, clean=False, follow=None):
+	def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, clean=False, follow=None):
 		"""
 		Runs a command. The primary workhorse function of PipelineManager. This is the command execution function, which enforces
 		racefree file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
@@ -295,19 +304,19 @@ class PipelineManager(object):
 		(for example, in parallel pipelines) from touching the file while it is being created.
 		It also records the memory of the process and provides some logging output.
 
-		:param cmd: Bash command(s) to be run.
+		:param cmd: Shell command(s) to be run.
 		:type cmd: str or list
 		:param target: Output file to be produced. Optional.
 		:type target: str or None
 		:param lock_name: Name of lock file. Optional.
 		:type lock_name: str or None
-		:param shell: If command requires should be run in its own shell. Optional. Default: False.
+		:param shell: If command requires should be run in its own shell. Optional. Default: "guess" -- run will try to determine if the command requires a shell.
 		:type shell: bool
 		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
 			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 			they will not cause the pipeline to bail out.
 		:type nofail: bool
-		:param clean: True means the files will be automatically added to a auto cleanup list. Optional.
+		:param clean: True means the target file will be automatically added to a auto cleanup list. Optional.
 		:type clean: bool
 		:returns: Return code of process. If a list of commands is passed, this is the maximum of all return codes for all commands.
 		:rtype: int
@@ -337,11 +346,20 @@ class PipelineManager(object):
 		# re-do the tests.
 		# TODO: maybe output a message if when repeatedly going through the loop
 
+		follow_result = None
+
 		while True:
 			##### Tests block
 			# Base case: Target exists.	# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
 			if target is not None and os.path.isfile(target) and not os.path.isfile(lock_file):
 				print("\nTarget exists: `" + target + "`")
+
+				# Normally we don't run the follow, but if you want to force...
+				if self.force_follow and hasattr(follow, '__call__'):
+					# Run the follow function
+					print("Follow:")
+					follow_result = follow()
+					
 				break  # Do not run command
 
 			# Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
@@ -390,24 +408,30 @@ class PipelineManager(object):
 			if hasattr(follow, '__call__'):
 				# Run the follow function
 				print("Follow:")
-				follow()
+				follow_result = follow()
 
 			os.remove(lock_file)  # Remove lock file
 
 			# If you make it to the end of the while loop, you're done
 			break
 
+		# Bad idea: don't return follow_result; it seems nice but nothing else
+		# in your pipeline can depend on this since it won't be run if that command 		# isn't required because target exists.
 		return process_return_code
 
-	def checkprint(self, cmd, shell=False, nofail=False):
+	def checkprint(self, cmd, shell="guess", nofail=False):
 		"""
-		A wrapper around subprocess.check_output() that also prints the command,
-		and can understand the nofail parameter. Just like callprint, but checks output. This is equivalent to
-		running subprocess.check_output() instead of subprocess.call().
+		Just like callprint, but checks output -- so you can get a variable
+		in python corresponding to the return value of the command you call.
+		This is equivalent to running subprocess.check_output() 
+		instead of subprocess.call().
 
 		:param cmd: Bash command(s) to be run.
 		:type cmd: str or list
-		:param shell: If command requires should be run in its own shell. Optional. Default: False.
+		:param shell: If command requires should be run in its own shell. Optional. 		Default: "guess" -- `run()` will 
+		try to guess if the command should be run in a shell (based on the 
+		presence of a pipe (|) or redirect (>), To force a process to run as
+		a direct subprocess, set `shell` to False; to force a shell, set True.
 		:type shell: bool
 		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
 			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
@@ -415,10 +439,21 @@ class PipelineManager(object):
 		:type nofail: bool
 		"""
 		self.report_command(cmd)
+
+		if shell == "guess":
+			if ("|" in cmd or ">" in cmd):
+				shell = True
+			else:
+				shell = False
+
 		if not shell:
 			if ("|" in cmd or ">" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
-			cmd = cmd.split()
+		
+			#cmd = cmd.split()
+			cmd = shlex.split(cmd)
+		# else: # if shell: # do nothing (cmd is not split)
+			
 
 		try:
 			returnvalue = subprocess.check_output(cmd, shell=shell)
@@ -432,9 +467,10 @@ class PipelineManager(object):
 
 		return returnvalue
 
-	def callprint(self, cmd, shell=False, nofail=False):
+	def callprint(self, cmd, shell="guess", nofail=False):
 		"""
-		Prints the command, and then executes it, then prints the memory use and return code of the command.
+		Prints the command, and then executes it, then prints the memory use and
+		return code of the command.
 
 		Uses python's subprocess.Popen() to execute the given command. The shell argument is simply
 		passed along to Popen(). You should use shell=False (default) where possible, because this enables memory
@@ -459,10 +495,18 @@ class PipelineManager(object):
 		self.report_command(cmd)
 		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
+
+		if shell == "guess":
+			if ("|" in cmd or ">" in cmd):
+				shell = True
+			else:
+				shell = False
+
 		if not shell:
 			if ("|" in cmd or ">" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
-			cmd = cmd.split()
+			#cmd = cmd.split()
+			cmd = shlex.split(cmd)
 		# call(cmd, shell=shell) # old way (no memory profiling)
 
 		# Try to execute the command:
@@ -627,6 +671,8 @@ class PipelineManager(object):
 
 		:type key: str
 		"""
+		# keep the value in memory:
+		self.stats_dict[key] = str(value).strip()
 		messageRaw = key + "\t " + str(value).strip()
 		messageMarkdown = "> `" + key + "`\t" + str(value).strip() + "\t" + "_RES_"
 		print(messageMarkdown)
@@ -678,6 +724,40 @@ class PipelineManager(object):
 		except OSError as exception:
 			if exception.errno != errno.EEXIST:
 				raise
+
+	###################################
+	# Pipeline stats calculation helpers
+	###################################
+
+
+	def _refresh_stats(self):
+		"""
+		Loads up the stats sheet created for this pipeline run and reads
+		those stats into memory
+		"""
+
+		with open(self.pipeline_stats_file, "rb") as stat_file:
+			for line in stat_file:
+				key, value  = line.split('\t')
+				self.stats_dict[key] = value.strip()
+
+
+
+	def get_stat(self, key):
+		"""
+		Returns a stats key reported by this pipeline.
+		"""
+
+		if self.stats_dict.has_key(key):
+			return (self.stats_dict[key])
+		else:
+			self._refresh_stats()
+			if self.stats_dict.has_key(key):
+				return (self.stats_dict[key])
+			else:
+				print("Error: Missing stat: " + key + ". Can't report result")
+				return None
+
 
 	###################################
 	# Pipeline termination functions
@@ -956,11 +1036,15 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		'-R', '--recover', dest='recover', action='store_true',
 		default=False, help='Recover mode, overwrite locks')
 	parser.add_argument(
-		'-F', '--fresh-start', dest='fresh', action='store_true',
+		'-N', '--new-start', dest='fresh', action='store_true',
 		default=False, help='Fresh start mode, overwrite all')
 	parser.add_argument(
 		'-D', '--dirty', dest='manual_clean', action='store_true',
 		default=False, help='Make all cleanups manual')  # Useful for debugging
+	parser.add_argument(
+		'-F', '--follow', dest='force_follow', action='store_true',
+		default=False, help='Run all follow commands, even if command is not run')  # Recalculating stats
+
 
 	# Additional arguments *not* used by pypiper, but added for convenience
 	# to create a standard interface (optional)
