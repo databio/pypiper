@@ -7,7 +7,7 @@ Making robust pipelines just got easier. Pypiper helps you take your current pip
 Pypiper is a lightweight python toolkit for gluing together restartable, robust
 command line pipelines. With Pypiper, simplicity is paramount. A new user can start building pipelines using Pypiper in under 15 minutes. Learning all the :doc:`features and  benefits <features>` of Pypiper takes just an hour or two. At the same time, Pypiper provides immediate and significant advantages over a simple shell script.
 
-To get started, proceed with the :doc:`Introduction <intro>` or use the table of contents below to navigate the docs. When you have a feel for what Pypiper is, the best way to learn to use it is by looking at the :doc:`Tutorials <tutorials>`.
+To get started, proceed with the :doc:`Introduction <intro>` or use the table of contents below to navigate the docs. When you have a feel for what Pypiper is, the best way to learn is by looking at the :doc:`Tutorials <tutorials>`. That should get you started building your first pipeline. But before you get too deep, make sure you get the most out Pypiper by checking out the :doc:`Advanced Functions <advanced>` and :doc:`Best Practices <best-practices>` for building pipelines.
 
 Links
 ^^^^^^^^
@@ -28,6 +28,7 @@ Contents
    outputs.rst
    commands.rst
    advanced.rst
+   best-practices.rst
    ngstk.rst
    api.rst
 
