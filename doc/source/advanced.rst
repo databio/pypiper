@@ -72,6 +72,70 @@ Then you can access these settings automatically in your script using:
 	pipeline.config.settings.setting2
 
 
+In this yaml file, the developer of a pipeline records any information the pipeline needs to run that is not related to the Sample being processed. By convension, for consistency across pipelines we use sections called ``tools``, ``resources``, and ``parameters``, but the developer has the freedom to add other sections/variables as needed.
+
+Other information related to a specific run (*e.g.* cpus and memory available) should ideally be passed as command-line arguments.
+
+Pipeline config files by default are named the same as the pipeline with the suffix ``.yaml`` and reside in the same directory as the pipeline code.
+
+
+Example:
+
+.. code-block:: yaml
+
+	tools:
+	  # absolute paths to required tools
+	  java:  /home/user/.local/tools /home/user/.local/tools/java
+	  trimmomatic:  /home/user/.local/tools/trimmomatic.jar
+	  fastqc:  fastqc
+	  samtools:  samtools
+	  bsmap:  /home/user/.local/tools/bsmap
+	  split_reads:  /home/user/.local/tools/split_reads.py  # split_reads.py script; distributed with this pipeline
+
+	resources:
+	  # paths to reference genomes, adapter files, and other required shared data
+	  resources: /data/groups/lab_bock/shared/resources
+	  genomes: /data/groups/lab_bock/shared/resources/genomes/
+	  adapters: /data/groups/lab_bock/shared/resources/adapters/
+
+	parameters:
+	  # parameters passed to bioinformatic tools, subclassed by tool
+
+	  trimmomatic:
+	    quality_encoding: "phred33"
+	    threads: 30
+	    illuminaclip:
+	      adapter_fasta: "/home/user/.local/tools/resources/cpgseq_adapter.fa"
+	      seed_mismatches: 2
+	      palindrome_clip_threshold: 40
+	      simple_clip_threshold: 7
+	    slidingwindow:
+	      window_size: 4
+	      required_quality: 15
+	    maxinfo:
+	      target_length: 17
+	      strictness: 0.5
+	    minlen:
+	      min_length: 17
+
+	  bsmap:
+	    seed_size: 12
+	    mismatches_allowed_for_background: 0.10
+	    mismatches_allowed_for_left_splitreads: 0.06
+	    mismatches_allowed_for_right_splitreads: 0.00
+	    equal_best_hits: 100
+	    quality_threshold: 15
+	    quality_encoding: 33
+	    max_number_of_Ns: 3
+	    processors: 8
+	    random_number_seed: 0
+	    map_to_strands: 0
+
+
+
+
+
+
 Python process types: Shell vs direct
 *************
 By default, Pypiper will try to guess what kind of process you want, so for most pipelines, it's probably not necessary to understand the details in this section. However, how you write your commands has some implications for memory tracking, and advanced pipeline authors may want to control the process types that Pypiper uses, so this section covers how these subprocesses work.
