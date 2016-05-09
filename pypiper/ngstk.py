@@ -99,21 +99,73 @@ class NGSTk(_AttributeDict):
 			raise NotImplementedError("This pipeline can only deal with .bam, .fastq, or .fastq.gz files")
 		return input_ext
 
-	def create_local_input(self, pipeline_outfolder, input_arg, sample_name="sample"):
+	def create_multiple_local_inputs(self, pipeline_outfolder, input_args, local_base="sample"):
+		"""
+		:param input_args: This is a list of arguments, each one is a class of
+		inputs (which can in turn be a string or a list). Typically, input_args
+		is a list with 2 elements: first a list of read1 files; second
+		an (optional!) list of read2 files.
+		:type input_args: list
+		"""
+
+		if type(input_args) != list:
+			raise Exception("Input must be a list")
+
+		local_input_files = list()
+		n_input_files = len(filter(bool, input_args))
+		print("Number of input files:\t\t" + str(n_input_files))
+
+		for input_i, input_arg in enumerate(input_args):
+			# Count how many non-null items there are in the list;
+			# we only append _R1 (etc.) if there are mutliple input files.
+			if n_input_files > 1:
+				local_base_extended = local_base + "_R" + str(input_i + 1)
+			else:
+				local_base_extended = local_base
+			if input_arg:
+				out = self.create_local_input(pipeline_outfolder, input_arg, local_base_extended)
+
+				print("Local input file: " + out) 
+				# Make sure file exists:
+				if not os.path.isfile(out):
+					print out + " is not a file"
+
+				local_input_files.append(out)
+
+		return local_input_files
+
+		
+
+	def create_local_input(self, pipeline_outfolder, input_arg, local_base="sample"):
 		"""
 		This function standardizes various input possibilities by converting
 		either .bam, .fastq, or .fastq.gz files into a local file; merging those
-		with multiple files given.
+		if multiple files given.
+
+		:param local_base: Usually the sample name. This (plus file extension) will
+		be the name of the local file linked (or merged) by this function.
 		"""
 
 		raw_folder = "raw" # previously, "unmapped_bam"
 		self.make_sure_path_exists(os.path.join(pipeline_outfolder, raw_folder))
 
+#		# class_split_string (;) is a magic input separator indicating 
+#		# multiple classes of input; in this case, it separates read1 from read2.
+#		print(class_split_string, input_arg)
+##		if any(class_split_string in x for x in input_arg):
+#		for input_arg_item in input_arg:
+#			if class_split_string in input_arg_item:
+#				print("Detected multiple input classes.")
+#				input_arg_split = input_arg_item.split(class_split_string)
+#				result = [] # create list to collect output
+#				for split_i, split_arg in enumerate(input_arg_split):
+#					result.append(self.create_local_input(pipeline_outfolder, [split_arg], outfile_name + "_R" + str(split_i+1)))
+
+#				return result
+
 		# for bam files:
 		# If more than 1 input file is given, then these are to be merged
 		# if they are in bam format.
-
-		print("Number of input files:\t\t" + str(len(input_arg)))
 
 		# base case: A single input file; we just link it, regardless of
 		# file type:
@@ -127,7 +179,7 @@ class NGSTk(_AttributeDict):
 				input_arg = os.path.abspath(input_arg)
 
 			# Link it to into the raw folder
-			local_input_abs = os.path.join(pipeline_outfolder, raw_folder, sample_name + input_ext)
+			local_input_abs = os.path.join(pipeline_outfolder, raw_folder, local_base + input_ext)
 			self.pm.callprint("ln -sf " + input_arg + " " + local_input_abs, shell=True)
 			# return the local (linked) filename absolute path
 			return local_input_abs
@@ -135,9 +187,10 @@ class NGSTk(_AttributeDict):
 		elif len(input_arg) > 1:
 			# Otherwise, there are multiple inputs. 
 			# if multiple bams
+		
 			if all([self.get_input_ext(x) == ".bam" for x in input_arg]):
 				merge_folder = os.path.join(pipeline_outfolder, raw_folder)
-				sample_merged_bam = sample_name + ".merged.bam"
+				sample_merged_bam = local_base + ".merged.bam"
 				output_merge = os.path.join(merge_folder, sample_merged_bam)
 				cmd = self.merge_bams(input_arg, output_merge)
 				self.pm.run(cmd, sample_merged_bam)
@@ -153,10 +206,9 @@ class NGSTk(_AttributeDict):
 			# At this point, we don't recognize the input file types or they
 			# do not match.
 			raise NotImplementedError("Input files must be of the same type.")
-			
 
-	def input_to_fastq(self, input_file, pipeline_outfolder, sample_name,
-		paired_end, format=None):
+	def input_to_fastq(self, input_file, sample_name,
+		paired_end, fastq_folder, output_file=None, multiclass=False):
 		"""
 		Builds a command to convert input file to fastq, for various inputs.
 
@@ -166,8 +218,7 @@ class NGSTk(_AttributeDict):
 		types seamlessly, standardizing you to the fastq which is still the
 		most common format for adapter trimmers, etc.
 
-		It will place the output fastq file in a subfolder of 
-		`pipeline_outfolder` called `fastq`.
+		It will place the output fastq file in given `fastq_folder`.
 		
 		:param input_file: filename of the input you want to convert to fastq
 		:type input_file: string
@@ -175,44 +226,76 @@ class NGSTk(_AttributeDict):
 		:returns: A command (to be run with PipelineManager) that will ensure
 		your fastq file exists.
 		"""
-
-		fastq_folder = os.path.join(pipeline_outfolder, "fastq")
+	
 		fastq_prefix = os.path.join(fastq_folder, sample_name)
-		unaligned_fastq = fastq_prefix + "_R1.fastq"
-		input_ext = self.get_input_ext(input_file)
+		self.make_sure_path_exists(fastq_folder)
 
-		if input_ext ==".bam":
-			print("Found .bam file")
-			cmd = self.bam_to_fastq(input_file, fastq_prefix, paired_end)
-			# pm.run(cmd, unaligned_fastq, follow=check_fastq)
-		elif input_ext == ".fastq.gz":
-			print("Found .fastq.gz file")
-			if paired_end:
-				# For paired-end reads in one fastq file, we must split the file into 2.
-				cmd = tools.python + " -u " + os.path.join(tools.scripts_dir, "fastq_split.py")
-				cmd += " -i " + input_file
-				cmd += " -o " + fastq_prefix
-			else:
-				# For single-end reads, we just unzip the fastq.gz file.
-				cmd = "gunzip -c " + input_file + " > " + unaligned_fastq
-				# a non-shell version
-				#cmd1 = "gunzip --force " + input_file
-				#cmd2 = "mv " + os.path.splitext(input_file)[0] + " " + unaligned_fastq
-				#cmd = [cmd1, cmd2]
-		elif input_ext == ".fastq":
-			cmd = None
-			print("Found .fastq file; no conversion necessary")
+		# this expects a list; if it gets a string, convert it to a list.
+		if type(input_file) != list:
+			input_file = [input_file]
 
-		return [cmd, fastq_folder, fastq_prefix, unaligned_fastq]
+		if len(input_file) > 1:
+			cmd = []
+			output_file = []
+			for in_i, in_arg in enumerate(input_file):
+				output = fastq_prefix + "_R" + str(in_i+1) + ".fastq"
+				result_cmd, uf, result_file = (self.input_to_fastq(in_arg, sample_name, paired_end, fastq_folder, output, multiclass = True))
+				cmd.append(result_cmd)
+				output_file.append(result_file)
 
-	def check_fastq(self, input_file, unaligned_fastq, paired_end):
-		input_ext = self.get_input_ext(input_file)
+		else: 
+			# There was only 1 input class.
+			# Convert back into a string
+			input_file = input_file[0]
+			if not output_file:
+				output_file = fastq_prefix + "_R1.fastq"
+			input_ext = self.get_input_ext(input_file)
+
+
+			if input_ext ==".bam":
+				print("Found .bam file")
+				cmd = self.bam_to_fastq(input_file, fastq_prefix, paired_end)
+				# pm.run(cmd, output_file, follow=check_fastq)
+			elif input_ext == ".fastq.gz":
+				print("Found .fastq.gz file")
+				if paired_end and not multiclass:
+					# For paired-end reads in one fastq file, we must split the file into 2.
+					cmd = tools.python + " -u " + os.path.join(tools.scripts_dir, "fastq_split.py")
+					cmd += " -i " + input_file
+					cmd += " -o " + fastq_prefix
+				else:
+					# For single-end reads, we just unzip the fastq.gz file.
+					# or, paired-end reads that were already split.
+					cmd = "gunzip -c " + input_file + " > " + output_file
+					# a non-shell version
+					#cmd1 = "gunzip --force " + input_file
+					#cmd2 = "mv " + os.path.splitext(input_file)[0] + " " + output_file
+					#cmd = [cmd1, cmd2]
+			elif input_ext == ".fastq":
+				cmd = "ln -sf " + input_file + " " + output_file
+				print("Found .fastq file; no conversion necessary")
+
+		return [cmd, fastq_prefix, output_file]
+
+	def check_fastq(self, input_files, output_files, paired_end):
+		"""
+		This is AFTER merge, so if there are multiple files it means the
+		files were split into read1/read2; therefore I must divide by number
+		of files for final reads.
+		"""
+
 
 		def temp_func():
-			raw_reads = self.count_reads(input_file, paired_end)
+			print(input_files)
+			print(output_files)
+			n_input_files = len(filter(bool, input_files))
+
+			raw_reads = sum([self.count_reads(input_file, paired_end) for input_file in input_files]) / n_input_files
 			self.pm.report_result("Raw_reads", str(raw_reads))
-			fastq_reads = self.count_reads(unaligned_fastq, paired_end)
+			fastq_reads = sum([self.count_reads(output_file, paired_end) for output_file in output_files]) / n_input_files
+
 			self.pm.report_result("Fastq_reads", fastq_reads)
+			input_ext = self.get_input_ext(input_files[0])
 			# We can only assess pass filter reads in bam files with flags.
 			if input_ext == "bam":
 				fail_filter_reads = self.count_fail_reads(input_file, paired_end)
@@ -220,6 +303,7 @@ class NGSTk(_AttributeDict):
 				self.pm.report_result("PF_reads", str(pf_reads))
 			if fastq_reads != int(raw_reads):
 				raise Exception("Fastq conversion error? Number of reads doesn't match unaligned bam")
+
 			return fastq_reads
 
 		return temp_func
@@ -375,11 +459,11 @@ class NGSTk(_AttributeDict):
 
 	def count_reads(self, fileName, paired_end):
 		"""
-		To do: remove the default paired_end option, you should be forced to specify.
 		Paired-end reads count as 2 in this function.
-		For paired-end reads, this function assumes that the reads are split into 2 fastq files,
-		therefore, to count the reads, it divides by 2 instead of 4. This will thus give an incorrect
-		result if your paired-end fastq files are in only a single file.
+		For paired-end reads, this function assumes that the reads are split into 2
+		fastq files, therefore, to count the reads, it divides by 2 instead of 4.
+		This will thus give an incorrect result if your paired-end fastq files 
+		are in only a single file (you must divide by 2 again).
 		"""
 		if fileName.endswith("bam"):
 			return self.samtools_view(fileName, param="-c")

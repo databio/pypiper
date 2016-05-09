@@ -327,6 +327,11 @@ class PipelineManager(object):
 		if target is None and lock_name is None:
 				raise Exception("You must provide either a target or a lock_name.")
 
+		# If the target is a list, for now let's just strip it to the first target.
+		# Really, it should just check for all of them.
+		if type(target) == list:
+			target = target[0]
+			#primary_target = target[0]
 		# Create lock file:
 		# Default lock_name (if not provided) is based on the target file name,
 		# but placed in the parent pipeline outfolder, and not in a subfolder, if any.
@@ -1084,7 +1089,7 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		# Arguments typically used in every pipeline
 		parser.add_argument(
 			"-I", "--input", dest="input", type=str, nargs="+",
-			help="one or more input files (required)",
+			help="One or more primary input files (required)",
 			required=False, metavar="INPUT_FILES")
 		# input was previously called unmapped_bam
 
@@ -1095,6 +1100,12 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 
 	if (ngs_args):
 		# Common arguments specific to NGS pipelines
+		parser.add_argument(
+			"-I2", "--input2", dest="input2", type=str, nargs="+",
+			help="One or more secondary input files (if they exists); \
+			for example, second read in pair.",
+			required=False, default=None, metavar="INPUT_FILES2")
+
 		parser.add_argument(
 			"-G", "--genome", dest="genome_assembly", type=str,
 			help="identifier for genome assempbly (required)",
