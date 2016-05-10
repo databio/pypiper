@@ -99,44 +99,7 @@ class NGSTk(_AttributeDict):
 			raise NotImplementedError("This pipeline can only deal with .bam, .fastq, or .fastq.gz files")
 		return input_ext
 
-	def create_multiple_local_inputs(self, pipeline_outfolder, input_args, local_base="sample"):
-		"""
-		:param input_args: This is a list of arguments, each one is a class of
-		inputs (which can in turn be a string or a list). Typically, input_args
-		is a list with 2 elements: first a list of read1 files; second
-		an (optional!) list of read2 files.
-		:type input_args: list
-		"""
-
-		if type(input_args) != list:
-			raise Exception("Input must be a list")
-
-		local_input_files = list()
-		n_input_files = len(filter(bool, input_args))
-		print("Number of input files:\t\t" + str(n_input_files))
-
-		for input_i, input_arg in enumerate(input_args):
-			# Count how many non-null items there are in the list;
-			# we only append _R1 (etc.) if there are mutliple input files.
-			if n_input_files > 1:
-				local_base_extended = local_base + "_R" + str(input_i + 1)
-			else:
-				local_base_extended = local_base
-			if input_arg:
-				out = self.create_local_input(pipeline_outfolder, input_arg, local_base_extended)
-
-				print("Local input file: " + out) 
-				# Make sure file exists:
-				if not os.path.isfile(out):
-					print out + " is not a file"
-
-				local_input_files.append(out)
-
-		return local_input_files
-
-		
-
-	def create_local_input(self, pipeline_outfolder, input_arg, local_base="sample"):
+	def merge_or_link(self, input_args, raw_folder, local_base="sample"):
 		"""
 		This function standardizes various input possibilities by converting
 		either .bam, .fastq, or .fastq.gz files into a local file; merging those
@@ -144,68 +107,93 @@ class NGSTk(_AttributeDict):
 
 		:param local_base: Usually the sample name. This (plus file extension) will
 		be the name of the local file linked (or merged) by this function.
+
+		:param input_args: This is a list of arguments, each one is a class of
+		inputs (which can in turn be a string or a list). Typically, input_args
+		is a list with 2 elements: first a list of read1 files; second
+		an (optional!) list of read2 files.
+		:type input_args: list
 		"""
+		self.make_sure_path_exists(raw_folder)
 
-		raw_folder = "raw" # previously, "unmapped_bam"
-		self.make_sure_path_exists(os.path.join(pipeline_outfolder, raw_folder))
+		if type(input_args) != list:
+			raise Exception("Input must be a list")
 
-#		# class_split_string (;) is a magic input separator indicating 
-#		# multiple classes of input; in this case, it separates read1 from read2.
-#		print(class_split_string, input_arg)
-##		if any(class_split_string in x for x in input_arg):
-#		for input_arg_item in input_arg:
-#			if class_split_string in input_arg_item:
-#				print("Detected multiple input classes.")
-#				input_arg_split = input_arg_item.split(class_split_string)
-#				result = [] # create list to collect output
-#				for split_i, split_arg in enumerate(input_arg_split):
-#					result.append(self.create_local_input(pipeline_outfolder, [split_arg], outfile_name + "_R" + str(split_i+1)))
+		if any(isinstance(i, list) for i in input_args):
+			# We have a list of lists. Process each individually.
+			local_input_files = list()
+			n_input_files = len(filter(bool, input_args))
+			print("Number of input files:\t\t" + str(n_input_files))
 
-#				return result
+			for input_i, input_arg in enumerate(input_args):
+				# Count how many non-null items there are in the list;
+				# we only append _R1 (etc.) if there are multiple input files.
+				if n_input_files > 1:
+					local_base_extended = local_base + "_R" + str(input_i + 1)
+				else:
+					local_base_extended = local_base
+				if input_arg:
+					out = self.merge_or_link(input_arg, raw_folder, local_base_extended)
 
-		# for bam files:
-		# If more than 1 input file is given, then these are to be merged
-		# if they are in bam format.
+					print("Local input file: " + out) 
+					# Make sure file exists:
+					if not os.path.isfile(out):
+						print out + " is not a file"
 
-		# base case: A single input file; we just link it, regardless of
-		# file type:
-		if len(input_arg) == 1:
-			# Pull the value out of the list
-			input_arg = input_arg[0]
-			input_ext = self.get_input_ext(input_arg)
+					local_input_files.append(out)
 
-			# Convert to absolute path
-			if not os.path.isabs(input_arg):
-				input_arg = os.path.abspath(input_arg)
+			return local_input_files
 
-			# Link it to into the raw folder
-			local_input_abs = os.path.join(pipeline_outfolder, raw_folder, local_base + input_ext)
-			self.pm.callprint("ln -sf " + input_arg + " " + local_input_abs, shell=True)
-			# return the local (linked) filename absolute path
-			return local_input_abs
+		else:
+			# We have a list of individual arguments. Merge them.
 
-		elif len(input_arg) > 1:
-			# Otherwise, there are multiple inputs. 
-			# if multiple bams
-		
-			if all([self.get_input_ext(x) == ".bam" for x in input_arg]):
-				merge_folder = os.path.join(pipeline_outfolder, raw_folder)
-				sample_merged_bam = local_base + ".merged.bam"
-				output_merge = os.path.join(merge_folder, sample_merged_bam)
-				cmd = self.merge_bams(input_arg, output_merge)
-				self.pm.run(cmd, sample_merged_bam)
-				return(output_merge)
+			if len(input_arg) == 1:
+				# Only one argument in this list. A single input file; we just link
+				# it, regardless of file type:
+				# Pull the value out of the list
+				input_arg = input_arg[0]
+				input_ext = self.get_input_ext(input_arg)
 
-			# if multiple fastq
-			if all([self.get_input_ext(x) == ".fastq.gz" for x in input_arg]):
-				raise NotImplementedError("Currently we can only merge bam inputs")
+				# Convert to absolute path
+				if not os.path.isabs(input_arg):
+					input_arg = os.path.abspath(input_arg)
 
-			if all([self.get_input_ext(x) == ".fastq" for x in input_arg]):
-				raise NotImplementedError("Currently we can only merge bam inputs")
+				# Link it to into the raw folder
+				local_input_abs = os.path.join(raw_folder, local_base + input_ext)
+				self.pm.callprint("ln -sf " + input_arg + " " + local_input_abs, shell=True)
+				# return the local (linked) filename absolute path
+				return local_input_abs
 
-			# At this point, we don't recognize the input file types or they
-			# do not match.
-			raise NotImplementedError("Input files must be of the same type.")
+			elif len(input_arg) > 1:
+				# Otherwise, there are multiple inputs. 
+				# If more than 1 input file is given, then these are to be merged
+				# if they are in bam format.
+				if all([self.get_input_ext(x) == ".bam" for x in input_arg]):
+					sample_merged = local_base + ".merged.bam"
+					output_merge = os.path.join(raw_folder, sample_merged)
+					cmd = self.merge_bams(input_arg, output_merge)
+					self.pm.run(cmd, sample_merged)
+					return(output_merge)
+
+				# if multiple fastq
+				if all([self.get_input_ext(x) == ".fastq.gz" for x in input_arg]):
+					sample_merged = local_base + ".merged.fastq.gz"
+					output_merge = os.path.join(raw_folder, sample_merged)
+					cmd = "zcat " + " ".join(input_arg) + " > " + output_merge
+					self.pm.run(cmd, sample_merged)
+					return(output_merge)
+
+				if all([self.get_input_ext(x) == ".fastq" for x in input_arg]):
+					sample_merged = local_base + ".merged.fastq"
+					output_merge = os.path.join(raw_folder, sample_merged)
+					cmd = "cat " + " ".join(input_arg) + " > " + output_merge
+					self.pm.run(cmd, sample_merged)
+					return(output_merge)
+
+				# At this point, we don't recognize the input file types or they
+				# do not match.
+				raise NotImplementedError("Input files must be of the same type; and can only merge bam of fastq.")
+
 
 	def input_to_fastq(self, input_file, sample_name,
 		paired_end, fastq_folder, output_file=None, multiclass=False):
