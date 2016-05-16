@@ -628,6 +628,41 @@ class PipelineManager(object):
 		if first_message_flag:
 			self.timestamp("File unlocked.")
 
+	def wait_for_file(self, file_name, lock_name = None):
+		"""
+		Just sleep until the file_name DOES exist.
+
+		:param file_name: File to wait for.
+		:type file_name: str
+		"""
+		# Build default lock name:
+		if lock_name is None:
+			lock_name = file_name.replace(self.pipeline_outfolder, "").replace("/", "__")
+
+		lock_name = "lock." + lock_name
+		lock_file = os.path.join(self.pipeline_outfolder, lock_name)
+
+
+		sleeptime = .5
+		first_message_flag = False
+		dot_count = 0
+		while not os.path.isfile(file_name):
+			if first_message_flag is False:
+				self.timestamp("Waiting for file: " + file_name)
+				first_message_flag = True
+			else:
+				sys.stdout.write(".")
+				dot_count = dot_count + 1
+				if dot_count % 60 == 0:
+					print("")  # linefeed
+			time.sleep(sleeptime)
+			sleeptime = min(sleeptime + 2.5, 60)
+
+		if first_message_flag:
+			self.timestamp("File exists.")
+
+		self.wait_for_lock(lock_file)
+
 	###################################
 	# Logging functions
 	###################################
