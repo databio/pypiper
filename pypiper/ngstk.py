@@ -274,10 +274,13 @@ class NGSTk(_AttributeDict):
 
 
 		def temp_func():
+			if type(input_files) != list:
+				input_files = [input_files]
+			if type(output_files) != list:
+				output_files = [output_files]
 			print(input_files)
 			print(output_files)
 			n_input_files = len(filter(bool, input_files))
-
 			raw_reads = sum([self.count_reads(input_file, paired_end) for input_file in input_files]) / n_input_files
 			self.pm.report_result("Raw_reads", str(raw_reads))
 			fastq_reads = sum([self.count_reads(output_file, paired_end) for output_file in output_files]) / n_input_files
