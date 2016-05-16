@@ -172,7 +172,7 @@ class NGSTk(_AttributeDict):
 					sample_merged = local_base + ".merged.bam"
 					output_merge = os.path.join(raw_folder, sample_merged)
 					cmd = self.merge_bams(input_args, output_merge)
-					self.pm.run(cmd, sample_merged)
+					self.pm.run(cmd, output_merge)
 					return(output_merge)
 
 				# if multiple fastq
@@ -180,14 +180,14 @@ class NGSTk(_AttributeDict):
 					sample_merged = local_base + ".merged.fastq.gz"
 					output_merge = os.path.join(raw_folder, sample_merged)
 					cmd = "zcat " + " ".join(input_args) + " > " + output_merge
-					self.pm.run(cmd, sample_merged)
+					self.pm.run(cmd, output_merge)
 					return(output_merge)
 
 				if all([self.get_input_ext(x) == ".fastq" for x in input_args]):
 					sample_merged = local_base + ".merged.fastq"
 					output_merge = os.path.join(raw_folder, sample_merged)
 					cmd = "cat " + " ".join(input_args) + " > " + output_merge
-					self.pm.run(cmd, sample_merged)
+					self.pm.run(cmd, output_merge)
 					return(output_merge)
 
 				# At this point, we don't recognize the input file types or they
