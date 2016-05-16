@@ -147,11 +147,11 @@ class NGSTk(_AttributeDict):
 		else:
 			# We have a list of individual arguments. Merge them.
 
-			if len(input_arg) == 1:
+			if len(input_args) == 1:
 				# Only one argument in this list. A single input file; we just link
 				# it, regardless of file type:
 				# Pull the value out of the list
-				input_arg = input_arg[0]
+				input_arg = input_args[0]
 				input_ext = self.get_input_ext(input_arg)
 
 				# Convert to absolute path
@@ -164,29 +164,29 @@ class NGSTk(_AttributeDict):
 				# return the local (linked) filename absolute path
 				return local_input_abs
 
-			elif len(input_arg) > 1:
+			else:
 				# Otherwise, there are multiple inputs. 
 				# If more than 1 input file is given, then these are to be merged
 				# if they are in bam format.
-				if all([self.get_input_ext(x) == ".bam" for x in input_arg]):
+				if all([self.get_input_ext(x) == ".bam" for x in input_args]):
 					sample_merged = local_base + ".merged.bam"
 					output_merge = os.path.join(raw_folder, sample_merged)
-					cmd = self.merge_bams(input_arg, output_merge)
+					cmd = self.merge_bams(input_args, output_merge)
 					self.pm.run(cmd, sample_merged)
 					return(output_merge)
 
 				# if multiple fastq
-				if all([self.get_input_ext(x) == ".fastq.gz" for x in input_arg]):
+				if all([self.get_input_ext(x) == ".fastq.gz" for x in input_args]):
 					sample_merged = local_base + ".merged.fastq.gz"
 					output_merge = os.path.join(raw_folder, sample_merged)
-					cmd = "zcat " + " ".join(input_arg) + " > " + output_merge
+					cmd = "zcat " + " ".join(input_args) + " > " + output_merge
 					self.pm.run(cmd, sample_merged)
 					return(output_merge)
 
-				if all([self.get_input_ext(x) == ".fastq" for x in input_arg]):
+				if all([self.get_input_ext(x) == ".fastq" for x in input_args]):
 					sample_merged = local_base + ".merged.fastq"
 					output_merge = os.path.join(raw_folder, sample_merged)
-					cmd = "cat " + " ".join(input_arg) + " > " + output_merge
+					cmd = "cat " + " ".join(input_args) + " > " + output_merge
 					self.pm.run(cmd, sample_merged)
 					return(output_merge)
 
