@@ -140,7 +140,7 @@ class NGSTk(_AttributeDict):
 				sample_merged_bam = sample_name + ".merged.bam"
 				output_merge = os.path.join(merge_folder, sample_merged_bam)
 				cmd = self.merge_bams(input_arg, output_merge)
-				self.pm.run(cmd, sample_merged_bam)
+				self.pm.run(cmd, output_merge)
 				return(output_merge)
 
 			# if multiple fastq
