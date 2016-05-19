@@ -76,6 +76,11 @@ class PipelineManager(object):
 		# this could become customizable if necessary
 		self.mem = params['mem'] + "m"
 
+		# Set relative output_parent directory to absolute
+		# not necessary after all...
+		#if self.output_parent and not os.path.isabs(self.output_parent):
+		#	self.output_parent = os.path.join(os.getcwd(), self.output_parent)
+
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
 		self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
@@ -775,11 +780,11 @@ class PipelineManager(object):
 		Loads up the stats sheet created for this pipeline run and reads
 		those stats into memory
 		"""
-
-		with open(self.pipeline_stats_file, "rb") as stat_file:
-			for line in stat_file:
-				key, value  = line.split('\t')
-				self.stats_dict[key] = value.strip()
+		if os.path.isfile(self.pipeline_stats_file):
+			with open(self.pipeline_stats_file, "rb") as stat_file:
+				for line in stat_file:
+					key, value  = line.split('\t')
+					self.stats_dict[key] = value.strip()
 
 
 
