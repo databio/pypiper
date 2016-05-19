@@ -76,6 +76,10 @@ class PipelineManager(object):
 		# this could become customizable if necessary
 		self.mem = params['mem'] + "m"
 
+		# Set relative output_parent directory to absolute
+		if not os.path.isabs(self.output_parent):
+			self.output_parent = os.path.join(os.path.dirname(sys.argv[0]), self.output_parent)
+
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
 		self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
