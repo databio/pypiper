@@ -60,6 +60,25 @@ class NGSTk(_AttributeDict):
 			if exception.errno != errno.EEXIST:
 				raise
 
+
+	def get_file_size(self, filenames):
+		"""
+		Get size of all files in string (space-separated) in megabytes (Mb).
+
+		:param filenames: a space-separated string of filenames
+		:type filenames: str
+		"""
+		# use (1024 ** 3) for gigabytes
+		# equivalent to: stat -Lc '%s' filename
+
+		# If given a list, convert to string.
+		if type(filenames) is list:
+			filenames = " ".join(filenames)
+
+		return round(sum([float(os.stat(f).st_size) for f in filenames.split(" ")]) / (1024 ** 2), 4)
+
+
+
 	def markDuplicates(self, aligned_file, out_file, metrics_file, remove_duplicates="True"):
 		cmd = self.tools.java 
 		if self.pm.mem:  # If a memory restriction exists.
@@ -272,8 +291,10 @@ class NGSTk(_AttributeDict):
 		of files for final reads.
 		"""
 
-
-		def temp_func():
+		# Must define default parameters here based on the parameters passed in to lock
+		# these values in place, and so that the variables will be defined when this function
+		# is called without parameters as a follow function by pm.run.
+		def temp_func(input_files=input_files, output_files=output_files, paired_end=paired_end):
 			if type(input_files) != list:
 				input_files = [input_files]
 			if type(output_files) != list:
@@ -281,9 +302,9 @@ class NGSTk(_AttributeDict):
 			print(input_files)
 			print(output_files)
 			n_input_files = len(filter(bool, input_files))
-			raw_reads = sum([self.count_reads(input_file, paired_end) for input_file in input_files]) / n_input_files
+			raw_reads = sum([int(self.count_reads(input_file, paired_end)) for input_file in input_files]) / n_input_files
 			self.pm.report_result("Raw_reads", str(raw_reads))
-			fastq_reads = sum([self.count_reads(output_file, paired_end) for output_file in output_files]) / n_input_files
+			fastq_reads = sum([int(self.count_reads(output_file, paired_end)) for output_file in output_files]) / n_input_files
 
 			self.pm.report_result("Fastq_reads", fastq_reads)
 			input_ext = self.get_input_ext(input_files[0])
