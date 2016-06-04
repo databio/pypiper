@@ -50,8 +50,10 @@ class NGSTk(_AttributeDict):
 		# Keep a link to the pipeline manager, if one is provided.
 		if pm is not None:
 			self.pm = pm
-			self.tools = self.pm.config.tools
-			self.parameters = self.pm.config.parameters
+			if hasattr(pm.config, "tools"):
+				self.tools = self.pm.config.tools
+			if hasattr(pm.config, "parameters"):
+				self.parameters = self.pm.config.parameters
 
 	def make_sure_path_exists(self, path):
 		try:
