@@ -336,6 +336,7 @@ class NGSTk(_AttributeDict):
 		cmd += " OUTPUT=" + merged_bam
 		cmd += " ASSUME_SORTED=" + str(in_sorted)
 		cmd += " CREATE_INDEX=TRUE"
+		cmd += " VALIDATION_STRINGENCY=LENIENT"
 		return(cmd)
 
 	def count_lines(self, fileName):
