@@ -103,6 +103,7 @@ class NGSTk(_AttributeDict):
 		cmd += " INCLUDE_NON_PF_READS=true"
 		cmd += " QUIET=true"
 		cmd += " VERBOSITY=ERROR"
+		cmd += " VALIDATION_STRINGENCY=SILENT"		
 		return cmd
 
 	def get_input_ext(self, input_file):
@@ -144,7 +145,7 @@ class NGSTk(_AttributeDict):
 			# We have a list of lists. Process each individually.
 			local_input_files = list()
 			n_input_files = len(filter(bool, input_args))
-			print("Number of input files:\t\t" + str(n_input_files))
+			print("Number of input file sets:\t\t" + str(n_input_files))
 
 			for input_i, input_arg in enumerate(input_args):
 				# Count how many non-null items there are in the list;
@@ -181,7 +182,7 @@ class NGSTk(_AttributeDict):
 
 				# Link it to into the raw folder
 				local_input_abs = os.path.join(raw_folder, local_base + input_ext)
-				self.pm.callprint("ln -sf " + input_arg + " " + local_input_abs, shell=True)
+				self.pm.run("ln -sf " + input_arg + " " + local_input_abs, shell=True)
 				# return the local (linked) filename absolute path
 				return local_input_abs
 
@@ -194,6 +195,8 @@ class NGSTk(_AttributeDict):
 					output_merge = os.path.join(raw_folder, sample_merged)
 					cmd = self.merge_bams(input_args, output_merge)
 					self.pm.run(cmd, output_merge)
+					cmd2 = self.validate_bam(output_merge)
+					self.pm.run(cmd, output_merge, nofail=True)
 					return(output_merge)
 
 				# if multiple fastq
@@ -288,14 +291,22 @@ class NGSTk(_AttributeDict):
 
 	def check_fastq(self, input_files, output_files, paired_end):
 		"""
-		This is AFTER merge, so if there are multiple files it means the
-		files were split into read1/read2; therefore I must divide by number
-		of files for final reads.
+		Returns a follow sanity-check function to be run after a fastq conversion. 
+		Run following a command that will produce the fastq files.
+
+		This function will make sure any input files have the same number of reads as the
+		output files.
 		"""
 
-		# Must define default parameters here based on the parameters passed in to lock
-		# these values in place, and so that the variables will be defined when this function
+		# Define a temporary function which we will return, to be called by the
+		# pipeline.
+		# Must define default parameters here based on the parameters passed in. This locks
+		# these values in place, so that the variables will be defined when this function
 		# is called without parameters as a follow function by pm.run.
+
+		# This is AFTER merge, so if there are multiple files it means the
+		# files were split into read1/read2; therefore I must divide by number
+		# of files for final reads.
 		def temp_func(input_files=input_files, output_files=output_files, paired_end=paired_end):
 			if type(input_files) != list:
 				input_files = [input_files]
@@ -322,6 +333,37 @@ class NGSTk(_AttributeDict):
 
 		return temp_func
 
+	def check_trim(self, trimmed_fastq, trimmed_fastq_R2, paired_end):
+		"""
+		Returns a follow function for a trimming step. This will count the trimmed reads,
+		and run fastqc on the trimmed fastq files.
+		"""
+
+		def temp_func(trimmed_fastq=trimmed_fastq, trimmed_fastq_R2 = trimmed_fastq_R2, paired_end=paired_end):
+			n_trim = float(self.count_reads(trimmed_fastq, paired_end))
+			pm.report_result("Trimmed_reads", int(n_trim))
+			try:
+				rr = float(pm.get_stat("Raw_reads"))
+				pm.report_result("Trim_loss_rate", round((rr - n_trim) * 100 / rr, 2))
+			except:
+				print("Can't calculate trim loss rate without raw read result.")
+			
+			# Also run a fastqc (if installed)
+			fastqc_folder = os.path.join(param.pipeline_outfolder, "fastqc/")
+			cmd = self.fastqc(trimmed_fastq, fastqc_folder)
+			pm.run(cmd, nofail=True)
+			if args.paired_end:
+				cmd = self.fastqc(trimmed_fastq_R2, fastqc_folder)
+				pm.run(cmd, nofail=True)
+
+		return temp_func
+
+
+	def validate_bam(self, input_bam):
+		cmd = self.tools.java + " -Xmx" + self.pm.mem
+		cmd += " -jar " + self.tools.picard + " ValidateSamFile"
+		cmd += " INPUT=" + input_bam
+		return(cmd)
 
 	def merge_bams(self, input_bams, merged_bam, in_sorted="TRUE"):
 		if not len(input_bams) > 1:
@@ -336,7 +378,7 @@ class NGSTk(_AttributeDict):
 		cmd += " OUTPUT=" + merged_bam
 		cmd += " ASSUME_SORTED=" + str(in_sorted)
 		cmd += " CREATE_INDEX=TRUE"
-		cmd += " VALIDATION_STRINGENCY=LENIENT"
+		cmd += " VALIDATION_STRINGENCY=SILENT"
 		return(cmd)
 
 	def count_lines(self, fileName):
@@ -538,9 +580,10 @@ class NGSTk(_AttributeDict):
 			cmd += self.tools.samtools + " depth " + bam.replace(".bam", "_sorted.bam") + " > " + bam.replace(".bam", "_sorted.depth") + "\n"
 		return cmd
 
-	def fastqc(self, bam, outputDir):
-		"""Call fastqc on a bam file."""
-		cmd = self.tools.fastqc + " --noextract --outdir " + outputDir + " " + bam
+	def fastqc(self, file, outdir):
+		"""Call fastqc on a bam file (or fastq file, right?)."""
+		# You can find the fastqc help with fastqc --help
+		cmd = self.tools.fastqc + " --noextract --outdir " + outdir + " " + file
 		return cmd
 
 	def samtools_index(self, bam):
