@@ -14,6 +14,7 @@ import atexit, signal, platform
 from AttributeDict import AttributeDict
 
 import shlex # for splitting commands like a shell does
+import datetime
 
 class PipelineManager(object):
 	"""
@@ -552,6 +553,7 @@ class PipelineManager(object):
 
 			returncode = p.returncode
 			info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
+			info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(self.proc_start_time))) + "."
 			if not shell:
 				info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
 				info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
@@ -674,15 +676,15 @@ class PipelineManager(object):
 
 	def timestamp(self, message=""):
 		"""
-		Prints your given message, along with the current time, and time elapsed since the previous timestamp() call.
-		If you specify a HEADING by beginning the message with "###", it surrounds the message with newlines
-		for easier readability in the log file.
+		Prints your given message, along with the current time, and time elapsed since the 
+		previous timestamp() call.	If you specify a HEADING by beginning the message with "###",
+		it surrounds the message with newlines for easier readability in the log file.
 
 		:param message: Message to timestamp.
 		:type message: str
 		"""
 		message += " (" + time.strftime("%m-%d %H:%M:%S") + ")"
-		message += " elapsed:" + str(self.time_elapsed(self.last_timestamp))
+		message += " elapsed:" + str(datetime.timedelta(seconds=self.time_elapsed(self.last_timestamp)))
 		message += " _TIME_"
 		if re.match("^###", message):
 			message = "\n" + message + "\n"
@@ -696,7 +698,7 @@ class PipelineManager(object):
 		:param time_since: Time as a float given by time.time().
 		:type time_since: float
 		"""
-		return round(time.time() - time_since, 2)
+		return round(time.time() - time_since, 0)
 
 	def report_profile(self, command, lock_name, elapsed_time, memory):
 		"""
