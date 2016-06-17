@@ -706,7 +706,10 @@ class PipelineManager(object):
 
 		:type key: str
 		"""
-		messageRaw = str(command) + "\t " + str(lock_name) + "\t" + str(round(elapsed_time, 2)) + "\t " + str(memory)
+		messageRaw = str(command) + "\t " + \
+			str(lock_name) + "\t" + \
+			str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
+			str(memory)
 		# messageMarkdown = "> `" + command + "`\t" + str(elapsed_time).strip() + "\t " + str(memory).strip() + "\t" + "_PROF_"
 		# print(messageMarkdown)
 		with open(self.pipeline_profile_file, "a") as myfile:
@@ -820,10 +823,10 @@ class PipelineManager(object):
 		"""
 		self.set_status_flag("completed")
 		self._cleanup()
-		self.report_result("Time", str(self.time_elapsed(self.starttime)))
+		self.report_result("Time", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
 		self.report_result("Success", time.strftime("%m-%d %H:%M:%S"))
 		print("\n##### [Epilogue:]")
-		print("* " + "Total elapsed time".rjust(20) + ":  " + str(self.time_elapsed(self.starttime)))
+		print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
 		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
 		print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
 		self.timestamp("* Pipeline completed at: ".rjust(20))
