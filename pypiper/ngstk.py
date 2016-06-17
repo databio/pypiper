@@ -182,7 +182,9 @@ class NGSTk(_AttributeDict):
 
 				# Link it to into the raw folder
 				local_input_abs = os.path.join(raw_folder, local_base + input_ext)
-				self.pm.run("ln -sf " + input_arg + " " + local_input_abs, shell=True)
+				self.pm.run("ln -sf " + input_arg + " " + local_input_abs, 
+					target = local_input_abs, 
+					shell = True)
 				# return the local (linked) filename absolute path
 				return local_input_abs
 
@@ -196,7 +198,7 @@ class NGSTk(_AttributeDict):
 					cmd = self.merge_bams(input_args, output_merge)
 					self.pm.run(cmd, output_merge)
 					cmd2 = self.validate_bam(output_merge)
-					self.pm.run(cmd, output_merge, nofail=True)
+					self.pm.run(cmd, output_merge, nofail = True)
 					return(output_merge)
 
 				# if multiple fastq
@@ -341,20 +343,20 @@ class NGSTk(_AttributeDict):
 
 		def temp_func(trimmed_fastq=trimmed_fastq, trimmed_fastq_R2 = trimmed_fastq_R2, paired_end=paired_end):
 			n_trim = float(self.count_reads(trimmed_fastq, paired_end))
-			pm.report_result("Trimmed_reads", int(n_trim))
+			self.pm.report_result("Trimmed_reads", int(n_trim))
 			try:
-				rr = float(pm.get_stat("Raw_reads"))
-				pm.report_result("Trim_loss_rate", round((rr - n_trim) * 100 / rr, 2))
+				rr = float(self.pm.get_stat("Raw_reads"))
+				self.pm.report_result("Trim_loss_rate", round((rr - n_trim) * 100 / rr, 2))
 			except:
 				print("Can't calculate trim loss rate without raw read result.")
 			
 			# Also run a fastqc (if installed)
 			fastqc_folder = os.path.join(param.pipeline_outfolder, "fastqc/")
 			cmd = self.fastqc(trimmed_fastq, fastqc_folder)
-			pm.run(cmd, nofail=True)
+			self.pm.run(cmd, nofail=True)
 			if args.paired_end:
 				cmd = self.fastqc(trimmed_fastq_R2, fastqc_folder)
-				pm.run(cmd, nofail=True)
+				self.pm.run(cmd, nofail=True)
 
 		return temp_func
 
