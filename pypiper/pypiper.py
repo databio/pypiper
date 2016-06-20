@@ -77,6 +77,17 @@ class PipelineManager(object):
 		# this could become customizable if necessary
 		self.mem = params['mem'] + "m"
 
+		# We use this memory to pass a memory limit to processes like java that
+		# can take a memory limit, so they don't get killed by a SLURM (or other
+		# cluster manager) overage. However, with java, the -Xmx argument can only
+		# limit the *heap* space, not total memory use; so occasionally SLURM will
+		# still kill these processes because total memory goes over the limit.
+		# As a kind of hack, we'll set the java processes heap limit to 95% of the
+		# total memory limit provided.
+		# This will give a little breathing room for non-heap java memory use.
+		self.javamem = str(int(int(params['mem']) * 0.95)) + "m"
+
+
 		# Set relative output_parent directory to absolute
 		# not necessary after all...
 		#if self.output_parent and not os.path.isabs(self.output_parent):

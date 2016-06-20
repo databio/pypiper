@@ -83,8 +83,8 @@ class NGSTk(_AttributeDict):
 
 	def markDuplicates(self, aligned_file, out_file, metrics_file, remove_duplicates="True"):
 		cmd = self.tools.java 
-		if self.pm.mem:  # If a memory restriction exists.
-			cmd += " -Xmx" + self.pm.mem
+		if self.pm.javamem:  # If a memory restriction exists.
+			cmd += " -Xmx" + self.pm.javamem
 		cmd += " -jar " + self.tools.picard + " MarkDuplicates"
 		cmd += " INPUT=" + aligned_file
 		cmd += " OUTPUT=" + out_file
@@ -94,7 +94,7 @@ class NGSTk(_AttributeDict):
 
 	def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
 		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
-		cmd = self.tools.java + " -Xmx" + self.pm.mem
+		cmd = self.tools.java + " -Xmx" + self.pm.javamem
 		cmd += " -jar " + self.tools.picard + " SamToFastq"
 		cmd += " I=" + bam_file
 		cmd += " F=" + out_fastq_pre + "_R1.fastq"
@@ -362,7 +362,7 @@ class NGSTk(_AttributeDict):
 
 
 	def validate_bam(self, input_bam):
-		cmd = self.tools.java + " -Xmx" + self.pm.mem
+		cmd = self.tools.java + " -Xmx" + self.pm.javamem
 		cmd += " -jar " + self.tools.picard + " ValidateSamFile"
 		cmd += " INPUT=" + input_bam
 		return(cmd)
@@ -374,7 +374,7 @@ class NGSTk(_AttributeDict):
 
 		print("Merging multiple bams: " + str(input_bams))
 		input_string = " INPUT=" + " INPUT=".join(input_bams)
-		cmd = self.tools.java + " -Xmx" + self.pm.mem
+		cmd = self.tools.java + " -Xmx" + self.pm.javamem
 		cmd += " -jar " + self.tools.picard + " MergeSamFiles"
 		cmd += input_string
 		cmd += " OUTPUT=" + merged_bam
@@ -638,7 +638,7 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def mergeBams(self, inputBams, outputBam):
-		cmd = self.tools.java + " -Xmx" + self.pm.mem
+		cmd = self.tools.java + " -Xmx" + self.pm.javamem
 		cmd += " -jar " + self.tools.picard + " MergeSamFiles"
 		cmd += " USE_THREADING=TRUE"
 		cmd += " " + (" ".join(["INPUT=%s"] * len(inputBams))) % tuple(inputBams)
@@ -669,7 +669,7 @@ class NGSTk(_AttributeDict):
 		""".format(output_prefix, bam_file)
 
 	def bam2fastq(self, inputBam, outputFastq, outputFastq2=None, unpairedFastq=None):
-		cmd = self.tools.java + " -Xmx" + self.pm.mem
+		cmd = self.tools.java + " -Xmx" + self.pm.javamem
 		cmd += " -jar " + self.tools.picard + " SamToFastq"
 		cmd += " INPUT={0}".format(inputBam)
 		cmd += " FASTQ={0}".format(outputFastq)
@@ -685,7 +685,7 @@ class NGSTk(_AttributeDict):
 
 		PE = False if inputFastq2 is None else True
 		pe = "PE" if PE else "SE"
-		cmd = self.tools.java + " -Xmx" + self.pm.mem
+		cmd = self.tools.java + " -Xmx" + self.pm.javamem
 		cmd += " -jar " + self.tools.trimmomatic
 		cmd += " {0} -threads {1} -trimlog {2} {3}".format(pe, cpus, log, inputFastq1)
 		if PE:
@@ -756,7 +756,7 @@ class NGSTk(_AttributeDict):
 		import re
 		transientFile = re.sub("\.bam$", "", outputBam) + ".dups.nosort.bam"
 		outputBam = re.sub("\.bam$", "", outputBam)
-		cmd1 = self.tools.java + " -Xmx" + self.pm.mem
+		cmd1 = self.tools.java + " -Xmx" + self.pm.javamem
 		cmd1 += " -jar  `which MarkDuplicates.jar`"
 		cmd1 += " INPUT={0}".format(inputBam)
 		cmd1 += " OUTPUT={0}".format(transientFile)
