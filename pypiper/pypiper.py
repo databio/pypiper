@@ -864,6 +864,7 @@ class PipelineManager(object):
 		if self.status != "failed":  # and self.status != "completed":
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
+			selfporint("Total time: ", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
 
 		raise e
 
