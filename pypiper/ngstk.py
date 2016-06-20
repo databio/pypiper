@@ -335,13 +335,16 @@ class NGSTk(_AttributeDict):
 
 		return temp_func
 
-	def check_trim(self, trimmed_fastq, trimmed_fastq_R2, paired_end):
+	def check_trim(self, trimmed_fastq, trimmed_fastq_R2, paired_end, fastqc_folder=None):
 		"""
 		Returns a follow function for a trimming step. This will count the trimmed reads,
 		and run fastqc on the trimmed fastq files.
 		"""
 
-		def temp_func(trimmed_fastq=trimmed_fastq, trimmed_fastq_R2 = trimmed_fastq_R2, paired_end=paired_end):
+		def temp_func(trimmed_fastq=trimmed_fastq, 
+			trimmed_fastq_R2 = trimmed_fastq_R2,
+			paired_end=paired_end,
+			fastqc_folder=fastqc_folder):
 			n_trim = float(self.count_reads(trimmed_fastq, paired_end))
 			self.pm.report_result("Trimmed_reads", int(n_trim))
 			try:
@@ -350,13 +353,14 @@ class NGSTk(_AttributeDict):
 			except:
 				print("Can't calculate trim loss rate without raw read result.")
 			
-			# Also run a fastqc (if installed)
-			fastqc_folder = os.path.join(param.pipeline_outfolder, "fastqc/")
-			cmd = self.fastqc(trimmed_fastq, fastqc_folder)
-			self.pm.run(cmd, nofail=True)
-			if args.paired_end:
-				cmd = self.fastqc(trimmed_fastq_R2, fastqc_folder)
+			# Also run a fastqc (if installed/requested)
+			if fastqc_folder:
+				self.make_sure_path_exists(fastqc_folder)
+				cmd = self.fastqc(trimmed_fastq, fastqc_folder)
 				self.pm.run(cmd, nofail=True)
+				if args.paired_end:
+					cmd = self.fastqc(trimmed_fastq_R2, fastqc_folder)
+					self.pm.run(cmd, nofail=True)
 
 		return temp_func
 
