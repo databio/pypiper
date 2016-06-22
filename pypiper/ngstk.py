@@ -357,10 +357,10 @@ class NGSTk(_AttributeDict):
 			if fastqc_folder:
 				self.make_sure_path_exists(fastqc_folder)
 				cmd = self.fastqc(trimmed_fastq, fastqc_folder)
-				self.pm.run(cmd, nofail=True)
-				if args.paired_end:
+				self.pm.run(cmd, lock_name="trimmed_fastqc", nofail=True)
+				if paired_end:
 					cmd = self.fastqc(trimmed_fastq_R2, fastqc_folder)
-					self.pm.run(cmd, nofail=True)
+					self.pm.run(cmd, lock_name="trimmed_fastqc_R2", nofail=True)
 
 		return temp_func
 
