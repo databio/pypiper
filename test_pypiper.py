@@ -65,6 +65,8 @@ class PypiperTest(unittest.TestCase):
 
 		print("Make sure the pipeline respects files already existing...")
 		target = self.pp.pipeline_outfolder + "tgt"
+		if os.path.isfile(target):  # for repeat runs.
+			os.remove(target)
 		self.pp.run("echo first > " + target, target, shell=True)
 		self.pp.run("echo second > " + target, target, shell=True) # Should not run
 		with open(target) as f:
@@ -76,6 +78,17 @@ class PypiperTest(unittest.TestCase):
 		with open(target) as f:
 			lines = f.readlines()
 		self.assertEqual(lines, ['third\n'])
+
+		# Test reporting results
+		self.pp.report_result("key1", "abc")
+		self.pp.report_result("key2", "def", "shared")
+		key1 = self.pp.get_stat("key1")
+		self.assertEqual(key1, 'abc')
+
+		key1 = self.pp2.get_stat("key1")  # should fail
+		self.assertEqual(key1, None)
+		key2 = self.pp2.get_stat("key2")  # should succeed
+		self.assertEqual(key2, 'def')
 
 		print("Test intermediate file cleanup...")
 		tgt1 = self.pp.pipeline_outfolder + "tgt1.temp"

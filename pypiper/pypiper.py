@@ -97,7 +97,8 @@ class PipelineManager(object):
 		self.pipeline_outfolder = os.path.join(outfolder, '')
 		self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
 		self.pipeline_profile_file = self.pipeline_outfolder + self.pipeline_name + "_profile.tsv"
-		self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.tsv"
+		#self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.tsv"
+		self.pipeline_stats_file = self.pipeline_outfolder + "stats.tsv"
 		self.pipeline_commands_file = self.pipeline_outfolder + self.pipeline_name + "_commands.sh"
 		self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
 
@@ -406,7 +407,7 @@ class PipelineManager(object):
 				self._create_file(lock_file)
 
 			##### End tests block
-			# If you make it past theses tests, we should proceed to run the process.
+			# If you make it past these tests, we should proceed to run the process.
 
 			if target is not None:
 				print("\nTarget to produce: `" + target + "`")
@@ -726,19 +727,54 @@ class PipelineManager(object):
 		with open(self.pipeline_profile_file, "a") as myfile:
 			myfile.write(messageRaw + "\n")
 
-	def report_result(self, key, value):
+	def report_result(self, key, value, annotation=None):
 		"""
 		Writes a string to self.pipeline_stats_file.
 
 		:type key: str
+		:param annotation: By default, the stats will be annotated with the pipeline
+		name, so you can tell which pipeline records which stats. If you want, you can
+		change this; use annotation='shared' if you need the stat to be used by
+		another pipeline (using get_stat()).
+		:type annotation: str
 		"""
+		# Default annotation is current pipeline name
+		if not annotation:
+			annotation = self.pipeline_name
+
 		# keep the value in memory:
 		self.stats_dict[key] = str(value).strip()
-		messageRaw = key + "\t " + str(value).strip()
-		messageMarkdown = "> `" + key + "`\t" + str(value).strip() + "\t" + "_RES_"
+		messageRaw = key + "\t " + str(value).strip() + "\t" + str(annotation)
+		messageMarkdown = "> `" + key + "`\t" + str(value).strip()\
+		 + "\t" + str(annotation) + "\t" + "_RES_"
 		print(messageMarkdown)
-		with open(self.pipeline_stats_file, "a") as myfile:
-			myfile.write(messageRaw + "\n")
+
+		# Just to be extra careful, let's lock the file while we we write
+		# in case multiple pipelines write to the same file.
+		target = self.pipeline_stats_file
+		lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
+		lock_name = "lock." + lock_name
+		lock_file = os.path.join(self.pipeline_outfolder, lock_name)
+
+		while True:
+			if os.path.isfile(lock_file):
+				self.wait_for_lock(lock_file)
+			else:
+				try:
+					self._create_file_racefree(lock_file)  # Create lock
+				except OSError as e:
+					if e.errno == errno.EEXIST:  # File already exists
+						print ("Lock file created after test! Looping again.")
+						continue  # Go back to start
+
+				# Proceed with file writing
+				with open(self.pipeline_stats_file, "a") as myfile:
+					myfile.write(messageRaw + "\n")
+
+				os.remove(lock_file)  # Remove lock file
+
+				# If you make it to the end of the while loop, you're done
+				break
 
 	def report_command(self, cmd):
 		"""
@@ -796,13 +832,23 @@ class PipelineManager(object):
 		Loads up the stats sheet created for this pipeline run and reads
 		those stats into memory
 		"""
+
+		# regex identifies all possible stats files.
+		#regex = self.pipeline_outfolder +  "*_stats.tsv"		
+		#stats_files = glob.glob(regex)
+		#stats_files.insert(self.pipeline_stats_file) # last one is the current pipeline
+		#for stats_file in stats_files:
+
+		stats_file = self.pipeline_stats_file
 		if os.path.isfile(self.pipeline_stats_file):
-			with open(self.pipeline_stats_file, "rb") as stat_file:
+			with open(stats_file, "rb") as stat_file:
 				for line in stat_file:
-					key, value  = line.split('\t')
-					self.stats_dict[key] = value.strip()
+					key, value, annotation  = line.split('\t')
+					if annotation.rstrip() == self.pipeline_name or annotation.rstrip() == "shared":
+						self.stats_dict[key] = value.strip()
 
 
+		#if os.path.isfile(self.pipeline_stats_file):
 
 	def get_stat(self, key):
 		"""
@@ -816,7 +862,7 @@ class PipelineManager(object):
 			if self.stats_dict.has_key(key):
 				return (self.stats_dict[key])
 			else:
-				print("Error: Missing stat: " + key + ". Can't report result")
+				print("Error: Missing stat: " + key + ".")
 				return None
 
 
