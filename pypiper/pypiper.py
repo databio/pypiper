@@ -14,6 +14,7 @@ import atexit, signal, platform
 from AttributeDict import AttributeDict
 
 import shlex # for splitting commands like a shell does
+import datetime
 
 class PipelineManager(object):
 	"""
@@ -76,6 +77,16 @@ class PipelineManager(object):
 		# this could become customizable if necessary
 		self.mem = params['mem'] + "m"
 
+		# We use this memory to pass a memory limit to processes like java that
+		# can take a memory limit, so they don't get killed by a SLURM (or other
+		# cluster manager) overage. However, with java, the -Xmx argument can only
+		# limit the *heap* space, not total memory use; so occasionally SLURM will
+		# still kill these processes because total memory goes over the limit.
+		# As a kind of hack, we'll set the java processes heap limit to 95% of the
+		# total memory limit provided.
+		# This will give a little breathing room for non-heap java memory use.
+		self.javamem = str(int(int(params['mem']) * 0.95)) + "m"
+
 		# Set relative output_parent directory to absolute
 		# not necessary after all...
 		#if self.output_parent and not os.path.isabs(self.output_parent):
@@ -85,7 +96,8 @@ class PipelineManager(object):
 		self.pipeline_outfolder = os.path.join(outfolder, '')
 		self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
 		self.pipeline_profile_file = self.pipeline_outfolder + self.pipeline_name + "_profile.tsv"
-		self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.tsv"
+		#self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.tsv"
+		self.pipeline_stats_file = self.pipeline_outfolder + "stats.tsv"
 		self.pipeline_commands_file = self.pipeline_outfolder + self.pipeline_name + "_commands.sh"
 		self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
 
@@ -332,6 +344,11 @@ class PipelineManager(object):
 		if target is None and lock_name is None:
 				raise Exception("You must provide either a target or a lock_name.")
 
+		# If the target is a list, for now let's just strip it to the first target.
+		# Really, it should just check for all of them.
+		if type(target) == list:
+			target = target[0]
+			#primary_target = target[0]
 		# Create lock file:
 		# Default lock_name (if not provided) is based on the target file name,
 		# but placed in the parent pipeline outfolder, and not in a subfolder, if any.
@@ -389,7 +406,7 @@ class PipelineManager(object):
 				self._create_file(lock_file)
 
 			##### End tests block
-			# If you make it past theses tests, we should proceed to run the process.
+			# If you make it past these tests, we should proceed to run the process.
 
 			if target is not None:
 				print("\nTarget to produce: `" + target + "`")
@@ -547,6 +564,7 @@ class PipelineManager(object):
 
 			returncode = p.returncode
 			info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
+			info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(self.proc_start_time))) + "."
 			if not shell:
 				info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
 				info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
@@ -628,21 +646,56 @@ class PipelineManager(object):
 		if first_message_flag:
 			self.timestamp("File unlocked.")
 
+	def wait_for_file(self, file_name, lock_name = None):
+		"""
+		Just sleep until the file_name DOES exist.
+
+		:param file_name: File to wait for.
+		:type file_name: str
+		"""
+		# Build default lock name:
+		if lock_name is None:
+			lock_name = file_name.replace(self.pipeline_outfolder, "").replace("/", "__")
+
+		lock_name = "lock." + lock_name
+		lock_file = os.path.join(self.pipeline_outfolder, lock_name)
+
+
+		sleeptime = .5
+		first_message_flag = False
+		dot_count = 0
+		while not os.path.isfile(file_name):
+			if first_message_flag is False:
+				self.timestamp("Waiting for file: " + file_name)
+				first_message_flag = True
+			else:
+				sys.stdout.write(".")
+				dot_count = dot_count + 1
+				if dot_count % 60 == 0:
+					print("")  # linefeed
+			time.sleep(sleeptime)
+			sleeptime = min(sleeptime + 2.5, 60)
+
+		if first_message_flag:
+			self.timestamp("File exists.")
+
+		self.wait_for_lock(lock_file)
+
 	###################################
 	# Logging functions
 	###################################
 
 	def timestamp(self, message=""):
 		"""
-		Prints your given message, along with the current time, and time elapsed since the previous timestamp() call.
-		If you specify a HEADING by beginning the message with "###", it surrounds the message with newlines
-		for easier readability in the log file.
+		Prints your given message, along with the current time, and time elapsed since the 
+		previous timestamp() call.	If you specify a HEADING by beginning the message with "###",
+		it surrounds the message with newlines for easier readability in the log file.
 
 		:param message: Message to timestamp.
 		:type message: str
 		"""
 		message += " (" + time.strftime("%m-%d %H:%M:%S") + ")"
-		message += " elapsed:" + str(self.time_elapsed(self.last_timestamp))
+		message += " elapsed:" + str(datetime.timedelta(seconds=self.time_elapsed(self.last_timestamp)))
 		message += " _TIME_"
 		if re.match("^###", message):
 			message = "\n" + message + "\n"
@@ -656,7 +709,7 @@ class PipelineManager(object):
 		:param time_since: Time as a float given by time.time().
 		:type time_since: float
 		"""
-		return round(time.time() - time_since, 2)
+		return round(time.time() - time_since, 0)
 
 	def report_profile(self, command, lock_name, elapsed_time, memory):
 		"""
@@ -664,25 +717,63 @@ class PipelineManager(object):
 
 		:type key: str
 		"""
-		messageRaw = str(command) + "\t " + str(lock_name) + "\t" + str(round(elapsed_time, 2)) + "\t " + str(memory)
+		messageRaw = str(command) + "\t " + \
+			str(lock_name) + "\t" + \
+			str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
+			str(memory)
 		# messageMarkdown = "> `" + command + "`\t" + str(elapsed_time).strip() + "\t " + str(memory).strip() + "\t" + "_PROF_"
 		# print(messageMarkdown)
 		with open(self.pipeline_profile_file, "a") as myfile:
 			myfile.write(messageRaw + "\n")
 
-	def report_result(self, key, value):
+	def report_result(self, key, value, annotation=None):
 		"""
 		Writes a string to self.pipeline_stats_file.
 
 		:type key: str
+		:param annotation: By default, the stats will be annotated with the pipeline
+		name, so you can tell which pipeline records which stats. If you want, you can
+		change this; use annotation='shared' if you need the stat to be used by
+		another pipeline (using get_stat()).
+		:type annotation: str
 		"""
+		# Default annotation is current pipeline name
+		if not annotation:
+			annotation = self.pipeline_name
+
 		# keep the value in memory:
 		self.stats_dict[key] = str(value).strip()
-		messageRaw = key + "\t " + str(value).strip()
-		messageMarkdown = "> `" + key + "`\t" + str(value).strip() + "\t" + "_RES_"
+		messageRaw = key + "\t " + str(value).strip() + "\t" + str(annotation)
+		messageMarkdown = "> `" + key + "`\t" + str(value).strip()\
+		 + "\t" + str(annotation) + "\t" + "_RES_"
 		print(messageMarkdown)
-		with open(self.pipeline_stats_file, "a") as myfile:
-			myfile.write(messageRaw + "\n")
+
+		# Just to be extra careful, let's lock the file while we we write
+		# in case multiple pipelines write to the same file.
+		target = self.pipeline_stats_file
+		lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
+		lock_name = "lock." + lock_name
+		lock_file = os.path.join(self.pipeline_outfolder, lock_name)
+
+		while True:
+			if os.path.isfile(lock_file):
+				self.wait_for_lock(lock_file)
+			else:
+				try:
+					self._create_file_racefree(lock_file)  # Create lock
+				except OSError as e:
+					if e.errno == errno.EEXIST:  # File already exists
+						print ("Lock file created after test! Looping again.")
+						continue  # Go back to start
+
+				# Proceed with file writing
+				with open(self.pipeline_stats_file, "a") as myfile:
+					myfile.write(messageRaw + "\n")
+
+				os.remove(lock_file)  # Remove lock file
+
+				# If you make it to the end of the while loop, you're done
+				break
 
 	def report_command(self, cmd):
 		"""
@@ -740,13 +831,23 @@ class PipelineManager(object):
 		Loads up the stats sheet created for this pipeline run and reads
 		those stats into memory
 		"""
+
+		# regex identifies all possible stats files.
+		#regex = self.pipeline_outfolder +  "*_stats.tsv"		
+		#stats_files = glob.glob(regex)
+		#stats_files.insert(self.pipeline_stats_file) # last one is the current pipeline
+		#for stats_file in stats_files:
+
+		stats_file = self.pipeline_stats_file
 		if os.path.isfile(self.pipeline_stats_file):
-			with open(self.pipeline_stats_file, "rb") as stat_file:
+			with open(stats_file, "rb") as stat_file:
 				for line in stat_file:
-					key, value  = line.split('\t')
-					self.stats_dict[key] = value.strip()
+					key, value, annotation  = line.split('\t')
+					if annotation.rstrip() == self.pipeline_name or annotation.rstrip() == "shared":
+						self.stats_dict[key] = value.strip()
 
 
+		#if os.path.isfile(self.pipeline_stats_file):
 
 	def get_stat(self, key):
 		"""
@@ -760,7 +861,7 @@ class PipelineManager(object):
 			if self.stats_dict.has_key(key):
 				return (self.stats_dict[key])
 			else:
-				print("Error: Missing stat: " + key + ". Can't report result")
+				print("Error: Missing stat: " + key + ".")
 				return None
 
 
@@ -778,10 +879,10 @@ class PipelineManager(object):
 		"""
 		self.set_status_flag("completed")
 		self._cleanup()
-		self.report_result("Time", str(self.time_elapsed(self.starttime)))
+		self.report_result("Time", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
 		self.report_result("Success", time.strftime("%m-%d %H:%M:%S"))
 		print("\n##### [Epilogue:]")
-		print("* " + "Total elapsed time".rjust(20) + ":  " + str(self.time_elapsed(self.starttime)))
+		print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
 		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
 		print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
 		self.timestamp("* Pipeline completed at: ".rjust(20))
@@ -808,6 +909,7 @@ class PipelineManager(object):
 		if self.status != "failed":  # and self.status != "completed":
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
+			print("Total time: ", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
 
 		raise e
 
@@ -1089,7 +1191,7 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 		# Arguments typically used in every pipeline
 		parser.add_argument(
 			"-I", "--input", dest="input", type=str, nargs="+",
-			help="one or more input files (required)",
+			help="One or more primary input files (required)",
 			required=False, metavar="INPUT_FILES")
 		# input was previously called unmapped_bam
 
@@ -1100,6 +1202,12 @@ def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=Fals
 
 	if (ngs_args):
 		# Common arguments specific to NGS pipelines
+		parser.add_argument(
+			"-I2", "--input2", dest="input2", type=str, nargs="+",
+			help="One or more secondary input files (if they exists); \
+			for example, second read in pair.",
+			required=False, default=None, metavar="INPUT_FILES2")
+
 		parser.add_argument(
 			"-G", "--genome", dest="genome_assembly", type=str,
 			help="identifier for genome assempbly (required)",
