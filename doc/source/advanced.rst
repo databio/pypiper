@@ -3,7 +3,7 @@ Advanced
 
 The ``follow`` argument
 *************
-*Follow functions* let you couple functions to run commands; the functions will only be run if the command is run. This lets you avoid running unnecessary processes repeatedly in the even that you restart your pipeline multiple times (for instance, while debugging later steps in the pipeline).
+*Follow functions* let you couple functions to run commands; the functions will only be run if the command is run. This lets you avoid running unnecessary processes repeatedly in the event that you restart your pipeline multiple times (for instance, while debugging later steps in the pipeline).
 
 One of the really useful things in pypiper is that you can pass a python function (we call a "follow function") along in your call to ``run``, and python will call this *follow function* if and only if it runs your command. This is useful for data checks to make sure processes did what you expect. A good example is file conversions; after you convert from one format into another, it's good practice to make sure the conversion completed and you have the same number of lines, or whatever, in the final file. Pypiper's command locking mechanism solves most of this problem, but there are still lots of times you'd like to run a function but only once, right after the command that produced it runs. For example, just counting the number of lines in a file after producing it. You don't need to re-run the counting every time you restart the pipeline, which will skip that step since it is complete. 
 

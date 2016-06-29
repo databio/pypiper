@@ -20,7 +20,7 @@ Links
 Sister projects
 ^^^^^^^^^^^^^^^^
 
- `Pypiper <http://pypiper.readthedocs.io/>`_ and `Looper <http://looper.readthedocs.io/>`_ work together as a comprehensive pipeline management system. `Pypiper <http://pypiper.readthedocs.io/>`_ builds individual, single-sample pipelines that can be run one sample at a time. `Looper <http://looper.readthedocs.io/>`_ then processes groups of samples, submitting appropriate pipelines to a cluster or server. The two projects are independent and can be used separately, but they are most powerful when combined.
+`Pypiper <http://pypiper.readthedocs.io/>`_ and `Looper <http://looper.readthedocs.io/>`_ work together as a comprehensive pipeline management system. `Pypiper <http://pypiper.readthedocs.io/>`_ builds individual, single-sample pipelines that can be run one sample at a time. `Looper <http://looper.readthedocs.io/>`_ then processes groups of samples, submitting appropriate pipelines to a cluster or server. The two projects are independent and can be used separately, but they are most powerful when combined.
 
 
 Contents
