@@ -184,8 +184,12 @@ class PipelineManager(object):
 		# Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
 		self.make_sure_path_exists(self.pipeline_outfolder)
 
+		if sys.__stdin__.isatty():
+			print("Warning: You're running an interactive python session. This works, but pypiper cannot tee\
+				the output, so results are only logged to screen.")
+
 		# Mirror every operation on sys.stdout to log file
-		if not multi:
+		if not multi and not sys.__stdin__.isatty():
 			sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
 
 			# Before creating the subprocess, we use the signal module to ignore TERM and INT signals;
