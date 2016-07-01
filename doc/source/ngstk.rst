@@ -8,11 +8,18 @@ Example:
 
 .. code-block:: python
 
-	from pypiper.ngstk import NGSTk
+	import pypiper
+	pm = pypiper.PipelineManager(..., args = args)
 
-	tk = NGSTk()
-	tk.index_bam("sample.bam")
+	# Create a ngstk object (pass the PipelineManager as an argument)
+	ngstk = pypiper.NGSTk(pm = pm)
+
+	# Now you use use ngstk functions
+	ngstk.index_bam("sample.bam")
+
+
+A list of available functions can be found in the :doc:`API <api>` or in the source code for `NGSTk`_.
 
 Contributions of additional toolkits or functions in an existing toolkit are welcome.
 
-.. _NGSTk: https://github.com/epigen/pypiper/pypiper/ngstk.py
+.. _NGSTk: https://github.com/epigen/pypiper/blob/master/pypiper/ngstk.py
