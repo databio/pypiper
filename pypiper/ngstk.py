@@ -55,12 +55,17 @@ class NGSTk(_AttributeDict):
 			if hasattr(pm.config, "parameters"):
 				self.parameters = self.pm.config.parameters
 
-	def make_sure_path_exists(self, path):
+	def make_dir(self, path):
 		try:
 			os.makedirs(path)
 		except OSError as exception:
 			if exception.errno != errno.EEXIST:
 				raise
+
+
+	def make_sure_path_exists(self, path):
+		""" Alias for make_dir """
+		self.make_dir(path)
 
 
 	def get_file_size(self, filenames):
