@@ -1,6 +1,13 @@
 Advanced
 =========================
 
+
+Toolkits
+*************
+
+Pypiper includes optional "toolkits" (right now just one) -- suites of commonly used code snippets which simplifies tasks for a pipeline author. For example, the next-gen sequencing toolkit, NGSTk, which simply provides some convenient helper functions to create common shell commands, like converting from file formats (_e.g._ ``bam_to_fastq()``), merging files (_e.g._ ``merge_bams()``), counting reads, etc. These make it faster to design bioinformatics pipelines in Pypiper, but are entirely optional. Contributions of additional toolkits or functions to an existing toolkit are welcome.
+
+
 The ``follow`` argument
 *************
 *Follow functions* let you couple functions to run commands; the functions will only be run if the command is run. This lets you avoid running unnecessary processes repeatedly in the event that you restart your pipeline multiple times (for instance, while debugging later steps in the pipeline).
