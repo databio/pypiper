@@ -1,5 +1,5 @@
 
-Features
+Features at-a-glance
 =========================
 Pypiper provides the following benefits:
 
