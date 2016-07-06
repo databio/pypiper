@@ -208,11 +208,14 @@ class NGSTk(_AttributeDict):
 
 				# if multiple fastq
 				if all([self.get_input_ext(x) == ".fastq.gz" for x in input_args]):
-					sample_merged = local_base + ".merged.fastq.gz"
+					sample_merged = local_base + ".merged.fastq"
+					sample_merged_gz = local_base + ".merged.fastq.gz"
 					output_merge = os.path.join(raw_folder, sample_merged)
-					cmd = "zcat " + " ".join(input_args) + " > " + output_merge
-					self.pm.run(cmd, output_merge)
-					return(output_merge)
+					output_merge_gz = os.path.join(raw_folder, sample_merged_gz)
+					cmd1 = "zcat " + " ".join(input_args) + " > " + output_merge
+					cmd2 = "gzip " + output_merge
+					self.pm.run([cmd1,cmd2], output_merge_gz)
+					return(output_merge_gz)
 
 				if all([self.get_input_ext(x) == ".fastq" for x in input_args]):
 					sample_merged = local_base + ".merged.fastq"
