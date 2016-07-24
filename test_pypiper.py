@@ -16,7 +16,7 @@ class PypiperTest(unittest.TestCase):
 	def setUp(self):
 		print("Setting up...")
 		# Create a fixture
-		self.pp = pypiper.PipelineManager(name="sample_pipeline", outfolder="pipeline_output/", multi=True)
+		self.pp = pypiper.PipelineManager(name="sample_pipeline", outfolder="pipeline_output/", multi = False)
 		self.pp2 = pypiper.PipelineManager(name="sample_pipeline2", outfolder="pipeline_output/", multi=True)
 
 	def tearDown(self):
@@ -38,6 +38,7 @@ class PypiperTest(unittest.TestCase):
 		self.assertEqual(self.pp2.pipeline_name, "sample_pipeline2")
 		# it creates an outfolder
 		self.assertTrue(os.path.exists(self.pp.pipeline_outfolder))
+		self.assertTrue(os.path.isfile(self.pp.pipeline_outfolder + "sample_pipeline_log.md"))
 
 		print("Testing status flags...")
 		self.pp.set_status_flag("testing")
