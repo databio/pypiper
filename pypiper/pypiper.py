@@ -177,7 +177,7 @@ class PipelineManager(object):
 		signal.signal(signal.SIGINT, signal.SIG_IGN)
 		signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
-	def start_pipeline(self, args=None, multi=False):
+	def start_pipeline(self, args = None, multi = False):
 		"""
 		Initialize setup. Do some setup, like tee output, print some diagnostics, create temp files.
 		You provide only the output directory (used for pipeline stats, log, and status flag files).
@@ -185,31 +185,41 @@ class PipelineManager(object):
 		# Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
 		self.make_sure_path_exists(self.pipeline_outfolder)
 
-		if not hasattr(__main__, "__file__"):
+		# By default, Pypiper will mirror every operation so it is displayed both
+		# on sys.stdout **and** to a log file. Unfortunately, interactive python sessions
+		# ruin this by interfering with stdout. So, for interactive mode, we do not enable 
+		# the tee subprocess, sending all output to screen only.
+		# Starting multiple PipelineManagers in the same script has the same problem, and
+		# must therefore be run in interactive_mode.
+		
+		interactive_mode = False  # Defaults to off
+
+		if multi or not hasattr(__main__, "__file__"):
 			print("Warning: You're running an interactive python session. This works, but pypiper cannot tee\
-				the output, so results are only logged to screen.")
+					the output, so results are only logged to screen.")
 
-
-		# Mirror every operation on sys.stdout to log file
-		if not multi and not hasattr(__main__, "__file__"):
+			interactive_mode = True
+		
+		if not interactive_mode:
 			sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
 
-			# Before creating the subprocess, we use the signal module to ignore TERM and INT signals;
-			# The subprocess will inherit these settings, so it won't be terminated by INT or TERM
-			# automatically; but instead, I will clean up this process in the signal handler functions.
-			# This is required because otherwise, the tee is terminated early, before I have a chance to
-			# print some final output, and so those things don't end up in the log files because the tee
-			# subprocess is dead.
+			# The tee subprocess must be instructed to ignore TERM and INT signals;
+			# Instead, I will clean up this process in the signal handler functions.
+			# This is required because otherwise, if pypiper recieves a TERM or INT,
+			# the tee will be automatically terminated by python before I have a chance to
+			# print some final output (for example, about when the process stopped),
+			# and so those things don't end up in the log files because the tee
+			# subprocess is dead. Instead, I will handle the killing of the tee process
+			# manually (in the exit handler).
 
 			# a for append to file
+			
 			tee = subprocess.Popen(
 				["tee", "-a", self.pipeline_log_file], stdin=subprocess.PIPE,
 				preexec_fn=self._ignore_interrupts)
 
-			# Reset the signal handlers after spawning that process
-			# signal.signal(signal.SIGINT, self._signal_int_handler)
-			# signal.signal(signal.SIGTERM, self._signal_term_handler)
-			# In case this pipeline process is terminated with SIGTERM, make sure we kill this spawned process as well.
+			# If the pipeline is terminated with SIGTERM/SIGINT,
+			# make sure we kill this spawned tee subprocess as well.
 			atexit.register(self._kill_child_process, tee.pid)
 			os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
 			os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
@@ -229,21 +239,22 @@ class PipelineManager(object):
 		gitvars = {}
 		try:
 			gitvars['pypiper_dir'] = os.path.dirname(os.path.realpath(__file__))
-			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD 2>\\dev\\null", shell=True)
-			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD 2>\\dev\\null", shell=True)
-			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD 2>\\dev\\null", shell=True)
-			gitvars['pypiper_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git branch | grep '*' 2>\\dev\\null", shell=True)
+			print("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD 2>/dev/null")
+			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
+			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
+			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
+			gitvars['pypiper_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git branch | grep '*' 2>/dev/null", shell=True)
 		except Exception:
 			pass
 		try:
 			gitvars['pipe_dir'] = os.path.dirname(os.path.realpath(sys.argv[0]))
-			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD 2>\\dev\\null", shell=True)
-			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD 2>\\dev\\null", shell=True)
-			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD 2>\\dev\\null", shell=True)
-			gitvars['pipe_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git branch | grep '*' 2>\\dev\\null", shell=True)
+			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
+			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
+			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
+			gitvars['pipe_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git branch | grep '*' 2>/dev/null", shell=True)
 		except Exception:
 			pass
-
+		
 		# Print out a header section in the pipeline log:
 		# Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
 		print("----------------------------------------")
