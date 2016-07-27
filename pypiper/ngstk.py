@@ -78,9 +78,9 @@ class NGSTk(_AttributeDict):
 		# use (1024 ** 3) for gigabytes
 		# equivalent to: stat -Lc '%s' filename
 
-		# If given a list, convert to string.
+		# If given a list, recurse through it.
 		if type(filenames) is list:
-			filenames = " ".join(filenames)
+			return(sum([self.get_file_size(filename) for filename in filenames]))
 
 		return round(sum([float(os.stat(f).st_size) for f in filenames.split(" ")]) / (1024 ** 2), 4)
 
