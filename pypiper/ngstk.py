@@ -379,7 +379,11 @@ class NGSTk(_AttributeDict):
 		cmd += " INPUT=" + input_bam
 		return(cmd)
 
-	def merge_bams(self, input_bams, merged_bam, in_sorted="TRUE"):
+	def merge_bams(self, input_bams, merged_bam, in_sorted="TRUE", tmp_dir=None):
+		"""
+		The tmp_dir parameter is important because the default can sometimes fill up on
+		poorly configured systems.
+		"""
 		if not len(input_bams) > 1:
 			print("No merge required")
 			return 0
@@ -393,6 +397,8 @@ class NGSTk(_AttributeDict):
 		cmd += " ASSUME_SORTED=" + str(in_sorted)
 		cmd += " CREATE_INDEX=TRUE"
 		cmd += " VALIDATION_STRINGENCY=SILENT"
+		if tmp_dir:
+			cmd += " TMP_DIR=" + tmp_dir
 		return(cmd)
 
 	def count_lines(self, fileName):
