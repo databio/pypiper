@@ -479,14 +479,15 @@ class PipelineManager(object):
 		"""
 		self.report_command(cmd)
 
+
 		if shell == "guess":
-			if ("|" in cmd or ">" in cmd):
+			if ("|" in cmd or ">" in cmd or r"*" in cmd):
 				shell = True
 			else:
 				shell = False
 
 		if not shell:
-			if ("|" in cmd or ">" in cmd):
+			if ("|" in cmd or ">" in cmd or r"*" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
 		
 			#cmd = cmd.split()
@@ -536,13 +537,13 @@ class PipelineManager(object):
 		self.proc_name = "".join(cmd).split()[0]
 
 		if shell == "guess":
-			if ("|" in cmd or ">" in cmd):
+			if ("|" in cmd or ">" in cmd or "*" in cmd):
 				shell = True
 			else:
 				shell = False
 
 		if not shell:
-			if ("|" in cmd or ">" in cmd):
+			if ("|" in cmd or ">" in cmd or "*" in cmd):
 				print("Should this command run in a shell instead of directly in a subprocess?")
 			#cmd = cmd.split()
 			cmd = shlex.split(cmd)
