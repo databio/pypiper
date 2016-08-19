@@ -1050,7 +1050,7 @@ class NGSTk(_AttributeDict):
 			cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 			if controlBam is not None:
 				cmd += " -c {0}".format(controlBam)
-			cmd += " --bw 200 -g {0} -n {0} --outdir {0}".format(sizes[genome], sampleName, outputDir)
+			cmd += " --bw 200 -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 			# --fix-bimodal --extsize 180
 		else:
 			# Parameter setting for broad factors according to Nature Protocols (2012)
