@@ -117,9 +117,6 @@ class NGSTk(_AttributeDict):
 			cmd = self.tools.samtools + " view " + bam_file + " | awk '"
 			cmd += r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + out_fastq_pre + '_R1.fastq"; }'
 			cmd += "'"
-		    
-		print cmd
-		   
 		return cmd
 
 
