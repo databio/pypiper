@@ -115,9 +115,11 @@ class NGSTk(_AttributeDict):
 			cmd += "'"  # end the awk command
 		else:
 			cmd = self.tools.samtools + " view " + bam_file + " | awk '"
-			cmd = r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + out_fastq_pre + '_R1.fastq"; }'
+			cmd += r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + out_fastq_pre + '_R1.fastq"; }'
 			cmd += "'"
-
+		    
+		print cmd
+		   
 		return cmd
 
 
@@ -594,7 +596,7 @@ class NGSTk(_AttributeDict):
 		:param depth: also calculate coverage over each position
 		"""
 		cmd = self.tools.samtools + " view -bS " + sam + " > " + sam.replace(".sam", ".bam") + "\n"
-		cmd += self.tools.samtools + " sort " + sam.replace(".sam", ".bam") + " " + sam.replace(".sam", "_sorted") + "\n"
+		cmd += self.tools.samtools + " sort " + sam.replace(".sam", ".bam") + " -o " + sam.replace(".sam", "_sorted.bam") + "\n"
 		cmd += self.tools.samtools + " index " + sam.replace(".sam", "_sorted.bam") + "\n"
 		if depth:
 			cmd += self.tools.samtools + " depth " + sam.replace(".sam", "_sorted.bam") + " > " + sam.replace(".sam", "_sorted.depth") + "\n"
@@ -606,7 +608,7 @@ class NGSTk(_AttributeDict):
 		:param depth: also calculate coverage over each position
 		"""
 		cmd = self.tools.samtools + " view -h " + bam + " > " + bam.replace(".bam", ".sam") + "\n"
-		cmd += self.tools.samtools + " sort " + bam + " " + bam.replace(".bam", "_sorted") + "\n"
+		cmd += self.tools.samtools + " sort " + bam + " -o " + bam.replace(".bam", "_sorted.bam") + "\n"
 		cmd += self.tools.samtools + " index " + bam.replace(".bam", "_sorted.bam") + "\n"
 		if depth:
 			cmd += self.tools.samtools + " depth " + bam.replace(".bam", "_sorted.bam") + " > " + bam.replace(".bam", "_sorted.depth") + "\n"
@@ -829,7 +831,7 @@ class NGSTk(_AttributeDict):
 
 	def shiftReads(self, inputBam, genome, outputBam):
 		import re
-		outputBam = re.sub("\.bam$", "", outputBam)
+        # outputBam = re.sub("\.bam$", "", outputBam)
 		cmd = self.tools.samtools + " view -h {0} |".format(inputBam)
 		cmd += " shift_reads.py {0} |".format(genome)
 		cmd += " " + self.tools.samtools + " view -S -b - |"
