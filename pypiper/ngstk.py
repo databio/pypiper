@@ -97,7 +97,7 @@ class NGSTk(_AttributeDict):
 		cmd += " REMOVE_DUPLICATES=" + remove_duplicates
 		return cmd
 
-	def bam_to_fastq2(self, bam_file, out_fastq_pre, paired_end):
+	def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
 		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
 		cmd = self.tools.java + " -Xmx" + self.pm.javamem
 		cmd += " -jar " + self.tools.picard + " SamToFastq"
@@ -111,7 +111,7 @@ class NGSTk(_AttributeDict):
 		cmd += " VALIDATION_STRINGENCY=SILENT"		
 		return cmd
 
-	def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
+	def bam_to_fastq2(self, bam_file, out_fastq_pre, paired_end):
 		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
 
 		if paired_end:
