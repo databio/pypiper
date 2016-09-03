@@ -46,12 +46,17 @@ class NGSTk(_AttributeDict):
 			super(NGSTk, self).__init__(config, default=True)
 
 		# Keep a link to the pipeline manager, if one is provided.
+		# if None is provided, instantiate "tools" and "parameters" with empty AttributeDicts
+		# this allows the usage of the same code for a command with and without using a pipeline manager
 		if pm is not None:
 			self.pm = pm
 			if hasattr(pm.config, "tools"):
 				self.tools = self.pm.config.tools
 			if hasattr(pm.config, "parameters"):
 				self.parameters = self.pm.config.parameters
+		else:
+			self.tools = _AttributeDict(dict(), default=True)
+			self.parameters = _AttributeDict(dict(), default=True)
 
 	def make_dir(self, path):
 		try:
