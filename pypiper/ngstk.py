@@ -659,7 +659,7 @@ class NGSTk(_AttributeDict):
 
 		""".format(
 			queue, n_tasks, time, cpus_per_task, mem_per_cpu,
-			nodes, job_name, output, user_mail, mail_type)
+			nodes, job_name, output, mail_type, user_mail)
 
 		return cmd
 
