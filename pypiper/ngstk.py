@@ -631,7 +631,7 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def slurm_header(
-		job_name, output, queue="shortq", n_tasks=1, time="10:00:00",
+		self, job_name, output, queue="shortq", n_tasks=1, time="10:00:00",
 		cpus_per_task=8, mem_per_cpu=2000, nodes=1, user_mail="", mail_type="end"):
 		cmd = """    #!/bin/bash
 		#SBATCH --partition={0}
