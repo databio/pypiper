@@ -664,7 +664,7 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def slurm_footer(self):
-		cmd = "    date"
+		cmd = "		date"
 		return cmd
 
 	def slurm_submit_job(self, jobFile):
