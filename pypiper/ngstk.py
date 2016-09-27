@@ -46,12 +46,17 @@ class NGSTk(_AttributeDict):
 			super(NGSTk, self).__init__(config, default=True)
 
 		# Keep a link to the pipeline manager, if one is provided.
+		# if None is provided, instantiate "tools" and "parameters" with empty AttributeDicts
+		# this allows the usage of the same code for a command with and without using a pipeline manager
 		if pm is not None:
 			self.pm = pm
 			if hasattr(pm.config, "tools"):
 				self.tools = self.pm.config.tools
 			if hasattr(pm.config, "parameters"):
 				self.parameters = self.pm.config.parameters
+		else:
+			self.tools = _AttributeDict(dict(), default=True)
+			self.parameters = _AttributeDict(dict(), default=True)
 
 	def make_dir(self, path):
 		try:
@@ -633,9 +638,9 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def slurm_header(
-		job_name, output, queue="shortq", n_tasks=1, time="10:00:00",
+		self, job_name, output, queue="shortq", n_tasks=1, time="10:00:00",
 		cpus_per_task=8, mem_per_cpu=2000, nodes=1, user_mail="", mail_type="end"):
-		cmd = """    #!/bin/bash
+		cmd = """		#!/bin/bash
 		#SBATCH --partition={0}
 		#SBATCH --ntasks={1}
 		#SBATCH --time={2}
@@ -656,12 +661,12 @@ class NGSTk(_AttributeDict):
 
 		""".format(
 			queue, n_tasks, time, cpus_per_task, mem_per_cpu,
-			nodes, job_name, output, user_mail, mail_type)
+			nodes, job_name, output, mail_type, user_mail)
 
 		return cmd
 
 	def slurm_footer(self):
-		cmd = "    date"
+		cmd = "		date"
 		return cmd
 
 	def slurm_submit_job(self, jobFile):
