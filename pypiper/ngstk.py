@@ -605,11 +605,9 @@ class NGSTk(_AttributeDict):
 		:param depth: also calculate coverage over each position
 		"""
 		cmd = self.tools.samtools + " view -h " + bam + " > " + bam.replace(".bam", ".sam") + "\n"
-<<<<<<< HEAD
+
 		cmd += self.tools.samtools + " sort " + bam + " -o " + bam.replace(".bam", "_sorted.bam") + "\n"
-=======
-		cmd += self.tools.samtools + " sort " + bam + " " + bam.replace(".bam", "_sorted.bam") + "\n"
->>>>>>> a26a02c2eb4b4f687bc6c96dfe5141e107d7006f
+
 		cmd += self.tools.samtools + " index " + bam.replace(".bam", "_sorted.bam") + "\n"
 		if depth:
 			cmd += self.tools.samtools + " depth " + bam.replace(".bam", "_sorted.bam") + " > " + bam.replace(".bam", "_sorted.depth") + "\n"
