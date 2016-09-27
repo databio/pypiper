@@ -1143,7 +1143,7 @@ class Tee(object):
 
 
 # @staticmethod
-def add_pypiper_args(parser, groups = ["pypiper"], args = [None]):
+def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = False):
 	"""
 	Adds default automatic args to an ArgumentParser. Use this to add standardized 
 	pypiper arguments to your python pipeline.
@@ -1176,6 +1176,8 @@ def add_pypiper_args(parser, groups = ["pypiper"], args = [None]):
 				"ngs" : ["input", "sample-name", "input2", "genome", "single-or-paired"]
 				}
 
+
+
 	# any argument in any group is added to a new group called "all"
 	args_list["all"] = list(set(sum(args_list.values(), [])))
 
@@ -1188,6 +1190,10 @@ def add_pypiper_args(parser, groups = ["pypiper"], args = [None]):
 	if groups:
 		if type(groups) != list:
 			groups = [groups]
+
+		# For backwards-compatilibity
+		if all_args:
+			groups.append("all")
 
 		for group in groups:
 			args_to_add.update(args_list[group])
