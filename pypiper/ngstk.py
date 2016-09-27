@@ -91,7 +91,7 @@ class NGSTk(_AttributeDict):
 		cmd += " REMOVE_DUPLICATES=" + remove_duplicates
 		return cmd
 
-	def bam_to_fastq2(self, bam_file, out_fastq_pre, paired_end):
+	def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
 		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
 		cmd = self.tools.java + " -Xmx" + self.pm.javamem
 		cmd += " -jar " + self.tools.picard + " SamToFastq"
@@ -105,7 +105,7 @@ class NGSTk(_AttributeDict):
 		cmd += " VALIDATION_STRINGENCY=SILENT"
 		return cmd
 
-	def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
+	def bam_to_fastq2(self, bam_file, out_fastq_pre, paired_end):
 		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
 
 		if paired_end:
@@ -605,7 +605,11 @@ class NGSTk(_AttributeDict):
 		:param depth: also calculate coverage over each position
 		"""
 		cmd = self.tools.samtools + " view -h " + bam + " > " + bam.replace(".bam", ".sam") + "\n"
+<<<<<<< HEAD
 		cmd += self.tools.samtools + " sort " + bam + " -o " + bam.replace(".bam", "_sorted.bam") + "\n"
+=======
+		cmd += self.tools.samtools + " sort " + bam + " " + bam.replace(".bam", "_sorted.bam") + "\n"
+>>>>>>> a26a02c2eb4b4f687bc6c96dfe5141e107d7006f
 		cmd += self.tools.samtools + " index " + bam.replace(".bam", "_sorted.bam") + "\n"
 		if depth:
 			cmd += self.tools.samtools + " depth " + bam.replace(".bam", "_sorted.bam") + " > " + bam.replace(".bam", "_sorted.depth") + "\n"
