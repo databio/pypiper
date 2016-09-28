@@ -1076,7 +1076,7 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def macs2CallPeaks(self, treatmentBam, outputDir, sampleName, genome, controlBam=None, broad=False):
-		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
+		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 2.7e9}
 		if not broad:
 			cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 			if controlBam is not None:
@@ -1095,7 +1095,7 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def macs2CallPeaksATACSeq(self, treatmentBam, outputDir, sampleName, genome):
-		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
+		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 2.7e9}
 		cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 		cmd += " --nomodel --extsize 147 -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 		return cmd
