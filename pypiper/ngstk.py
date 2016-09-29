@@ -37,8 +37,6 @@ class NGSTk(_AttributeDict):
 		# parse yaml into the project's attributes
 		# self.add_entries(**config)
 
-
-
 		if config_file is None:
 			super(NGSTk, self).__init__({}, default=True)
 		else:
@@ -48,12 +46,17 @@ class NGSTk(_AttributeDict):
 			super(NGSTk, self).__init__(config, default=True)
 
 		# Keep a link to the pipeline manager, if one is provided.
+		# if None is provided, instantiate "tools" and "parameters" with empty AttributeDicts
+		# this allows the usage of the same code for a command with and without using a pipeline manager
 		if pm is not None:
 			self.pm = pm
 			if hasattr(pm.config, "tools"):
 				self.tools = self.pm.config.tools
 			if hasattr(pm.config, "parameters"):
 				self.parameters = self.pm.config.parameters
+		else:
+			self.tools = _AttributeDict(dict(), default=True)
+			self.parameters = _AttributeDict(dict(), default=True)
 
 	def make_dir(self, path):
 		try:
@@ -62,11 +65,9 @@ class NGSTk(_AttributeDict):
 			if exception.errno != errno.EEXIST:
 				raise
 
-
 	def make_sure_path_exists(self, path):
 		""" Alias for make_dir """
 		self.make_dir(path)
-
 
 	def get_file_size(self, filenames):
 		"""
@@ -84,10 +85,8 @@ class NGSTk(_AttributeDict):
 
 		return round(sum([float(os.stat(f).st_size) for f in filenames.split(" ")]) / (1024 ** 2), 4)
 
-
-
 	def markDuplicates(self, aligned_file, out_file, metrics_file, remove_duplicates="True"):
-		cmd = self.tools.java 
+		cmd = self.tools.java
 		if self.pm.javamem:  # If a memory restriction exists.
 			cmd += " -Xmx" + self.pm.javamem
 		cmd += " -jar " + self.tools.picard + " MarkDuplicates"
@@ -108,7 +107,7 @@ class NGSTk(_AttributeDict):
 		cmd += " INCLUDE_NON_PF_READS=true"
 		cmd += " QUIET=true"
 		cmd += " VERBOSITY=ERROR"
-		cmd += " VALIDATION_STRINGENCY=SILENT"		
+		cmd += " VALIDATION_STRINGENCY=SILENT"
 		return cmd
 
 	def bam_to_fastq2(self, bam_file, out_fastq_pre, paired_end):
@@ -121,9 +120,8 @@ class NGSTk(_AttributeDict):
 			cmd += "'"  # end the awk command
 		else:
 			cmd = self.tools.samtools + " view " + bam_file + " | awk '"
-			cmd = r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + out_fastq_pre + '_R1.fastq"; }'
+			cmd += r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + out_fastq_pre + '_R1.fastq"; }'
 			cmd += "'"
-
 		return cmd
 
 
@@ -181,7 +179,7 @@ class NGSTk(_AttributeDict):
 				if input_arg:
 					out = self.merge_or_link(input_arg, raw_folder, local_base_extended)
 
-					print("Local input file: " + out) 
+					print("Local input file: " + out)
 					# Make sure file exists:
 					if not os.path.isfile(out):
 						print out + " is not a file"
@@ -206,14 +204,15 @@ class NGSTk(_AttributeDict):
 
 				# Link it to into the raw folder
 				local_input_abs = os.path.join(raw_folder, local_base + input_ext)
-				self.pm.run("ln -sf " + input_arg + " " + local_input_abs, 
-					target = local_input_abs, 
-					shell = True)
+				self.pm.run(
+					"ln -sf " + input_arg + " " + local_input_abs,
+					target=local_input_abs,
+					shell=True)
 				# return the local (linked) filename absolute path
 				return local_input_abs
 
 			else:
-				# Otherwise, there are multiple inputs. 
+				# Otherwise, there are multiple inputs.
 				# If more than 1 input file is given, then these are to be merged
 				# if they are in bam format.
 				if all([self.get_input_ext(x) == ".bam" for x in input_args]):
@@ -222,7 +221,7 @@ class NGSTk(_AttributeDict):
 					cmd = self.merge_bams(input_args, output_merge)
 					self.pm.run(cmd, output_merge)
 					cmd2 = self.validate_bam(output_merge)
-					self.pm.run(cmd, output_merge, nofail = True)
+					self.pm.run(cmd, output_merge, nofail=True)
 					return(output_merge)
 
 				# if multiple fastq
@@ -233,7 +232,7 @@ class NGSTk(_AttributeDict):
 					output_merge_gz = os.path.join(raw_folder, sample_merged_gz)
 					cmd1 = "zcat " + " ".join(input_args) + " > " + output_merge
 					cmd2 = "gzip " + output_merge
-					self.pm.run([cmd1,cmd2], output_merge_gz)
+					self.pm.run([cmd1, cmd2], output_merge_gz)
 					return(output_merge_gz)
 
 				if all([self.get_input_ext(x) == ".fastq" for x in input_args]):
@@ -247,8 +246,8 @@ class NGSTk(_AttributeDict):
 				# do not match.
 				raise NotImplementedError("Input files must be of the same type; and can only merge bam of fastq.")
 
-
-	def input_to_fastq(self, input_file, sample_name,
+	def input_to_fastq(
+		self, input_file, sample_name,
 		paired_end, fastq_folder, output_file=None, multiclass=False):
 		"""
 		Builds a command to convert input file to fastq, for various inputs.
@@ -260,14 +259,14 @@ class NGSTk(_AttributeDict):
 		most common format for adapter trimmers, etc.
 
 		It will place the output fastq file in given `fastq_folder`.
-		
+
 		:param input_file: filename of the input you want to convert to fastq
 		:type input_file: string
 
 		:returns: A command (to be run with PipelineManager) that will ensure
 		your fastq file exists.
 		"""
-	
+
 		fastq_prefix = os.path.join(fastq_folder, sample_name)
 		self.make_sure_path_exists(fastq_folder)
 
@@ -279,12 +278,12 @@ class NGSTk(_AttributeDict):
 			cmd = []
 			output_file = []
 			for in_i, in_arg in enumerate(input_file):
-				output = fastq_prefix + "_R" + str(in_i+1) + ".fastq"
-				result_cmd, uf, result_file = (self.input_to_fastq(in_arg, sample_name, paired_end, fastq_folder, output, multiclass = True))
+				output = fastq_prefix + "_R" + str(in_i + 1) + ".fastq"
+				result_cmd, uf, result_file = (self.input_to_fastq(in_arg, sample_name, paired_end, fastq_folder, output, multiclass=True))
 				cmd.append(result_cmd)
 				output_file.append(result_file)
 
-		else: 
+		else:
 			# There was only 1 input class.
 			# Convert back into a string
 			input_file = input_file[0]
@@ -292,8 +291,7 @@ class NGSTk(_AttributeDict):
 				output_file = fastq_prefix + "_R1.fastq"
 			input_ext = self.get_input_ext(input_file)
 
-
-			if input_ext ==".bam":
+			if input_ext == ".bam":
 				print("Found .bam file")
 				cmd = self.bam_to_fastq(input_file, fastq_prefix, paired_end)
 				# pm.run(cmd, output_file, follow=check_fastq)
@@ -309,9 +307,9 @@ class NGSTk(_AttributeDict):
 					# or, paired-end reads that were already split.
 					cmd = "gunzip -c " + input_file + " > " + output_file
 					# a non-shell version
-					#cmd1 = "gunzip --force " + input_file
-					#cmd2 = "mv " + os.path.splitext(input_file)[0] + " " + output_file
-					#cmd = [cmd1, cmd2]
+					# cmd1 = "gunzip --force " + input_file
+					# cmd2 = "mv " + os.path.splitext(input_file)[0] + " " + output_file
+					# cmd = [cmd1, cmd2]
 			elif input_ext == ".fastq":
 				cmd = "ln -sf " + input_file + " " + output_file
 				print("Found .fastq file; no conversion necessary")
@@ -320,7 +318,7 @@ class NGSTk(_AttributeDict):
 
 	def check_fastq(self, input_files, output_files, paired_end):
 		"""
-		Returns a follow sanity-check function to be run after a fastq conversion. 
+		Returns a follow sanity-check function to be run after a fastq conversion.
 		Run following a command that will produce the fastq files.
 
 		This function will make sure any input files have the same number of reads as the
@@ -368,8 +366,9 @@ class NGSTk(_AttributeDict):
 		and run fastqc on the trimmed fastq files.
 		"""
 
-		def temp_func(trimmed_fastq=trimmed_fastq, 
-			trimmed_fastq_R2 = trimmed_fastq_R2,
+		def temp_func(
+			trimmed_fastq=trimmed_fastq,
+			trimmed_fastq_R2=trimmed_fastq_R2,
 			paired_end=paired_end,
 			fastqc_folder=fastqc_folder):
 			n_trim = float(self.count_reads(trimmed_fastq, paired_end))
@@ -379,7 +378,7 @@ class NGSTk(_AttributeDict):
 				self.pm.report_result("Trim_loss_rate", round((rr - n_trim) * 100 / rr, 2))
 			except:
 				print("Can't calculate trim loss rate without raw read result.")
-			
+
 			# Also run a fastqc (if installed/requested)
 			if fastqc_folder:
 				self.make_sure_path_exists(fastqc_folder)
@@ -390,7 +389,6 @@ class NGSTk(_AttributeDict):
 					self.pm.run(cmd, lock_name="trimmed_fastqc_R2", nofail=True)
 
 		return temp_func
-
 
 	def validate_bam(self, input_bam):
 		cmd = self.tools.java + " -Xmx" + self.pm.javamem
@@ -425,7 +423,7 @@ class NGSTk(_AttributeDict):
 		Uses the command-line utility wc to count the number of lines in a file.
 		:param file: Filename
 		"""
-		x = subprocess.check_output("wc -l " + fileName + " | cut -f1 -d' '", shell = True)
+		x = subprocess.check_output("wc -l " + fileName + " | cut -f1 -d' '", shell=True)
 		return x
 
 	def count_lines_zip(self, fileName):
@@ -434,16 +432,15 @@ class NGSTk(_AttributeDict):
 		For compressed files.
 		:param file: Filename
 		"""
-		x = subprocess.check_output("zcat " + fileName + " | wc -l | cut -f1 -d' '", shell = True)
+		x = subprocess.check_output("zcat " + fileName + " | wc -l | cut -f1 -d' '", shell=True)
 		return x
-
 
 	def get_chrs_from_bam(self, fileName):
 		"""
 		Uses samtools to grab the chromosomes from the header that are contained
 		in this bam file.
 		"""
-		x = subprocess.check_output(self.tools.samtools + " view -H " + fileName + " | grep '^@SQ' | cut -f2| sed s'/SN://'", shell = True)
+		x = subprocess.check_output(self.tools.samtools + " view -H " + fileName + " | grep '^@SQ' | cut -f2| sed s'/SN://'", shell=True)
 		# Chromosomes will be separated by newlines; split into list to return
 		return x.split()
 
@@ -558,7 +555,7 @@ class NGSTk(_AttributeDict):
 		Paired-end reads count as 2 in this function.
 		For paired-end reads, this function assumes that the reads are split into 2
 		fastq files, therefore, to count the reads, it divides by 2 instead of 4.
-		This will thus give an incorrect result if your paired-end fastq files 
+		This will thus give an incorrect result if your paired-end fastq files
 		are in only a single file (you must divide by 2 again).
 		"""
 		if fileName.endswith("bam"):
@@ -601,7 +598,7 @@ class NGSTk(_AttributeDict):
 		:param depth: also calculate coverage over each position
 		"""
 		cmd = self.tools.samtools + " view -bS " + sam + " > " + sam.replace(".sam", ".bam") + "\n"
-		cmd += self.tools.samtools + " sort " + sam.replace(".sam", ".bam") + " " + sam.replace(".sam", "_sorted") + "\n"
+		cmd += self.tools.samtools + " sort " + sam.replace(".sam", ".bam") + " -o " + sam.replace(".sam", "_sorted.bam") + "\n"
 		cmd += self.tools.samtools + " index " + sam.replace(".sam", "_sorted.bam") + "\n"
 		if depth:
 			cmd += self.tools.samtools + " depth " + sam.replace(".sam", "_sorted.bam") + " > " + sam.replace(".sam", "_sorted.depth") + "\n"
@@ -613,25 +610,37 @@ class NGSTk(_AttributeDict):
 		:param depth: also calculate coverage over each position
 		"""
 		cmd = self.tools.samtools + " view -h " + bam + " > " + bam.replace(".bam", ".sam") + "\n"
-		cmd += self.tools.samtools + " sort " + bam + " " + bam.replace(".bam", "_sorted.bam") + "\n"
+
+		cmd += self.tools.samtools + " sort " + bam + " -o " + bam.replace(".bam", "_sorted.bam") + "\n"
+
 		cmd += self.tools.samtools + " index " + bam.replace(".bam", "_sorted.bam") + "\n"
 		if depth:
 			cmd += self.tools.samtools + " depth " + bam.replace(".bam", "_sorted.bam") + " > " + bam.replace(".bam", "_sorted.depth") + "\n"
 		return cmd
 
 	def fastqc(self, file, outdir):
-		"""Call fastqc on a bam file (or fastq file, right?)."""
-		# You can find the fastqc help with fastqc --help
+		"""Call fastqc on a bam file (or fastq file, right?).
+		# You can find the fastqc help with fastqc --help"""
 		cmd = self.tools.fastqc + " --noextract --outdir " + outdir + " " + file
 		return cmd
+
+	def fastqc_rename(self, input_bam, output_dir, sample_name):
+		import os
+		initial = os.path.splitext(os.path.basename(input_bam))[0]
+		cmd1 = self.tools.fastqc + " --noextract --outdir {0} {1}".format(output_dir, input_bam)
+		cmd2 = "mv {0}_fastqc.html {1}_fastqc.html".format(os.path.join(output_dir, initial), os.path.join(output_dir, sample_name))
+		cmd3 = "mv {0}_fastqc.zip {1}_fastqc.zip".format(os.path.join(output_dir, initial), os.path.join(output_dir, sample_name))
+		return [cmd1, cmd2, cmd3]
 
 	def samtools_index(self, bam):
 		"""Index a bam file."""
 		cmd = self.tools.samtools + " index {0}".format(bam)
 		return cmd
 
-	def slurmHeader(self, jobName, output, queue="shortq", ntasks=1, time="10:00:00", cpusPerTask=16, memPerCpu=2000, nodes=1, userMail=""):
-		cmd = """    #!/bin/bash
+	def slurm_header(
+		self, job_name, output, queue="shortq", n_tasks=1, time="10:00:00",
+		cpus_per_task=8, mem_per_cpu=2000, nodes=1, user_mail="", mail_type="end"):
+		cmd = """		#!/bin/bash
 		#SBATCH --partition={0}
 		#SBATCH --ntasks={1}
 		#SBATCH --time={2}
@@ -643,30 +652,33 @@ class NGSTk(_AttributeDict):
 		#SBATCH --job-name={6}
 		#SBATCH --output={7}
 
-		#SBATCH --mail-type=end
-		#SBATCH --mail-user={8}
+		#SBATCH --mail-type={8}
+		#SBATCH --mail-user={9}
 
 		# Start running the job
 		hostname
 		date
 
-		""".format(queue, ntasks, time, cpusPerTask, memPerCpu, nodes, jobName, output, userMail)
+		""".format(
+			queue, n_tasks, time, cpus_per_task, mem_per_cpu,
+			nodes, job_name, output, mail_type, user_mail)
+
 		return cmd
 
-	def slurmFooter(self):
-		cmd = "    date"
+	def slurm_footer(self):
+		cmd = "		date"
 		return cmd
 
-	def slurmSubmitJob(self, jobFile):
+	def slurm_submit_job(self, jobFile):
 		import os
 		cmd = "sbatch %s" % jobFile
 		return os.system(cmd)
 
-	def removeFile(self, fileName):
-		cmd = "rm {0}".format(fileName)
+	def remove_file(self, file_name):
+		cmd = "rm {0}".format(file_name)
 		return cmd
 
-	def moveFile(self, old, new):
+	def move_file(self, old, new):
 		cmd = "mv {0} {1}".format(old, new)
 		return cmd
 
@@ -674,21 +686,14 @@ class NGSTk(_AttributeDict):
 		cmd = "mkdir -p {0}".format(directory)
 		return cmd
 
-	def mergeBams(self, inputBams, outputBam):
-		cmd = self.tools.java + " -Xmx" + self.pm.javamem
-		cmd += " -jar " + self.tools.picard + " MergeSamFiles"
-		cmd += " USE_THREADING=TRUE"
-		cmd += " " + (" ".join(["INPUT=%s"] * len(inputBams))) % tuple(inputBams)
-		cmd += " OUTPUT={0}".format(outputBam)
-		return cmd
-
-	def fastQC(self, inputBam, outputDir, sampleName):
-		import os
-		initial = os.path.splitext(os.path.basename(inputBam))[0]
-		cmd1 = self.tools.fastqc + " --noextract --outdir {0} {1}".format(outputDir, inputBam)
-		cmd2 = "mv {0}_fastqc.html {1}_fastqc.html".format(os.path.join(outputDir, initial), os.path.join(outputDir, sampleName))
-		cmd3 = "mv {0}_fastqc.zip {1}_fastqc.zip".format(os.path.join(outputDir, initial), os.path.join(outputDir, sampleName))
-		return [cmd1, cmd2, cmd3]
+	# REDUNDANT
+	# def merge_bams(self, inputBams, outputBam):
+	# 	cmd = self.tools.java + " -Xmx" + self.pm.javamem
+	# 	cmd += " -jar " + self.tools.picard + " MergeSamFiles"
+	# 	cmd += " USE_THREADING=TRUE"
+	# 	cmd += " " + (" ".join(["INPUT=%s"] * len(inputBams))) % tuple(inputBams)
+	# 	cmd += " OUTPUT={0}".format(outputBam)
+	# 	return cmd
 
 	def preseq_curve(self, bam_file, output_prefix):
 		return """
@@ -741,7 +746,7 @@ class NGSTk(_AttributeDict):
 		PE = False if inputFastq2 is None else True
 		mode = "pe" if PE else "any"
 		cmds = list()
-		cmd1 = self.tools.java + " --quiet"
+		cmd1 = self.tools.skewer + " --quiet"
 		cmd1 += " -f sanger"
 		cmd1 += " -t {0}".format(cpus)
 		cmd1 += " -m {0}".format(mode)
@@ -766,8 +771,6 @@ class NGSTk(_AttributeDict):
 		return cmds
 
 	def bowtie2Map(self, inputFastq1, outputBam, log, metrics, genomeIndex, maxInsert, cpus, inputFastq2=None):
-		import re
-		outputBam = re.sub("\.bam$", "", outputBam)
 		# Admits 2000bp-long fragments (--maxins option)
 		cmd = self.tools.bowtie2 + " --very-sensitive -p {0}".format(cpus)
 		cmd += " -x {0}".format(genomeIndex)
@@ -778,7 +781,7 @@ class NGSTk(_AttributeDict):
 			cmd += " --maxins {0}".format(maxInsert)
 			cmd += " -1 {0}".format(inputFastq1)
 			cmd += " -2 {0}".format(inputFastq2)
-		cmd += " 2> {0} | samtools view -S -b - | samtools sort - {1}".format(log, outputBam)
+		cmd += " 2> {0} | samtools view -S -b - | samtools sort -o {1} -".format(log, outputBam)
 		return cmd
 
 	def topHatMap(self, inputFastq, outDir, genome, transcriptome, cpus):
@@ -832,11 +835,11 @@ class NGSTk(_AttributeDict):
 
 	def shiftReads(self, inputBam, genome, outputBam):
 		import re
-		outputBam = re.sub("\.bam$", "", outputBam)
+        # outputBam = re.sub("\.bam$", "", outputBam)
 		cmd = self.tools.samtools + " view -h {0} |".format(inputBam)
 		cmd += " shift_reads.py {0} |".format(genome)
 		cmd += " " + self.tools.samtools + " view -S -b - |"
-		cmd += " " + self.tools.samtools + " sort - {0}".format(outputBam)
+		cmd += " " + self.tools.samtools + " sort -o {0} -".format(outputBam)
 		return cmd
 
 	def sortIndexBam(self, inputBam, outputBam):
@@ -852,7 +855,7 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def peakTools(self, inputBam, output, plot, cpus):
-		cmd = self.tools.Rscript + " `which run_spp.R` -rf -savp -savp={0} -s=0:5:500 -c={1} -out={2}".format(plot, inputBam, output)
+		cmd = self.tools.Rscript + " " + self.tools.spp + " -rf -savp -savp={0} -s=0:5:500 -c={1} -out={2}".format(plot, inputBam, output)
 		return cmd
 
 	def getFragmentSizes(self, bam):
@@ -869,7 +872,7 @@ class NGSTk(_AttributeDict):
 		bam.close()
 		return np.array(fragSizes)
 
-	def plotInsertSizesFit(self, bam, plot, outputCSV, maxInsert=1500, smallestInsert=30):
+	def plot_atacseq_insert_sizes(self, bam, plot, output_csv, max_insert=1500, smallest_insert=30):
 		"""
 		Heavy inspiration from here:
 		https://github.com/dbrg77/ATAC/blob/master/ATAC_seq_read_length_curve_fitting.ipynb
@@ -880,22 +883,29 @@ class NGSTk(_AttributeDict):
 			import matplotlib.mlab as mlab
 			from scipy.optimize import curve_fit
 			from scipy.integrate import simps
+			import matplotlib
+			matplotlib.use('Agg')
 			import matplotlib.pyplot as plt
 		except:
+			print("Necessary Python modules couldn't be loaded.")
 			return
+
 		try:
 			import seaborn as sns
 			sns.set_style("whitegrid")
 		except:
 			pass
 
-		def getFragmentSizes(bam, maxInsert=1500):
+		def getFragmentSizes(bam, max_insert=1500):
 			fragSizes = list()
+
 			bam = pysam.Samfile(bam, 'rb')
+
 			for i, read in enumerate(bam):
-				if read.tlen < maxInsert:
+				if read.tlen < max_insert:
 					fragSizes.append(read.tlen)
 			bam.close()
+
 			return np.array(fragSizes)
 
 		def mixtureFunction(x, *p):
@@ -904,13 +914,13 @@ class NGSTk(_AttributeDict):
 			"""
 			m1, s1, w1, m2, s2, w2, m3, s3, w3, m4, s4, w4, q, r = p
 			nfr = expo(x, 2.9e-02, 2.8e-02)
-			nfr[:smallestInsert] = 0
-			return (
-				mlab.normpdf(x, m1, s1) * w1 +
-				mlab.normpdf(x, m2, s2) * w2 +
-				mlab.normpdf(x, m3, s3) * w3 +
-				mlab.normpdf(x, m4, s4) * w4 +
-				nfr)
+			nfr[:smallest_insert] = 0
+
+			return (mlab.normpdf(x, m1, s1) * w1 +
+					mlab.normpdf(x, m2, s2) * w2 +
+					mlab.normpdf(x, m3, s3) * w3 +
+					mlab.normpdf(x, m4, s4) * w4 +
+					nfr)
 
 		def expo(x, q, r):
 			"""
@@ -920,11 +930,13 @@ class NGSTk(_AttributeDict):
 
 		# get fragment sizes
 		fragSizes = getFragmentSizes(bam)
+
 		# bin
-		numBins = np.linspace(0, maxInsert, maxInsert + 1)
+		numBins = np.linspace(0, max_insert, max_insert + 1)
 		y, scatter_x = np.histogram(fragSizes, numBins, density=1)
 		# get the mid-point of each bin
 		x = (scatter_x[:-1] + scatter_x[1:]) / 2
+
 		# Parameters are empirical, need to check
 		paramGuess = [
 			200, 50, 0.7,  # gaussians
@@ -933,28 +945,41 @@ class NGSTk(_AttributeDict):
 			800, 55, 0.045,
 			2.9e-02, 2.8e-02  # exponential
 		]
-		popt3, pcov3 = curve_fit(mixtureFunction, x[smallestInsert:], y[smallestInsert:], p0=paramGuess, maxfev=100000)
+
+		try:
+			popt3, pcov3 = curve_fit(mixtureFunction, x[smallest_insert:], y[smallest_insert:], p0=paramGuess, maxfev=100000)
+		except:
+			print("Nucleosomal fit could not be found.")
+			return
+
 		m1, s1, w1, m2, s2, w2, m3, s3, w3, m4, s4, w4, q, r = popt3
+
 		# Plot
 		plt.figure(figsize=(12, 12))
+
 		# Plot distribution
 		plt.hist(fragSizes, numBins, histtype="step", ec="k", normed=1, alpha=0.5)
+
 		# Plot nucleosomal fits
 		plt.plot(x, mlab.normpdf(x, m1, s1) * w1, 'r-', lw=1.5, label="1st nucleosome")
 		plt.plot(x, mlab.normpdf(x, m2, s2) * w2, 'g-', lw=1.5, label="2nd nucleosome")
 		plt.plot(x, mlab.normpdf(x, m3, s3) * w3, 'b-', lw=1.5, label="3rd nucleosome")
 		plt.plot(x, mlab.normpdf(x, m4, s4) * w4, 'c-', lw=1.5, label="4th nucleosome")
+
 		# Plot nucleosome-free fit
 		nfr = expo(x, 2.9e-02, 2.8e-02)
-		nfr[:smallestInsert] = 0
+		nfr[:smallest_insert] = 0
 		plt.plot(x, nfr, 'k-', lw=1.5, label="nucleosome-free")
+
 		# Plot sum of fits
 		ys = mixtureFunction(x, *popt3)
 		plt.plot(x, ys, 'k--', lw=3.5, label="fit sum")
+
 		plt.legend()
 		plt.xlabel("Fragment size (bp)")
 		plt.ylabel("Density")
 		plt.savefig(plot, bbox_inches="tight")
+
 		# Integrate curves and get areas under curve
 		areas = [
 			["fraction", "area under curve", "max density"],
@@ -964,9 +989,11 @@ class NGSTk(_AttributeDict):
 			["3rd nucleosome", simps(mlab.normpdf(x, m3, s3) * w1), max(mlab.normpdf(x, m3, s3) * w3)],
 			["4th nucleosome", simps(mlab.normpdf(x, m4, s4) * w1), max(mlab.normpdf(x, m4, s4) * w4)]
 		]
+
 		try:
 			import csv
-			with open(outputCSV, "w") as f:
+
+			with open(output_csv, "w") as f:
 				writer = csv.writer(f)
 				writer.writerows(areas)
 		except:
@@ -1049,12 +1076,12 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def macs2CallPeaks(self, treatmentBam, outputDir, sampleName, genome, controlBam=None, broad=False):
-		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
+		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 2.7e9}
 		if not broad:
 			cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 			if controlBam is not None:
 				cmd += " -c {0}".format(controlBam)
-			cmd += " --bw 200 -g {0} -n {0} --outdir {0}".format(sizes[genome], sampleName, outputDir)
+			cmd += " --bw 200 -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 			# --fix-bimodal --extsize 180
 		else:
 			# Parameter setting for broad factors according to Nature Protocols (2012)
@@ -1068,7 +1095,7 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def macs2CallPeaksATACSeq(self, treatmentBam, outputDir, sampleName, genome):
-		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
+		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 2.7e9}
 		cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 		cmd += " --nomodel --extsize 147 -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 		return cmd
