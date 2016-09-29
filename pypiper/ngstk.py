@@ -299,7 +299,7 @@ class NGSTk(_AttributeDict):
 				print("Found .fastq.gz file")
 				if paired_end and not multiclass:
 					# For paired-end reads in one fastq file, we must split the file into 2.
-					cmd = tools.python + " -u " + os.path.join(tools.scripts_dir, "fastq_split.py")
+					cmd = self.tools.python + " -u " + os.path.join(self.tools.scripts_dir, "fastq_split.py")
 					cmd += " -i " + input_file
 					cmd += " -o " + fastq_prefix
 				else:
