@@ -860,7 +860,13 @@ class PipelineManager(object):
 		if os.path.isfile(self.pipeline_stats_file):
 			with open(stats_file, "rb") as stat_file:
 				for line in stat_file:
-					key, value, annotation  = line.split('\t')
+					try:
+						# Someone may have put something that's not 3 columns in the stats file
+						# if so, shame on him, but we can just ignore it.
+						key, value, annotation  = line.split('\t')
+					except ValueError:
+						print("WARNING: Each row in a stats file is expected to have 3 columns")
+
 					if annotation.rstrip() == self.pipeline_name or annotation.rstrip() == "shared":
 						self.stats_dict[key] = value.strip()
 
