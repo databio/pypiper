@@ -1,4 +1,6 @@
 
+import os
+
 class AttributeDict(object):
 	"""
 	A class to convert a nested Dictionary into an object with key-values
@@ -22,7 +24,14 @@ class AttributeDict(object):
 			if type(value) is dict:
 				self.__dict__[key] = AttributeDict(value, default)
 			else:
-				self.__dict__[key] = value
+				try:
+					# try expandvars() to allow the yaml to use
+					# shell variables.
+					self.__dict__[key] = os.path.expandvars(value)  # value
+				except TypeError:
+					# if value is an int, expandvars() will fail; if 
+					# expandvars() fails, just use the raw value
+					self.__dict__[key] = value
 
 	def __getitem__(self, key):
 		"""
