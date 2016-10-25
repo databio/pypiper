@@ -626,11 +626,16 @@ class NGSTk(_AttributeDict):
 
 	def fastqc_rename(self, input_bam, output_dir, sample_name):
 		import os
+		cmds = list()
 		initial = os.path.splitext(os.path.basename(input_bam))[0]
 		cmd1 = self.tools.fastqc + " --noextract --outdir {0} {1}".format(output_dir, input_bam)
-		cmd2 = "mv {0}_fastqc.html {1}_fastqc.html".format(os.path.join(output_dir, initial), os.path.join(output_dir, sample_name))
-		cmd3 = "mv {0}_fastqc.zip {1}_fastqc.zip".format(os.path.join(output_dir, initial), os.path.join(output_dir, sample_name))
-		return [cmd1, cmd2, cmd3]
+		cmds.append(cmd1)
+		if not os.path.exists(os.path.join(output_dir, sample_name + "_fastqc.html")):
+			cmd2 = "mv {0}_fastqc.html {1}_fastqc.html".format(os.path.join(output_dir, initial), os.path.join(output_dir, sample_name))
+			cmd3 = "mv {0}_fastqc.zip {1}_fastqc.zip".format(os.path.join(output_dir, initial), os.path.join(output_dir, sample_name))
+			cmds.append(cmd2)
+			cmds.append(cmd3)
+		return cmds
 
 	def samtools_index(self, bam):
 		"""Index a bam file."""
@@ -772,7 +777,7 @@ class NGSTk(_AttributeDict):
 
 	def bowtie2Map(self, inputFastq1, outputBam, log, metrics, genomeIndex, maxInsert, cpus, inputFastq2=None):
 		# Admits 2000bp-long fragments (--maxins option)
-		cmd = self.tools.bowtie2 + " --very-sensitive -p {0}".format(cpus)
+		cmd = self.tools.bowtie2 + " --very-sensitive --no-discordant -p {0}".format(cpus)
 		cmd += " -x {0}".format(genomeIndex)
 		cmd += " --met-file {0}".format(metrics)
 		if inputFastq2 is None:
@@ -813,6 +818,15 @@ class NGSTk(_AttributeDict):
 		cmd = self.tools.sambamba + " markdup -t {0} -r {1} {2}".format(cpus, inputBam, outputBam)
 		return cmd
 
+	def get_mitochondrial_reads(self, bam_file, output, cpus=4):
+		"""
+		"""
+		tmp_bam = bam_file + "tmp_rmMe"
+		cmd1 = """sambamba index -t {0} {1}""".format(cpus, bam_file)
+		cmd2 = """sambamba slice {0} chrM | sambamba markdup -t 4 /dev/stdin {1} 2> {2}""".format(bam_file, tmp_bam, output)
+		cmd3 = """rm {}""".format(tmp_bam)
+		return [cmd1, cmd2, cmd3]
+
 	def filterReads(self, inputBam, outputBam, metricsFile, paired=False, cpus=16, Q=30):
 		"""
 		Remove duplicates, filter for >Q, remove multiple mapping reads.
@@ -835,7 +849,7 @@ class NGSTk(_AttributeDict):
 
 	def shiftReads(self, inputBam, genome, outputBam):
 		import re
-        # outputBam = re.sub("\.bam$", "", outputBam)
+		# outputBam = re.sub("\.bam$", "", outputBam)
 		cmd = self.tools.samtools + " view -h {0} |".format(inputBam)
 		cmd += " shift_reads.py {0} |".format(genome)
 		cmd += " " + self.tools.samtools + " view -S -b - |"
@@ -1018,7 +1032,7 @@ class NGSTk(_AttributeDict):
 		)
 		cmds.append(cmd1)
 		if normalize:
-			cmds.append("""awk 'NR==FNR{{sum+= $4; next}}{{ $4 = ($4 / sum) * 1000000; print}}' {0}.cov {0}.cov > {0}.normalized.cov""".format(transientFile))
+			cmds.append("""awk 'NR==FNR{{sum+= $4; next}}{{ $4 = ($4 / sum) * 1000000; print}}' {0}.cov {0}.cov | sort -k1,1 -k2,2n > {0}.normalized.cov""".format(transientFile))
 		cmds.append(self.tools.bedGraphToBigWig + " {0}{1}.cov {2} {3}".format(transientFile, ".normalized" if normalize else "", genomeSizes, outputBigWig))
 		# remove tmp files
 		cmds.append("if [[ -s {0}.cov ]]; then rm {0}.cov; fi".format(transientFile))
@@ -1066,7 +1080,7 @@ class NGSTk(_AttributeDict):
 		return [cmd1, cmd2]
 
 	def genomeWideCoverage(self, inputBam, genomeWindows, output):
-		cmd = self.tools.bedtools + " coverage -abam -counts -a {0} -b {1} > {2}".format(inputBam, genomeWindows, output)
+		cmd = self.tools.bedtools + " coverage -counts -abam {0} -b {1} > {2}".format(inputBam, genomeWindows, output)
 		return cmd
 
 	def calculateFRiP(self, inputBam, inputBed, output):
