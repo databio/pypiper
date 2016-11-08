@@ -58,6 +58,12 @@ class NGSTk(_AttributeDict):
 			self.tools = _AttributeDict(dict(), default=True)
 			self.parameters = _AttributeDict(dict(), default=True)
 
+		# If pigz is available, use that. Otherwise, default to gzip.
+		if hasattr(self.pm, "cores") and self.pm.cores > 1 and self.check_command("pigz"):
+			self.ziptool = "pigz -p " + self.pm.cores
+		else:
+			self.ziptool = "gzip"
+
 	def make_dir(self, path):
 		try:
 			os.makedirs(path)
@@ -68,6 +74,23 @@ class NGSTk(_AttributeDict):
 	def make_sure_path_exists(self, path):
 		""" Alias for make_dir """
 		self.make_dir(path)
+
+	# Borrowed from looper
+	def check_command(self, command):
+		"""
+		Check if command can be called.
+		"""
+		import os
+
+		# Use `command` to see if command is callable, store exit code
+		code = os.system("command -v {0} >/dev/null 2>&1 || {{ exit 1; }}".format(command))
+
+		# If exit code is not 0, report which command failed and return False, else return True
+		if code != 0:
+			print("Command is not callable: {0}".format(command))
+			return False
+		else:
+			return True
 
 	def get_file_size(self, filenames):
 		"""
@@ -123,9 +146,6 @@ class NGSTk(_AttributeDict):
 			cmd += r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + out_fastq_pre + '_R1.fastq"; }'
 			cmd += "'"
 		return cmd
-
-
-
 
 
 	def get_input_ext(self, input_file):
@@ -305,7 +325,7 @@ class NGSTk(_AttributeDict):
 				else:
 					# For single-end reads, we just unzip the fastq.gz file.
 					# or, paired-end reads that were already split.
-					cmd = "gunzip -c " + input_file + " > " + output_file
+					cmd = self.ziptool + " -d -c " + input_file + " > " + output_file
 					# a non-shell version
 					# cmd1 = "gunzip --force " + input_file
 					# cmd2 = "mv " + os.path.splitext(input_file)[0] + " " + output_file
