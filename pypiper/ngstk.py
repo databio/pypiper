@@ -147,7 +147,6 @@ class NGSTk(_AttributeDict):
 			cmd += "'"
 		return cmd
 
-
 	def get_input_ext(self, input_file):
 		"""
 		Get the extension of the input_file. Assumes you're using either
@@ -842,9 +841,9 @@ class NGSTk(_AttributeDict):
 		"""
 		"""
 		tmp_bam = bam_file + "tmp_rmMe"
-		cmd1 = """sambamba index -t {0} {1}""".format(cpus, bam_file)
-		cmd2 = """sambamba slice {0} chrM | sambamba markdup -t 4 /dev/stdin {1} 2> {2}""".format(bam_file, tmp_bam, output)
-		cmd3 = """rm {}""".format(tmp_bam)
+		cmd1 = self.tools.sambamba + " index -t {0} {1}".format(cpus, bam_file)
+		cmd2 = self.tools.sambamba + " slice {0} chrM | {1} markdup -t 4 /dev/stdin {2} 2> {3}".format(bam_file, self.tools.sambamba, tmp_bam, output)
+		cmd3 = "rm {}".format(tmp_bam)
 		return [cmd1, cmd2, cmd3]
 
 	def filterReads(self, inputBam, outputBam, metricsFile, paired=False, cpus=16, Q=30):
@@ -868,7 +867,7 @@ class NGSTk(_AttributeDict):
 		return [cmd1, cmd2, cmd3, cmd4]
 
 	def shiftReads(self, inputBam, genome, outputBam):
-		import re
+		# import re
 		# outputBam = re.sub("\.bam$", "", outputBam)
 		cmd = self.tools.samtools + " view -h {0} |".format(inputBam)
 		cmd += " shift_reads.py {0} |".format(genome)
@@ -1052,7 +1051,7 @@ class NGSTk(_AttributeDict):
 		)
 		cmds.append(cmd1)
 		if normalize:
-			cmds.append("""awk 'NR==FNR{{sum+= $4; next}}{{ $4 = ($4 / sum) * 1000000; print}}' {0}.cov {0}.cov | sort -k1,1 -k2,2n > {0}.normalized.cov""".format(transientFile))
+			cmds.append("""awk 'NR==FNR{{sum+= $4; next}}{{ $4 = ($4 / sum) * 1000; print}}' {0}.cov {0}.cov | sort -k1,1 -k2,2n > {0}.normalized.cov""".format(transientFile))
 		cmds.append(self.tools.bedGraphToBigWig + " {0}{1}.cov {2} {3}".format(transientFile, ".normalized" if normalize else "", genomeSizes, outputBigWig))
 		# remove tmp files
 		cmds.append("if [[ -s {0}.cov ]]; then rm {0}.cov; fi".format(transientFile))
@@ -1103,29 +1102,30 @@ class NGSTk(_AttributeDict):
 		cmd = self.tools.bedtools + " coverage -counts -abam {0} -b {1} > {2}".format(inputBam, genomeWindows, output)
 		return cmd
 
-	def calculateFRiP(self, inputBam, inputBed, output):
-		cmd = "cut -f 1,2,3 {0} |".format(inputBed)
-		cmd += self.tools.bedtools + " coverage -counts -abam {0} -b - |".format(inputBam)
-		cmd += " awk '{{sum+=$4}} END {{print sum}}' > {0}".format(output)
+	def calculate_FRiP(self, inputBam, inputBed, output, cpus=4):
+		cmd = self.tools.sambamba + " depth region -t {0}".format(cpus)
+		cmd += " -L {0}".format(inputBed)
+		cmd += " {0}".format(inputBam)
+		cmd += " | awk '{{sum+=$5}} END {{print sum}}' > {0}".format(output)
 		return cmd
 
-	def macs2CallPeaks(self, treatmentBam, outputDir, sampleName, genome, controlBam=None, broad=False):
-		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 2.7e9}
+	def macs2CallPeaks(treatmentBams, outputDir, sampleName, genome, controlBams=None, broad=False, paired=False):
+		"""
+		Use MACS2 to call peaks.
+		"""
+		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
+
+		cmd = "macs2 callpeak -t {0}".format(treatmentBams if type(treatmentBams) is str else " ".join(treatmentBams))
+		if controlBams is not None:
+			cmd += " -c {0}".format(controlBams if type(controlBams) is str else " ".join(controlBams))
+		if paired:
+			cmd += "-f BAMPE "
 		if not broad:
-			cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
-			if controlBam is not None:
-				cmd += " -c {0}".format(controlBam)
-			cmd += " --bw 200 -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
-			# --fix-bimodal --extsize 180
+			cmd += " --fix-bimodal --extsize 180 --bw 200"
 		else:
-			# Parameter setting for broad factors according to Nature Protocols (2012)
-			# Vol.7 No.9 1728-1740 doi:10.1038/nprot.2012.101 Protocol (D) for H3K36me3
-			cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
-			if controlBam is not None:
-				cmd += " -c {0}".format(controlBam)
-			cmd += " --broad --nomodel --extsize 73 --pvalue 1e-3 -g {0} -n {1} --outdir {2}".format(
-				sizes[genome], sampleName, outputDir
-			)
+			cmd += " --broad --nomodel --extsize 73 --pvalue 1e-3"
+		cmd += " -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
+
 		return cmd
 
 	def macs2CallPeaksATACSeq(self, treatmentBam, outputDir, sampleName, genome):
