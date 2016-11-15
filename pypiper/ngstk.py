@@ -263,7 +263,7 @@ class NGSTk(_AttributeDict):
 
 				# At this point, we don't recognize the input file types or they
 				# do not match.
-				raise NotImplementedError("Input files must be of the same type; and can only merge bam of fastq.")
+				raise NotImplementedError("Input files must be of the same type; and can only merge bam or fastq.")
 
 	def input_to_fastq(
 		self, input_file, sample_name,

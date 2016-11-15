@@ -389,8 +389,9 @@ class PipelineManager(object):
 
 		while True:
 			##### Tests block
-			# Base case: Target exists.	# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
-			if target is not None and os.path.isfile(target) and not os.path.isfile(lock_file):
+			# Base case: Target exists (and we don't overwrite); break loop, don't run process.
+			# os.path.exists allows the target to be either a file or directory; .isfile is file-only
+			if target is not None and os.path.exists(target) and not os.path.isfile(lock_file):
 				print("\nTarget exists: `" + target + "`")
 
 				# Normally we don't run the follow, but if you want to force...
@@ -410,8 +411,8 @@ class PipelineManager(object):
 					# when it's done loop through again to try one more time (to see if the target exists now)
 					continue
 
-			# if you get to this point, the target doesn't exist, and the lock_file doesn't exist (or we should overwrite).
-			# create the lock (if you can)
+			# If you get to this point, the target doesn't exist, and the lock_file doesn't exist 
+			# (or we should overwrite). create the lock (if you can)
 			if not self.overwrite_locks:
 				try:
 					self._create_file_racefree(lock_file)  # Create lock
