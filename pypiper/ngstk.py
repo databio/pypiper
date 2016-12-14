@@ -133,7 +133,14 @@ class NGSTk(_AttributeDict):
 		cmd += " VALIDATION_STRINGENCY=SILENT"
 		return cmd
 
-	def bam_to_fastq2(self, bam_file, out_fastq_pre, paired_end):
+	def bam_to_fastq_awk(self, bam_file, out_fastq_pre, paired_end):
+		"""
+		This converts bam file to fastq files, but using awk. As of 2016, this is much faster 
+		than the standard way of doing this using Picard, and also much faster than the 
+		bedtools implementation as well; however, it does no sanity checks and assumes the reads
+		are e
+
+		"""
 		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
 
 		if paired_end:
@@ -146,6 +153,17 @@ class NGSTk(_AttributeDict):
 			cmd += r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + out_fastq_pre + '_R1.fastq"; }'
 			cmd += "'"
 		return cmd
+
+	def bam_to_fastq_bedtools(self, bam_file, out_fastq_pre, paired_end):
+		"""
+		Converts bam to fastq; A version using bedtools
+		"""
+		cmd = self.tools.bedtools + " bamtofastq -i " + bam_file + " -fq " + out_fastq_pre + "_R1.fastq"
+		if paired_end:
+			cmd += " -fq2 " + out_fastq_pre + "_R2.fastq"
+
+		return cmd
+
 
 	def get_input_ext(self, input_file):
 		"""
