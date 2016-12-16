@@ -142,27 +142,33 @@ class NGSTk(_AttributeDict):
 
 		"""
 		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
-
+		fq1 = out_fastq_pre + "_R1.fastq"
 		if paired_end:
+			fq2 = out_fastq_pre + "_R2.fastq"
 			cmd = self.tools.samtools + " view " + bam_file + " | awk '"
-			cmd += r'{ if (NR%2==1) print "@"$1"/1\n"$10"\n+\n"$11 > "' + out_fastq_pre + '_R1.fastq";'
-			cmd += r' else print "@"$1"/2\n"$10"\n+\n"$11 > "' + out_fastq_pre + '_R2.fastq"; }'
+			cmd += r'{ if (NR%2==1) print "@"$1"/1\n"$10"\n+\n"$11 > "' + fq1 + '";'
+			cmd += r' else print "@"$1"/2\n"$10"\n+\n"$11 > "' + fq2 + '"; }'
 			cmd += "'"  # end the awk command
 		else:
+			fq2 = None
 			cmd = self.tools.samtools + " view " + bam_file + " | awk '"
-			cmd += r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + out_fastq_pre + '_R1.fastq"; }'
+			cmd += r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + fq1 + '"; }'
 			cmd += "'"
-		return cmd
+		return cmd, fq1, fq2
 
 	def bam_to_fastq_bedtools(self, bam_file, out_fastq_pre, paired_end):
 		"""
 		Converts bam to fastq; A version using bedtools
 		"""
-		cmd = self.tools.bedtools + " bamtofastq -i " + bam_file + " -fq " + out_fastq_pre + "_R1.fastq"
+		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
+		fq1 = out_fastq_pre + "_R1.fastq"
+		fq2 = None
+		cmd = self.tools.bedtools + " bamtofastq -i " + bam_file + " -fq " + fq1 + ".fastq"
 		if paired_end:
-			cmd += " -fq2 " + out_fastq_pre + "_R2.fastq"
+			fq2 = out_fastq_pre + "_R2.fastq"
+			cmd += " -fq2 " + fq2
 
-		return cmd
+		return cmd, fq1, fq2
 
 
 	def get_input_ext(self, input_file):
