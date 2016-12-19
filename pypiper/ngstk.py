@@ -1126,6 +1126,11 @@ class NGSTk(_AttributeDict):
 		cmd = self.tools.bedtools + " coverage -counts -abam {0} -b {1} > {2}".format(inputBam, genomeWindows, output)
 		return cmd
 
+	def simple_frip(self, input_bam, input_bed):
+		cmd = self.tools.samtools + " view -c -L " + input_bed
+		cmd += " " + input_bam
+		return cmd
+
 	def calculate_FRiP(self, inputBam, inputBed, output, cpus=4):
 		cmd = self.tools.sambamba + " depth region -t {0}".format(cpus)
 		cmd += " -L {0}".format(inputBed)

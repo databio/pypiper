@@ -47,6 +47,8 @@ Additional stuff (to be explained more thorougly soon): You can also add some ot
 
 The most significant of these special keywords is the ``config_file`` argument, which leads us to the concept of ``pipeline config files``:
 
+.. _pipeline_config_files:
+
 Pipeline config files
 *************
 Optionally, you may choose to conform to our standard for parameterizing pipelines, which enables you to use some powerful features of the pypiper system.
