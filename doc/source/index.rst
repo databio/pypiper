@@ -28,12 +28,14 @@ Contents
    features.rst
    tutorials.rst
    outputs.rst
-   commands.rst
+   functions.rst
    advanced.rst
    best-practices.rst
    ngstk.rst
    api.rst
+   faq.rst
    support.rst
+
 
 
 Indices and tables

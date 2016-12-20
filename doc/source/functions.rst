@@ -16,9 +16,10 @@ With that you can create a simple pipeline. You can click on each function to vi
 When you've mastered the basics and are ready to get more powerful, add in a few new (optional) commands that make debugging and development easier:
 
 .. autosummary:: 
-	timestamp
 	clean_add
 	report_result
 	get_stat
-	
+	timestamp
+
+
 The complete documentation for these functions can be found in the :doc:`API <api>`.
