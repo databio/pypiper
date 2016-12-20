@@ -331,12 +331,12 @@ class PipelineManager(object):
 
 	def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, clean=False, follow=None):
 		"""
-		Runs a command. The primary workhorse function of PipelineManager. This is the command execution function, which enforces
-		racefree file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
-		wait for the file lock if it exists, and not produce new output (by default) if the target output file already
-		exists. If the output is to be created, it will first create a lock file to prevent other calls to run
-		(for example, in parallel pipelines) from touching the file while it is being created.
-		It also records the memory of the process and provides some logging output.
+		Runs a shell command. This is the primary workhorse function of PipelineManager. This is the command  execution
+		function, which enforces racefree file-locking, enables restartability, and multiple pipelines can produce/use
+		the same files. The function will wait for the file lock if it exists, and not produce new output (by default)
+		if the target output file already exists. If the output is to be created, it will first create a lock file to
+		prevent other calls to run (for example, in parallel pipelines) from touching the file while it is being
+		created. It also records the memory of the process and provides some logging output
 
 		:param cmd: Shell command(s) to be run.
 		:type cmd: str or list
@@ -407,7 +407,7 @@ class PipelineManager(object):
 				if self.overwrite_locks:
 					print("Found lock file; overwriting this target...")
 				else:  # don't overwite locks
-					self.wait_for_lock(lock_file)
+					self._wait_for_lock(lock_file)
 					# when it's done loop through again to try one more time (to see if the target exists now)
 					continue
 
@@ -478,7 +478,7 @@ class PipelineManager(object):
 			they will not cause the pipeline to bail out.
 		:type nofail: bool
 		"""
-		self.report_command(cmd)
+		self._report_command(cmd)
 
 
 		if shell == "guess":
@@ -533,7 +533,7 @@ class PipelineManager(object):
 		# if shell=False, then we format the command (with split()) to be a list of command and its arguments.
 		# Split the command to use shell=False;
 		# leave it together to use shell=True;
-		self.report_command(cmd)
+		self._report_command(cmd)
 		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
 
@@ -593,7 +593,7 @@ class PipelineManager(object):
 			# set self.maxmem
 			self.peak_memory = max(self.peak_memory, local_maxmem)
 			# report process profile
-			self.report_profile(self.proc_name, self.proc_lock_name, time.time() - self.proc_start_time, local_maxmem)
+			self._report_profile(self.proc_name, self.proc_lock_name, time.time() - self.proc_start_time, local_maxmem)
 			self.running_subprocess = None
 			self.proc_lock_name = None
 			self.proc_start_time = None
@@ -640,7 +640,7 @@ class PipelineManager(object):
 			raise Exception("Process returned nonzero result.")
 		return [p.returncode, local_maxmem]
 
-	def wait_for_lock(self, lock_file):
+	def _wait_for_lock(self, lock_file):
 		"""
 		Just sleep until the lock_file does not exist.
 
@@ -665,7 +665,7 @@ class PipelineManager(object):
 		if first_message_flag:
 			self.timestamp("File unlocked.")
 
-	def wait_for_file(self, file_name, lock_name = None):
+	def _wait_for_file(self, file_name, lock_name = None):
 		"""
 		Just sleep until the file_name DOES exist.
 
@@ -698,7 +698,7 @@ class PipelineManager(object):
 		if first_message_flag:
 			self.timestamp("File exists.")
 
-		self.wait_for_lock(lock_file)
+		self._wait_for_lock(lock_file)
 
 	###################################
 	# Logging functions
@@ -730,7 +730,7 @@ class PipelineManager(object):
 		"""
 		return round(time.time() - time_since, 0)
 
-	def report_profile(self, command, lock_name, elapsed_time, memory):
+	def _report_profile(self, command, lock_name, elapsed_time, memory):
 		"""
 		Writes a string to self.pipeline_profile_file.
 
@@ -776,7 +776,7 @@ class PipelineManager(object):
 
 		while True:
 			if os.path.isfile(lock_file):
-				self.wait_for_lock(lock_file)
+				self._wait_for_lock(lock_file)
 			else:
 				try:
 					self._create_file_racefree(lock_file)  # Create lock
@@ -794,7 +794,7 @@ class PipelineManager(object):
 				# If you make it to the end of the while loop, you're done
 				break
 
-	def report_command(self, cmd):
+	def _report_command(self, cmd):
 		"""
 		Writes a command to self.pipeline_commands_file.
 
@@ -876,7 +876,14 @@ class PipelineManager(object):
 
 	def get_stat(self, key):
 		"""
-		Returns a stats key reported by this pipeline.
+		Returns a stat that was previously reported. This is necessary for reporting new stats that are
+		derived from two stats, one of which may have been reported by an earlier run. For example, 
+		if you first use report_result to report (number of trimmed reads), and then in a later stage
+		want to report alignment rate, then this second stat (alignment rate) will require knowing the 
+		first stat (number of trimmed reads); however, that may not have been calculated in the current
+		pipeline run, so we must retrieve it from the stats.tsv output file. This command will retrieve
+		such previously reported stats if they were not already calculated in the current pipeline run.
+		:param key: key of stat to retrieve		
 		"""
 
 		if self.stats_dict.has_key(key):
@@ -928,7 +935,7 @@ class PipelineManager(object):
 			print("</pre>")
 			# record profile of any running processes before killing
 			elapsed_time = time.time() - self.proc_start_time
-			self.report_profile(self.proc_name, self.proc_lock_name, elapsed_time, self.peak_memory)
+			self._report_profile(self.proc_name, self.proc_lock_name, elapsed_time, self.peak_memory)
 
 			self._kill_child_process(pid_to_kill)
 		if self.status != "failed":  # and self.status != "completed":

@@ -1,8 +1,8 @@
 
-Commands
+Pypiper Functions
 =========================
 
-The key things you need to know that the ``PipelineManager`` can do are:
+Pypiper is simple, but powerful. You only need 3 functions to get started. ``PipelineManager`` can do:
 
 .. currentmodule:: pypiper.pypiper.PipelineManager
 .. autosummary:: 
@@ -11,6 +11,15 @@ The key things you need to know that the ``PipelineManager`` can do are:
 	stop_pipeline
 
 
-With that you can create a simple pipeline.
+With that you can create a simple pipeline. You can click on each function to view the in-depth documentation for that function. There are quite a few optional parameters to the ``run`` function, which is where most of Pypiper's power comes from
 
-Complete specifications for these and the more advanced functions can be found in the :doc:`API <api>`.
+When you've mastered the basics and are ready to get more powerful, add in a few new (optional) commands that make debugging and development easier:
+
+.. autosummary:: 
+	clean_add
+	report_result
+	get_stat
+	timestamp
+
+
+The complete documentation for these functions can be found in the :doc:`API <api>`.
