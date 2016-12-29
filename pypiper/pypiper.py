@@ -239,7 +239,6 @@ class PipelineManager(object):
 		gitvars = {}
 		try:
 			gitvars['pypiper_dir'] = os.path.dirname(os.path.realpath(__file__))
-			print("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD 2>/dev/null")
 			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
 			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
 			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
