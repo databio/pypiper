@@ -336,7 +336,8 @@ class NGSTk(_AttributeDict):
 
 			if input_ext == ".bam":
 				print("Found .bam file")
-				cmd = self.bam_to_fastq(input_file, fastq_prefix, paired_end)
+				#cmd = self.bam_to_fastq(input_file, fastq_prefix, paired_end)
+				cmd, fq1, fq2 = self.bam_to_fastq_awk(input_file, fastq_prefix, paired_end)
 				# pm.run(cmd, output_file, follow=check_fastq)
 			elif input_ext == ".fastq.gz":
 				print("Found .fastq.gz file")
