@@ -33,4 +33,4 @@ Now string together whatever commands your pipeline requires! At the end, termin
 
 That's it! By running commands through ``run()`` instead of directly in bash, you get a robust, logged, restartable pipeline manager for free!
 
-To see an example of a simple pipline, look in the `example_pipelines` folder in this respository (also listed here under tutorials), which are thoroughly commented to act as vignettes. This is the best way to learn how to use Pyipiper.
+Go to the next page (:doc:`basic tutorial <tutorials-basic>`) to see a more complicated example.

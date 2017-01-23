@@ -239,7 +239,6 @@ class PipelineManager(object):
 		gitvars = {}
 		try:
 			gitvars['pypiper_dir'] = os.path.dirname(os.path.realpath(__file__))
-			print("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD 2>/dev/null")
 			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
 			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
 			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
@@ -331,12 +330,12 @@ class PipelineManager(object):
 
 	def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, clean=False, follow=None):
 		"""
-		Runs a command. The primary workhorse function of PipelineManager. This is the command execution function, which enforces
-		racefree file-locking, enables restartability, and multiple pipelines can produce/use the same files. The function will
-		wait for the file lock if it exists, and not produce new output (by default) if the target output file already
-		exists. If the output is to be created, it will first create a lock file to prevent other calls to run
-		(for example, in parallel pipelines) from touching the file while it is being created.
-		It also records the memory of the process and provides some logging output.
+		Runs a shell command. This is the primary workhorse function of PipelineManager. This is the command  execution
+		function, which enforces racefree file-locking, enables restartability, and multiple pipelines can produce/use
+		the same files. The function will wait for the file lock if it exists, and not produce new output (by default)
+		if the target output file already exists. If the output is to be created, it will first create a lock file to
+		prevent other calls to run (for example, in parallel pipelines) from touching the file while it is being
+		created. It also records the memory of the process and provides some logging output
 
 		:param cmd: Shell command(s) to be run.
 		:type cmd: str or list
@@ -389,8 +388,9 @@ class PipelineManager(object):
 
 		while True:
 			##### Tests block
-			# Base case: Target exists.	# Scenario 3: Target exists (and we don't overwrite); break loop, don't run process.
-			if target is not None and os.path.isfile(target) and not os.path.isfile(lock_file):
+			# Base case: Target exists (and we don't overwrite); break loop, don't run process.
+			# os.path.exists allows the target to be either a file or directory; .isfile is file-only
+			if target is not None and os.path.exists(target) and not os.path.isfile(lock_file):
 				print("\nTarget exists: `" + target + "`")
 
 				# Normally we don't run the follow, but if you want to force...
@@ -406,12 +406,12 @@ class PipelineManager(object):
 				if self.overwrite_locks:
 					print("Found lock file; overwriting this target...")
 				else:  # don't overwite locks
-					self.wait_for_lock(lock_file)
+					self._wait_for_lock(lock_file)
 					# when it's done loop through again to try one more time (to see if the target exists now)
 					continue
 
-			# if you get to this point, the target doesn't exist, and the lock_file doesn't exist (or we should overwrite).
-			# create the lock (if you can)
+			# If you get to this point, the target doesn't exist, and the lock_file doesn't exist 
+			# (or we should overwrite). create the lock (if you can)
 			if not self.overwrite_locks:
 				try:
 					self._create_file_racefree(lock_file)  # Create lock
@@ -477,7 +477,7 @@ class PipelineManager(object):
 			they will not cause the pipeline to bail out.
 		:type nofail: bool
 		"""
-		self.report_command(cmd)
+		self._report_command(cmd)
 
 
 		if shell == "guess":
@@ -532,7 +532,7 @@ class PipelineManager(object):
 		# if shell=False, then we format the command (with split()) to be a list of command and its arguments.
 		# Split the command to use shell=False;
 		# leave it together to use shell=True;
-		self.report_command(cmd)
+		self._report_command(cmd)
 		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
 
@@ -592,7 +592,7 @@ class PipelineManager(object):
 			# set self.maxmem
 			self.peak_memory = max(self.peak_memory, local_maxmem)
 			# report process profile
-			self.report_profile(self.proc_name, self.proc_lock_name, time.time() - self.proc_start_time, local_maxmem)
+			self._report_profile(self.proc_name, self.proc_lock_name, time.time() - self.proc_start_time, local_maxmem)
 			self.running_subprocess = None
 			self.proc_lock_name = None
 			self.proc_start_time = None
@@ -639,7 +639,7 @@ class PipelineManager(object):
 			raise Exception("Process returned nonzero result.")
 		return [p.returncode, local_maxmem]
 
-	def wait_for_lock(self, lock_file):
+	def _wait_for_lock(self, lock_file):
 		"""
 		Just sleep until the lock_file does not exist.
 
@@ -664,7 +664,7 @@ class PipelineManager(object):
 		if first_message_flag:
 			self.timestamp("File unlocked.")
 
-	def wait_for_file(self, file_name, lock_name = None):
+	def _wait_for_file(self, file_name, lock_name = None):
 		"""
 		Just sleep until the file_name DOES exist.
 
@@ -697,7 +697,7 @@ class PipelineManager(object):
 		if first_message_flag:
 			self.timestamp("File exists.")
 
-		self.wait_for_lock(lock_file)
+		self._wait_for_lock(lock_file)
 
 	###################################
 	# Logging functions
@@ -729,7 +729,7 @@ class PipelineManager(object):
 		"""
 		return round(time.time() - time_since, 0)
 
-	def report_profile(self, command, lock_name, elapsed_time, memory):
+	def _report_profile(self, command, lock_name, elapsed_time, memory):
 		"""
 		Writes a string to self.pipeline_profile_file.
 
@@ -775,7 +775,7 @@ class PipelineManager(object):
 
 		while True:
 			if os.path.isfile(lock_file):
-				self.wait_for_lock(lock_file)
+				self._wait_for_lock(lock_file)
 			else:
 				try:
 					self._create_file_racefree(lock_file)  # Create lock
@@ -793,7 +793,7 @@ class PipelineManager(object):
 				# If you make it to the end of the while loop, you're done
 				break
 
-	def report_command(self, cmd):
+	def _report_command(self, cmd):
 		"""
 		Writes a command to self.pipeline_commands_file.
 
@@ -860,7 +860,13 @@ class PipelineManager(object):
 		if os.path.isfile(self.pipeline_stats_file):
 			with open(stats_file, "rb") as stat_file:
 				for line in stat_file:
-					key, value, annotation  = line.split('\t')
+					try:
+						# Someone may have put something that's not 3 columns in the stats file
+						# if so, shame on him, but we can just ignore it.
+						key, value, annotation  = line.split('\t')
+					except ValueError:
+						print("WARNING: Each row in a stats file is expected to have 3 columns")
+
 					if annotation.rstrip() == self.pipeline_name or annotation.rstrip() == "shared":
 						self.stats_dict[key] = value.strip()
 
@@ -869,7 +875,14 @@ class PipelineManager(object):
 
 	def get_stat(self, key):
 		"""
-		Returns a stats key reported by this pipeline.
+		Returns a stat that was previously reported. This is necessary for reporting new stats that are
+		derived from two stats, one of which may have been reported by an earlier run. For example, 
+		if you first use report_result to report (number of trimmed reads), and then in a later stage
+		want to report alignment rate, then this second stat (alignment rate) will require knowing the 
+		first stat (number of trimmed reads); however, that may not have been calculated in the current
+		pipeline run, so we must retrieve it from the stats.tsv output file. This command will retrieve
+		such previously reported stats if they were not already calculated in the current pipeline run.
+		:param key: key of stat to retrieve		
 		"""
 
 		if self.stats_dict.has_key(key):
@@ -921,7 +934,7 @@ class PipelineManager(object):
 			print("</pre>")
 			# record profile of any running processes before killing
 			elapsed_time = time.time() - self.proc_start_time
-			self.report_profile(self.proc_name, self.proc_lock_name, elapsed_time, self.peak_memory)
+			self._report_profile(self.proc_name, self.proc_lock_name, elapsed_time, self.peak_memory)
 
 			self._kill_child_process(pid_to_kill)
 		if self.status != "failed":  # and self.status != "completed":
@@ -1143,97 +1156,143 @@ class Tee(object):
 
 
 # @staticmethod
-def add_pypiper_args(parser, looper_args=False, common_args=False, ngs_args=False, all_args=False):
+def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = False):
 	"""
-	Static method to add default automatic args to an ArgumentParser.
+	Adds default automatic args to an ArgumentParser. Use this to add standardized 
+	pypiper arguments to your python pipeline.
 
-	Use this to take an ArgumentParser in your pipeline, and also parse
-	default pypiper arguments.
+	There are two ways to use `add_pypiper_args`: by specifying argument groups,
+	or by specifying individual arguments. Specifying argument groups will add
+	multiple arguments to your parser; these convenient argumenet groupings make it
+	easy to add arguments to certain types of pipeline. For example, to make a
+	looper-compatible pipeline, use `groups = ["pypiper", "looper"]`.
 
 	:param parser: an ArgumentParser object from your pipeline
-	:param looper_args: Adds additional arguments to standardize a
-		common interface to looper.py.
-	:returns: A new ArgumentParser object, with default pypiper arguments added
+	:param groups: Adds arguments belong to specified group of args.
+		 Options are: pypiper, config, looper, resources, common, ngs, all.
+	:type groups: list
+	:param args: You may specify a list of specific arguments one by one.
+	:type args: list
+
+	:returns: A new ArgumentParser object, with selected pypiper arguments added
 	"""
-	
-	# Basic pypiper arguments actually used by pypiper
-	parser.add_argument(
-		'-R', '--recover', dest='recover', action='store_true',
-		default=False, help='Recover mode, overwrite locks')
-	parser.add_argument(
-		'-N', '--new-start', dest='fresh', action='store_true',
-		default=False, help='Fresh start mode, overwrite all')
-	parser.add_argument(
-		'-D', '--dirty', dest='manual_clean', action='store_true',
-		default=False, help='Make all cleanups manual')  # Useful for debugging
-	parser.add_argument(
-		'-F', '--follow', dest='force_follow', action='store_true',
-		default=False, help='Run all follow commands, even if command is not run')  # Recalculating stats
+
+	# A Dict that defines groups of arguments. If the keys in this dict
+	# are specified under "groups", then all of the arguments for any specified
+	# group will be added.
+
+	args_list = {"pypiper" : ["recover", "new-start", "dirty", "follow"],
+				"config" : ["config"],
+				"resource" : ["mem", "cores"],
+				"looper" : ["config", "output-parent", "mem", "cores"],
+				"common" : ["input", "sample-name"],
+				"ngs" : ["input", "sample-name", "input2", "genome", "single-or-paired"]
+				}
 
 
-	# Additional arguments *not* used by pypiper, but added for convenience
-	# to create a standard interface (optional)
 
-	if (all_args):
-		looper_args = True
-		common_args = True
-		ngs_args = True
+	# any argument in any group is added to a new group called "all"
+	args_list["all"] = list(set(sum(args_list.values(), [])))
 
-	if (looper_args):
-		# Default config: name of the pipeline with .yaml extension
-		default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
+	args_to_add = set()
+	# accumulate args to add based on parameters passed to this method
 
-		# Arguments to optimize the intervace to looper
-		parser.add_argument(
-			"-C", "--config", dest="config_file", type=str,
-			help="pipeline config file in YAML format; relative paths are \
-			considered relative to the pipeline script. \
-			defaults to " + default_config,
-			required=False, default=default_config, metavar="CONFIG_FILE")
-		parser.add_argument(
-			"-O", "--output-parent", dest="output_parent", type=str,
-			help="parent output directory of the project (required). The sample_name \
-			argument will be appended to this folder for output",
-			required=True, metavar="PARENT_OUTPUT_FOLDER")
-		# output_parent was previously called project_root
-		parser.add_argument(
-			"-P", "--cores", dest="cores", type=str,
-			help="number of cores to use for parallel processes",
-			required=False, default=1, metavar="NUMBER_OF_CORES")
-		parser.add_argument(
-			"-M", "--mem", dest="mem", type=str,
-			help="Memory string for processes that accept memory limits (like java)",
-			required=False, default="4000", metavar="MEMORY_LIMIT")
+	#if basic:
+	#	args_to_add.update(args_list["basic"])
 
-	if (common_args):
-		# Arguments typically used in every pipeline
-		parser.add_argument(
-			"-I", "--input", dest="input", type=str, nargs="+",
-			help="One or more primary input files (required)",
-			required=False, metavar="INPUT_FILES")
-		# input was previously called unmapped_bam
+	if groups:
+		if type(groups) != list:
+			groups = [groups]
 
-		parser.add_argument(
-			"-S", "--sample-name", dest="sample_name", type=str,
-			help="unique name for output subfolder and files (required)",
-			required=False, metavar="SAMPLE_NAME")
+		# For backwards-compatilibity
+		if all_args:
+			groups.append("all")
 
-	if (ngs_args):
-		# Common arguments specific to NGS pipelines
-		parser.add_argument(
-			"-I2", "--input2", dest="input2", type=str, nargs="+",
-			help="One or more secondary input files (if they exists); \
-			for example, second read in pair.",
-			required=False, default=None, metavar="INPUT_FILES2")
+		for group in groups:
+			args_to_add.update(args_list[group])
 
-		parser.add_argument(
-			"-G", "--genome", dest="genome_assembly", type=str,
-			help="identifier for genome assempbly (required)",
-			required=False)
+	if args:
+		if type(args) != list:
+			args = [args]
+		args_to_add.update(args)
 
-		parser.add_argument(
-			"-Q", "--single-or-paired", dest="single_or_paired", type=str,
-			help="single or paired end? default: single",
-			required=False, default="single")
+	#print(args_to_add)
+
+	for arg in args_to_add:	
+		# Basic pypiper arguments actually used by pypiper
+		if arg == "recover":
+			parser.add_argument(
+				'-R', '--recover', dest='recover', action='store_true',
+				default=False, help='Recover mode, overwrite locks')
+		if arg == "new-start":
+			parser.add_argument(
+				'-N', '--new-start', dest='fresh', action='store_true',
+				default=False, help='Fresh start mode, overwrite all')
+		if arg == "dirty":
+			parser.add_argument(
+				'-D', '--dirty', dest='manual_clean', action='store_true',
+				default=False, help='Make all cleanups manual')  # Useful for debugging
+		if arg == "follow":
+			parser.add_argument(
+				'-F', '--follow', dest='force_follow', action='store_true',
+				default=False, help='Run all follow commands, even if command is not run')  # Recalculating stats
+
+		if arg == "config":
+			default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
+			# Arguments to optimize the interface to looper
+			parser.add_argument(
+				"-C", "--config", dest="config_file", type=str,
+				help="pipeline config file in YAML format; relative paths are \
+				considered relative to the pipeline script. \
+				defaults to " + default_config,
+				required=False, default=default_config, metavar="CONFIG_FILE")
+		if arg == "output-parent":	
+			parser.add_argument(
+				"-O", "--output-parent", dest="output_parent", type=str,
+				help="parent output directory of the project (required).",
+				required=False, metavar="PARENT_OUTPUT_FOLDER")
+			# output_parent was previously called project_root
+
+		if arg == "cores":
+			parser.add_argument(
+				"-P", "--cores", dest="cores", type=str,
+				help="number of cores to use for parallel processes",
+				required=False, default=1, metavar="NUMBER_OF_CORES")
+		if arg == "mem":	
+			parser.add_argument(
+				"-M", "--mem", dest="mem", type=str,
+				help="Memory string for processes that accept memory limits (like java)",
+				required=False, default="4000", metavar="MEMORY_LIMIT")
+
+		if arg == "input":
+			# Arguments typically used in every pipeline
+			parser.add_argument(
+				"-I", "--input", dest="input", type=str, nargs="+",
+				help="One or more primary input files (required)",
+				required=False, metavar="INPUT_FILES")
+			# input was previously called unmapped_bam
+		if arg == "sample-name":
+			parser.add_argument(
+				"-S", "--sample-name", dest="sample_name", type=str,
+				help="unique name for output subfolder and files (required)",
+				required=False, metavar="SAMPLE_NAME")
+
+		if arg == "input2":
+			# Common arguments specific to NGS pipelines
+			parser.add_argument(
+				"-I2", "--input2", dest="input2", type=str, nargs="+",
+				help="One or more secondary input files (if they exists); \
+				for example, second read in pair.",
+				required=False, default=None, metavar="INPUT_FILES2")
+		if arg == "genome":
+			parser.add_argument(
+				"-G", "--genome", dest="genome_assembly", type=str,
+				help="identifier for genome assempbly (required)",
+				required=False)
+		if arg == "single-or-paired":
+			parser.add_argument(
+				"-Q", "--single-or-paired", dest="single_or_paired", type=str,
+				help="single or paired end? default: single",
+				required=False, default="single")
 
 	return(parser)
