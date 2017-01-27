@@ -652,6 +652,7 @@ class PipelineManager(object):
 		while os.path.isfile(lock_file):
 			if first_message_flag is False:
 				self.timestamp("Waiting for file lock: " + lock_file)
+				self.set_status_flag("waiting")
 				first_message_flag = True
 			else:
 				sys.stdout.write(".")
@@ -663,6 +664,7 @@ class PipelineManager(object):
 
 		if first_message_flag:
 			self.timestamp("File unlocked.")
+			self.set_status_flag("running")
 
 	def _wait_for_file(self, file_name, lock_name = None):
 		"""
