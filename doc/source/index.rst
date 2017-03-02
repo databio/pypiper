@@ -22,16 +22,34 @@ Contents
 ^^^^^^^^
 
 .. toctree::
-   :maxdepth: 2
+   :caption: Getting Started
+   :maxdepth: 1
 
    intro.rst
+   hello-world.rst
+   usage.rst
    features.rst
-   tutorials.rst
    outputs.rst
+
+.. toctree::
+   :caption: Developing Pipelines
+   :maxdepth: 2
+
+   tutorials.rst
    functions.rst
    advanced.rst
    best-practices.rst
+
+.. toctree::
+   :caption: Toolkits
+   :maxdepth: 2
+
    ngstk.rst
+
+.. toctree::
+   :caption: Further Reading
+   :maxdepth: 2
+
    api.rst
    faq.rst
    support.rst
