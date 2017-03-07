@@ -328,7 +328,7 @@ class PipelineManager(object):
 	# Process calling functions
 	###################################
 
-	def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, clean=False, follow=None):
+	def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, clean=False, follow=None, container=None):
 		"""
 		Runs a shell command. This is the primary workhorse function of PipelineManager. This is the command  execution
 		function, which enforces racefree file-locking, enables restartability, and multiple pipelines can produce/use
@@ -351,6 +351,7 @@ class PipelineManager(object):
 		:type nofail: bool
 		:param clean: True means the target file will be automatically added to a auto cleanup list. Optional.
 		:type clean: bool
+		:param container: Runs commands in given named docker container.
 		:returns: Return code of process. If a list of commands is passed, this is the maximum of all return codes for all commands.
 		:rtype: int
 		"""
@@ -432,12 +433,12 @@ class PipelineManager(object):
 
 			if isinstance(cmd, list):  # Handle command lists
 				for cmd_i in cmd:
-					list_ret, list_maxmem = self.callprint(cmd_i, shell, nofail)
+					list_ret, list_maxmem = self.callprint(cmd_i, shell, nofail, container)
 					local_maxmem = max(local_maxmem, list_maxmem)
 					process_return_code = max(process_return_code, list_ret)
 
 			else:  # Single command (most common)
-				process_return_code, local_maxmem = self.callprint(cmd, shell, nofail)  # Run command
+				process_return_code, local_maxmem = self.callprint(cmd, shell, nofail, container)  # Run command
 
 			# For temporary files, you can specify a clean option to automatically
 			# add them to the clean list, saving you a manual call to clean_add
@@ -507,7 +508,7 @@ class PipelineManager(object):
 
 		return returnvalue
 
-	def callprint(self, cmd, shell="guess", nofail=False):
+	def callprint(self, cmd, shell="guess", nofail=False, container=None):
 		"""
 		Prints the command, and then executes it, then prints the memory use and
 		return code of the command.
@@ -532,6 +533,9 @@ class PipelineManager(object):
 		# if shell=False, then we format the command (with split()) to be a list of command and its arguments.
 		# Split the command to use shell=False;
 		# leave it together to use shell=True;
+
+		if container:
+			cmd = "docker exec " + container + " " + cmd
 		self._report_command(cmd)
 		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
