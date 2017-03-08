@@ -77,6 +77,7 @@ class PipelineManager(object):
 		# For now, we assume the memory is in megabytes.
 		# this could become customizable if necessary
 		self.mem = params['mem'] + "m"
+		self.container = None
 
 		# We use this memory to pass a memory limit to processes like java that
 		# can take a memory limit, so they don't get killed by a SLURM (or other
@@ -327,7 +328,6 @@ class PipelineManager(object):
 	###################################
 	# Process calling functions
 	###################################
-
 	def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, clean=False, follow=None, container=None):
 		"""
 		Runs a shell command. This is the primary workhorse function of PipelineManager. This is the command  execution
@@ -579,7 +579,7 @@ class PipelineManager(object):
 
 			while p.poll() is None:
 				if not shell:
-					local_maxmem = max(local_maxmem, self._memory_usage(p.pid)/1e6)
+					local_maxmem = max(local_maxmem, self._memory_usage(p.pid, container=container)/1e6)
 					# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
 				time.sleep(sleeptime)
 				sleeptime = min(sleeptime + 5, 60)
@@ -1012,6 +1012,27 @@ class PipelineManager(object):
 			# sys.stdout.flush()
 			os.kill(child_pid, signal.SIGTERM)
 
+	def atexit_register(self, *args):
+		""" Convenience alias to register exit functions without having to import atexit in the pipeline. """
+		atexit.register(*args)
+
+	def get_container(self, image, mounts):
+		# image is something like "nsheff/refgenie"
+		cmd = "docker run -itd"
+		for mnt in mounts:
+			absmnt = os.path.abspath(mnt)
+			cmd += " -v " + absmnt + ":" + absmnt
+		cmd += " " + image
+		container = pm.checkprint(cmd).rstrip()
+		self.container = container
+		print("Using docker container: " + container)
+		self.atexit_register(remove_container, container)
+
+	def remove_container(container):
+		print("Removing docker container...")
+		cmd = "docker rm -f " + container
+		pm.callprint(cmd)
+
 	def clean_add(self, regex, conditional=False, manual=False):
 		"""
 		Add files (or regexs) to a cleanup list, to delete when this pipeline completes successfully.
@@ -1111,7 +1132,7 @@ class PipelineManager(object):
 					except:
 						pass
 
-	def _memory_usage(self, pid='self', category="hwm"):
+	def _memory_usage(self, pid='self', category="hwm", container=None):
 		"""
 		Memory usage of the process in kilobytes.
 
@@ -1120,6 +1141,23 @@ class PipelineManager(object):
 		:param category: Memory type to check. 'hwm' for high water mark.
 		:type category: str
 		"""
+		if container:
+			# TODO: Put some debug output here with switch to Logger
+			# since this is relatively untested.
+			cmd = "docker stats " + container + " --format '{{.MemUsage}}' --no-stream"
+			mem_use_str = subprocess.check_output(cmd, shell=True)
+			mem_use = mem_use_str.split("/")[0].split()
+			mem_use[0] = float(mem_use[0])
+			if mem_use[1] == "GiB":
+				return mem_use[0] * 1e6
+			elif mem_use[1] == "MiB":
+				return mem_use[0] * 1e3
+			elif mem_use[1] == "KiB":
+				return mem_use[0]
+			else:
+				# What type is this?
+				return 0
+
 		# Thanks Martin Geisler:
 		status = None
 		result = {'peak': 0, 'rss': 0, 'hwm': 0}
