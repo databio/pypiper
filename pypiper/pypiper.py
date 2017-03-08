@@ -1032,10 +1032,10 @@ class PipelineManager(object):
 		print("Using docker container: " + container)
 		self.atexit_register(self.remove_container, container)
 
-	def remove_container(container):
+	def remove_container(self, container):
 		print("Removing docker container...")
 		cmd = "docker rm -f " + container
-		pm.callprint(cmd)
+		self.callprint(cmd)
 
 	def clean_add(self, regex, conditional=False, manual=False):
 		"""
