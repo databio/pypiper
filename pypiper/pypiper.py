@@ -1020,15 +1020,17 @@ class PipelineManager(object):
 
 	def get_container(self, image, mounts):
 		# image is something like "nsheff/refgenie"
+		if type(mounts) == str:
+			mounts = [mounts]
 		cmd = "docker run -itd"
 		for mnt in mounts:
 			absmnt = os.path.abspath(mnt)
 			cmd += " -v " + absmnt + ":" + absmnt
 		cmd += " " + image
-		container = pm.checkprint(cmd).rstrip()
+		container = self.checkprint(cmd).rstrip()
 		self.container = container
 		print("Using docker container: " + container)
-		self.atexit_register(remove_container, container)
+		self.atexit_register(self.remove_container, container)
 
 	def remove_container(container):
 		print("Removing docker container...")

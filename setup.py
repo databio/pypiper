@@ -16,9 +16,9 @@ except ImportError:
         extra['dependencies'] = ['argparse']
 
 
-with open("looper/_version.py", 'r') as versionfile:
+with open("pypiper/_version.py", 'r') as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
-    
+
 setup(
     name='pypiper',
     packages=['pypiper'],
