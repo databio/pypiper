@@ -13,6 +13,7 @@ import time
 import atexit, signal, platform
 import __main__
 from AttributeDict import AttributeDict
+from _version import __version__
 
 import shlex # for splitting commands like a shell does
 import datetime
@@ -270,7 +271,8 @@ class PipelineManager(object):
 		print("* " + "Python version".rjust(20) + ":  " + platform.python_version())
 		try:
 			print("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
-			print("* " + "Pypiper version".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
+			print("* " + "Pypiper version".rjust(20) + ":  " + __version__)
+			print("* " + "Pypiper hash".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
 			print("* " + "Pypiper branch".rjust(20) + ":  " + gitvars['pypiper_branch'].strip())
 			print("* " + "Pypiper date".rjust(20) + ":  " + gitvars['pypiper_date'].strip())
 			if (gitvars['pypiper_diff'] != ""):

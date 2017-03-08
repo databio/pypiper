@@ -59,8 +59,7 @@ copyright = u'2015, Nathan Sheffield, Johanna Klughammer, Andre Rendeiro'
 # built documents.
 #
 # The short X.Y version.
-version = open(os.path.join("..", "..", "VERSION")).read().strip()
-
+version = open(os.path.join("..", "..", "pypiper", "_version.py")).read().strip().split(" ")[-1].strip('"')
 # The full version, including alpha/beta/rc tags.
 release = version
 
