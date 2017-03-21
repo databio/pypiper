@@ -347,7 +347,7 @@ class PipelineManager(object):
 		:type lock_name: str or None
 		:param shell: If command requires should be run in its own shell. Optional. Default: "guess" -- run will try to determine if the command requires a shell.
 		:type shell: bool
-		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
+		:param nofail: Should the pipeline proceed past a nonzero return from a process? Default: False
 			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 			they will not cause the pipeline to bail out.
 		:type nofail: bool
