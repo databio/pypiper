@@ -40,7 +40,7 @@ class Mailer(object):
         # Determine the destinations.
         if isinstance(dest, str):
             dests = [dest]
-            dest_text = self.src
+            dest_text = dest
         else:
             # Assume we have an iterable of destinations.
             # Allow TypeError if False.
