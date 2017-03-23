@@ -18,6 +18,8 @@ from _version import __version__
 import shlex # for splitting commands like a shell does
 import datetime
 
+
+
 class PipelineManager(object):
 	"""
 	Base class for instantiating a PipelineManager object, the main class of Pypiper
@@ -43,7 +45,9 @@ class PipelineManager(object):
 		manual_clean=False, recover=False, fresh=False,
 		force_follow=False,
 		cores=1, mem="1000",
-		config_file=None, output_parent=None):
+		config_file=None, output_parent=None,
+		email=None
+	):
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
 		# to Pypiper. If any pypiper arguments are passed
@@ -103,6 +107,9 @@ class PipelineManager(object):
 		self.pipeline_stats_file = self.pipeline_outfolder + "stats.tsv"
 		self.pipeline_commands_file = self.pipeline_outfolder + self.pipeline_name + "_commands.sh"
 		self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
+
+		# Notifications
+		self.email = email
 
 		# Pipeline status variables
 		self.peak_memory = 0  # memory high water mark
@@ -178,6 +185,7 @@ class PipelineManager(object):
 		"""
 		signal.signal(signal.SIGINT, signal.SIG_IGN)
 		signal.signal(signal.SIGTERM, signal.SIG_IGN)
+
 
 	def start_pipeline(self, args = None, multi = False):
 		"""
@@ -461,6 +469,12 @@ class PipelineManager(object):
 		# in your pipeline can depend on this since it won't be run if that command 		# isn't required because target exists.
 		return process_return_code
 
+
+	@staticmethod
+	def _likely_shell(cmd):
+		return "|" in cmd or ">" in cmd or r"*" in cmd
+
+
 	def checkprint(self, cmd, shell="guess", nofail=False):
 		"""
 		Just like callprint, but checks output -- so you can get a variable
@@ -470,7 +484,8 @@ class PipelineManager(object):
 
 		:param cmd: Bash command(s) to be run.
 		:type cmd: str or list
-		:param shell: If command requires should be run in its own shell. Optional. 		Default: "guess" -- `run()` will 
+		:param shell: If command requires should be run in its own shell. Optional.
+		Default: "guess" -- `run()` will
 		try to guess if the command should be run in a shell (based on the 
 		presence of a pipe (|) or redirect (>), To force a process to run as
 		a direct subprocess, set `shell` to False; to force a shell, set True.
@@ -480,35 +495,30 @@ class PipelineManager(object):
 			they will not cause the pipeline to bail out.
 		:type nofail: bool
 		"""
+
 		self._report_command(cmd)
 
+		likely_shell = self._likely_shell(cmd)
 
 		if shell == "guess":
-			if ("|" in cmd or ">" in cmd or r"*" in cmd):
-				shell = True
-			else:
-				shell = False
+			shell = likely_shell
 
-		if not shell:
-			if ("|" in cmd or ">" in cmd or r"*" in cmd):
-				print("Should this command run in a shell instead of directly in a subprocess?")
-		
+		if not shell and likely_shell:
+			print("Should this command run in a shell instead of directly in a subprocess?")
 			#cmd = cmd.split()
 			cmd = shlex.split(cmd)
 		# else: # if shell: # do nothing (cmd is not split)
 			
-
 		try:
-			returnvalue = subprocess.check_output(cmd, shell=shell)
-
+			return subprocess.check_output(cmd, shell=shell)
 		except Exception as e:
 			if not nofail:
 				self.fail_pipeline(e)
 			else:
 				print(e)
 				print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
+			# TODO: return nonzero, or something...
 
-		return returnvalue
 
 	def callprint(self, cmd, shell="guess", nofail=False, container=None):
 		"""
@@ -542,15 +552,13 @@ class PipelineManager(object):
 		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
 
-		if shell == "guess":
-			if ("|" in cmd or ">" in cmd or "*" in cmd):
-				shell = True
-			else:
-				shell = False
+		likely_shell = self._likely_shell(cmd)
 
-		if not shell:
-			if ("|" in cmd or ">" in cmd or "*" in cmd):
-				print("Should this command run in a shell instead of directly in a subprocess?")
+		if shell == "guess":
+			shell = likely_shell
+
+		if not shell and likely_shell:
+			print("Should this command run in a shell instead of directly in a subprocess?")
 			#cmd = cmd.split()
 			cmd = shlex.split(cmd)
 		# call(cmd, shell=shell) # old way (no memory profiling)
@@ -926,6 +934,7 @@ class PipelineManager(object):
 		print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
 		self.timestamp("* Pipeline completed at: ".rjust(20))
 
+
 	def fail_pipeline(self, e):
 		"""
 		If the pipeline does not complete, this function will stop the pipeline gracefully.
@@ -949,8 +958,8 @@ class PipelineManager(object):
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
 			print("Total time: ", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
-
 		raise e
+
 
 	def _signal_term_handler(self, signal, frame):
 		"""
@@ -967,6 +976,7 @@ class PipelineManager(object):
 		self.fail_pipeline(Exception("SIGTERM"))
 		sys.exit(1)
 
+
 	def _signal_int_handler(self, signal, frame):
 		"""
 		For catching interrupt (Ctrl +C) signals. Fails gracefully.
@@ -976,6 +986,7 @@ class PipelineManager(object):
 			myfile.write(message + "\n")
 		self.fail_pipeline(Exception("SIGINT"))
 		sys.exit(1)
+
 
 	def _exit_handler(self):
 		"""
@@ -996,6 +1007,7 @@ class PipelineManager(object):
 		if self.status != "completed" and self.status != "failed":
 			self.fail_pipeline(Exception("Unknown exit failure"))
 
+
 	def _kill_child_process(self, child_pid):
 		"""
 		Pypiper spawns subprocesses. We need to kill them to exit gracefully,
@@ -1014,9 +1026,11 @@ class PipelineManager(object):
 			# sys.stdout.flush()
 			os.kill(child_pid, signal.SIGTERM)
 
+
 	def atexit_register(self, *args):
 		""" Convenience alias to register exit functions without having to import atexit in the pipeline. """
 		atexit.register(*args)
+
 
 	def get_container(self, image, mounts):
 		# image is something like "nsheff/refgenie"
@@ -1032,10 +1046,12 @@ class PipelineManager(object):
 		print("Using docker container: " + container)
 		self.atexit_register(self.remove_container, container)
 
+
 	def remove_container(self, container):
 		print("Removing docker container...")
 		cmd = "docker rm -f " + container
 		self.callprint(cmd)
+
 
 	def clean_add(self, regex, conditional=False, manual=False):
 		"""
@@ -1073,6 +1089,7 @@ class PipelineManager(object):
 			self.cleanup_list.append(regex)
 			# Remove it from the conditional list if added to the absolute list
 			while regex in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(regex)
+
 
 	def _cleanup(self):
 		"""
@@ -1136,6 +1153,7 @@ class PipelineManager(object):
 					except:
 						pass
 
+
 	def _memory_usage(self, pid='self', category="hwm", container=None):
 		"""
 		Memory usage of the process in kilobytes.
@@ -1183,6 +1201,7 @@ class PipelineManager(object):
 		return result[category]
 
 
+
 class Tee(object):
 	def __init__(self, log_file):
 		self.file = open(log_file, "a")
@@ -1201,6 +1220,7 @@ class Tee(object):
 
 	def fileno(self):
 		return(self.stdout.fileno())
+
 
 
 # @staticmethod
