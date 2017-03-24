@@ -22,31 +22,37 @@ import datetime
 
 class PipelineManager(object):
 	"""
-	Base class for instantiating a PipelineManager object, the main class of Pypiper
+	Base class for instantiating a PipelineManager object,
+	the main class of Pypiper.
 
-	:param name: Choose a name for your pipeline; it's used to name the output files, flags, etc.
-	:param outfolder: Folder in which to store the results.
-	:param args: Optional args object from ArgumentParser; Pypiper will simply record these arguments from your script
-	:param overwrite_locks: Advanced debugging options; this will cause Pypiper to ignore locked files, enabling
-		you to restart a failed pipeline where it left off. Be careful, though, this invalidates the typical file locking
-		that enables multiple pipelines to run in parallel on the same intermediate files.
-	:param fresh: NOT IMPLEMENTED
-	:param follow: Force run all follow functions, even if the preceeding command is not run.
-		By default, follow functions are only run if the preceeding command is run.
-	:param recover: Specify recover mode, to overwrite lock files. If pypiper encounters a locked
-		target, it will ignore the lock, and recompute this step. Useful to restart a failed pipeline.
-	:param multi: Enables running multiple pipelines in one script; or for interactive use. It simply disables the tee
-		of the output, so you won't get output logged to a file.
-	:param manual_clean: Overrides the pipeline's clean_add() manual parameters, to *never* clean up intermediate files
-		automatically. Useful for debugging; all cleanup files are added to the manual cleanup script.
+	:param str name: Choose a name for your pipeline;
+	it's used to name the output files, flags, etc.
+	:param str outfolder: Folder in which to store the results.
+	:param argparse.Namespace args: Optional args object from ArgumentParser;
+	Pypiper will simply record these arguments from your script
+	:param bool multi: Enables running multiple pipelines in one script
+	or for interactive use. It simply disables the tee of the output,
+	so you won't get output logged to a file.
+	:param bool manual_clean: Overrides the pipeline's clean_add()
+	manual parameters, to *never* clean up intermediate files automatically.
+	Useful for debugging; all cleanup files are added to manual cleanup script.
+	:param bool recover: Specify recover mode, to overwrite lock files.
+	If pypiper encounters a locked target, it will ignore the lock and
+	recompute this step. Useful to restart a failed pipeline.
+	:param bool fresh: NOT IMPLEMENTED
+	:param bool force_follow: Force run all follow functions
+	even if  the preceding command is not run. By default,
+	following functions  are only run if the preceding command is run.
+	:param int cores: number of processors to use, default 1
+	:param str mem: amount of memory to use, in Mb
+	:param str config_file: path to pipeline configuration file, optional
+	:param str output_parent: path to folder in which output folder will live
 	"""
 	def __init__(
 		self, name, outfolder, args=None, multi=False,
-		manual_clean=False, recover=False, fresh=False,
-		force_follow=False,
+		manual_clean=False, recover=False, fresh=False, force_follow=False,
 		cores=1, mem="1000",
 		config_file=None, output_parent=None,
-		email=None
 	):
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
@@ -107,9 +113,6 @@ class PipelineManager(object):
 		self.pipeline_stats_file = self.pipeline_outfolder + "stats.tsv"
 		self.pipeline_commands_file = self.pipeline_outfolder + self.pipeline_name + "_commands.sh"
 		self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
-
-		# Notifications
-		self.email = email
 
 		# Pipeline status variables
 		self.peak_memory = 0  # memory high water mark
