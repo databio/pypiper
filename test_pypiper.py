@@ -14,7 +14,7 @@ import subprocess
 class PypiperTest(unittest.TestCase):
 
 	@classmethod
-	def _clean():
+	def _clean(cls):
 		for d in glob.glob("pipeline_output*/"):
 			if os.path.isdir(d):
 				shutil.rmtree(d)
