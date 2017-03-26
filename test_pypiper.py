@@ -4,12 +4,14 @@ These are unit tests for the Pypiper class. Run with
 python test_pypiper.py
 """
 
+import glob
+import os
+import shutil #for rmtree
+import subprocess
+import time
 import unittest
 import pypiper
-import shutil #for rmtree
-import os
-import time
-import subprocess
+
 
 class PypiperTest(unittest.TestCase):
 
