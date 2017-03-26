@@ -474,7 +474,7 @@ class PipelineManager(object):
 
 
 	@staticmethod
-	def _likely_shell(cmd):
+	def _check_shell(cmd):
 		return "|" in cmd or ">" in cmd or r"*" in cmd
 
 
@@ -501,13 +501,14 @@ class PipelineManager(object):
 
 		self._report_command(cmd)
 
-		likely_shell = self._likely_shell(cmd)
+		likely_shell = self._check_shell(cmd)
 
 		if shell == "guess":
 			shell = likely_shell
 
-		if not shell and likely_shell:
-			print("Should this command run in a shell instead of directly in a subprocess?")
+		if not shell:
+			if likely_shell:
+				print("Should this command run in a shell instead of directly in a subprocess?")
 			#cmd = cmd.split()
 			cmd = shlex.split(cmd)
 		# else: # if shell: # do nothing (cmd is not split)
@@ -555,13 +556,14 @@ class PipelineManager(object):
 		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
 
-		likely_shell = self._likely_shell(cmd)
+		likely_shell = self._check_shell(cmd)
 
 		if shell == "guess":
 			shell = likely_shell
 
-		if not shell and likely_shell:
-			print("Should this command run in a shell instead of directly in a subprocess?")
+		if not shell:
+			if likely_shell:
+				print("Should this command run in a shell instead of directly in a subprocess?")
 			#cmd = cmd.split()
 			cmd = shlex.split(cmd)
 		# call(cmd, shell=shell) # old way (no memory profiling)
