@@ -22,7 +22,7 @@ Now, to test pypiper, follow the commands in the `Hello, Pypiper! tutorial: just
 	pip install --user https://github.com/epigen/pypiper/zipball/master
 
 	# download hello_pypiper.py
-	wget https://github.com/databio/pypiper/example_pipelines/hello_pypiper.py
+	wget https://raw.githubusercontent.com/epigen/pypiper/master/example_pipelines/hello_pypiper.py
 	
 	# Run it:
 	python hello_pypiper.py
