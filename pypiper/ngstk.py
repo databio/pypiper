@@ -674,11 +674,9 @@ class NGSTk(_AttributeDict):
 		initial = os.path.splitext(os.path.basename(input_bam))[0]
 		cmd1 = self.tools.fastqc + " --noextract --outdir {0} {1}".format(output_dir, input_bam)
 		cmds.append(cmd1)
-		if not os.path.exists(os.path.join(output_dir, sample_name + "_fastqc.html")):
-			cmd2 = "mv {0}_fastqc.html {1}_fastqc.html".format(os.path.join(output_dir, initial), os.path.join(output_dir, sample_name))
-			cmd3 = "mv {0}_fastqc.zip {1}_fastqc.zip".format(os.path.join(output_dir, initial), os.path.join(output_dir, sample_name))
-			cmds.append(cmd2)
-			cmds.append(cmd3)
+		cmd2 = "if [[ ! -s {1}_fastqc.html ]]; then mv {0}_fastqc.html {1}_fastqc.html; mv {0}_fastqc.zip {1}_fastqc.zip; fi".format(
+			os.path.join(output_dir, initial), os.path.join(output_dir, sample_name))
+		cmds.append(cmd2)
 		return cmds
 
 	def samtools_index(self, bam):
