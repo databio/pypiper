@@ -18,32 +18,42 @@ from _version import __version__
 import shlex # for splitting commands like a shell does
 import datetime
 
+
+
 class PipelineManager(object):
 	"""
-	Base class for instantiating a PipelineManager object, the main class of Pypiper
+	Base class for instantiating a PipelineManager object,
+	the main class of Pypiper.
 
-	:param name: Choose a name for your pipeline; it's used to name the output files, flags, etc.
-	:param outfolder: Folder in which to store the results.
-	:param args: Optional args object from ArgumentParser; Pypiper will simply record these arguments from your script
-	:param overwrite_locks: Advanced debugging options; this will cause Pypiper to ignore locked files, enabling
-		you to restart a failed pipeline where it left off. Be careful, though, this invalidates the typical file locking
-		that enables multiple pipelines to run in parallel on the same intermediate files.
-	:param fresh: NOT IMPLEMENTED
-	:param follow: Force run all follow functions, even if the preceding command is not run.
-		By default, follow functions are only run if the preceding command is run.
-	:param recover: Specify recover mode, to overwrite lock files. If pypiper encounters a locked
-		target, it will ignore the lock, and recompute this step. Useful to restart a failed pipeline.
-	:param multi: Enables running multiple pipelines in one script; or for interactive use. It simply disables the tee
-		of the output, so you won't get output logged to a file.
-	:param manual_clean: Overrides the pipeline's clean_add() manual parameters, to *never* clean up intermediate files
-		automatically. Useful for debugging; all cleanup files are added to the manual cleanup script.
+	:param str name: Choose a name for your pipeline;
+	it's used to name the output files, flags, etc.
+	:param str outfolder: Folder in which to store the results.
+	:param argparse.Namespace args: Optional args object from ArgumentParser;
+	Pypiper will simply record these arguments from your script
+	:param bool multi: Enables running multiple pipelines in one script
+	or for interactive use. It simply disables the tee of the output,
+	so you won't get output logged to a file.
+	:param bool manual_clean: Overrides the pipeline's clean_add()
+	manual parameters, to *never* clean up intermediate files automatically.
+	Useful for debugging; all cleanup files are added to manual cleanup script.
+	:param bool recover: Specify recover mode, to overwrite lock files.
+	If pypiper encounters a locked target, it will ignore the lock and
+	recompute this step. Useful to restart a failed pipeline.
+	:param bool fresh: NOT IMPLEMENTED
+	:param bool force_follow: Force run all follow functions
+	even if  the preceding command is not run. By default,
+	following functions  are only run if the preceding command is run.
+	:param int cores: number of processors to use, default 1
+	:param str mem: amount of memory to use, in Mb
+	:param str config_file: path to pipeline configuration file, optional
+	:param str output_parent: path to folder in which output folder will live
 	"""
 	def __init__(
 		self, name, outfolder, version=None, args=None, multi=False,
-		manual_clean=False, recover=False, fresh=False,
-		force_follow=False,
+		manual_clean=False, recover=False, fresh=False, force_follow=False,
 		cores=1, mem="1000",
-		config_file=None, output_parent=None):
+		config_file=None, output_parent=None,
+	):
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
 		# to Pypiper. If any pypiper arguments are passed
@@ -179,6 +189,7 @@ class PipelineManager(object):
 		"""
 		signal.signal(signal.SIGINT, signal.SIG_IGN)
 		signal.signal(signal.SIGTERM, signal.SIG_IGN)
+
 
 	def start_pipeline(self, args = None, multi = False):
 		"""
@@ -349,7 +360,7 @@ class PipelineManager(object):
 		:type lock_name: str or None
 		:param shell: If command requires should be run in its own shell. Optional. Default: "guess" -- run will try to determine if the command requires a shell.
 		:type shell: bool
-		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
+		:param nofail: Should the pipeline proceed past a nonzero return from a process? Default: False
 			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 			they will not cause the pipeline to bail out.
 		:type nofail: bool
@@ -463,6 +474,12 @@ class PipelineManager(object):
 		# in your pipeline can depend on this since it won't be run if that command 		# isn't required because target exists.
 		return process_return_code
 
+
+	@staticmethod
+	def _check_shell(cmd):
+		return "|" in cmd or ">" in cmd or r"*" in cmd
+
+
 	def checkprint(self, cmd, shell="guess", nofail=False):
 		"""
 		Just like callprint, but checks output -- so you can get a variable
@@ -472,7 +489,8 @@ class PipelineManager(object):
 
 		:param cmd: Bash command(s) to be run.
 		:type cmd: str or list
-		:param shell: If command requires should be run in its own shell. Optional. 		Default: "guess" -- `run()` will 
+		:param shell: If command requires should be run in its own shell. Optional.
+		Default: "guess" -- `run()` will
 		try to guess if the command should be run in a shell (based on the 
 		presence of a pipe (|) or redirect (>), To force a process to run as
 		a direct subprocess, set `shell` to False; to force a shell, set True.
@@ -482,35 +500,31 @@ class PipelineManager(object):
 			they will not cause the pipeline to bail out.
 		:type nofail: bool
 		"""
+
 		self._report_command(cmd)
 
+		likely_shell = self._check_shell(cmd)
 
 		if shell == "guess":
-			if ("|" in cmd or ">" in cmd or r"*" in cmd):
-				shell = True
-			else:
-				shell = False
+			shell = likely_shell
 
 		if not shell:
-			if ("|" in cmd or ">" in cmd or r"*" in cmd):
+			if likely_shell:
 				print("Should this command run in a shell instead of directly in a subprocess?")
-		
 			#cmd = cmd.split()
 			cmd = shlex.split(cmd)
 		# else: # if shell: # do nothing (cmd is not split)
 			
-
 		try:
-			returnvalue = subprocess.check_output(cmd, shell=shell)
-
+			return subprocess.check_output(cmd, shell=shell)
 		except Exception as e:
 			if not nofail:
 				self.fail_pipeline(e)
 			else:
 				print(e)
 				print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
+			# TODO: return nonzero, or something...
 
-		return returnvalue
 
 	def callprint(self, cmd, shell="guess", nofail=False, container=None):
 		"""
@@ -544,14 +558,13 @@ class PipelineManager(object):
 		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
 
+		likely_shell = self._check_shell(cmd)
+
 		if shell == "guess":
-			if ("|" in cmd or ">" in cmd or "*" in cmd):
-				shell = True
-			else:
-				shell = False
+			shell = likely_shell
 
 		if not shell:
-			if ("|" in cmd or ">" in cmd or "*" in cmd):
+			if likely_shell:
 				print("Should this command run in a shell instead of directly in a subprocess?")
 			#cmd = cmd.split()
 			cmd = shlex.split(cmd)
@@ -928,6 +941,7 @@ class PipelineManager(object):
 		print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
 		self.timestamp("* Pipeline completed at: ".rjust(20))
 
+
 	def fail_pipeline(self, e):
 		"""
 		If the pipeline does not complete, this function will stop the pipeline gracefully.
@@ -951,8 +965,8 @@ class PipelineManager(object):
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
 			print("Total time: ", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
-
 		raise e
+
 
 	def _signal_term_handler(self, signal, frame):
 		"""
@@ -969,6 +983,7 @@ class PipelineManager(object):
 		self.fail_pipeline(Exception("SIGTERM"))
 		sys.exit(1)
 
+
 	def _signal_int_handler(self, signal, frame):
 		"""
 		For catching interrupt (Ctrl +C) signals. Fails gracefully.
@@ -978,6 +993,7 @@ class PipelineManager(object):
 			myfile.write(message + "\n")
 		self.fail_pipeline(Exception("SIGINT"))
 		sys.exit(1)
+
 
 	def _exit_handler(self):
 		"""
@@ -998,6 +1014,7 @@ class PipelineManager(object):
 		if self.status != "completed" and self.status != "failed":
 			self.fail_pipeline(Exception("Unknown exit failure"))
 
+
 	def _kill_child_process(self, child_pid):
 		"""
 		Pypiper spawns subprocesses. We need to kill them to exit gracefully,
@@ -1016,9 +1033,11 @@ class PipelineManager(object):
 			# sys.stdout.flush()
 			os.kill(child_pid, signal.SIGTERM)
 
+
 	def atexit_register(self, *args):
 		""" Convenience alias to register exit functions without having to import atexit in the pipeline. """
 		atexit.register(*args)
+
 
 	def get_container(self, image, mounts):
 		# image is something like "nsheff/refgenie"
@@ -1034,10 +1053,12 @@ class PipelineManager(object):
 		print("Using docker container: " + container)
 		self.atexit_register(self.remove_container, container)
 
+
 	def remove_container(self, container):
 		print("Removing docker container...")
 		cmd = "docker rm -f " + container
 		self.callprint(cmd)
+
 
 	def clean_add(self, regex, conditional=False, manual=False):
 		"""
@@ -1075,6 +1096,7 @@ class PipelineManager(object):
 			self.cleanup_list.append(regex)
 			# Remove it from the conditional list if added to the absolute list
 			while regex in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(regex)
+
 
 	def _cleanup(self):
 		"""
@@ -1138,6 +1160,7 @@ class PipelineManager(object):
 					except:
 						pass
 
+
 	def _memory_usage(self, pid='self', category="hwm", container=None):
 		"""
 		Memory usage of the process in kilobytes.
@@ -1185,6 +1208,7 @@ class PipelineManager(object):
 		return result[category]
 
 
+
 class Tee(object):
 	def __init__(self, log_file):
 		self.file = open(log_file, "a")
@@ -1203,6 +1227,7 @@ class Tee(object):
 
 	def fileno(self):
 		return(self.stdout.fileno())
+
 
 
 # @staticmethod
