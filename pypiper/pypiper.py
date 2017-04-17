@@ -29,8 +29,8 @@ class PipelineManager(object):
 		you to restart a failed pipeline where it left off. Be careful, though, this invalidates the typical file locking
 		that enables multiple pipelines to run in parallel on the same intermediate files.
 	:param fresh: NOT IMPLEMENTED
-	:param follow: Force run all follow functions, even if the preceeding command is not run.
-		By default, follow functions are only run if the preceeding command is run.
+	:param follow: Force run all follow functions, even if the preceding command is not run.
+		By default, follow functions are only run if the preceding command is run.
 	:param recover: Specify recover mode, to overwrite lock files. If pypiper encounters a locked
 		target, it will ignore the lock, and recompute this step. Useful to restart a failed pipeline.
 	:param multi: Enables running multiple pipelines in one script; or for interactive use. It simply disables the tee
@@ -39,7 +39,7 @@ class PipelineManager(object):
 		automatically. Useful for debugging; all cleanup files are added to the manual cleanup script.
 	"""
 	def __init__(
-		self, name, outfolder, args=None, multi=False,
+		self, name, outfolder, version=None, args=None, multi=False,
 		manual_clean=False, recover=False, fresh=False,
 		force_follow=False,
 		cores=1, mem="1000",
@@ -90,6 +90,7 @@ class PipelineManager(object):
 		# This will give a little breathing room for non-heap java memory use.
 		self.javamem = str(int(int(params['mem']) * 0.95)) + "m"
 
+		self.pl_version = version
 		# Set relative output_parent directory to absolute
 		# not necessary after all...
 		#if self.output_parent and not os.path.isabs(self.output_parent):
@@ -283,7 +284,8 @@ class PipelineManager(object):
 
 		try:
 			print("* " + "Pipeline dir".rjust(20) + ":  " + "`" + gitvars['pipe_dir'].strip() + "`")
-			print("* " + "Pipeline version".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
+			print("* " + "Pipeline version".rjust(20) + ":  " + str(self.pl_version))
+			print("* " + "Pipeline hash".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
 			print("* " + "Pipeline branch".rjust(20) + ":  " + gitvars['pipe_branch'].strip())
 			print("* " + "Pipeline date".rjust(20) + ":  " + gitvars['pipe_date'].strip())
 			if (gitvars['pipe_diff'] != ""):
@@ -1342,5 +1344,7 @@ def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = Fal
 				"-Q", "--single-or-paired", dest="single_or_paired", type=str,
 				help="single or paired end? default: single",
 				required=False, default="single")
+
+
 
 	return(parser)
