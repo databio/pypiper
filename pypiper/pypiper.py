@@ -90,6 +90,21 @@ class PipelineManager(object):
 		self.mem = params['mem'] + "m"
 		self.container = None
 
+		# Do some cores math for split processes
+		# If a pipeline wants to run a process using half the cores, or 1/4 of the cores,
+		# this can lead to complications if the number of cores is not evenly divisible.
+		# Here we add a few variables so that pipelines can easily divide the cores evenly.
+		# 50/50 split
+		self.cores1of2a = int(self.cores) / 2 + int(self.cores) % 2
+		self.cores1of2 = int(self.cores) / 2
+
+		# 75/25 split
+		self.cores1of4 = int(self.cores) / 4
+		self.cores3of4 = int(self.cores) - int(self.cores1of4)
+
+		self.cores1of8 = int(self.cores) / 8
+		self.cores7of8 = int(self.cores) - int(self.cores1of8)
+
 		# We use this memory to pass a memory limit to processes like java that
 		# can take a memory limit, so they don't get killed by a SLURM (or other
 		# cluster manager) overage. However, with java, the -Xmx argument can only
