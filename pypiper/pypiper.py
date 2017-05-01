@@ -1191,13 +1191,18 @@ class PipelineManager(object):
 			cmd = "docker stats " + container + " --format '{{.MemUsage}}' --no-stream"
 			mem_use_str = subprocess.check_output(cmd, shell=True)
 			mem_use = mem_use_str.split("/")[0].split()
-			mem_use[0] = float(mem_use[0])
-			if mem_use[1] == "GiB":
-				return mem_use[0] * 1e6
-			elif mem_use[1] == "MiB":
-				return mem_use[0] * 1e3
-			elif mem_use[1] == "KiB":
-				return mem_use[0]
+			
+			mem_num = re.findall('[\d\.]+', mem_use_str.split("/")[0])[0]
+			mem_scale = re.findall('[A-Za-z]+', mem_use_str.split("/")[0])[0]
+
+			#print(mem_use_str, mem_num, mem_scale)
+			mem_num = float(mem_num)
+			if mem_scale == "GiB":
+				return mem_num * 1e6
+			elif mem_scale == "MiB":
+				return mem_num * 1e3
+			elif mem_scale == "KiB":
+				return mem_num
 			else:
 				# What type is this?
 				return 0
