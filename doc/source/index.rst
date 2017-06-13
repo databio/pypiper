@@ -52,6 +52,7 @@ Contents
 
    api.rst
    faq.rst
+   changelog.rst
    support.rst
 
 

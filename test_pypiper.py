@@ -4,14 +4,22 @@ These are unit tests for the Pypiper class. Run with
 python test_pypiper.py
 """
 
+import glob
+import os
+import shutil #for rmtree
+import subprocess
+import time
 import unittest
 import pypiper
-import shutil #for rmtree
-import os
-import time
-import subprocess
+
 
 class PypiperTest(unittest.TestCase):
+
+	@classmethod
+	def _clean(cls):
+		for d in glob.glob("pipeline_output*/"):
+			if os.path.isdir(d):
+				shutil.rmtree(d)
 
 	def setUp(self):
 		print("Setting up...")
@@ -25,12 +33,16 @@ class PypiperTest(unittest.TestCase):
 		self.pp2.stop_pipeline()
 		self.pp3.stop_pipeline()
 		print("Removing " + self.pp.pipeline_outfolder)
-		shutil.rmtree(self.pp.pipeline_outfolder)
-		shutil.rmtree(self.pp3.pipeline_outfolder)
-		#shutil.rmtree(self.pp2.pipeline_outfolder)
+		#shutil.rmtree(self.pp.pipeline_outfolder)
+		#shutil.rmtree(self.pp3.pipeline_outfolder)
+		self._clean()
 		del self.pp
 		del self.pp2
 		del self.pp3
+
+	@classmethod
+	def tearDownClass(cls):
+		cls._clean()
 
 	def test_me(self):
 		print("Testing initialization...")

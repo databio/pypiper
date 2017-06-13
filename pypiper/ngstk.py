@@ -138,7 +138,7 @@ class NGSTk(_AttributeDict):
 		This converts bam file to fastq files, but using awk. As of 2016, this is much faster 
 		than the standard way of doing this using Picard, and also much faster than the 
 		bedtools implementation as well; however, it does no sanity checks and assumes the reads
-		are e
+		(for paired data) are all paired (no singletons), in the correct order.
 
 		"""
 		self.make_sure_path_exists(os.path.dirname(out_fastq_pre))

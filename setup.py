@@ -15,7 +15,9 @@ except ImportError:
     if sys.version_info < (2, 7):
         extra['dependencies'] = ['argparse']
 
-version = open("VERSION").read().strip()
+
+with open("pypiper/_version.py", 'r') as versionfile:
+    version = versionfile.readline().split()[-1].strip("\"'\n")
 
 setup(
     name='pypiper',

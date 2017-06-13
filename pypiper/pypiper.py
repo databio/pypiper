@@ -13,36 +13,47 @@ import time
 import atexit, signal, platform
 import __main__
 from AttributeDict import AttributeDict
+from _version import __version__
 
 import shlex # for splitting commands like a shell does
 import datetime
 
+
+
 class PipelineManager(object):
 	"""
-	Base class for instantiating a PipelineManager object, the main class of Pypiper
+	Base class for instantiating a PipelineManager object,
+	the main class of Pypiper.
 
-	:param name: Choose a name for your pipeline; it's used to name the output files, flags, etc.
-	:param outfolder: Folder in which to store the results.
-	:param args: Optional args object from ArgumentParser; Pypiper will simply record these arguments from your script
-	:param overwrite_locks: Advanced debugging options; this will cause Pypiper to ignore locked files, enabling
-		you to restart a failed pipeline where it left off. Be careful, though, this invalidates the typical file locking
-		that enables multiple pipelines to run in parallel on the same intermediate files.
-	:param fresh: NOT IMPLEMENTED
-	:param follow: Force run all follow functions, even if the preceeding command is not run.
-		By default, follow functions are only run if the preceeding command is run.
-	:param recover: Specify recover mode, to overwrite lock files. If pypiper encounters a locked
-		target, it will ignore the lock, and recompute this step. Useful to restart a failed pipeline.
-	:param multi: Enables running multiple pipelines in one script; or for interactive use. It simply disables the tee
-		of the output, so you won't get output logged to a file.
-	:param manual_clean: Overrides the pipeline's clean_add() manual parameters, to *never* clean up intermediate files
-		automatically. Useful for debugging; all cleanup files are added to the manual cleanup script.
+	:param str name: Choose a name for your pipeline;
+	it's used to name the output files, flags, etc.
+	:param str outfolder: Folder in which to store the results.
+	:param argparse.Namespace args: Optional args object from ArgumentParser;
+	Pypiper will simply record these arguments from your script
+	:param bool multi: Enables running multiple pipelines in one script
+	or for interactive use. It simply disables the tee of the output,
+	so you won't get output logged to a file.
+	:param bool manual_clean: Overrides the pipeline's clean_add()
+	manual parameters, to *never* clean up intermediate files automatically.
+	Useful for debugging; all cleanup files are added to manual cleanup script.
+	:param bool recover: Specify recover mode, to overwrite lock files.
+	If pypiper encounters a locked target, it will ignore the lock and
+	recompute this step. Useful to restart a failed pipeline.
+	:param bool fresh: NOT IMPLEMENTED
+	:param bool force_follow: Force run all follow functions
+	even if  the preceding command is not run. By default,
+	following functions  are only run if the preceding command is run.
+	:param int cores: number of processors to use, default 1
+	:param str mem: amount of memory to use, in Mb
+	:param str config_file: path to pipeline configuration file, optional
+	:param str output_parent: path to folder in which output folder will live
 	"""
 	def __init__(
-		self, name, outfolder, args=None, multi=False,
-		manual_clean=False, recover=False, fresh=False,
-		force_follow=False,
+		self, name, outfolder, version=None, args=None, multi=False,
+		manual_clean=False, recover=False, fresh=False, force_follow=False,
 		cores=1, mem="1000",
-		config_file=None, output_parent=None):
+		config_file=None, output_parent=None,
+	):
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
 		# to Pypiper. If any pypiper arguments are passed
@@ -77,6 +88,22 @@ class PipelineManager(object):
 		# For now, we assume the memory is in megabytes.
 		# this could become customizable if necessary
 		self.mem = params['mem'] + "m"
+		self.container = None
+
+		# Do some cores math for split processes
+		# If a pipeline wants to run a process using half the cores, or 1/4 of the cores,
+		# this can lead to complications if the number of cores is not evenly divisible.
+		# Here we add a few variables so that pipelines can easily divide the cores evenly.
+		# 50/50 split
+		self.cores1of2a = int(self.cores) / 2 + int(self.cores) % 2
+		self.cores1of2 = int(self.cores) / 2
+
+		# 75/25 split
+		self.cores1of4 = int(self.cores) / 4
+		self.cores3of4 = int(self.cores) - int(self.cores1of4)
+
+		self.cores1of8 = int(self.cores) / 8
+		self.cores7of8 = int(self.cores) - int(self.cores1of8)
 
 		# We use this memory to pass a memory limit to processes like java that
 		# can take a memory limit, so they don't get killed by a SLURM (or other
@@ -88,6 +115,7 @@ class PipelineManager(object):
 		# This will give a little breathing room for non-heap java memory use.
 		self.javamem = str(int(int(params['mem']) * 0.95)) + "m"
 
+		self.pl_version = version
 		# Set relative output_parent directory to absolute
 		# not necessary after all...
 		#if self.output_parent and not os.path.isabs(self.output_parent):
@@ -176,6 +204,7 @@ class PipelineManager(object):
 		"""
 		signal.signal(signal.SIGINT, signal.SIG_IGN)
 		signal.signal(signal.SIGTERM, signal.SIG_IGN)
+
 
 	def start_pipeline(self, args = None, multi = False):
 		"""
@@ -269,7 +298,8 @@ class PipelineManager(object):
 		print("* " + "Python version".rjust(20) + ":  " + platform.python_version())
 		try:
 			print("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
-			print("* " + "Pypiper version".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
+			print("* " + "Pypiper version".rjust(20) + ":  " + __version__)
+			print("* " + "Pypiper hash".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
 			print("* " + "Pypiper branch".rjust(20) + ":  " + gitvars['pypiper_branch'].strip())
 			print("* " + "Pypiper date".rjust(20) + ":  " + gitvars['pypiper_date'].strip())
 			if (gitvars['pypiper_diff'] != ""):
@@ -280,7 +310,8 @@ class PipelineManager(object):
 
 		try:
 			print("* " + "Pipeline dir".rjust(20) + ":  " + "`" + gitvars['pipe_dir'].strip() + "`")
-			print("* " + "Pipeline version".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
+			print("* " + "Pipeline version".rjust(20) + ":  " + str(self.pl_version))
+			print("* " + "Pipeline hash".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
 			print("* " + "Pipeline branch".rjust(20) + ":  " + gitvars['pipe_branch'].strip())
 			print("* " + "Pipeline date".rjust(20) + ":  " + gitvars['pipe_date'].strip())
 			if (gitvars['pipe_diff'] != ""):
@@ -327,8 +358,7 @@ class PipelineManager(object):
 	###################################
 	# Process calling functions
 	###################################
-
-	def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, clean=False, follow=None):
+	def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, clean=False, follow=None, container=None):
 		"""
 		Runs a shell command. This is the primary workhorse function of PipelineManager. This is the command  execution
 		function, which enforces racefree file-locking, enables restartability, and multiple pipelines can produce/use
@@ -345,12 +375,13 @@ class PipelineManager(object):
 		:type lock_name: str or None
 		:param shell: If command requires should be run in its own shell. Optional. Default: "guess" -- run will try to determine if the command requires a shell.
 		:type shell: bool
-		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
+		:param nofail: Should the pipeline proceed past a nonzero return from a process? Default: False
 			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
 			they will not cause the pipeline to bail out.
 		:type nofail: bool
 		:param clean: True means the target file will be automatically added to a auto cleanup list. Optional.
 		:type clean: bool
+		:param container: Runs commands in given named docker container.
 		:returns: Return code of process. If a list of commands is passed, this is the maximum of all return codes for all commands.
 		:rtype: int
 		"""
@@ -432,12 +463,12 @@ class PipelineManager(object):
 
 			if isinstance(cmd, list):  # Handle command lists
 				for cmd_i in cmd:
-					list_ret, list_maxmem = self.callprint(cmd_i, shell, nofail)
+					list_ret, list_maxmem = self.callprint(cmd_i, shell, nofail, container)
 					local_maxmem = max(local_maxmem, list_maxmem)
 					process_return_code = max(process_return_code, list_ret)
 
 			else:  # Single command (most common)
-				process_return_code, local_maxmem = self.callprint(cmd, shell, nofail)  # Run command
+				process_return_code, local_maxmem = self.callprint(cmd, shell, nofail, container)  # Run command
 
 			# For temporary files, you can specify a clean option to automatically
 			# add them to the clean list, saving you a manual call to clean_add
@@ -458,6 +489,12 @@ class PipelineManager(object):
 		# in your pipeline can depend on this since it won't be run if that command 		# isn't required because target exists.
 		return process_return_code
 
+
+	@staticmethod
+	def _check_shell(cmd):
+		return "|" in cmd or ">" in cmd or r"*" in cmd
+
+
 	def checkprint(self, cmd, shell="guess", nofail=False):
 		"""
 		Just like callprint, but checks output -- so you can get a variable
@@ -467,7 +504,8 @@ class PipelineManager(object):
 
 		:param cmd: Bash command(s) to be run.
 		:type cmd: str or list
-		:param shell: If command requires should be run in its own shell. Optional. 		Default: "guess" -- `run()` will 
+		:param shell: If command requires should be run in its own shell. Optional.
+		Default: "guess" -- `run()` will
 		try to guess if the command should be run in a shell (based on the 
 		presence of a pipe (|) or redirect (>), To force a process to run as
 		a direct subprocess, set `shell` to False; to force a shell, set True.
@@ -477,37 +515,33 @@ class PipelineManager(object):
 			they will not cause the pipeline to bail out.
 		:type nofail: bool
 		"""
+
 		self._report_command(cmd)
 
+		likely_shell = self._check_shell(cmd)
 
 		if shell == "guess":
-			if ("|" in cmd or ">" in cmd or r"*" in cmd):
-				shell = True
-			else:
-				shell = False
+			shell = likely_shell
 
 		if not shell:
-			if ("|" in cmd or ">" in cmd or r"*" in cmd):
+			if likely_shell:
 				print("Should this command run in a shell instead of directly in a subprocess?")
-		
 			#cmd = cmd.split()
 			cmd = shlex.split(cmd)
 		# else: # if shell: # do nothing (cmd is not split)
 			
-
 		try:
-			returnvalue = subprocess.check_output(cmd, shell=shell)
-
+			return subprocess.check_output(cmd, shell=shell)
 		except Exception as e:
 			if not nofail:
 				self.fail_pipeline(e)
 			else:
 				print(e)
 				print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
+			# TODO: return nonzero, or something...
 
-		return returnvalue
 
-	def callprint(self, cmd, shell="guess", nofail=False):
+	def callprint(self, cmd, shell="guess", nofail=False, container=None):
 		"""
 		Prints the command, and then executes it, then prints the memory use and
 		return code of the command.
@@ -532,18 +566,20 @@ class PipelineManager(object):
 		# if shell=False, then we format the command (with split()) to be a list of command and its arguments.
 		# Split the command to use shell=False;
 		# leave it together to use shell=True;
+
+		if container:
+			cmd = "docker exec " + container + " " + cmd
 		self._report_command(cmd)
 		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
 
+		likely_shell = self._check_shell(cmd)
+
 		if shell == "guess":
-			if ("|" in cmd or ">" in cmd or "*" in cmd):
-				shell = True
-			else:
-				shell = False
+			shell = likely_shell
 
 		if not shell:
-			if ("|" in cmd or ">" in cmd or "*" in cmd):
+			if likely_shell:
 				print("Should this command run in a shell instead of directly in a subprocess?")
 			#cmd = cmd.split()
 			cmd = shlex.split(cmd)
@@ -575,7 +611,7 @@ class PipelineManager(object):
 
 			while p.poll() is None:
 				if not shell:
-					local_maxmem = max(local_maxmem, self._memory_usage(p.pid)/1e6)
+					local_maxmem = max(local_maxmem, self._memory_usage(p.pid, container=container)/1e6)
 					# print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
 				time.sleep(sleeptime)
 				sleeptime = min(sleeptime + 5, 60)
@@ -920,6 +956,7 @@ class PipelineManager(object):
 		print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
 		self.timestamp("* Pipeline completed at: ".rjust(20))
 
+
 	def fail_pipeline(self, e):
 		"""
 		If the pipeline does not complete, this function will stop the pipeline gracefully.
@@ -943,8 +980,8 @@ class PipelineManager(object):
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
 			print("Total time: ", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
-
 		raise e
+
 
 	def _signal_term_handler(self, signal, frame):
 		"""
@@ -961,6 +998,7 @@ class PipelineManager(object):
 		self.fail_pipeline(Exception("SIGTERM"))
 		sys.exit(1)
 
+
 	def _signal_int_handler(self, signal, frame):
 		"""
 		For catching interrupt (Ctrl +C) signals. Fails gracefully.
@@ -970,6 +1008,7 @@ class PipelineManager(object):
 			myfile.write(message + "\n")
 		self.fail_pipeline(Exception("SIGINT"))
 		sys.exit(1)
+
 
 	def _exit_handler(self):
 		"""
@@ -990,6 +1029,7 @@ class PipelineManager(object):
 		if self.status != "completed" and self.status != "failed":
 			self.fail_pipeline(Exception("Unknown exit failure"))
 
+
 	def _kill_child_process(self, child_pid):
 		"""
 		Pypiper spawns subprocesses. We need to kill them to exit gracefully,
@@ -1007,6 +1047,33 @@ class PipelineManager(object):
 			print("\nPypiper terminating spawned child process " + str(child_pid))
 			# sys.stdout.flush()
 			os.kill(child_pid, signal.SIGTERM)
+
+
+	def atexit_register(self, *args):
+		""" Convenience alias to register exit functions without having to import atexit in the pipeline. """
+		atexit.register(*args)
+
+
+	def get_container(self, image, mounts):
+		# image is something like "nsheff/refgenie"
+		if type(mounts) == str:
+			mounts = [mounts]
+		cmd = "docker run -itd"
+		for mnt in mounts:
+			absmnt = os.path.abspath(mnt)
+			cmd += " -v " + absmnt + ":" + absmnt
+		cmd += " " + image
+		container = self.checkprint(cmd).rstrip()
+		self.container = container
+		print("Using docker container: " + container)
+		self.atexit_register(self.remove_container, container)
+
+
+	def remove_container(self, container):
+		print("Removing docker container...")
+		cmd = "docker rm -f " + container
+		self.callprint(cmd)
+
 
 	def clean_add(self, regex, conditional=False, manual=False):
 		"""
@@ -1044,6 +1111,7 @@ class PipelineManager(object):
 			self.cleanup_list.append(regex)
 			# Remove it from the conditional list if added to the absolute list
 			while regex in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(regex)
+
 
 	def _cleanup(self):
 		"""
@@ -1107,7 +1175,8 @@ class PipelineManager(object):
 					except:
 						pass
 
-	def _memory_usage(self, pid='self', category="hwm"):
+
+	def _memory_usage(self, pid='self', category="hwm", container=None):
 		"""
 		Memory usage of the process in kilobytes.
 
@@ -1116,6 +1185,28 @@ class PipelineManager(object):
 		:param category: Memory type to check. 'hwm' for high water mark.
 		:type category: str
 		"""
+		if container:
+			# TODO: Put some debug output here with switch to Logger
+			# since this is relatively untested.
+			cmd = "docker stats " + container + " --format '{{.MemUsage}}' --no-stream"
+			mem_use_str = subprocess.check_output(cmd, shell=True)
+			mem_use = mem_use_str.split("/")[0].split()
+			
+			mem_num = re.findall('[\d\.]+', mem_use_str.split("/")[0])[0]
+			mem_scale = re.findall('[A-Za-z]+', mem_use_str.split("/")[0])[0]
+
+			#print(mem_use_str, mem_num, mem_scale)
+			mem_num = float(mem_num)
+			if mem_scale == "GiB":
+				return mem_num * 1e6
+			elif mem_scale == "MiB":
+				return mem_num * 1e3
+			elif mem_scale == "KiB":
+				return mem_num
+			else:
+				# What type is this?
+				return 0
+
 		# Thanks Martin Geisler:
 		status = None
 		result = {'peak': 0, 'rss': 0, 'hwm': 0}
@@ -1137,6 +1228,7 @@ class PipelineManager(object):
 		return result[category]
 
 
+
 class Tee(object):
 	def __init__(self, log_file):
 		self.file = open(log_file, "a")
@@ -1155,6 +1247,7 @@ class Tee(object):
 
 	def fileno(self):
 		return(self.stdout.fileno())
+
 
 
 # @staticmethod
@@ -1296,5 +1389,7 @@ def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = Fal
 				"-Q", "--single-or-paired", dest="single_or_paired", type=str,
 				help="single or paired end? default: single",
 				required=False, default="single")
+
+
 
 	return(parser)
