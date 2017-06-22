@@ -1382,7 +1382,7 @@ def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = Fal
 		if arg == "genome":
 			parser.add_argument(
 				"-G", "--genome", dest="genome_assembly", type=str,
-				help="identifier for genome assempbly (required)",
+				help="identifier for genome assembly (required)",
 				required=False)
 		if arg == "single-or-paired":
 			parser.add_argument(
