@@ -10,6 +10,12 @@ Changelog
 
     - Adds 'waiting' flag.
 
+	- Eliminates extra spaces in reported results
+	
+	- Pypiper module is version aware
+	
+	- Updates Success time format to eliminate space
+
 - **v0.4** (*2017-01-23*):
     
     - First major public release!
