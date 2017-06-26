@@ -267,19 +267,23 @@ class PipelineManager(object):
 		# Wrapped in try blocks so that the code will not fail if the pipeline or pypiper are not git repositories
 		gitvars = {}
 		try:
-			gitvars['pypiper_dir'] = os.path.dirname(os.path.realpath(__file__))
-			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
-			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
-			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
-			gitvars['pypiper_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git branch | grep '*' 2>/dev/null", shell=True)
+			# pypiper dir
+			ppd = os.path.dirname(os.path.realpath(__file__))
+			gitvars['pypiper_dir'] = ppd
+			gitvars['pypiper_hash'] = subprocess.check_output("cd " + ppd + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
+			gitvars['pypiper_date'] = subprocess.check_output("cd " + ppd + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
+			gitvars['pypiper_diff'] = subprocess.check_output("cd " + ppd + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
+			gitvars['pypiper_branch'] = subprocess.check_output("cd " + ppd + "; git branch | grep '*' 2>/dev/null", shell=True)
 		except Exception:
 			pass
 		try:
-			gitvars['pipe_dir'] = os.path.dirname(os.path.realpath(sys.argv[0]))
-			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
-			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
-			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
-			gitvars['pipe_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git branch | grep '*' 2>/dev/null", shell=True)
+			# pipeline dir
+			pld = os.path.dirname(os.path.realpath(sys.argv[0]))
+			gitvars['pipe_dir'] = pld
+			gitvars['pipe_hash'] = subprocess.check_output("cd " + pld + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
+			gitvars['pipe_date'] = subprocess.check_output("cd " + pld + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
+			gitvars['pipe_diff'] = subprocess.check_output("cd " + pld + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
+			gitvars['pipe_branch'] = subprocess.check_output("cd " + pld + "; git branch | grep '*' 2>/dev/null", shell=True)
 		except Exception:
 			pass
 		
@@ -305,7 +309,7 @@ class PipelineManager(object):
 			if (gitvars['pypiper_diff'] != ""):
 				print("* " + "Pypiper diff".rjust(20) + ":  " + gitvars['pypiper_diff'].strip())
 		except KeyError:
-			# If any of the keys aren't set, that's OK. It just means pypiper isn't being run from a git repo.
+			# It is ok if keys aren't set, it means pypiper isn't in a  git repo.
 			pass
 
 		try:
@@ -373,7 +377,8 @@ class PipelineManager(object):
 		:type target: str or None
 		:param lock_name: Name of lock file. Optional.
 		:type lock_name: str or None
-		:param shell: If command requires should be run in its own shell. Optional. Default: "guess" -- run will try to determine if the command requires a shell.
+		:param shell: If command requires should be run in its own shell. Optional. Default: "guess" --
+			run will try to determine if the command requires a shell.
 		:type shell: bool
 		:param nofail: Should the pipeline proceed past a nonzero return from a process? Default: False
 			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
@@ -486,7 +491,8 @@ class PipelineManager(object):
 			break
 
 		# Bad idea: don't return follow_result; it seems nice but nothing else
-		# in your pipeline can depend on this since it won't be run if that command 		# isn't required because target exists.
+		# in your pipeline can depend on this since it won't be run if that command
+		# isn't required because target exists.
 		return process_return_code
 
 
@@ -777,8 +783,7 @@ class PipelineManager(object):
 			str(lock_name) + "\t" + \
 			str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
 			str(memory)
-		# messageMarkdown = "> `" + command + "`\t" + str(elapsed_time).strip() + "\t " + str(memory).strip() + "\t" + "_PROF_"
-		# print(messageMarkdown)
+
 		with open(self.pipeline_profile_file, "a") as myfile:
 			myfile.write(messageRaw + "\n")
 
@@ -949,7 +954,7 @@ class PipelineManager(object):
 		self.set_status_flag("completed")
 		self._cleanup()
 		self.report_result("Time", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
-		self.report_result("Success", time.strftime("%m-%d %H:%M:%S"))
+		self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
 		print("\n##### [Epilogue:]")
 		print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
 		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
