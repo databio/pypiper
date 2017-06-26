@@ -804,7 +804,7 @@ class PipelineManager(object):
 
 		# keep the value in memory:
 		self.stats_dict[key] = str(value).strip()
-		messageRaw = key + "\t " + str(value).strip() + "\t" + str(annotation)
+		messageRaw = key + "\t" + str(value).strip() + "\t" + str(annotation)
 		messageMarkdown = "> `" + key + "`\t" + str(value).strip()\
 		 + "\t" + str(annotation) + "\t" + "_RES_"
 		print(messageMarkdown)
