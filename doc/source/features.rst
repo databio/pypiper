@@ -21,6 +21,8 @@ Pypiper provides the following benefits:
 	Pypiper provides functions to put key-value pairs into an easy-to-parse stats file, making it easy to summarize your pipeline results.
 -   **Simplicity:**
 	It should only take you 15 minutes to run your first pipeline. The basic documentation is just a few pages long. The codebase itself is also only a few thousand lines of code, making it very lightweight.
+-	**Dynamic recovery:**
+	If a job is user-interrupted (with SIGINT or SIGTERM), for example by a cluster resource manager, it will get a dynamic recovery flag set, and the next time the run is started it will automatically pick up where it left off.
 
 
 Furthermore, Pypiper includes a suite of commonly used pieces of code (toolkits) which the user may use to build pipelines.

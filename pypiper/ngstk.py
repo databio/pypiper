@@ -1137,13 +1137,13 @@ class NGSTk(_AttributeDict):
 		cmd += " | awk '{{sum+=$5}} END {{print sum}}' > {0}".format(output)
 		return cmd
 
-	def macs2CallPeaks(treatmentBams, outputDir, sampleName, genome, controlBams=None, broad=False, paired=False):
+	def macs2CallPeaks(self, treatmentBams, outputDir, sampleName, genome, controlBams=None, broad=False, paired=False):
 		"""
 		Use MACS2 to call peaks.
 		"""
-		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9}
+		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 1.87e9}
 
-		cmd = "macs2 callpeak -t {0}".format(treatmentBams if type(treatmentBams) is str else " ".join(treatmentBams))
+		cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBams if type(treatmentBams) is str else " ".join(treatmentBams))
 		if controlBams is not None:
 			cmd += " -c {0}".format(controlBams if type(controlBams) is str else " ".join(controlBams))
 		if paired:
@@ -1157,7 +1157,7 @@ class NGSTk(_AttributeDict):
 		return cmd
 
 	def macs2CallPeaksATACSeq(self, treatmentBam, outputDir, sampleName, genome):
-		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 2.7e9}
+		sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 1.87e9}
 		cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBam)
 		cmd += " --nomodel --extsize 147 -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 		return cmd

@@ -267,19 +267,23 @@ class PipelineManager(object):
 		# Wrapped in try blocks so that the code will not fail if the pipeline or pypiper are not git repositories
 		gitvars = {}
 		try:
-			gitvars['pypiper_dir'] = os.path.dirname(os.path.realpath(__file__))
-			gitvars['pypiper_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
-			gitvars['pypiper_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
-			gitvars['pypiper_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
-			gitvars['pypiper_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(__file__)) + "; git branch | grep '*' 2>/dev/null", shell=True)
+			# pypiper dir
+			ppd = os.path.dirname(os.path.realpath(__file__))
+			gitvars['pypiper_dir'] = ppd
+			gitvars['pypiper_hash'] = subprocess.check_output("cd " + ppd + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
+			gitvars['pypiper_date'] = subprocess.check_output("cd " + ppd + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
+			gitvars['pypiper_diff'] = subprocess.check_output("cd " + ppd + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
+			gitvars['pypiper_branch'] = subprocess.check_output("cd " + ppd + "; git branch | grep '*' 2>/dev/null", shell=True)
 		except Exception:
 			pass
 		try:
-			gitvars['pipe_dir'] = os.path.dirname(os.path.realpath(sys.argv[0]))
-			gitvars['pipe_hash'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
-			gitvars['pipe_date'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
-			gitvars['pipe_diff'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
-			gitvars['pipe_branch'] = subprocess.check_output("cd " + os.path.dirname(os.path.realpath(sys.argv[0])) + "; git branch | grep '*' 2>/dev/null", shell=True)
+			# pipeline dir
+			pld = os.path.dirname(os.path.realpath(sys.argv[0]))
+			gitvars['pipe_dir'] = pld
+			gitvars['pipe_hash'] = subprocess.check_output("cd " + pld + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
+			gitvars['pipe_date'] = subprocess.check_output("cd " + pld + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
+			gitvars['pipe_diff'] = subprocess.check_output("cd " + pld + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
+			gitvars['pipe_branch'] = subprocess.check_output("cd " + pld + "; git branch | grep '*' 2>/dev/null", shell=True)
 		except Exception:
 			pass
 		
@@ -305,7 +309,7 @@ class PipelineManager(object):
 			if (gitvars['pypiper_diff'] != ""):
 				print("* " + "Pypiper diff".rjust(20) + ":  " + gitvars['pypiper_diff'].strip())
 		except KeyError:
-			# If any of the keys aren't set, that's OK. It just means pypiper isn't being run from a git repo.
+			# It is ok if keys aren't set, it means pypiper isn't in a  git repo.
 			pass
 
 		try:
@@ -373,7 +377,8 @@ class PipelineManager(object):
 		:type target: str or None
 		:param lock_name: Name of lock file. Optional.
 		:type lock_name: str or None
-		:param shell: If command requires should be run in its own shell. Optional. Default: "guess" -- run will try to determine if the command requires a shell.
+		:param shell: If command requires should be run in its own shell. Optional. Default: "guess" --
+			run will try to determine if the command requires a shell.
 		:type shell: bool
 		:param nofail: Should the pipeline proceed past a nonzero return from a process? Default: False
 			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
@@ -405,6 +410,9 @@ class PipelineManager(object):
 		# Prepend "lock." to make it easy to find the lock files.
 		self.proc_lock_name = lock_name
 		lock_name = "lock." + lock_name
+		recover_name = "lock.recover." + self.proc_lock_name
+		recover_file = os.path.join(self.pipeline_outfolder, recover_name)
+		recover_mode = False
 		lock_file = os.path.join(self.pipeline_outfolder, lock_name)
 		process_return_code = 0
 		local_maxmem = 0
@@ -436,6 +444,12 @@ class PipelineManager(object):
 			if os.path.isfile(lock_file):
 				if self.overwrite_locks:
 					print("Found lock file; overwriting this target...")
+				elif os.path.isfile(recover_file):
+					print("Found lock file; dynamic recovery set. Overwriting this target...")
+					# remove the lock file which will then be prompty re-created for the current run.
+					recover_mode = True
+					# the recovery flag is now spent, so remove so we don't accidently re-recover a failed job
+					os.remove(recover_file)
 				else:  # don't overwite locks
 					self._wait_for_lock(lock_file)
 					# when it's done loop through again to try one more time (to see if the target exists now)
@@ -443,15 +457,15 @@ class PipelineManager(object):
 
 			# If you get to this point, the target doesn't exist, and the lock_file doesn't exist 
 			# (or we should overwrite). create the lock (if you can)
-			if not self.overwrite_locks:
+			if self.overwrite_locks or recover_mode:
+				self._create_file(lock_file)
+			else:
 				try:
 					self._create_file_racefree(lock_file)  # Create lock
 				except OSError as e:
 					if e.errno == errno.EEXIST:  # File already exists
 						print ("Lock file created after test! Looping again.")
 						continue  # Go back to start
-			else:
-				self._create_file(lock_file)
 
 			##### End tests block
 			# If you make it past these tests, we should proceed to run the process.
@@ -486,7 +500,8 @@ class PipelineManager(object):
 			break
 
 		# Bad idea: don't return follow_result; it seems nice but nothing else
-		# in your pipeline can depend on this since it won't be run if that command 		# isn't required because target exists.
+		# in your pipeline can depend on this since it won't be run if that command
+		# isn't required because target exists.
 		return process_return_code
 
 
@@ -777,8 +792,7 @@ class PipelineManager(object):
 			str(lock_name) + "\t" + \
 			str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
 			str(memory)
-		# messageMarkdown = "> `" + command + "`\t" + str(elapsed_time).strip() + "\t " + str(memory).strip() + "\t" + "_PROF_"
-		# print(messageMarkdown)
+
 		with open(self.pipeline_profile_file, "a") as myfile:
 			myfile.write(messageRaw + "\n")
 
@@ -799,7 +813,7 @@ class PipelineManager(object):
 
 		# keep the value in memory:
 		self.stats_dict[key] = str(value).strip()
-		messageRaw = key + "\t " + str(value).strip() + "\t" + str(annotation)
+		messageRaw = key + "\t" + str(value).strip() + "\t" + str(annotation)
 		messageMarkdown = "> `" + key + "`\t" + str(value).strip()\
 		 + "\t" + str(annotation) + "\t" + "_RES_"
 		print(messageMarkdown)
@@ -949,7 +963,7 @@ class PipelineManager(object):
 		self.set_status_flag("completed")
 		self._cleanup()
 		self.report_result("Time", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
-		self.report_result("Success", time.strftime("%m-%d %H:%M:%S"))
+		self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
 		print("\n##### [Epilogue:]")
 		print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
 		# print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
@@ -957,7 +971,7 @@ class PipelineManager(object):
 		self.timestamp("* Pipeline completed at: ".rjust(20))
 
 
-	def fail_pipeline(self, e):
+	def fail_pipeline(self, e, dynamic_recover=False):
 		"""
 		If the pipeline does not complete, this function will stop the pipeline gracefully.
 		It sets the status flag to failed and skips the	normal success completion procedure.
@@ -980,6 +994,17 @@ class PipelineManager(object):
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
 			print("Total time: ", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
+
+		if dynamic_recover:
+			# job was terminated, not failed due to a bad process.
+			# flag this run as recoverable.
+			if self.proc_lock_name:
+				# if there is no process locked, then recovery will be automatic.
+				recover_name = "lock.recover." + self.proc_lock_name
+				recover_file = os.path.join(self.pipeline_outfolder, recover_name)
+				print("Setting dynamic recover file: " + recover_file)
+				self._create_file_racefree(recover_file)
+
 		raise e
 
 
@@ -995,7 +1020,7 @@ class PipelineManager(object):
 		message = "Got SIGTERM; Failing gracefully..."
 		with open(self.pipeline_log_file, "a") as myfile:
 			myfile.write(message + "\n")
-		self.fail_pipeline(Exception("SIGTERM"))
+		self.fail_pipeline(Exception("SIGTERM"), dynamic_recover=True)
 		sys.exit(1)
 
 
@@ -1006,7 +1031,7 @@ class PipelineManager(object):
 		message = "Got SIGINT (Ctrl +C); Failing gracefully..."
 		with open(self.pipeline_log_file, "a") as myfile:
 			myfile.write(message + "\n")
-		self.fail_pipeline(Exception("SIGINT"))
+		self.fail_pipeline(Exception("SIGINT"), dynamic_recover=True)
 		sys.exit(1)
 
 
@@ -1382,7 +1407,7 @@ def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = Fal
 		if arg == "genome":
 			parser.add_argument(
 				"-G", "--genome", dest="genome_assembly", type=str,
-				help="identifier for genome assempbly (required)",
+				help="identifier for genome assembly (required)",
 				required=False)
 		if arg == "single-or-paired":
 			parser.add_argument(

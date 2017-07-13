@@ -19,6 +19,7 @@ class PypiperTest(unittest.TestCase):
 	def _clean(cls):
 		for d in glob.glob("pipeline_output*/"):
 			if os.path.isdir(d):
+				print("Removing " + d)
 				shutil.rmtree(d)
 
 	def setUp(self):
@@ -71,10 +72,14 @@ class PypiperTest(unittest.TestCase):
 		self.pp.run(cmd, lock_name="sleep")
 		print("Elapsed: " + str(self.pp.time_elapsed(stamp)))
 		self.assertTrue(self.pp.time_elapsed(stamp) > 1)
+
+
 		print("Wait for subprocess...")
 		self.pp._wait_for_process(self.pp.running_subprocess)
 		self.pp2.wait=True
 		self.pp.wait=True
+
+
 
 		print("Make sure the pipeline respects files already existing...")
 		target = self.pp.pipeline_outfolder + "tgt"
@@ -182,15 +187,26 @@ class PypiperTest(unittest.TestCase):
 
 		cmd = "thiscommandisbad"
 
-		#Should not raise an error
+		# Should not raise an error
 		self.pp.run(cmd, target=None, lock_name="badcommand", nofail=True)
 		self.pp.callprint(cmd, nofail=True)
 
+		# Should raise an error
 		with self.assertRaises(OSError):
 			self.pp.run(cmd, target=None, lock_name="badcommand")
 
+		print("Test dynamic recovery...")
+		# send sigint
+		self.pp.proc_lock_name="sleep"
+		with self.assertRaises(Exception):
+			self.pp._signal_int_handler(None, None)
 
 
+		sleep_lock = self.pp.pipeline_outfolder + "lock.sleep"
+		#subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
+		self.pp._create_file(sleep_lock)
+		cmd = "echo hello"
+		self.pp.run(cmd, lock_name="sleep")
 
 		#subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
 
