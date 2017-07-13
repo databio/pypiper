@@ -410,6 +410,9 @@ class PipelineManager(object):
 		# Prepend "lock." to make it easy to find the lock files.
 		self.proc_lock_name = lock_name
 		lock_name = "lock." + lock_name
+		recover_name = "lock.recover." + self.proc_lock_name
+		recover_file = os.path.join(self.pipeline_outfolder, recover_name)
+		recover_mode = False
 		lock_file = os.path.join(self.pipeline_outfolder, lock_name)
 		process_return_code = 0
 		local_maxmem = 0
@@ -441,6 +444,12 @@ class PipelineManager(object):
 			if os.path.isfile(lock_file):
 				if self.overwrite_locks:
 					print("Found lock file; overwriting this target...")
+				elif os.path.isfile(recover_file):
+					print("Found lock file; dynamic recovery set. Overwriting this target...")
+					# remove the lock file which will then be prompty re-created for the current run.
+					recover_mode = True
+					# the recovery flag is now spent, so remove so we don't accidently re-recover a failed job
+					os.remove(recover_file)
 				else:  # don't overwite locks
 					self._wait_for_lock(lock_file)
 					# when it's done loop through again to try one more time (to see if the target exists now)
@@ -448,15 +457,15 @@ class PipelineManager(object):
 
 			# If you get to this point, the target doesn't exist, and the lock_file doesn't exist 
 			# (or we should overwrite). create the lock (if you can)
-			if not self.overwrite_locks:
+			if self.overwrite_locks or recover_mode:
+				self._create_file(lock_file)
+			else:
 				try:
 					self._create_file_racefree(lock_file)  # Create lock
 				except OSError as e:
 					if e.errno == errno.EEXIST:  # File already exists
 						print ("Lock file created after test! Looping again.")
 						continue  # Go back to start
-			else:
-				self._create_file(lock_file)
 
 			##### End tests block
 			# If you make it past these tests, we should proceed to run the process.
@@ -962,7 +971,7 @@ class PipelineManager(object):
 		self.timestamp("* Pipeline completed at: ".rjust(20))
 
 
-	def fail_pipeline(self, e):
+	def fail_pipeline(self, e, dynamic_recover=False):
 		"""
 		If the pipeline does not complete, this function will stop the pipeline gracefully.
 		It sets the status flag to failed and skips the	normal success completion procedure.
@@ -985,6 +994,17 @@ class PipelineManager(object):
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
 			print("Total time: ", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
+
+		if dynamic_recover:
+			# job was terminated, not failed due to a bad process.
+			# flag this run as recoverable.
+			if self.proc_lock_name:
+				# if there is no process locked, then recovery will be automatic.
+				recover_name = "lock.recover." + self.proc_lock_name
+				recover_file = os.path.join(self.pipeline_outfolder, recover_name)
+				print("Setting dynamic recover file: " + recover_file)
+				self._create_file_racefree(recover_file)
+
 		raise e
 
 
@@ -1000,7 +1020,7 @@ class PipelineManager(object):
 		message = "Got SIGTERM; Failing gracefully..."
 		with open(self.pipeline_log_file, "a") as myfile:
 			myfile.write(message + "\n")
-		self.fail_pipeline(Exception("SIGTERM"))
+		self.fail_pipeline(Exception("SIGTERM"), dynamic_recover=True)
 		sys.exit(1)
 
 
@@ -1011,7 +1031,7 @@ class PipelineManager(object):
 		message = "Got SIGINT (Ctrl +C); Failing gracefully..."
 		with open(self.pipeline_log_file, "a") as myfile:
 			myfile.write(message + "\n")
-		self.fail_pipeline(Exception("SIGINT"))
+		self.fail_pipeline(Exception("SIGINT"), dynamic_recover=True)
 		sys.exit(1)
 
 
