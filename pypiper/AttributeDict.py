@@ -37,7 +37,10 @@ class AttributeDict(object):
 		"""
 		Provides dict-style access to attributes
 		"""
-		return getattr(self, key)
+		try:
+			return getattr(self, key)
+		except AttributeError:
+			raise KeyError(key)
 
 	def __repr__(self):
 		return str(self.__dict__)
