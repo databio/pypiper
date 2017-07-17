@@ -38,7 +38,8 @@ class AttributeDict(object):
 		Provides dict-style access to attributes
 		"""
 		try:
-			return getattr(self, key)
+			# Invoke overridden method directly to not prohibit numeric key.
+			return self.__getattr__(key)
 		except AttributeError:
 			raise KeyError(key)
 
@@ -46,9 +47,9 @@ class AttributeDict(object):
 		return str(self.__dict__)
 
 	def __getattr__(self, name):
-		if name in self.__dict__.keys():
-			return self.name
-		else:
+		try:
+			return self.__dict__[name]
+		except KeyError:
 			if self.return_defaults:
 				# If this object has default mode on, then we should
 				# simply return the name of the requested attribute as
