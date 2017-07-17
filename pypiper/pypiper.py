@@ -47,12 +47,16 @@ class PipelineManager(object):
 	:param str mem: amount of memory to use, in Mb
 	:param str config_file: path to pipeline configuration file, optional
 	:param str output_parent: path to folder in which output folder will live
+	:param bool strict_config: require that key/attribute requests on this
+		PipelineManager's config section be present rather than returning the
+		requested key/attribute if it's not there (i.e., raise an exception)
 	"""
 	def __init__(
 		self, name, outfolder, version=None, args=None, multi=False,
 		manual_clean=False, recover=False, fresh=False, force_follow=False,
 		cores=1, mem="1000",
 		config_file=None, output_parent=None,
+		strict_config = False
 	):
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
@@ -191,7 +195,7 @@ class PipelineManager(object):
 				args.config_file = config_to_load
 				import yaml
 				config = yaml.load(config_file)
-				self.config = AttributeDict(config, default=True)
+				self.config = AttributeDict(config, default=not strict_config)
 		else:
 			self.config = None
 
