@@ -3,21 +3,22 @@ Advanced
 
 
 Toolkits
-*************
+****************************************************
 
 Pypiper includes optional "toolkits" (right now just one) -- suites of commonly used code snippets which simplifies tasks for a pipeline author. For example, the next-gen sequencing toolkit, NGSTk, which simply provides some convenient helper functions to create common shell commands, like converting from file formats (_e.g._ ``bam_to_fastq()``), merging files (_e.g._ ``merge_bams()``), counting reads, etc. These make it faster to design bioinformatics pipelines in Pypiper, but are entirely optional. Contributions of additional toolkits or functions to an existing toolkit are welcome.
 
 
 The follow argument
-*************
-*Follow functions* let you couple follow-up functions to run commands; a follow function will be run if and only if the command is run. This lets you avoid running unnecessary processes repeatedly in the event that you restart your pipeline multiple times (for instance, while debugging later steps in the pipeline).
+****************************************************
+The ``PipelineManager.run`` function has an optional argument named ``follow`` that is useful for checking or reporting results from a command. To the ``follow`` argument you must pass a python function (which may be either a defined function or a ``lambda`` function). These *follow functions* are then coupled to the command that is run; the follow function will be called by python **if and only if** the command is run. 
 
-This is useful for data QC checks to make sure processes did what you expect. Often you'd like to run a function to examine a file but only once, right after the command that produced it runs. For example, just counting the number of lines in a file after producing it, or counting the number of reads that aligned right after an alignment step. You want the counting process coupled to the alignment process, and don't need to re-run the counting every time you restart the pipeline. 
+Why is this useful? There are 2 major use cases: 1) QC checks and reporting results. We use it for QC checks to make sure processes did what we expect, and then to report that result to the ``stats`` file. Often, you'd like to run a function to examine the result of a command, but you only want to run that once, *right after the command that produced the result*. For example, counting the number of lines in a file after producing it, or counting the number of reads that aligned right after an alignment step. You want the counting process coupled to the alignment process, and don't need to re-run the counting every time you restart the pipeline. Because pypiper is smart, it will not re-run the alignment once it has been run; so there is no need to re-count the result on every pipeline run! 
 
+*Follow functions* let you avoid running unnecessary processes repeatedly in the event that you restart your pipeline multiple times (for instance, while debugging later steps in the pipeline).
 
 
 Pipeline command-line arguments
-*************
+****************************************************
 To take full advantage of Pypiper (make your pipeline recoverable, etc.), you need to add command-line options to the ``PipelineManager``. Use the typical Python `argparse module <https://docs.python.org/2/library/argparse.html>`_,  add Pypiper args to it (with ``add_pypiper_args()``), and then pass this to your `PipelineManager`.
 
 .. code-block:: python
@@ -50,7 +51,7 @@ The most significant of these special keywords is the ``config_file`` argument, 
 .. _pipeline_config_files:
 
 Pipeline config files
-*************
+****************************************************
 Optionally, you may choose to conform to our standard for parameterizing pipelines, which enables you to use some powerful features of the pypiper system.
 
 If you write a pipeline config file in ``yaml`` format and name it the same thing as the pipeline (but ending in ``.yaml`` instead of ``.py``), pypiper will automatically load and provide access to these configuration options, and make it possible to pass customized config files on the command line. This is very useful for tweaking a pipeline for a similar project with slightly different parameters, without having to re-write the pipeline.
@@ -146,7 +147,7 @@ Example:
 
 
 Python process types: Shell vs direct
-*************
+****************************************************
 By default, Pypiper will try to guess what kind of process you want, so for most pipelines, it's probably not necessary to understand the details in this section. However, how you write your commands has some implications for memory tracking, and advanced pipeline authors may want to control the process types that Pypiper uses, so this section covers how these subprocesses work.
 
 Since Pypiper runs all your commands from within python (using the `subprocess` python module), it's nice to be aware of the two types of processes that `subprocess` can handle: **direct processes** and **shell processes**.
@@ -158,7 +159,7 @@ Since Pypiper runs all your commands from within python (using the `subprocess` 
 You can force Pypiper to use one or the other by specifying ``shell=True`` or ``shell=False`` to the ``run`` function. By default Pypiper will try to guess: if your command contains any of the shell process characters ("*", "|", or ">"), it will be run in a shell. Otherwise, it will be run as a direct subprocess.
 
 Harvesting statistics
-*************
+****************************************************
 
 Pypiper has a neat function called ``get_stat`` that lets you retrieve any value you've reported with ``report_result`` so you could use it to calculate statistics elsewhere in the pipeline. It will retrieve this either from memory, if the calculation of that result happened during the current pipeline run, or from the ``_stats.tsv`` file if the result was reported by an earlier run (or even another pipeline). So you could in theory calculate statistics based on results across pipelines.
 
