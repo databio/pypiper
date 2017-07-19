@@ -9,4 +9,4 @@ Many pipelines employ default pypiper arguments which are detailed below:
   - ``-R, --recover``
   	Recover mode, overwrite locks. This argument will tell pypiper to recover from a failed previous run. Pypiper will execute commands until it encounters a locked file, at which point it will re-execute the failed command and continue from there.
   - ``-F, --follow``
-  	Run follow-functions. :doc:`the follow argument <the-follow-argument>`.
+  	Run follow-functions. :ref:`the follow argument <The-follow-argument>`.

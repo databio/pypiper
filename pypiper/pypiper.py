@@ -26,23 +26,23 @@ class PipelineManager(object):
 	the main class of Pypiper.
 
 	:param str name: Choose a name for your pipeline;
-	it's used to name the output files, flags, etc.
+		it's used to name the output files, flags, etc.
 	:param str outfolder: Folder in which to store the results.
 	:param argparse.Namespace args: Optional args object from ArgumentParser;
-	Pypiper will simply record these arguments from your script
+		Pypiper will simply record these arguments from your script
 	:param bool multi: Enables running multiple pipelines in one script
-	or for interactive use. It simply disables the tee of the output,
-	so you won't get output logged to a file.
+		or for interactive use. It simply disables the tee of the output,
+		so you won't get output logged to a file.
 	:param bool manual_clean: Overrides the pipeline's clean_add()
-	manual parameters, to *never* clean up intermediate files automatically.
-	Useful for debugging; all cleanup files are added to manual cleanup script.
+		manual parameters, to *never* clean up intermediate files automatically.
+		Useful for debugging; all cleanup files are added to manual cleanup script.
 	:param bool recover: Specify recover mode, to overwrite lock files.
-	If pypiper encounters a locked target, it will ignore the lock and
-	recompute this step. Useful to restart a failed pipeline.
+		If pypiper encounters a locked target, it will ignore the lock and
+		recompute this step. Useful to restart a failed pipeline.
 	:param bool fresh: NOT IMPLEMENTED
 	:param bool force_follow: Force run all follow functions
-	even if  the preceding command is not run. By default,
-	following functions  are only run if the preceding command is run.
+		even if  the preceding command is not run. By default,
+		following functions  are only run if the preceding command is run.
 	:param int cores: number of processors to use, default 1
 	:param str mem: amount of memory to use, in Mb
 	:param str config_file: path to pipeline configuration file, optional
@@ -52,7 +52,7 @@ class PipelineManager(object):
 		self, name, outfolder, version=None, args=None, multi=False,
 		manual_clean=False, recover=False, fresh=False, force_follow=False,
 		cores=1, mem="1000",
-		config_file=None, output_parent=None,
+		config_file=None, output_parent=None
 	):
 		# Params defines the set of options that could be updated via
 		# command line args to a pipeline run, that can be forwarded
@@ -141,7 +141,7 @@ class PipelineManager(object):
 		self.running_subprocess = None
 		self.wait = True  # turn off for debugging
 
-		# In-memory holder for report_results
+		# In-memory holder for report_result
 		self.stats_dict = {}
 
 		# Register handler functions to deal with interrupt and termination signals;
@@ -516,7 +516,6 @@ class PipelineManager(object):
 		in python corresponding to the return value of the command you call.
 		This is equivalent to running subprocess.check_output() 
 		instead of subprocess.call().
-
 		:param cmd: Bash command(s) to be run.
 		:type cmd: str or list
 		:param shell: If command requires should be run in its own shell. Optional.
@@ -526,8 +525,8 @@ class PipelineManager(object):
 		a direct subprocess, set `shell` to False; to force a shell, set True.
 		:type shell: bool
 		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
-			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
-			they will not cause the pipeline to bail out.
+		Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
+		they will not cause the pipeline to bail out.
 		:type nofail: bool
 		"""
 
@@ -799,12 +798,13 @@ class PipelineManager(object):
 	def report_result(self, key, value, annotation=None):
 		"""
 		Writes a string to self.pipeline_stats_file.
-
+		
+		:param key: name (key) of the stat
 		:type key: str
 		:param annotation: By default, the stats will be annotated with the pipeline
-		name, so you can tell which pipeline records which stats. If you want, you can
-		change this; use annotation='shared' if you need the stat to be used by
-		another pipeline (using get_stat()).
+			name, so you can tell which pipeline records which stats. If you want, you can
+			change this; use annotation='shared' if you need the stat to be used by
+			another pipeline (using get_stat()).
 		:type annotation: str
 		"""
 		# Default annotation is current pipeline name

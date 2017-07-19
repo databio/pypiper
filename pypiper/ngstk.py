@@ -193,12 +193,12 @@ class NGSTk(_AttributeDict):
 		if multiple files given.
 
 		:param local_base: Usually the sample name. This (plus file extension) will
-		be the name of the local file linked (or merged) by this function.
+			be the name of the local file linked (or merged) by this function.
 
 		:param input_args: This is a list of arguments, each one is a class of
-		inputs (which can in turn be a string or a list). Typically, input_args
-		is a list with 2 elements: first a list of read1 files; second
-		an (optional!) list of read2 files.
+			inputs (which can in turn be a string or a list). Typically, input_args
+			is a list with 2 elements: first a list of read1 files; second
+			an (optional!) list of read2 files.
 		:type input_args: list
 		"""
 		self.make_sure_path_exists(raw_folder)
@@ -307,7 +307,7 @@ class NGSTk(_AttributeDict):
 		:type input_file: string
 
 		:returns: A command (to be run with PipelineManager) that will ensure
-		your fastq file exists.
+			your fastq file exists.
 		"""
 
 		fastq_prefix = os.path.join(fastq_folder, sample_name)
