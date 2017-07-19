@@ -14,7 +14,7 @@ Update with:
 
 	pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master
 
-Now, to test pypiper, follow the commands in the `Hello, Pypiper! tutorial: just run these 3 lines of code and you're running your first pypiper pipeline!
+Now, to test pypiper, follow the commands in the ``Hello, Pypiper!`` tutorial: just run these 3 lines of code and you're running your first pypiper pipeline!
 
 .. code:: bash
 
