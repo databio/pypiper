@@ -273,9 +273,12 @@ class NGSTk(_AttributeDict):
 					sample_merged_gz = local_base + ".merged.fastq.gz"
 					output_merge = os.path.join(raw_folder, sample_merged)
 					output_merge_gz = os.path.join(raw_folder, sample_merged_gz)
-					cmd1 = "zcat " + " ".join(input_args) + " > " + output_merge
-					cmd2 = "gzip " + output_merge
-					self.pm.run([cmd1, cmd2], output_merge_gz)
+					#cmd1 = self.ziptool + "-d -c " + " ".join(input_args) + " > " + output_merge
+					#cmd2 = self.ziptool + " " + output_merge
+					#self.pm.run([cmd1, cmd2], output_merge_gz)
+					# you can save yourself the decompression/recompression:
+					cmd = "cat " + " ".join(input_args) + " > " + output_merge_gz 
+					self.pm.run(cmd, output_merge_gz)
 					return(output_merge_gz)
 
 				if all([self.get_input_ext(x) == ".fastq" for x in input_args]):
