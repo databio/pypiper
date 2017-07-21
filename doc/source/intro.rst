@@ -3,7 +3,7 @@ Introduction
 =========================
 
 Pypiper is a lightweight python toolkit for gluing together restartable, robust
-command line pipelines. With Pypiper, simplicity is paramount. A new user can start building pipelines using Pypiper in under 15 minutes. Learning all the :doc:`features and  benefits <features>` of Pypiper takes just an hour or two. At the same time, Pypiper provides immediate and significant advantages over a simple shell script.
+command line pipelines. With Pypiper, simplicity is paramount. A new user can start building pipelines using Pypiper in under 15 minutes. Learning all the :doc:`features and benefits <features>` of Pypiper takes just an hour or two. At the same time, Pypiper provides immediate and significant advantages over a simple shell script.
 
 The target user of Pypiper is a computational scientist comfortable on the command line, who has something like a bash script that would benefit from a layer of "handling code". Pypiper helps you convert that set of shell commands into a production-scale workflow, automatically handling the annoying details (restartablilty, file integrity, logging) to make your pipeline robust and restartable, with minimal learning curve.
 
