@@ -549,6 +549,9 @@ class PipelineManager(object):
 		except Exception as e:
 			if not nofail:
 				self.fail_pipeline(e)
+			elif self.status is "failed":
+				print("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
+				raise e
 			else:
 				print(e)
 				print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
@@ -653,6 +656,9 @@ class PipelineManager(object):
 		except Exception as e:
 			if not nofail:
 				self.fail_pipeline(e)
+			elif self.status is "failed":
+				print("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
+				raise e
 			else:
 				print(e)
 				print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
