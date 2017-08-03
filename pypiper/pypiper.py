@@ -1126,8 +1126,13 @@ class PipelineManager(object):
 				files = glob.glob(regex)
 				for file in files:
 					with open(self.cleanup_file, "a") as myfile:
-						if os.path.isfile(file): myfile.write("rm " + file + "\n")
-						elif os.path.isdir(file): myfile.write("rmdir " + file + "\n")
+						if os.path.isfile(file):
+							myfile.write("rm " + file + "\n")
+						elif os.path.isdir(file):
+							# first, add all files in the directory
+							myfile.write("rm " + file + "/*\n")
+							# and the directory itself
+							myfile.write("rmdir " + file + "\n")
 			except:
 				pass
 		elif conditional:
