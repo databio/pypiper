@@ -134,12 +134,24 @@ class PipelineManager(object):
 		self.peak_memory = 0  # memory high water mark
 		self.starttime = time.time()
 		self.last_timestamp = self.starttime  # time of the last call to timestamp()
-		self.status = "initializing"
 		self.proc_name = None
 		self.proc_lock_name = None
 		self.proc_start_time = None
 		self.running_subprocess = None
 		self.wait = True  # turn off for debugging
+
+		# Initialize status and flags
+		self.status = "initializing"
+		# as part of the beginning of the pipeline, clear any flags set by
+		# previous runs of this pipeline
+		flags_to_delete = ["running", "completed", "failed"]
+		for flag in flags_to_delete:
+			existing_flag = os.path.join(self.pipeline_outfolder, self.pipeline_name + "_" + flag + ".flag")
+			try:
+				os.remove(existing_flag)
+				print("Removed existing flag: " + existing_flag)
+			except:
+				pass
 
 		# In-memory holder for report_result
 		self.stats_dict = {}
@@ -352,6 +364,7 @@ class PipelineManager(object):
 		except:
 			pass
 
+			"failed"
 		# Set new status
 		self.status = status
 		flag_file = self.pipeline_outfolder + "/" + self.pipeline_name + "_" + status + ".flag"
