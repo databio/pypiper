@@ -144,7 +144,7 @@ class PipelineManager(object):
 		self.status = "initializing"
 		# as part of the beginning of the pipeline, clear any flags set by
 		# previous runs of this pipeline
-		flags_to_delete = ["running", "completed", "failed"]
+		flags_to_delete = ["running", "completed", "failed", "waiting"]
 		for flag in flags_to_delete:
 			existing_flag = os.path.join(self.pipeline_outfolder, self.pipeline_name + "_" + flag + ".flag")
 			try:
