@@ -198,7 +198,7 @@ class PypiperTest(unittest.TestCase):
 		print("Test dynamic recovery...")
 		# send sigint
 		self.pp.proc_lock_name="sleep"
-		with self.assertRaises(Exception):
+		with self.assertRaises(KeyboardInterrupt):
 			self.pp._signal_int_handler(None, None)
 
 

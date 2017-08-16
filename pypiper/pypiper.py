@@ -407,7 +407,7 @@ class PipelineManager(object):
 		# The default lock name is based on the target name. Therefore, a targetless command that you want
 		# to lock must specify a lock_name manually.
 		if target is None and lock_name is None:
-				raise Exception("You must provide either a target or a lock_name.")
+			self.fail_pipeline(Exception("You must provide either a target or a lock_name."))
 
 		# If the target is a list, for now let's just strip it to the first target.
 		# Really, it should just check for all of them.
@@ -559,7 +559,7 @@ class PipelineManager(object):
 			
 		try:
 			return subprocess.check_output(cmd, shell=shell)
-		except Exception as e:
+		except (OSError, subprocess.CalledProcessError) as e:
 			if not nofail:
 				self.fail_pipeline(e)
 			elif self.status is "failed":
@@ -666,7 +666,7 @@ class PipelineManager(object):
 			if p.returncode != 0:
 				raise Exception("Subprocess returned nonzero result.")
 
-		except Exception as e:
+		except (OSError, subprocess.CalledProcessError) as e:
 			if not nofail:
 				self.fail_pipeline(e)
 			elif self.status is "failed":
@@ -1001,14 +1001,15 @@ class PipelineManager(object):
 		# Take care of any active running subprocess
 		if self.running_subprocess is not None:
 			pid_to_kill = self.running_subprocess.pid
-			self.running_subprocess = None
 			# Close the preformat tag that we opened when the process was spawned.
-			print("</pre>")
 			# record profile of any running processes before killing
 			elapsed_time = time.time() - self.proc_start_time
 			self._report_profile(self.proc_name, self.proc_lock_name, elapsed_time, self.peak_memory)
 
+			print("</pre>")
 			self._kill_child_process(pid_to_kill)
+			self.running_subprocess = None
+
 		if self.status != "failed":  # and self.status != "completed":
 			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
@@ -1039,7 +1040,7 @@ class PipelineManager(object):
 		message = "Got SIGTERM; Failing gracefully..."
 		with open(self.pipeline_log_file, "a") as myfile:
 			myfile.write(message + "\n")
-		self.fail_pipeline(Exception("SIGTERM"), dynamic_recover=True)
+		self.fail_pipeline(KeyboardInterrupt("SIGTERM"), dynamic_recover=True)
 		sys.exit(1)
 
 
@@ -1050,7 +1051,7 @@ class PipelineManager(object):
 		message = "Got SIGINT (Ctrl +C); Failing gracefully..."
 		with open(self.pipeline_log_file, "a") as myfile:
 			myfile.write(message + "\n")
-		self.fail_pipeline(Exception("SIGINT"), dynamic_recover=True)
+		self.fail_pipeline(KeyboardInterrupt("SIGINT"), dynamic_recover=True)
 		sys.exit(1)
 
 
@@ -1071,6 +1072,7 @@ class PipelineManager(object):
 		# as failed, then mark it as failed now.
 
 		if self.status != "completed" and self.status != "failed":
+			print("Pipeline status is: " + self.status)
 			self.fail_pipeline(Exception("Unknown exit failure"))
 
 
