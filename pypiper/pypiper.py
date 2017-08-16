@@ -664,7 +664,7 @@ class PipelineManager(object):
 			self.proc_start_time = None
 
 			if p.returncode != 0:
-				raise Exception("Subprocess returned nonzero result.")
+				raise OSError("Subprocess returned nonzero result.")
 
 		except (OSError, subprocess.CalledProcessError) as e:
 			if not nofail:
