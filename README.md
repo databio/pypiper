@@ -6,7 +6,6 @@ A lightweight python toolkit for gluing together restartable, robust command lin
 
 # Links
 
- * Public-facing permalink: http://databio.org/pypiper
  * Documentation: [Read the Docs](http://pypiper.readthedocs.org/)
  * Source code: http://github.com/epigen/pypiper
 
