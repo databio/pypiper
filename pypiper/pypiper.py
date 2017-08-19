@@ -134,10 +134,10 @@ class PipelineManager(object):
 		self.peak_memory = 0  # memory high water mark
 		self.starttime = time.time()
 		self.last_timestamp = self.starttime  # time of the last call to timestamp()
-		self.proc_name = None
-		self.proc_lock_name = None
-		self.proc_start_time = None
-		self.running_subprocess = None
+
+		self.locks = []
+		self.procs = {}
+		
 		self.wait = True  # turn off for debugging
 
 		# Initialize status and flags
@@ -421,14 +421,16 @@ class PipelineManager(object):
 			lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
 
 		# Prepend "lock." to make it easy to find the lock files.
-		self.proc_lock_name = lock_name
 		lock_name = "lock." + lock_name
-		recover_name = "lock.recover." + self.proc_lock_name
+
+		recover_name = "recover." + lock_name
 		recover_file = os.path.join(self.pipeline_outfolder, recover_name)
 		recover_mode = False
 		lock_file = os.path.join(self.pipeline_outfolder, lock_name)
 		process_return_code = 0
 		local_maxmem = 0
+
+
 
 		# The loop here is unlikely to be triggered, and is just a wrapper
 		# to prevent race conditions; the lock_file must be created by
@@ -458,7 +460,7 @@ class PipelineManager(object):
 				if self.overwrite_locks:
 					print("Found lock file; overwriting this target...")
 				elif os.path.isfile(recover_file):
-					print("Found lock file; dynamic recovery set. Overwriting this target...")
+					print("Found lock file; found dynamic recovery file. Overwriting this target...")
 					# remove the lock file which will then be prompty re-created for the current run.
 					recover_mode = True
 					# the recovery flag is now spent, so remove so we don't accidently re-recover a failed job
@@ -471,9 +473,12 @@ class PipelineManager(object):
 			# If you get to this point, the target doesn't exist, and the lock_file doesn't exist 
 			# (or we should overwrite). create the lock (if you can)
 			if self.overwrite_locks or recover_mode:
+				# Initialize lock in master lock list
+				self.locks.append(lock_name)
 				self._create_file(lock_file)
 			else:
 				try:
+					self.locks.append(lock_name)
 					self._create_file_racefree(lock_file)  # Create lock
 				except OSError as e:
 					if e.errno == errno.EEXIST:  # File already exists
@@ -508,6 +513,7 @@ class PipelineManager(object):
 				follow_result = follow()
 
 			os.remove(lock_file)  # Remove lock file
+			self.locks.remove(lock_name)
 
 			# If you make it to the end of the while loop, you're done
 			break
@@ -571,7 +577,7 @@ class PipelineManager(object):
 			# TODO: return nonzero, or something...
 
 
-	def callprint(self, cmd, shell="guess", nofail=False, container=None):
+	def callprint(self, cmd, shell="guess", nofail=False, container=None, lock_name=None):
 		"""
 		Prints the command, and then executes it, then prints the memory use and
 		return code of the command.
@@ -585,7 +591,9 @@ class PipelineManager(object):
 
 		:param cmd: Bash command(s) to be run.
 		:type cmd: str or list
-		:param shell: If command requires should be run in its own shell. Optional. Default: False.
+		:param shell: If command is required to be run in its own shell. Optional. Default: "guess", which
+			will make a best guess on whether it should run in a shell or not, based on presence of shell
+			utils, like asterisks, pipes, or output redirects. Force one way or another by specifying True or False
 		:type shell: bool
 		:param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
 			Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
@@ -602,6 +610,8 @@ class PipelineManager(object):
 		self._report_command(cmd)
 		# self.proc_name = cmd[0] + " " + cmd[1]
 		self.proc_name = "".join(cmd).split()[0]
+		proc_name = "".join(cmd).split()[0]
+
 
 		likely_shell = self._check_shell(cmd)
 
@@ -626,11 +636,10 @@ class PipelineManager(object):
 			# Capture the subprocess output in <pre> tags to make it format nicely
 			# if the markdown log file is displayed as HTML.
 			print("<pre>")
-			self.proc_start_time = time.time()
 			p = subprocess.Popen(cmd, shell=shell)
 
 			# Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
-			self.running_subprocess = p
+			self.procs[p.pid] = {"proc_name":proc_name, "start_time":time.time(), "pre_block":True, "container":container}
 
 			sleeptime = .25
 
@@ -648,7 +657,7 @@ class PipelineManager(object):
 
 			returncode = p.returncode
 			info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
-			info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(self.proc_start_time))) + "."
+			info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(self.procs[p.pid]["start_time"]))) + "."
 			if not shell:
 				info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
 				info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
@@ -657,11 +666,12 @@ class PipelineManager(object):
 			print(info)
 			# set self.maxmem
 			self.peak_memory = max(self.peak_memory, local_maxmem)
+
 			# report process profile
-			self._report_profile(self.proc_name, self.proc_lock_name, time.time() - self.proc_start_time, local_maxmem)
-			self.running_subprocess = None
-			self.proc_lock_name = None
-			self.proc_start_time = None
+			self._report_profile(self.procs[p.pid]["proc_name"], lock_name, time.time() - self.procs[p.pid]["start_time"], local_maxmem)
+			
+			# Remove this as a running subprocess
+			del self.procs[p.pid]
 
 			if p.returncode != 0:
 				raise OSError("Subprocess returned nonzero result.")
@@ -696,7 +706,8 @@ class PipelineManager(object):
 			sleeptime = min(sleeptime + 5, 60)
 
 		self.peak_memory = max(self.peak_memory, local_maxmem)
-		self.running_subprocess = None
+		
+		del self.procs[p]
 
 		info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
 		if not shell:
@@ -998,30 +1009,24 @@ class PipelineManager(object):
 		:param e: Exception to raise.
 		:type e: Exception
 		"""
+		# Take care of any active running subprocess
+		self._terminate_running_subprocesses()
 
 		if dynamic_recover:
 			# job was terminated, not failed due to a bad process.
 			# flag this run as recoverable.
-			if self.proc_lock_name:
-				# if there is no process locked, then recovery will be automatic.
-				recover_name = "lock.recover." + self.proc_lock_name
+			if len(self.locks) < 1:
+				# If there is no process locked, then recovery will be automatic.
+				print("No locked process. Dynamic recovery will be automatic.")
+			# make a copy of self.locks to iterate over since we'll be clearing them as we go
+			# set a recovery flag for each lock.
+			for lock_name in self.locks[:]:
+				recover_name = "recover." + lock_name
 				recover_file = os.path.join(self.pipeline_outfolder, recover_name)
 				print("Setting dynamic recover file: " + recover_file)
 				self._create_file_racefree(recover_file)
-			else:
-				print("No locked process. Dynamic recovery will be automatic.")
+				self.locks.remove(lock_name)
 
-		# Take care of any active running subprocess
-		if self.running_subprocess is not None:
-			pid_to_kill = self.running_subprocess.pid
-			# Close the preformat tag that we opened when the process was spawned.
-			# record profile of any running processes before killing
-			elapsed_time = time.time() - self.proc_start_time
-			self._report_profile(self.proc_name, self.proc_lock_name, elapsed_time, self.peak_memory)
-
-			print("</pre>")
-			self._kill_child_process(pid_to_kill)
-			self.running_subprocess = None
 
 		# Finally, set the status to failed and close out with a timestamp
 		if self.status != "failed":  # and self.status != "completed":
@@ -1094,7 +1099,26 @@ class PipelineManager(object):
 			self.fail_pipeline(Exception("Unknown exit failure"))
 
 
-	def _kill_child_process(self, child_pid):
+	def _terminate_running_subprocesses(self):
+
+		# make a copy of the list to iterate over since we'll be removing items
+		for pid in self.procs.copy():
+			proc_dict = self.procs[pid]
+
+			# Close the preformat tag that we opened when the process was spawned.
+			# record profile of any running processes before killing
+			elapsed_time = time.time() - self.procs[pid]["start_time"]
+			process_peak_mem = self._memory_usage(pid, container=proc_dict["container"])/1e6
+			self._report_profile(self.procs[pid]["proc_name"], None, elapsed_time, process_peak_mem)
+		
+			if proc_dict["pre_block"]:
+				print("</pre>")
+
+			self._kill_child_process(pid, proc_dict["proc_name"])
+			del self.procs[pid]
+
+
+	def _kill_child_process(self, child_pid, proc_name=None):
 		"""
 		Pypiper spawns subprocesses. We need to kill them to exit gracefully,
 		in the event of a pipeline termination or interrupt signal.
@@ -1108,7 +1132,10 @@ class PipelineManager(object):
 		if child_pid is None:
 			pass
 		else:
-			print("\nPypiper terminating spawned child process " + str(child_pid) +  "...")
+			msg = "\nPypiper terminating spawned child process " + str(child_pid) +  "..."
+			if proc_name:
+				msg += "(" + proc_name + ")"
+			print(msg)
 			# sys.stdout.flush()
 			os.kill(child_pid, signal.SIGTERM)
 			print("child process terminated")
