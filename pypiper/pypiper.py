@@ -998,6 +998,19 @@ class PipelineManager(object):
 		:param e: Exception to raise.
 		:type e: Exception
 		"""
+
+		if dynamic_recover:
+			# job was terminated, not failed due to a bad process.
+			# flag this run as recoverable.
+			if self.proc_lock_name:
+				# if there is no process locked, then recovery will be automatic.
+				recover_name = "lock.recover." + self.proc_lock_name
+				recover_file = os.path.join(self.pipeline_outfolder, recover_name)
+				print("Setting dynamic recover file: " + recover_file)
+				self._create_file_racefree(recover_file)
+			else:
+				print("No locked process. Dynamic recovery will be automatic.")
+
 		# Take care of any active running subprocess
 		if self.running_subprocess is not None:
 			pid_to_kill = self.running_subprocess.pid
@@ -1010,20 +1023,12 @@ class PipelineManager(object):
 			self._kill_child_process(pid_to_kill)
 			self.running_subprocess = None
 
+		# Finally, set the status to failed and close out with a timestamp
 		if self.status != "failed":  # and self.status != "completed":
 			self.timestamp("### Pipeline failed at: ")
-			print("Total time: ", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
+			total_time = datetime.timedelta(seconds = self.time_elapsed(self.starttime))
+			print("Total time: " + str(total_time))
 			self.set_status_flag("failed")
-
-		if dynamic_recover:
-			# job was terminated, not failed due to a bad process.
-			# flag this run as recoverable.
-			if self.proc_lock_name:
-				# if there is no process locked, then recovery will be automatic.
-				recover_name = "lock.recover." + self.proc_lock_name
-				recover_file = os.path.join(self.pipeline_outfolder, recover_name)
-				print("Setting dynamic recover file: " + recover_file)
-				self._create_file_racefree(recover_file)
 
 		raise e
 
@@ -1037,22 +1042,35 @@ class PipelineManager(object):
 		error message in the tee'd output; if you do not handle this, then the tee process will be terminated
 		before the TERM error message, leading to a confusing log file.
 		"""
-		message = "Got SIGTERM; Failing gracefully..."
-		with open(self.pipeline_log_file, "a") as myfile:
-			myfile.write(message + "\n")
-		self.fail_pipeline(KeyboardInterrupt("SIGTERM"), dynamic_recover=True)
+		signal_type = "SIGTERM"
+		self._generic_signal_handler(signal_type)
+		
+	def _generic_signal_handler(self, signal_type):
+		"""
+		Function for handling both SIGTERM and SIGINT
+		"""
+		message = "Got " + signal_type + ". Failing gracefully..."
+		self.timestamp(message)
+		self.fail_pipeline(KeyboardInterrupt(signal_type), dynamic_recover=True)
 		sys.exit(1)
 
+		# I used to write to the logfile directly, because the interrupts
+		# would first destroy the tee subprocess, so anything printed
+		# after an interrupt would only go to screen and not get put in
+		# the log, which is bad for cluster processing. But I later
+		# figured out how to sequester the kill signals so they didn't get
+		# passed directly to the tee subprocess, so I could handle that on
+		# my own; hence, now I believe I no longer need to do this. I'm
+		# leaving this code here as a relic in case someething comes up.
+		#with open(self.pipeline_log_file, "a") as myfile:
+		#	myfile.write(message + "\n")
 
 	def _signal_int_handler(self, signal, frame):
 		"""
 		For catching interrupt (Ctrl +C) signals. Fails gracefully.
 		"""
-		message = "Got SIGINT (Ctrl +C); Failing gracefully..."
-		with open(self.pipeline_log_file, "a") as myfile:
-			myfile.write(message + "\n")
-		self.fail_pipeline(KeyboardInterrupt("SIGINT"), dynamic_recover=True)
-		sys.exit(1)
+		signal_type = "SIGINT"
+		self._generic_signal_handler(signal_type)
 
 
 	def _exit_handler(self):
@@ -1090,9 +1108,11 @@ class PipelineManager(object):
 		if child_pid is None:
 			pass
 		else:
-			print("\nPypiper terminating spawned child process " + str(child_pid))
+			print("\nPypiper terminating spawned child process " + str(child_pid) +  "...")
 			# sys.stdout.flush()
 			os.kill(child_pid, signal.SIGTERM)
+			print("child process terminated")
+
 
 
 	def atexit_register(self, *args):
