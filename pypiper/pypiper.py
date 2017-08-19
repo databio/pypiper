@@ -1011,9 +1011,9 @@ class PipelineManager(object):
 			self.running_subprocess = None
 
 		if self.status != "failed":  # and self.status != "completed":
-			self.set_status_flag("failed")
 			self.timestamp("### Pipeline failed at: ")
 			print("Total time: ", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
+			self.set_status_flag("failed")
 
 		if dynamic_recover:
 			# job was terminated, not failed due to a bad process.
