@@ -75,7 +75,8 @@ class PypiperTest(unittest.TestCase):
 
 
 		print("Wait for subprocess...")
-		self.pp._wait_for_process(self.pp.running_subprocess)
+		for p in self.pp.procs.copy():
+			self.pp._wait_for_process(self.pp.procs[p]["p"])
 		self.pp2.wait=True
 		self.pp.wait=True
 
@@ -134,6 +135,8 @@ class PypiperTest(unittest.TestCase):
 		self.assertTrue(os.path.isfile(tgt2))
 		self.assertTrue(os.path.isfile(tgt3))
 		self.assertTrue(os.path.isfile(tgt4))
+
+
 
 		# But in regular mode, they should be deleted:
 		self.pp.manual_clean=False
@@ -197,7 +200,7 @@ class PypiperTest(unittest.TestCase):
 
 		print("Test dynamic recovery...")
 		# send sigint
-		self.pp.proc_lock_name="sleep"
+		self.pp.locks.append("lock.sleep")
 		with self.assertRaises(KeyboardInterrupt):
 			self.pp._signal_int_handler(None, None)
 

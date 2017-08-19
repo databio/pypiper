@@ -460,7 +460,7 @@ class PipelineManager(object):
 				if self.overwrite_locks:
 					print("Found lock file; overwriting this target...")
 				elif os.path.isfile(recover_file):
-					print("Found lock file; found dynamic recovery file. Overwriting this target...")
+					print("Found lock file. Found dynamic recovery file. Overwriting this target...")
 					# remove the lock file which will then be prompty re-created for the current run.
 					recover_mode = True
 					# the recovery flag is now spent, so remove so we don't accidently re-recover a failed job
@@ -639,7 +639,12 @@ class PipelineManager(object):
 			p = subprocess.Popen(cmd, shell=shell)
 
 			# Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
-			self.procs[p.pid] = {"proc_name":proc_name, "start_time":time.time(), "pre_block":True, "container":container}
+			self.procs[p.pid] = {
+				"proc_name":proc_name,
+				"start_time":time.time(),
+				"pre_block":True,
+				"container":container,
+				"p": p}
 
 			sleeptime = .25
 
@@ -707,7 +712,7 @@ class PipelineManager(object):
 
 		self.peak_memory = max(self.peak_memory, local_maxmem)
 		
-		del self.procs[p]
+		del self.procs[p.pid]
 
 		info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
 		if not shell:
