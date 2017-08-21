@@ -1032,6 +1032,10 @@ class PipelineManager(object):
 				self._create_file_racefree(recover_file)
 				self.locks.remove(lock_name)
 
+		# Produce cleanup script
+		self._cleanup(dry_run=True)
+
+
 
 		# Finally, set the status to failed and close out with a timestamp
 		if self.status != "failed":  # and self.status != "completed":
@@ -1216,7 +1220,7 @@ class PipelineManager(object):
 			while regex in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(regex)
 
 
-	def _cleanup(self):
+	def _cleanup(self, dry_run=False):
 		"""
 		Cleans up (removes) intermediate files.
 
@@ -1224,7 +1228,18 @@ class PipelineManager(object):
 		when the pipeline completes. This function deletes them,
 		either absolutely or conditionally. It is run automatically when the
 		pipeline succeeds, so you shouldn't need to call it from a pipeline.
+
+		@param dry_run Set to True if you want to build a cleanup script, but
+		    not actually delete the files.
 		"""
+
+		if dry_run:
+			# Move all unconditional cleans into the conditional list
+			if len(self.cleanup_list) > 0:
+				combined_list = self.cleanup_list_conditional + self.cleanup_list
+				self.cleanup_list_conditional = combined_list
+				self.cleanup_list = []
+
 		if len(self.cleanup_list) > 0:
 			print("\nCleaning up flagged intermediate files...")
 			for expr in self.cleanup_list:
@@ -1248,7 +1263,7 @@ class PipelineManager(object):
 		if len(self.cleanup_list_conditional) > 0:
 			# flag_files = glob.glob(self.pipeline_outfolder + "*.flag")
 			flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag") if "completed" not in os.path.basename(fn) and not self.pipeline_name + "_running.flag" == os.path.basename(fn)]
-			if (len(flag_files) == 0):
+			if len(flag_files) == 0 and not dry_run:
 				print("\nCleaning up conditional list...")
 				for expr in self.cleanup_list_conditional:
 					print("\nRemoving glob: " + expr)
