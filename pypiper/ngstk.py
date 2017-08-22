@@ -1140,7 +1140,7 @@ class NGSTk(_AttributeDict):
 		cmd += " | awk '{{sum+=$5}} END {{print sum}}' > {0}".format(output)
 		return cmd
 
-	def macs2CallPeaks(self, treatmentBams, outputDir, sampleName, genome, controlBams=None, broad=False, paired=False, force_model=False):
+	def macs2CallPeaks(self, treatmentBams, outputDir, sampleName, genome, controlBams=None, broad=False, paired=False):
 		"""
 		Use MACS2 to call peaks.
 		"""
@@ -1154,9 +1154,7 @@ class NGSTk(_AttributeDict):
 		if not broad:
 			cmd += " --fix-bimodal --extsize 180 --bw 200"
 		else:
-			cmd += " --broad --extsize 73 --pvalue 1e-3"
-			if not force_model:
-				cmd += " --nomodel"
+			cmd += " --broad --nomodel --extsize 73 --pvalue 1e-3"
 		cmd += " -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 
 		return cmd
