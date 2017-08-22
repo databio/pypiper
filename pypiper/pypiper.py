@@ -972,14 +972,14 @@ class PipelineManager(object):
 		:param key: key of stat to retrieve		
 		"""
 
-		if self.stats_dict.has_key(key):
-			return (self.stats_dict[key])
-		else:
+		try:
+			return self.stats_dict[key]
+		except KeyError:
 			self._refresh_stats()
-			if self.stats_dict.has_key(key):
-				return (self.stats_dict[key])
-			else:
-				print("Error: Missing stat: " + key + ".")
+			try:
+				return self.stats_dict[key]
+			except KeyError:
+				print("Missing stat '{}'".format(key))
 				return None
 
 
