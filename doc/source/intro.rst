@@ -44,7 +44,8 @@ there are a few things Pypiper deliberately doesn't do:
   a pipeline with complex task dependencies, there are better options. We view
   this as an advantage because it makes the pipeline easier to write, easier to
   understand, and easier to debug. For developmental pipelines, the complexity
-  cost is not worth the minimal benefit (as sample size increases).
+  cost is not worth the minimal benefit -- read this `post on parallelism in bioinformatics <http://databio.org/posts/paralellism_in_bioinformatics.html>`_ 
+  for an explanation.
 
 - Cluster submission. Pypiper does not handle any sort of cluster job submission
   or  resource requesting. Instead, we have divided this into a

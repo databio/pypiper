@@ -14,12 +14,17 @@ Contents
 
    intro.rst
    hello-world.rst
-   usage.rst
-   features.rst
    outputs.rst
+   features.rst
 
 .. toctree::
-   :caption: Developing Pipelines
+   :caption: How to use a pipeline
+   :maxdepth: 2
+   
+   usage.rst
+
+.. toctree::
+   :caption: How to develop a pipeline
    :maxdepth: 2
 
    tutorials.rst
@@ -31,6 +36,7 @@ Contents
    :caption: Toolkits
    :maxdepth: 2
 
+   toolkits.rst
    ngstk.rst
 
 .. toctree::
@@ -41,6 +47,7 @@ Contents
    faq.rst
    changelog.rst
    support.rst
+   GitHub <http://github.com/epigen/pypiper>
 
 
 

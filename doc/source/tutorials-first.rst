@@ -13,7 +13,7 @@ Using pypiper is simple. Your pipeline is a python script, say `pipeline.py`. Fi
 
 This creates your ``outfolder`` and places a flag called ``my_pipeline_running.flag`` in the folder. It also initializes the log file (``my_pipeline_log.md``) with statistics such as time of starting, compute node, software versions, command-line parameters, etc.
 
-Now, the workhorse of ``PipelineManager`` is the ``run()`` function. Essentially, you just create a shell command as a string in python, and then pass it and its target (a file it creates) to ``run()``. The target is the final output file created by your command.
+Now, the workhorse of ``PipelineManager`` is the ``run()`` function. Essentially, you just create a shell command as a string in python, and then pass it and its target (a file it creates) to ``run()``. The target is the final output file created by your command. Let's use the built-in ``shuf`` command to create some random numbers and put them in a file called ``outfile.txt``:
 
 .. code-block:: python
 
