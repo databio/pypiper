@@ -7,31 +7,30 @@ Then, you add Pypiper args to your parser with the function ``add_pypiper_args()
 
 .. code-block:: python
 
-	import pypiper, os, argparse
-	parser = ArgumentParser(description='Write a short description here')
+    import pypiper, os, argparse
+    parser = ArgumentParser(description='Write a short description here')
 
-	# add any custom args here
-	# e.g. parser.add_argument('--foo', help='foo help')
+    # add any custom args here
+    # e.g. parser.add_argument('--foo', help='foo help')
 
-	# once you've established all your custom arguments, we can add the default
-	# pypiper arguments to your parser like this:
+    # once you've established all your custom arguments, we can add the default
+    # pypiper arguments to your parser like this:
 
-	parser = pypiper.add_pypiper_args(parser)
-	
-	# Then, pass this parser along to the PipelineManger
+    parser = pypiper.add_pypiper_args(parser)
+    
+    # Then, pass this parser along to the PipelineManger
 
-	pipeline = pypiper.PipelineManager(name="my_pipeline", outfolder="out", \
-						args=parser)
+    pipeline = pypiper.PipelineManager(name="my_pipeline", outfolder="out", \
+                        args=parser)
 
 
-Once you've added pypiper arguments, your pipeline will then enable a few **pypiper keyword arguments**: ``recover``, ``fresh``, and ``dirty``. As a side bonus, all arguments (including any of your custom arguments) will be recorded in the log outputs. 
+Once you've added pypiper arguments, your pipeline will then enable a few built-in arguments: ``--recover``, ``--follow``, and ``--dirty``, for example. As a side bonus, all arguments (including any of your custom arguments) will be recorded in the log outputs. 
 
 That's the basics. But you can customize things for more efficiency using a simple set of pre-built args and groups of args in pypiper:
 
 
 Customizing ``add_pypiper_args()``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 
 There are two ways to modulate the arguments added by ``add_pypiper_args()`` function: the ``groups`` argument, which lets you add argument groups; or the ``args`` argument, which lets you add arguments indvidually. By default, ``add_pypiper_args()`` add all arguments listed in the ``pypiper`` group. You may instead pass a list of one or more of these groups of arguments (to ``groups``) or individual arguments (to ``args``) to customize exactly the set of built-in options your pipeline implements.
 
@@ -70,25 +69,33 @@ Pre-built collections of arguments added via ``groups``:
 - ngs: ``input``, ``sample-name``, ``input2``, ``genome``, ``single-or-paired``
 
 
+Specifying required built-in arguments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+If you're using the built-in arguments, you may want to module which are required and which are not. That way, you can piggyback on how ``ArgumentParser`` handles required arguments very nicely -- if the user does not specify a required argument, the pipeline will automatically prompt with usage instructions.
+
+By default, built-in arguments are not flagged as required, but you can pass a list of required built-ins to the ``required`` parameter, like ``add_pypiper_args(parser, args=["sample-name"], required=["sample-name"])``.
+
+
 Examples
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
 
-	import pypiper, os, argparse
-	parser = ArgumentParser(description='Write a short description here')
+    import pypiper, os, argparse
+    parser = ArgumentParser(description='Write a short description here')
 
-	# add just arguments from group `pypiper`
-	parser = pypiper.add_pypiper_args(parser, groups=["pypiper"])
+    # add just arguments from group `pypiper`
+    parser = pypiper.add_pypiper_args(parser, groups=["pypiper"])
 
-	# add just arguments from group `common`
-	parser = pypiper.add_pypiper_args(parser, groups=["common"])	
+    # add just arguments from group `common`
+    parser = pypiper.add_pypiper_args(parser, groups=["common"])    
 
-	# add arguments from two groups
-	parser = pypiper.add_pypiper_args(parser, groups=["common", "resources"])
+    # add arguments from two groups
+    parser = pypiper.add_pypiper_args(parser, groups=["common", "resources"],
+                                        required=["sample-name", "output-parent"])
 
-	# add individual argument
-	parser = pypiper.add_pypiper_args(parser, args=["genome"])
+    # add individual argument
+    parser = pypiper.add_pypiper_args(parser, args=["genome"])
 
-	# add some groups and some individual arguments
-	parser = pypiper.add_pypiper_args(parser, args=["genome"], groups=["looper", "ngs"])
+    # add some groups and some individual arguments
+    parser = pypiper.add_pypiper_args(parser, args=["genome"], groups=["looper", "ngs"])
