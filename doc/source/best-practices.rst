@@ -9,7 +9,7 @@ Here are some guidelines for how you can design the most effective pipelines.
 	In your output, keep pipeline steps separate by organizing output into subfolders.
 
 * **Use git for versioning**. 
-	If you develop your pipeline in a git repository, Pypiper will automatically record what commit you run, making it easy to figure out what code version you ran.
+	If you develop your pipeline in a git repository, Pypiper will automatically record the commit hash when you run a pipeline, making it easy to figure out **exactly** what code version you ran.
 
 * **Record stats as you go**. 
 	In other words, don't do all your stats (``report_result()``) and QC at the end, do it along the way. This makes it easy for you to monitor pipeline performance, and couples stats with how far the pipeline makes it, so you could make use of a partially completed (or even ultimately failed) pipelines.

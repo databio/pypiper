@@ -21,16 +21,21 @@ Contents
    :caption: How to use a pipeline
    :maxdepth: 2
    
+   locating-pipelines.rst
    usage.rst
 
 .. toctree::
+   :titlesonly:
    :caption: How to develop a pipeline
-   :maxdepth: 2
 
    tutorials.rst
    functions.rst
-   advanced.rst
+   develop-arguments.rst
+   develop-config.rst
+   develop-follow.rst
+   develop-statistics.rst
    best-practices.rst
+   advanced.rst
 
 .. toctree::
    :caption: Toolkits
