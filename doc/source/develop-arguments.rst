@@ -1,9 +1,9 @@
 Command-line arguments
 ================================================================================
 
-To take full advantage of Pypiper (make your pipeline recoverable, etc.), you need to add command-line options to the ``PipelineManager``. You should use the typical Python `argparse module <https://docs.python.org/2/library/argparse.html>`_ to define command-line arguments to your pipeline, adding whatever arguments you like.
+To take full advantage of Pypiper (make your pipeline recoverable, etc.), you may choose to add command-line options to your pipeline that pypiper understands. Pypiper uses the typical Python `argparse module <https://docs.python.org/2/library/argparse.html>`_ to define command-line arguments to your pipeline.
 
-Then, you add Pypiper args to your parser with the function ``add_pypiper_args()``, and pass the parser to your ``PipelineManager``, like this:
+You can use an ArgumentParser as usual, adding whatever arguments you like. Then, you add Pypiper args to your parser with the function ``add_pypiper_args()``, and pass the parser to your ``PipelineManager``, like this:
 
 .. code-block:: python
 
