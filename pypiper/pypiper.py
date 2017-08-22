@@ -1369,7 +1369,8 @@ class Tee(object):
 
 
 # @staticmethod
-def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = False):
+def add_pypiper_args(parser, groups=["pypiper"], args=[None], 
+					 required=[None], all_args=False):
 	"""
 	Adds default automatic args to an ArgumentParser. Use this to add standardized 
 	pypiper arguments to your python pipeline.
@@ -1385,6 +1386,7 @@ def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = Fal
 		 Options are: pypiper, config, looper, resources, common, ngs, all.
 	:type groups: list
 	:param args: You may specify a list of specific arguments one by one.
+	:param required: List arguments to be flagged as 'required' by argparse.
 	:type args: list
 
 	:returns: A new ArgumentParser object, with selected pypiper arguments added
@@ -1431,24 +1433,33 @@ def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = Fal
 
 	#print(args_to_add)
 
-	for arg in args_to_add:	
+	for arg in args_to_add:
+
+		if arg in required:
+			req = True
+		else:
+			req = False
 		# Basic pypiper arguments actually used by pypiper
 		if arg == "recover":
 			parser.add_argument(
 				'-R', '--recover', dest='recover', action='store_true',
-				default=False, help='Recover mode, overwrite locks')
+				default=False, help='Recover mode, overwrite locks',
+				required=req)
 		if arg == "new-start":
 			parser.add_argument(
 				'-N', '--new-start', dest='fresh', action='store_true',
-				default=False, help='Fresh start mode, overwrite all')
+				default=False, help='Fresh start mode, overwrite all',
+				required=req)
 		if arg == "dirty":
 			parser.add_argument(
 				'-D', '--dirty', dest='manual_clean', action='store_true',
-				default=False, help='Make all cleanups manual')  # Useful for debugging
+				default=False, help='Make all cleanups manual',
+				required=req)  # Useful for debugging
 		if arg == "follow":
 			parser.add_argument(
 				'-F', '--follow', dest='force_follow', action='store_true',
-				default=False, help='Run all follow commands, even if command is not run')  # Recalculating stats
+				default=False, required=req,
+				help='Run all follow commands, even if command is not run')  # Recalculating stats
 
 		if arg == "config":
 			default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
@@ -1458,37 +1469,37 @@ def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = Fal
 				help="pipeline config file in YAML format; relative paths are \
 				considered relative to the pipeline script. \
 				defaults to " + default_config,
-				required=False, default=default_config, metavar="CONFIG_FILE")
+				required=req, default=default_config, metavar="CONFIG_FILE")
 		if arg == "output-parent":	
 			parser.add_argument(
 				"-O", "--output-parent", dest="output_parent", type=str,
 				help="parent output directory of the project (required).",
-				required=False, metavar="PARENT_OUTPUT_FOLDER")
+				required=req, metavar="PARENT_OUTPUT_FOLDER")
 			# output_parent was previously called project_root
 
 		if arg == "cores":
 			parser.add_argument(
 				"-P", "--cores", dest="cores", type=str,
 				help="number of cores to use for parallel processes",
-				required=False, default=1, metavar="NUMBER_OF_CORES")
+				required=req, default=1, metavar="NUMBER_OF_CORES")
 		if arg == "mem":	
 			parser.add_argument(
 				"-M", "--mem", dest="mem", type=str,
 				help="Memory string for processes that accept memory limits (like java)",
-				required=False, default="4000", metavar="MEMORY_LIMIT")
+				required=req, default="4000", metavar="MEMORY_LIMIT")
 
 		if arg == "input":
 			# Arguments typically used in every pipeline
 			parser.add_argument(
 				"-I", "--input", dest="input", type=str, nargs="+",
 				help="One or more primary input files (required)",
-				required=False, metavar="INPUT_FILES")
+				required=req, metavar="INPUT_FILES")
 			# input was previously called unmapped_bam
 		if arg == "sample-name":
 			parser.add_argument(
 				"-S", "--sample-name", dest="sample_name", type=str,
 				help="unique name for output subfolder and files (required)",
-				required=False, metavar="SAMPLE_NAME")
+				required=req, metavar="SAMPLE_NAME")
 
 		if arg == "input2":
 			# Common arguments specific to NGS pipelines
@@ -1496,17 +1507,17 @@ def add_pypiper_args(parser, groups = ["pypiper"], args = [None], all_args = Fal
 				"-I2", "--input2", dest="input2", type=str, nargs="+",
 				help="One or more secondary input files (if they exists); \
 				for example, second read in pair.",
-				required=False, default=None, metavar="INPUT_FILES2")
+				required=req, default=None, metavar="INPUT_FILES2")
 		if arg == "genome":
 			parser.add_argument(
 				"-G", "--genome", dest="genome_assembly", type=str,
 				help="identifier for genome assembly (required)",
-				required=False)
+				required=req)
 		if arg == "single-or-paired":
 			parser.add_argument(
 				"-Q", "--single-or-paired", dest="single_or_paired", type=str,
 				help="single or paired end? default: single",
-				required=False, default="single")
+				required=req, default="single")
 
 
 
