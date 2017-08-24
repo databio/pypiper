@@ -1165,12 +1165,12 @@ class NGSTk(_AttributeDict):
 		cmd += " --nomodel --extsize 147 -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 		return cmd
 
-	def macs2PlotModel(self, sampleName, outputDir):
+	def macs2PlotModel(self, r_peak_model_file, sample_name, output_dir):
 		import os
 		# run macs r script
-		cmd1 = self.tools.Rscript + " {0}/{1}_model.r".format(os.getcwd(), sampleName)
+		cmd1 = "{} {}".format(self.tools.Rscript, r_peak_model_file)
 		# move to sample dir
-		cmd2 = "mv {0}/{1}_model.pdf {2}/{1}_model.pdf".format(os.getcwd(), sampleName, outputDir)
+		cmd2 = "mv {0}/{1}_model.pdf {2}/{1}_model.pdf".format(os.getcwd(), sample_name, output_dir)
 		return [cmd1, cmd2]
 
 	def sppCallPeaks(self, treatmentBam, controlBam, treatmentName, controlName, outputDir, broad, cpus):
