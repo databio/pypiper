@@ -18,10 +18,12 @@ You can use an ArgumentParser as usual, adding whatever arguments you like. Then
 
     parser = pypiper.add_pypiper_args(parser)
     
-    # Then, pass this parser along to the PipelineManger
+    # Then, pass the args parsed along to the PipelineManger
+
+    args = parser.parse_args()
 
     pipeline = pypiper.PipelineManager(name="my_pipeline", outfolder="out", \
-                        args=parser)
+                        args=args)
 
 
 Once you've added pypiper arguments, your pipeline will then enable a few built-in arguments: ``--recover``, ``--follow``, and ``--dirty``, for example. As a side bonus, all arguments (including any of your custom arguments) will be recorded in the log outputs. 

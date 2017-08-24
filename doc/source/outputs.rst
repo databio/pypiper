@@ -1,5 +1,5 @@
 
-Outputs
+Outputs explained
 =========================
 
 Assume you are using a pypiper pipeline named `PIPE` ( it passes ``name="PIPE"`` to the PipelineManager constructor). By default, your ``PipelineManager`` will produce the following outputs automatically (in addition to any output created by the actual pipeline commands you run):
