@@ -1,5 +1,5 @@
 
-Pypiper Functions
+Basic functions
 =========================
 
 Pypiper is simple, but powerful. You only need 3 functions to get started. ``PipelineManager`` can do:

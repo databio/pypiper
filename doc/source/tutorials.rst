@@ -10,10 +10,7 @@ Start with the 'your first pipeline' tutorial to get a quick overview of a simpl
 
   tutorials-first.rst
   tutorials-basic.rst
+  tutorials-advanced.rst
 
-
-* `example_pipelines/advanced.py` (under construction) - A tutorial demonstrating some more advanced features.
-* `example_pipelines/bioinformatics.py` (under construction) - A tutorial showing some bioinformatics use cases.
-
-Finally, check out some real-world pipelines in our `open_pipelines repository <https://github.com/epigen/open_pipelines>`_
+Once you've been through these simple tutorials, you may want to check out :doc:`real-world pipelines built using pypiper <locating-pipelines>`.
 

@@ -52,8 +52,12 @@ class NGSTk(_AttributeDict):
 			self.pm = pm
 			if hasattr(pm.config, "tools"):
 				self.tools = self.pm.config.tools
+			else:
+				self.tools = _AttributeDict(dict(), default=True)	
 			if hasattr(pm.config, "parameters"):
 				self.parameters = self.pm.config.parameters
+			else:
+				self.parameters = _AttributeDict(dict(), default=True)	
 		else:
 			self.tools = _AttributeDict(dict(), default=True)
 			self.parameters = _AttributeDict(dict(), default=True)

@@ -1,4 +1,5 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python
+
 """Getting Started: A simple sample pipeline built using pypiper."""
 
 # This is a runnable example. You can run it to see what the output
