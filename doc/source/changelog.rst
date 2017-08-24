@@ -1,7 +1,7 @@
 Changelog
 ******************************
 
-- **v0.6** (*Unreleased*):
+- **v0.6** (*2017-08-24*):
 
     - Adds 'dynamic recovery' capability. For jobs that are terminated by an interrupt, such as a SIGINT or SIGTERM (as opposed to a failed command), pypiper will now set a dynamic recovery flags. These jobs, when restarted, will automatically pick up where they left off, without requiring any user intervention. Previously, the user would have to specify recover mode (``-R``). Now, recover mode forces a recover regardless of failure type, but interrupted pipelines will auto-recover.
 
@@ -16,6 +16,8 @@ Changelog
     - Pypiper now can handle multiple SIGTERMs without one canceling the shutdown procedure begun by the other.
 
     - Major improvements to documentation and tutorials.
+
+    - Adds ``report_figure`` function.
 
 - **v0.5** (*2017-07-21*):
 
