@@ -124,9 +124,14 @@ class PipelineManager(object):
 		# File paths:
 		self.pipeline_outfolder = os.path.join(outfolder, '')
 		self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
+
 		self.pipeline_profile_file = self.pipeline_outfolder + self.pipeline_name + "_profile.tsv"
-		#self.pipeline_stats_file = self.pipeline_outfolder + self.pipeline_name + "_stats.tsv"
+
+		# stats and figures are general and so lack the pipeline name.
 		self.pipeline_stats_file = self.pipeline_outfolder + "stats.tsv"
+		self.pipeline_figures_file = self.pipeline_outfolder + "figures.tsv"
+
+
 		self.pipeline_commands_file = self.pipeline_outfolder + self.pipeline_name + "_commands.sh"
 		self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
 
@@ -862,7 +867,47 @@ class PipelineManager(object):
 
 		# Just to be extra careful, let's lock the file while we we write
 		# in case multiple pipelines write to the same file.
-		target = self.pipeline_stats_file
+		self._safe_write_to_file(self.pipeline_stats_file, message_raw)
+
+
+	def report_figure(self, key, filename, annotation=None):
+		"""
+		Writes a string to self.pipeline_figures_file.
+
+		:param key: name (key) of the figure
+		:type key: str
+		:param filename: relative path to the file (relative to parent output dir)
+		:type filename: str
+		:param annotation: By default, the figures will be annotated with the pipeline
+			name, so you can tell which pipeline records which figures. If you want, you can
+			change this.
+		:type annotation: str
+		"""
+
+		# Default annotation is current pipeline name
+		if not annotation:
+			annotation = self.pipeline_name
+
+		# In case the value is passed with trailing whitespace
+		filename = str(filename).strip()
+		annotation = str(annotation)
+
+		message_raw = "{key}\t{filename}\t{annotation}".format(
+			key=key, filename=filename, annotation=annotation)
+
+		message_markdown = "> `{key}`\t{filename}\t{annotation}\t_RES_".format(
+			key=key, filename=filename, annotation=annotation)
+
+		print(message_markdown)
+
+		self._safe_write_to_file(self.pipeline_figures_file, message_raw)
+
+
+	def _safe_write_to_file(self, file, message):
+		"""
+		Writes a string to a file safely (with file locks).
+		"""
+		target = file
 		lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
 		lock_name = "lock." + lock_name
 		lock_file = os.path.join(self.pipeline_outfolder, lock_name)
@@ -872,6 +917,7 @@ class PipelineManager(object):
 				self._wait_for_lock(lock_file)
 			else:
 				try:
+					self.locks.append(lock_name)
 					self._create_file_racefree(lock_file)  # Create lock
 				except OSError as e:
 					if e.errno == errno.EEXIST:  # File already exists
@@ -879,25 +925,13 @@ class PipelineManager(object):
 						continue  # Go back to start
 
 				# Proceed with file writing
-				with open(self.pipeline_stats_file, "a") as myfile:
-					myfile.write(message_raw + "\n")
+				with open(file, "a") as myfile:
+					myfile.write(message + "\n")
 
 				os.remove(lock_file)  # Remove lock file
-
+				self.locks.remove(lock_name)
 				# If you make it to the end of the while loop, you're done
 				break
-
-	def report_figure(self, key, filename, annotation=None):
-		"""
-		Writes a string to self.pipeline_figures_file.
-
-		:param key: name (key) of the figure
-		:type key: str
-		:param annotation: By default, the figures will be annotated with the pipeline
-			name, so you can tell which pipeline records which figures. If you want, you can
-			change this.
-		:type annotation: str
-		"""
 
 
 

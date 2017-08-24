@@ -136,7 +136,7 @@ class PypiperTest(unittest.TestCase):
 		self.assertTrue(os.path.isfile(tgt3))
 		self.assertTrue(os.path.isfile(tgt4))
 
-
+		self.pp.report_figure("Test figure", "fig/fig.jpg")
 
 		# But in regular mode, they should be deleted:
 		self.pp.manual_clean=False
