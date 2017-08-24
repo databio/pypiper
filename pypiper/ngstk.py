@@ -1144,21 +1144,66 @@ class NGSTk(_AttributeDict):
         cmd += " | awk '{{sum+=$5}} END {{print sum}}' > {0}".format(output)
         return cmd
 
-    def macs2CallPeaks(self, treatmentBams, outputDir, sampleName, genome, controlBams=None, broad=False, paired=False):
+    def macs2CallPeaks(
+                self, treatmentBams, outputDir, sampleName, genome,
+                controlBams=None, broad=False, paired=False,
+                pvalue=None, qvalue=None, include_significance=None):
         """
         Use MACS2 to call peaks.
+
+        :param treatmentBams: Paths to files with data to regard as treatment.
+        :type treatmentBams: str | Iterable[str]
+        :param outputDir: Path to output folder.
+        :type outputDir: str
+        :param sampleName: Name for the sample involved.
+        :type sampleName: str
+        :param genome: Name of the genome assembly to use.
+        :type genome: str
+        :param controlBams: Paths to files with data to regard as control
+        :type controlBams: str | Iterable[str]
+        :param broad: Whether to do broad peak calling.
+        :type broad: bool
+        :param paired: Whether reads are paired-end
+        :type paired: bool
+        :param pvalue: Statistical significance measure to pass as --pvalue to
+            peak calling with MACS
+        :type pvalue: NoneType | float
+        :param qvalue: Statistical significance measure to pass as --qvalue to
+            peak calling with MACS
+        :type qvalue: NoneType | float
+        :param include_significance: Whether to pass a statistical significance
+            argument to peak calling with MACS; if omitted, this will be
+            True if the peak calling is broad or if either p-value or
+            q-value is specified; default significance specification is a
+            p-value of 0.001 if a significance is to be specified but no
+            value is provided for p-value or q-value.
+        :type include_significance: NoneType | bool
+        :return: Command to run.
+        :rtype: str
         """
         sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 1.87e9}
+
+        if include_significance is None:
+            include_significance = broad
 
         cmd = self.tools.macs2 + " callpeak -t {0}".format(treatmentBams if type(treatmentBams) is str else " ".join(treatmentBams))
         if controlBams is not None:
             cmd += " -c {0}".format(controlBams if type(controlBams) is str else " ".join(controlBams))
         if paired:
             cmd += "-f BAMPE "
-        if not broad:
-            cmd += " --fix-bimodal --extsize 180 --bw 200"
+        if broad:
+            cmd += " --broad --nomodel --extsize 73"
         else:
-            cmd += " --broad --nomodel --extsize 73 --pvalue 1e-3"
+            cmd += " --fix-bimodal --extsize 180 --bw 200"
+        if include_significance:
+            # Allow significance specification via either p- or q-value,
+            # giving preference to q-value if both are provided but falling
+            # back on a default p-value if neither is provided but inclusion
+            # of statistical significance measure is desired.
+            if qvalue is not None:
+                cmd += " --qvalue {}".format(qvalue)
+            else:
+                cmd += " --pvalue {}".format(pvalue or 0.001)
         cmd += " -g {0} -n {1} --outdir {2}".format(sizes[genome], sampleName, outputDir)
 
         return cmd
@@ -1177,11 +1222,37 @@ class NGSTk(_AttributeDict):
         cmd2 = "mv {0}/{1}_model.pdf {2}/{1}_model.pdf".format(os.getcwd(), sample_name, output_dir)
         return [cmd1, cmd2]
 
-    def sppCallPeaks(self, treatmentBam, controlBam, treatmentName, controlName, outputDir, broad, cpus):
+    def sppCallPeaks(
+                self, treatmentBam, controlBam, treatmentName, controlName,
+                outputDir, broad, cpus, qvalue=None):
+        """
+        Build command for R script to call peaks with SPP.
+
+        :param treatmentBam: Path to file with data for treatment sample.
+        :type treatmentBam: str
+        :param controlBam: Path to file with data for control sample.
+        :type controlBam: str
+        :param treatmentName: Name for the treatment sample.
+        :type treatmentName: str
+        :param controlName: Name for the control sample.
+        :type controlName: str
+        :param outputDir: Path to folder for output.
+        :type outputDir: str
+        :param broad: Whether to specify broad peak calling mode.
+        :type broad: str | bool
+        :param cpus: Number of cores the script may use.
+        :type cpus: int
+        :param qvalue: FDR, as decimal value
+        :type qvalue: float
+        :return: Command to run.
+        :rtype: str
+        """
         broad = "TRUE" if broad else "FALSE"
         cmd = self.tools.Rscript + " `which spp_peak_calling.R` {0} {1} {2} {3} {4} {5} {6}".format(
             treatmentBam, controlBam, treatmentName, controlName, broad, cpus, outputDir
         )
+        if qvalue is not None:
+            cmd += " {}".format(qvalue)
         return cmd
 
     def bamToBed(self, inputBam, outputBed):
