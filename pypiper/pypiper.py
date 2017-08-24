@@ -822,13 +822,13 @@ class PipelineManager(object):
 
 		:type key: str
 		"""
-		messageRaw = str(command) + "\t " + \
+		message_raw = str(command) + "\t " + \
 			str(lock_name) + "\t" + \
 			str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
 			str(memory)
 
 		with open(self.pipeline_profile_file, "a") as myfile:
-			myfile.write(messageRaw + "\n")
+			myfile.write(message_raw + "\n")
 
 	def report_result(self, key, value, annotation=None):
 		"""
@@ -846,12 +846,19 @@ class PipelineManager(object):
 		if not annotation:
 			annotation = self.pipeline_name
 
+		# In case the value is passed with trailing whitespace
+		value = str(value).strip()
+		annotation = str(annotation)
+
 		# keep the value in memory:
-		self.stats_dict[key] = str(value).strip()
-		messageRaw = key + "\t" + str(value).strip() + "\t" + str(annotation)
-		messageMarkdown = "> `" + key + "`\t" + str(value).strip()\
-		 + "\t" + str(annotation) + "\t" + "_RES_"
-		print(messageMarkdown)
+		self.stats_dict[key] = value
+		message_raw = "{key}\t{value}\t{annotation}".format(
+			key=key, value=value, annotation=annotation)
+
+		message_markdown = "> `{key}`\t{value}\t{annotation}\t_RES_".format(
+			key=key, value=value, annotation=annotation)
+
+		print(message_markdown)
 
 		# Just to be extra careful, let's lock the file while we we write
 		# in case multiple pipelines write to the same file.
@@ -873,12 +880,26 @@ class PipelineManager(object):
 
 				# Proceed with file writing
 				with open(self.pipeline_stats_file, "a") as myfile:
-					myfile.write(messageRaw + "\n")
+					myfile.write(message_raw + "\n")
 
 				os.remove(lock_file)  # Remove lock file
 
 				# If you make it to the end of the while loop, you're done
 				break
+
+	def report_figure(self, key, filename, annotation=None):
+		"""
+		Writes a string to self.pipeline_figures_file.
+
+		:param key: name (key) of the figure
+		:type key: str
+		:param annotation: By default, the figures will be annotated with the pipeline
+			name, so you can tell which pipeline records which figures. If you want, you can
+			change this.
+		:type annotation: str
+		"""
+
+
 
 	def _report_command(self, cmd):
 		"""
