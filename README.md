@@ -4,10 +4,13 @@
 
 A lightweight python toolkit for gluing together restartable, robust command line pipelines. Pypiper works with [Looper](http://github.com/epigen/looper) to form a complete bioinformatics pipeline framework.
 
-# Links
+The best place to learn more is at the [documentation hosted at Read the Docs](http://pypiper.readthedocs.org/). There you will find:
 
- * Documentation: [Read the Docs](http://pypiper.readthedocs.org/)
- * Source code: http://github.com/epigen/pypiper
+* [Hello World](http://pypiper.readthedocs.io/en/latest/hello-world.html)
+* [Tutorials](http://pypiper.readthedocs.io/en/latest/tutorials.html)
+* [API](http://pypiper.readthedocs.io/en/latest/api.html)
+* A list of public pipelines that use pypiper.
+* and more!
 
 # Install
 
