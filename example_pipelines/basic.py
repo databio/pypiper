@@ -14,7 +14,7 @@ import pypiper
 # This starts the pipeline.
 
 pm = pypiper.PipelineManager(name="BASIC",
-	outfolder="pipeline_output/")
+    outfolder="pipeline_output/")
 
 # Now just build shell command strings, and use the run function
 # to execute them in order. run needs 2 things: a command, and the
