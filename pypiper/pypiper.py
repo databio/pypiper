@@ -888,15 +888,24 @@ class PipelineManager(object):
 		if not annotation:
 			annotation = self.pipeline_name
 
-		# In case the value is passed with trailing whitespace
-		filename = str(filename).strip()
 		annotation = str(annotation)
 
-		message_raw = "{key}\t{filename}\t{annotation}".format(
-			key=key, filename=filename, annotation=annotation)
+		# In case the value is passed with trailing whitespace
+		filename = str(filename).strip()
 
-		message_markdown = "> `{key}`\t{filename}\t{annotation}\t_RES_".format(
-			key=key, filename=filename, annotation=annotation)
+		# better to use a relative path in this file
+		# convert any absoluate pathsinto relative paths
+		if os.path.isabs(filename):
+			relative_filename = os.path.relpath(filename,
+												self.pipeline_outfolder)
+		else:
+			relative_filename = filename
+
+		message_raw = "{key}\t{filename}\t{annotation}".format(
+			key=key, filename=relative_filename, annotation=annotation)
+
+		message_markdown = "> `{key}`\t{filename}\t{annotation}\t_FIG_".format(
+			key=key, filename=relative_filename, annotation=annotation)
 
 		print(message_markdown)
 
