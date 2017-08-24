@@ -17,6 +17,10 @@ class NGSTk(_AttributeDict):
 
     :param config_file: Path to pipeline yaml config file (optional).
     :type config_file: str
+    :param pm: A PipelineManager with which to associate this toolkit instance;
+        that is, essentially a source from which to grab paths to tools,
+        resources, etc.
+    :type pm: pypiper.PipelineManager
 
     :Example:
 
