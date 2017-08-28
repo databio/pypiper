@@ -773,8 +773,8 @@ class NGSTk(_AttributeDict):
 
     def trimmomatic(
             self, input_fastq1, output_fastq1, cpus, adapters, log,
-            input_fastq2=None, output_fastq1unpaired=None,
-            output_fastq2=None, output_fastq2unpaired=None):
+            input_fastq2=None, output_fastq1_unpaired=None,
+            output_fastq2=None, output_fastq2_unpaired=None):
 
         PE = False if input_fastq2 is None else True
         pe = "PE" if PE else "SE"
@@ -785,7 +785,7 @@ class NGSTk(_AttributeDict):
             cmd += " {0}".format(input_fastq2)
         cmd += " {0}".format(output_fastq1)
         if PE:
-            cmd += " {0} {1} {2}".format(output_fastq1unpaired, output_fastq2, output_fastq2unpaired)
+            cmd += " {0} {1} {2}".format(output_fastq1_unpaired, output_fastq2, output_fastq2_unpaired)
         cmd += " ILLUMINACLIP:{0}:1:40:15:8:true".format(adapters)
         cmd += " LEADING:3 TRAILING:3"
         cmd += " SLIDINGWINDOW:4:10"
