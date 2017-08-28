@@ -476,7 +476,7 @@ class NGSTk(_AttributeDict):
     def count_lines(self, file_name):
         """
         Uses the command-line utility wc to count the number of lines in a file.
-        :param file: File_name
+        :param file: file_name
         """
         x = subprocess.check_output("wc -l " + file_name + " | cut -f1 -d' '", shell=True)
         return x
@@ -485,7 +485,7 @@ class NGSTk(_AttributeDict):
         """
         Uses the command-line utility wc to count the number of lines in a file.
         For compressed files.
-        :param file: File_name
+        :param file: file_name
         """
         x = subprocess.check_output("zcat " + file_name + " | wc -l | cut -f1 -d' '", shell=True)
         return x
@@ -531,7 +531,7 @@ class NGSTk(_AttributeDict):
         For a bam or sam file with paired or or single-end reads, returns the
         number of mapped reads, counting each read only once, even if it appears
         mapped at multiple locations.
-        :param file: File_name
+        :param file: file_name
         :param paired_end: True/False paired end data
         """
         if file_name.endswith("sam"):
@@ -597,7 +597,7 @@ class NGSTk(_AttributeDict):
         """
         Runs samtools view on a file, with flexible parameters and post-processing. Used internally to implement
         the various count_reads functions.
-        :param file: File_name
+        :param file: file_name
         :param param: String of parameters to pass to samtools view
         :param postpend: String to postpend to the samtools command;
         useful to add cut, sort, wc operations to the samtools view output.
