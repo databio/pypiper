@@ -380,10 +380,10 @@ class PipelineManager(object):
     ###################################
     # Process calling functions
     ###################################
-    def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, clean=False, follow=None, container=None):
+    def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, errmsg=None, clean=False, follow=None, container=None):
         """
         Runs a shell command. This is the primary workhorse function of PipelineManager. This is the command  execution
-        function, which enforces racefree file-locking, enables restartability, and multiple pipelines can produce/use
+        function, which enforces race-free file-locking, enables restartability, and multiple pipelines can produce/use
         the same files. The function will wait for the file lock if it exists, and not produce new output (by default)
         if the target output file already exists. If the output is to be created, it will first create a lock file to
         prevent other calls to run (for example, in parallel pipelines) from touching the file while it is being
@@ -402,9 +402,14 @@ class PipelineManager(object):
             Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
             they will not cause the pipeline to bail out.
         :type nofail: bool
+        :param errmsg: Message to print if there's an error.
+        :type errmsg: str
         :param clean: True means the target file will be automatically added to a auto cleanup list. Optional.
         :type clean: bool
+        :param follow: Function to call after executing cmd or each command therein.
+        :type follow: callable
         :param container: Runs commands in given named docker container.
+        :type container: str
         :returns: Return code of process. If a list of commands is passed, this is the maximum of all return codes for all commands.
         :rtype: int
         """
@@ -434,8 +439,6 @@ class PipelineManager(object):
         lock_file = os.path.join(self.pipeline_outfolder, lock_name)
         process_return_code = 0
         local_maxmem = 0
-
-
 
         # The loop here is unlikely to be triggered, and is just a wrapper
         # to prevent race conditions; the lock_file must be created by
@@ -534,7 +537,7 @@ class PipelineManager(object):
         return "|" in cmd or ">" in cmd or r"*" in cmd
 
 
-    def checkprint(self, cmd, shell="guess", nofail=False):
+    def checkprint(self, cmd, shell="guess", nofail=False, errmsg=None):
         """
         Just like callprint, but checks output -- so you can get a variable
         in python corresponding to the return value of the command you call.
@@ -552,6 +555,8 @@ class PipelineManager(object):
         Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
         they will not cause the pipeline to bail out.
         :type nofail: bool
+        :param errmsg: Message to print if there's an error.
+        :type errmsg: str
         """
 
         self._report_command(cmd)
@@ -571,18 +576,10 @@ class PipelineManager(object):
         try:
             return subprocess.check_output(cmd, shell=shell)
         except (OSError, subprocess.CalledProcessError) as e:
-            if not nofail:
-                self.fail_pipeline(e)
-            elif self.status is "failed":
-                print("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
-                raise e
-            else:
-                print(e)
-                print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
-            # TODO: return nonzero, or something...
+            self._triage_error(e, nofail, errmsg)
 
 
-    def callprint(self, cmd, shell="guess", nofail=False, container=None, lock_name=None):
+    def callprint(self, cmd, shell="guess", nofail=False, container=None, lock_name=None, errmsg=None):
         """
         Prints the command, and then executes it, then prints the memory use and
         return code of the command.
@@ -604,6 +601,12 @@ class PipelineManager(object):
             Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
             they will not cause the pipeline to bail out.
         :type nofail: bool
+        :param container: Named Docker container in which to execute.
+        :param container: str
+        :param lock_name: Name of the relevant lock file.
+        :type lock_name: str
+        :param errmsg: Message to print if there's an error.
+        :type errmsg: str
         """
         # The Popen shell argument works like this:
         # if shell=False, then we format the command (with split()) to be a list of command and its arguments.
@@ -687,16 +690,10 @@ class PipelineManager(object):
                 raise OSError("Subprocess returned nonzero result.")
 
         except (OSError, subprocess.CalledProcessError) as e:
-            if not nofail:
-                self.fail_pipeline(e)
-            elif self.status is "failed":
-                print("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
-                raise e
-            else:
-                print(e)
-                print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
+            self._triage_error(e, nofail, errmsg)
 
         return [returncode, local_maxmem]
+
 
     def _wait_for_process(self, p, shell=False):
         """
@@ -729,6 +726,7 @@ class PipelineManager(object):
             raise Exception("Process returned nonzero result.")
         return [p.returncode, local_maxmem]
 
+
     def _wait_for_lock(self, lock_file):
         """
         Just sleep until the lock_file does not exist.
@@ -755,6 +753,7 @@ class PipelineManager(object):
         if first_message_flag:
             self.timestamp("File unlocked.")
             self.set_status_flag("running")
+
 
     def _wait_for_file(self, file_name, lock_name = None):
         """
@@ -1077,6 +1076,8 @@ class PipelineManager(object):
 
         :param e: Exception to raise.
         :type e: Exception
+        :param dynamic_recover: Whether to recover e.g. for job termination.
+        :type dynamic_recover: bool
         """
         # Take care of any active running subprocess
         self._terminate_running_subprocesses()
@@ -1408,6 +1409,21 @@ class PipelineManager(object):
                 status.close()
         # print(result[category])
         return result[category]
+
+
+    def _triage_error(self, e, nofail, errmsg):
+        """ Print a message and decide what to do about an error.  """
+        if errmsg is not None:
+            print(errmsg)
+        if not nofail:
+            self.fail_pipeline(e)
+        elif self.status is "failed":
+            print("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
+            raise e
+        else:
+            print(e)
+            print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
+        # TODO: return nonzero, or something...?
 
 
 
