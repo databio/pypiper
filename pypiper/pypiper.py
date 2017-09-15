@@ -443,7 +443,18 @@ class PipelineManager(object):
         # re-do the tests.
         # TODO: maybe output a message if when repeatedly going through the loop
 
-        follow_result = None
+        # Decide how to do follow-up.
+        if follow is None:
+            call_follow = lambda: None
+        elif not hasattr(follow, "__call__"):
+            # Warn about non-callable argument to follow-up function.
+            print("Follow-up function is not callable and won't be used: {}".format(type(follow)))
+            call_follow = lambda: None
+        else:
+            # Wrap the follow-up function so that the log shows what's going on.
+            def call_follow():
+                print("Follow:")
+                follow()
 
         while True:
             ##### Tests block
@@ -451,13 +462,9 @@ class PipelineManager(object):
             # os.path.exists allows the target to be either a file or directory; .isfile is file-only
             if target is not None and os.path.exists(target) and not os.path.isfile(lock_file):
                 print("\nTarget exists: `" + target + "`")
-
                 # Normally we don't run the follow, but if you want to force...
-                if self.force_follow and hasattr(follow, '__call__'):
-                    # Run the follow function
-                    print("Follow:")
-                    follow_result = follow()
-                    
+                if self.force_follow:
+                    call_follow()
                 break  # Do not run command
 
             # Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
@@ -512,20 +519,13 @@ class PipelineManager(object):
             if target is not None and clean:
                 self.clean_add(target)
 
-            if hasattr(follow, '__call__'):
-                # Run the follow function
-                print("Follow:")
-                follow_result = follow()
-
+            call_follow()
             os.remove(lock_file)  # Remove lock file
             self.locks.remove(lock_name)
 
             # If you make it to the end of the while loop, you're done
             break
 
-        # Bad idea: don't return follow_result; it seems nice but nothing else
-        # in your pipeline can depend on this since it won't be run if that command
-        # isn't required because target exists.
         return process_return_code
 
 
