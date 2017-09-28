@@ -194,14 +194,18 @@ class PipelineManager(object):
                     config_to_load = abs_config
                 else:
                     print("Can't find custom config file: " + abs_config)
+            if config_to_load is not None:
+                print("Using custom config file: {}".format(config_to_load))
         else:
             # No custom config file specified. Check for default
             default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
             if os.path.isfile(default_config):
                 config_to_load = default_config
+                print("Using default pipeline config file: {}".format(config_to_load))
 
         # Finally load the config we found.
         if config_to_load is not None:
+            print("Loading config file: {}".format(config_file))
             with open(config_to_load, 'r') as config_file:
                 # Set the args to the new config file, so it can be used
                 # later to pass to, for example, toolkits
@@ -210,6 +214,7 @@ class PipelineManager(object):
                 config = yaml.load(config_file)
                 self.config = AttributeDict(config, default=True)
         else:
+            print("No config file")
             self.config = None
 
 
