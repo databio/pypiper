@@ -128,6 +128,15 @@ class NGSTk(_AttributeDict):
         return cmd
 
     def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
+        """
+        Build command to convert BAM file to FASTQ file(s) (R1/R2).
+
+        :param str bam_file: path to BAM file with sequencing reads
+        :param str out_fastq_pre: path prefix for output FASTQ file(s)
+        :param bool paired_end: whether the given file contains paired-end
+            or single-end sequencing reads
+        :return str: file conversion command, ready to run
+        """
         self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
         cmd += " -jar " + self.tools.picard + " SamToFastq"
