@@ -1064,6 +1064,7 @@ class NGSTk(_AttributeDict):
         except:
             pass
 
+    # TODO: parameterize in terms of normalization factor.
     def bam_to_bigwig(self, input_bam, output_bigwig, genome_sizes, genome, tagmented=False, normalize=False):
         import os
         import re
