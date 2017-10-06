@@ -205,7 +205,7 @@ class PipelineManager(object):
 
         # Finally load the config we found.
         if config_to_load is not None:
-            print("Loading config file: {}".format(config_file))
+            print("Loading config file: {}".format(config_to_load))
             with open(config_to_load, 'r') as config_file:
                 # Set the args to the new config file, so it can be used
                 # later to pass to, for example, toolkits
