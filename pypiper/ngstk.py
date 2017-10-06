@@ -1195,18 +1195,29 @@ class NGSTk(_AttributeDict):
         """
         sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 1.87e9}
 
+        # Whether to specify to MACS2 a value for statistical significance
+        # can be either directly indicated, but if not, it's determined by
+        # whether the mark is associated with broad peaks. By default, we
+        # specify a signficance value to MACS2 for a mark associated with a
+        # broad peak.
         if include_significance is None:
             include_significance = broad
 
         cmd = self.tools.macs2 + " callpeak -t {0}".format(treatment_bams if type(treatment_bams) is str else " ".join(treatment_bams))
+
         if control_bams is not None:
             cmd += " -c {0}".format(control_bams if type(control_bams) is str else " ".join(control_bams))
+
         if paired:
             cmd += "-f BAMPE "
+
+        # Additional settings based on whether the marks is associated with
+        # broad peaks
         if broad:
             cmd += " --broad --nomodel --extsize 73"
         else:
             cmd += " --fix-bimodal --extsize 180 --bw 200"
+
         if include_significance:
             # Allow significance specification via either p- or q-value,
             # giving preference to q-value if both are provided but falling
