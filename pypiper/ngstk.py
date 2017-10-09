@@ -942,7 +942,7 @@ class NGSTk(_AttributeDict):
         cmd = self.tools.samtools + " index {0}".format(input_bam)
         return cmd
 
-    def peak_tools(self, input_bam, output, plot, cpus):
+    def run_spp(self, input_bam, output, plot, cpus):
         cmd = self.tools.Rscript + " " + self.tools.spp + " -rf -savp -savp={0} -s=0:5:500 -c={1} -out={2}".format(plot, input_bam, output)
         return cmd
 
