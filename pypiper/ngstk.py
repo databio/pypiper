@@ -112,7 +112,7 @@ class NGSTk(_AttributeDict):
 
         # If given a list, recurse through it.
         if type(filenames) is list:
-            return(sum([self.get_file_size(filename) for filename in filenames]))
+            return sum([self.get_file_size(filename) for filename in filenames])
 
         return round(sum([float(os.stat(f).st_size) for f in filenames.split(" ")]) / (1024 ** 2), 4)
 
@@ -485,7 +485,9 @@ class NGSTk(_AttributeDict):
     def count_lines(self, file_name):
         """
         Uses the command-line utility wc to count the number of lines in a file.
-        :param file: file_name
+
+        :param file_name: name of file whose lines are to be counted
+        :type file_name: str
         """
         x = subprocess.check_output("wc -l " + file_name + " | cut -f1 -d' '", shell=True)
         return x
@@ -540,8 +542,11 @@ class NGSTk(_AttributeDict):
         For a bam or sam file with paired or or single-end reads, returns the
         number of mapped reads, counting each read only once, even if it appears
         mapped at multiple locations.
-        :param file: file_name
+
+        :param file_name: name of reads file
+        :type file_name: str
         :param paired_end: True/False paired end data
+        :type paired_end: bool
         """
         if file_name.endswith("sam"):
             param = "-S -F4"
@@ -558,11 +563,16 @@ class NGSTk(_AttributeDict):
     def count_flag_reads(self, file_name, flag, paired_end):
         """
         Counts the number of reads with the specified flag.
+
+        :param file_name: name of reads file
+        :type file_name: str
         :param flag: sam flag value to be read
+        :type flag: str
         :param paired_end: This parameter is ignored; samtools automatically correctly responds depending
         on the data in the bamfile. We leave the option here just for consistency, since all the other
         counting functions require the parameter. This makes it easier to swap counting functions during
         pipeline development.
+        :type paired_end: bool
         """
         param = " -c -f" + str(flag)
         if file_name.endswith("sam"):
@@ -575,6 +585,9 @@ class NGSTk(_AttributeDict):
         currently, if the alignment software includes the reads at multiple locations, this function
         will count those more than once. This function is for software that randomly assigns,
         but flags reads as multimappers.
+
+        :param file_name: name of reads file
+        :type file_name: str
         :param paired_end: This parameter is ignored; samtools automatically correctly responds depending
         on the data in the bamfile. We leave the option here just for consistency, since all the other
         counting functions require the parameter. This makes it easier to swap counting functions during
@@ -585,7 +598,11 @@ class NGSTk(_AttributeDict):
     def count_uniquelymapping_reads(self, file_name, paired_end):
         """
         Counts the number of reads that mapped to a unique position.
+
+        :param file_name: name of reads file
+        :type file_name: str
         :param paired_end: This parameter is ignored.
+        :type paired_end: bool
         """
         param = " -c -F256"
         if file_name.endswith("sam"):
