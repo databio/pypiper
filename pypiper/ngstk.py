@@ -1119,11 +1119,13 @@ class NGSTk(_AttributeDict):
         cmds.append("chmod 755 {0}".format(output_bigwig))
         return cmds
 
+
     def add_track_to_hub(self, sample_name, track_url, track_hub, colour, five_prime=""):
         cmd1 = """echo "track type=bigWig name='{0} {1}' description='{0} {1}'""".format(sample_name, five_prime)
         cmd1 += """ height=32 visibility=full maxHeightPixels=32:32:25 bigDataUrl={0} color={1}" >> {2}""".format(track_url, colour, track_hub)
         cmd2 = "chmod 755 {0}".format(track_hub)
         return [cmd1, cmd2]
+
 
     def link_to_track_hub(self, track_hub_url, file_name, genome):
         import textwrap
@@ -1140,12 +1142,14 @@ class NGSTk(_AttributeDict):
         with open(file_name, 'w') as handle:
             handle.write(textwrap.dedent(html))
 
+
     def htseq_count(self, input_bam, gtf, output):
         sam = input_bam.replace("bam", "sam")
         cmd1 = "samtools view {0} > {1}".format(input_bam, sam)
         cmd2 = "htseq-count -f sam -t exon -i transcript_id -m union {0} {1} > {2}".format(sam, gtf, output)
         cmd3 = "rm {0}".format(sam)
         return [cmd1, cmd2, cmd3]
+
 
     def kallisto(self, input_fastq, output_dir, output_bam, transcriptome_index, cpus, input_fastq2=None, size=180, b=200):
         cmd1 = self.tools.kallisto + " quant --bias --pseudobam -b {0} -l {1} -i {2} -o {3} -t {4}".format(b, size, transcriptome_index, output_dir, cpus)
@@ -1157,14 +1161,39 @@ class NGSTk(_AttributeDict):
         cmd2 = self.tools.kallisto + " h5dump -o {0} {0}/abundance.h5".format(output_dir)
         return [cmd1, cmd2]
 
+
     def genome_wide_coverage(self, input_bam, genome_windows, output):
         cmd = self.tools.bedtools + " coverage -counts -abam {0} -b {1} > {2}".format(input_bam, genome_windows, output)
         return cmd
 
-    def simple_frip(self, input_bam, input_bed):
-        cmd = self.tools.samtools + " view -c -L " + input_bed
+
+    def calc_frip(self, input_bam, input_bed, threads=4):
+        """
+        Calculate fraction of reads in peaks.
+
+        A file of with a pool of sequencing reads and a file with peak call
+        regions define the operation that will be performed. Thread count
+        for samtools can be specified as well.
+
+        :param input_bam: sequencing reads file
+        :type input_bam: str
+        :param input_bed: file with called peak regions
+        :type input_bed: str
+        :param threads: number of threads samtools may use
+        :type threads: int
+        :return: fraction of reads in peaks defined in the given peaks file
+        :rtype: float
+        """
+        cmd = self.simple_frip(input_bam, input_bed, threads)
+        return subprocess.check_output(cmd.split(" "), shell=True)
+
+
+    def simple_frip(self, input_bam, input_bed, threads=4):
+        cmd = "{} view".format(self.tools.samtools)
+        cmd += " -@ {} -c -L {}".format(threads, input_bed)
         cmd += " " + input_bam
         return cmd
+
 
     def calculate_frip(self, input_bam, input_bed, output, cpus=4):
         cmd = self.tools.sambamba + " depth region -t {0}".format(cpus)
@@ -1172,6 +1201,7 @@ class NGSTk(_AttributeDict):
         cmd += " {0}".format(input_bam)
         cmd += " | awk '{{sum+=$5}} END {{print sum}}' > {0}".format(output)
         return cmd
+
 
     def macs2_call_peaks(
                 self, treatment_bams, output_dir, sample_name, genome,
