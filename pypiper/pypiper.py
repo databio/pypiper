@@ -1439,6 +1439,7 @@ class PipelineManager(object):
 
 
 
+# TODO: implement as context manager.
 class Tee(object):
     def __init__(self, log_file):
         self.file = open(log_file, "a")
@@ -1456,8 +1457,7 @@ class Tee(object):
         self.stdout.flush()
 
     def fileno(self):
-        return(self.stdout.fileno())
-
+        return self.stdout.fileno()
 
 
 
@@ -1468,8 +1468,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     :param argument_groups: Collection of names of groups of arguments to
         add to an argument parser.
     :type argument_groups: Iterable[str] | str
-    :param arguments: Collection of specific arguments to add to the parser;
-        these need not be defined/enumerated here.
+    :param arguments: Collection of specific arguments to add to the parser.
     :type arguments: Iterable[str] | str
     :param use_all_args: Whether to use all arguments defined here.
     :type use_all_args: bool
@@ -1516,6 +1515,87 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
 
 
 
+def _add_args(parser, args, required):
+    """
+    Add new arguments to an ArgumentParser.
+
+    :param parser: ArgumentParser to update with new arguments
+    :type parser: argparse.ArgumentParser
+    :param args: Collection of names of arguments to add.
+    :type args: Iterable[str]
+    :param required: Collection of arguments to designate as required
+    :type required: Iterable[str]
+    :return: Updated ArgumentParser
+    :rtype: argparse.ArgumentParser
+    """
+
+    import copy
+
+    # Determine the default pipeline config file.
+    pipeline_script = os.path.basename(sys.argv[0])
+    default_config, _ = os.path.splitext(pipeline_script)
+    default_config += ".yaml"
+
+    # Define the arguments.
+    argument_data = {
+        "recover":
+            ("-R", {"action": "store_true",
+                    "help": "Recover mode, overwrite locks"}),
+        "new-start":
+            ("-N", {"dest": "fresh", "action": "store_true",
+                    "help": "Fresh start mode, overwrite all"}),
+        "dirty":
+            ("-D", {"dest": "manual_clean", "action": "store_true",
+                    "help": "Make all cleanups manual"}),
+        "follow":
+            ("-F", {"dest": "force_follow", "action": "store_true",
+                    "help": "Run all 'follow' commands, even if the "
+                            "primary command is not run"}),
+        "config":
+            ("-C", {"dest": "config_file", "metavar": "CONFIG_FILE",
+                    "default": default_config,
+                    "help": "Pipeline configuration file (YAML). "
+                            "Relative paths are with respect to the "
+                            "pipeline script."}),
+        "output-parent":
+            ("-O", {"metavar": "PARENT_OUTPUT_FOLDER",
+                    "help": "Parent output directory of project"}),
+        "cores":
+            ("-P", {"type": int, "default": 1, "metavar": "NUMBER_OF_CORES",
+                    "help": "Number of cores for parallelized processes"}),
+        "mem":
+            ("-M", {"default": "4000", "metavar": "MEMORY_LIMIT",
+                    "help": "Amount of memory (Mb) use to allow for "
+                            "processes for which that can be specified"}),
+        "input":
+            ("-I", {"nargs": "+", "metavar": "INPUT_FILES",
+                    "help": "One or more primary input files (required)"}),
+        "input2":
+            ("-I2", {"nargs": "*", "metavar": "INPUT_FILES2",
+                     "help": "Secondary input file(s), e.g. read2 for a "
+                             "paired-end protocol"}),
+        "genome":
+            ("-G", {"dest": "genome_assembly",
+                    "help": "Identifier for genome assembly"}),
+        "single-or-paired":
+            ("-Q", {"default": "single",
+                    "help": "Single- or paired-end sequencing protocol"})
+    }
+
+    # Configure the parser for each argument.
+    for arg in args:
+        try:
+            short_opt, argdata = copy.deepcopy(argument_data[arg])
+        except KeyError:
+            print("Skipping undefined pypiper argument: '{}'".format(arg))
+            continue
+        argdata["required"] = arg in required
+        parser.add_argument(short_opt, "--{}".format(arg), **argdata)
+
+    return parser
+
+
+
 def add_pypiper_args(parser, groups=("pypiper", ), args=None,
                      required=None, all_args=False):
     """
@@ -1542,97 +1622,7 @@ def add_pypiper_args(parser, groups=("pypiper", ), args=None,
     :return: A new ArgumentParser object, with selected pypiper arguments added
     :rtype: argparse.ArgumentParser
     """
-
     args_to_add = _determine_args(
         argument_groups=groups, arguments=args, use_all_args=all_args)
-
-    #print(args_to_add)
-
-    required = [required] if isinstance(required, str) else set(required or [])
-
-    for arg in args_to_add:
-        req = arg in required
-
-        # Basic pypiper arguments actually used by pypiper
-        if arg == "recover":
-            parser.add_argument(
-                '-R', '--recover', dest='recover', action='store_true',
-                default=False, help='Recover mode, overwrite locks',
-                required=req)
-        if arg == "new-start":
-            parser.add_argument(
-                '-N', '--new-start', dest='fresh', action='store_true',
-                default=False, help='Fresh start mode, overwrite all',
-                required=req)
-        if arg == "dirty":
-            parser.add_argument(
-                '-D', '--dirty', dest='manual_clean', action='store_true',
-                default=False, help='Make all cleanups manual',
-                required=req)  # Useful for debugging
-        if arg == "follow":
-            parser.add_argument(
-                '-F', '--follow', dest='force_follow', action='store_true',
-                default=False, required=req,
-                help='Run all follow commands, even if command is not run')  # Recalculating stats
-
-        if arg == "config":
-            default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
-            # Arguments to optimize the interface to looper
-            parser.add_argument(
-                "-C", "--config", dest="config_file", type=str,
-                help="pipeline config file in YAML format; relative paths are \
-                considered relative to the pipeline script. \
-                defaults to " + default_config,
-                required=req, default=default_config, metavar="CONFIG_FILE")
-        if arg == "output-parent":  
-            parser.add_argument(
-                "-O", "--output-parent", dest="output_parent", type=str,
-                help="parent output directory of the project (required).",
-                required=req, metavar="PARENT_OUTPUT_FOLDER")
-            # output_parent was previously called project_root
-
-        if arg == "cores":
-            parser.add_argument(
-                "-P", "--cores", dest="cores", type=str,
-                help="number of cores to use for parallel processes",
-                required=req, default=1, metavar="NUMBER_OF_CORES")
-        if arg == "mem":    
-            parser.add_argument(
-                "-M", "--mem", dest="mem", type=str,
-                help="Memory string for processes that accept memory limits (like java)",
-                required=req, default="4000", metavar="MEMORY_LIMIT")
-
-        if arg == "input":
-            # Arguments typically used in every pipeline
-            parser.add_argument(
-                "-I", "--input", dest="input", type=str, nargs="+",
-                help="One or more primary input files (required)",
-                required=req, metavar="INPUT_FILES")
-            # input was previously called unmapped_bam
-        if arg == "sample-name":
-            parser.add_argument(
-                "-S", "--sample-name", dest="sample_name", type=str,
-                help="unique name for output subfolder and files (required)",
-                required=req, metavar="SAMPLE_NAME")
-
-        if arg == "input2":
-            # Common arguments specific to NGS pipelines
-            parser.add_argument(
-                "-I2", "--input2", dest="input2", type=str, nargs="+",
-                help="One or more secondary input files (if they exists); \
-                for example, second read in pair.",
-                required=req, default=None, metavar="INPUT_FILES2")
-        if arg == "genome":
-            parser.add_argument(
-                "-G", "--genome", dest="genome_assembly", type=str,
-                help="identifier for genome assembly (required)",
-                required=req)
-        if arg == "single-or-paired":
-            parser.add_argument(
-                "-Q", "--single-or-paired", dest="single_or_paired", type=str,
-                help="single or paired end? default: single",
-                required=req, default="single")
-
-
-
-    return(parser)
+    parser = _add_args(parser, args_to_add, required)
+    return parser
