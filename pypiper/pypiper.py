@@ -220,6 +220,8 @@ class PipelineManager(object):
             print("No config file")
             self.config = None
 
+        self.stopping_point = None if stopping_point is None else stopping_point.upper()
+
 
     def _ignore_interrupts(self):
         """
@@ -368,22 +370,42 @@ class PipelineManager(object):
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write("# Pipeline started at " + time.strftime("%m-%d %H:%M:%S", time.localtime(self.starttime)) + "\n\n")
 
+
     def set_status_flag(self, status):
-        prev_status = self.status
-        # Remove previous status flag file
-        flag_file = self.pipeline_outfolder + "/" + self.pipeline_name + "_" + prev_status + ".flag"
+        """
+        Configure state and files on disk to match current processing status.
+
+        :param str status: Name of new status designation for pipeline.
+        """
+
+        # Remove previous status flag file.
+        flag_file_path = self._flag_file_path()
         try:
-            os.remove(os.path.join(flag_file))
+            os.remove(flag_file_path)
         except:
+            print("Could not remove flag file: '{}'".format(flag_file_path))
             pass
 
-            "failed"
-        # Set new status
+        # Set new status.
+        prev_status = self.status
         self.status = status
-        flag_file = self.pipeline_outfolder + "/" + self.pipeline_name + "_" + status + ".flag"
-        self._create_file(flag_file)
+        self._create_file(self._flag_file_path())
+        print("\nChanged status from " + prev_status + " to " + self.status)
 
-        print("\nChange status from " + prev_status + " to " + status)
+
+    def _flag_file_path(self, status=None):
+        """
+        Create path to flag file based on indicated or current status.
+
+        Internal variables used are the pipeline name and the designated
+        pipeline output folder path.
+
+        :param str status: flag file type to create, default to current status
+        :return str: path to flag file of indicated or current status.
+        """
+        flag_file_name = "{}_{}.flag".format(self.pipeline_name, status or self.status)
+        return os.path.join(self.pipeline_outfolder, flag_file_name)
+
 
     ###################################
     # Process calling functions
@@ -538,7 +560,6 @@ class PipelineManager(object):
             break
 
         return process_return_code
-
 
 
     def checkprint(self, cmd, shell="guess", nofail=False, errmsg=None):
@@ -699,6 +720,10 @@ class PipelineManager(object):
         return [returncode, local_maxmem]
 
 
+    ###################################
+    # Waiting functions
+    ###################################
+
     def _wait_for_process(self, p, shell=False):
         """
         Debug function used in unit tests.
@@ -794,6 +819,7 @@ class PipelineManager(object):
 
         self._wait_for_lock(lock_file)
 
+
     ###################################
     # Logging functions
     ###################################
@@ -815,6 +841,7 @@ class PipelineManager(object):
         print(message)
         self.last_timestamp = time.time()
 
+
     def time_elapsed(self, time_since):
         """
         Returns the number of seconds that have elapsed since the time_since parameter.
@@ -823,6 +850,7 @@ class PipelineManager(object):
         :type time_since: float
         """
         return round(time.time() - time_since, 0)
+
 
     def _report_profile(self, command, lock_name, elapsed_time, memory):
         """
@@ -837,6 +865,7 @@ class PipelineManager(object):
 
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
+
 
     def report_result(self, key, value, annotation=None):
         """
@@ -946,7 +975,6 @@ class PipelineManager(object):
                 break
 
 
-
     def _report_command(self, cmd):
         """
         Writes a command to self.pipeline_commands_file.
@@ -956,6 +984,11 @@ class PipelineManager(object):
         print("> `" + cmd + "`\n")
         with open(self.pipeline_commands_file, "a") as myfile:
             myfile.write(cmd + "\n\n")
+
+
+    ###################################
+    # Filepath functions
+    ###################################
 
     def _create_file(self, file):
         """
@@ -968,6 +1001,7 @@ class PipelineManager(object):
         with open(file, 'w') as fout:
             fout.write('')
 
+
     def _create_file_racefree(self, file):
         """
         Creates a file, but fails if the file already exists.
@@ -979,6 +1013,7 @@ class PipelineManager(object):
         """
         write_lock_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
         os.open(file, write_lock_flags)
+
 
     def make_sure_path_exists(self, path):
         """
@@ -993,10 +1028,10 @@ class PipelineManager(object):
             if exception.errno != errno.EEXIST:
                 raise
 
+
     ###################################
     # Pipeline stats calculation helpers
     ###################################
-
 
     def _refresh_stats(self):
         """
@@ -1054,23 +1089,27 @@ class PipelineManager(object):
     # Pipeline termination functions
     ###################################
 
-    def stop_pipeline(self):
+    def checkpoint(self, stage_name):
         """
-        Terminates the pipeline.
+        Decide whether to stop processing of a pipeline.
 
-        The normal pipeline completion function, to be run by the pipeline
-        at the end of the script. It sets status flag to completed and records 
-        some time and memory statistics to the log file.
+        A pipeline can report various "checkpoints" as sort of status markers
+        that designate the logical processing phase that's just been completed.
+        The initiation of a pipeline can preordain one of those as a "stopping
+        point" that when reached, should stop the pipeline's execution.
+
+        :param str stage_name: name of the pipeline processing phase most
+            recently completed.
         """
-        self.set_status_flag("completed")
-        self._cleanup()
-        self.report_result("Time", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
-        self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
-        print("\n##### [Epilogue:]")
-        print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
-        # print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-        print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
-        self.timestamp("* Pipeline completed at: ".rjust(20))
+        stage_name = stage_name.upper()
+        if not self.stopping_point:
+            pass
+        elif stage_name == self.stopping_point:
+            print("'{}' is the designated stopping point, halting pipeline".
+                  format(stage_name))
+        else:
+            print("Just-completed stage '{}' doesn't match stopping point "
+                  "'{}', continuing".format(stage_name, self.stopping_point))
 
 
     def fail_pipeline(self, e, dynamic_recover=False):
@@ -1114,6 +1153,26 @@ class PipelineManager(object):
             self.set_status_flag("failed")
 
         raise e
+
+
+    def stop_pipeline(self, status="completed"):
+        """
+        Terminate the pipeline.
+
+        This is the "healthy" pipeline completion function.
+        The normal pipeline completion function, to be run by the pipeline
+        at the end of the script. It sets status flag to completed and records 
+        some time and memory statistics to the log file.
+        """
+        self.set_status_flag(status)
+        self._cleanup()
+        self.report_result("Time", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
+        self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
+        print("\n##### [Epilogue:]")
+        print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
+        # print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
+        print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
+        self.timestamp("* Pipeline completed at: ".rjust(20))
 
 
     def _signal_term_handler(self, signal, frame):
@@ -1300,8 +1359,8 @@ class PipelineManager(object):
         either absolutely or conditionally. It is run automatically when the
         pipeline succeeds, so you shouldn't need to call it from a pipeline.
 
-        @param dry_run Set to True if you want to build a cleanup script, but
-            not actually delete the files.
+        :param bool dry_run: Set to True if you want to build a cleanup
+            script, but not actually delete the files.
         """
 
         if dry_run:
@@ -1319,7 +1378,8 @@ class PipelineManager(object):
                     # Expand regular expression
                     files = glob.glob(expr)
                     # Remove entry from cleanup list
-                    while files in self.cleanup_list: self.cleanup_list.remove(files)
+                    while files in self.cleanup_list:
+                        self.cleanup_list.remove(files)
                     # and delete the files
                     for file in files:
                         if os.path.isfile(file):
