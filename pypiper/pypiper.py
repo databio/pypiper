@@ -1286,8 +1286,10 @@ class PipelineManager(object):
             self.cleanup_list_conditional.append(regex)
         else:
             self.cleanup_list.append(regex)
+            # TODO: what's the "absolute" list?
             # Remove it from the conditional list if added to the absolute list
-            while regex in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(regex)
+            while regex in self.cleanup_list_conditional:
+                self.cleanup_list_conditional.remove(regex)
 
 
     def _cleanup(self, dry_run=False):
@@ -1331,15 +1333,17 @@ class PipelineManager(object):
                     pass
 
         if len(self.cleanup_list_conditional) > 0:
-            # flag_files = glob.glob(self.pipeline_outfolder + "*.flag")
-            flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag") if "completed" not in os.path.basename(fn) and not self.pipeline_name + "_running.flag" == os.path.basename(fn)]
+            flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag")
+                          if "completed" not in os.path.basename(fn)
+                          and not self.pipeline_name + "_running.flag" == os.path.basename(fn)]
             if len(flag_files) == 0 and not dry_run:
                 print("\nCleaning up conditional list...")
                 for expr in self.cleanup_list_conditional:
                     print("\nRemoving glob: " + expr)
                     try:
                         files = glob.glob(expr)
-                        while files in self.cleanup_list_conditional: self.cleanup_list_conditional.remove(files)
+                        while files in self.cleanup_list_conditional:
+                            self.cleanup_list_conditional.remove(files)
                         for file in files:
                             if os.path.isfile(file):
                                 print("`rm " + file + "`")
@@ -1362,7 +1366,7 @@ class PipelineManager(object):
                             with open(self.cleanup_file, "a") as clean_script:
                                 if os.path.isfile(file): clean_script.write("rm " + clean_item + "\n")
                                 elif os.path.isdir(file): clean_script.write("rmdir " + clean_item + "\n")
-                    except Exception as e:
+                    except Exception:
                         print("Could not produce cleanup script for item '{}', "
                               "skipping".format(cleandir))
 
