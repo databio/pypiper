@@ -1352,16 +1352,19 @@ class PipelineManager(object):
             else:
                 print("\nConditional flag found: " + str([os.path.basename(i) for i in flag_files]))
                 print("\nThese conditional files were left in place:" + str(self.cleanup_list_conditional))
-                # Produce a cleanup script
-                for expr in self.cleanup_list_conditional:
+                # Produce a cleanup script.
+                for cleandir in self.cleanup_list_conditional:
                     try:
-                        files = glob.glob(expr)
-                        for file in files:
-                            with open(self.cleanup_file, "a") as myfile:
-                                if os.path.isfile(file): myfile.write("rm " + file + "\n")
-                                elif os.path.isdir(file): myfile.write("rmdir " + file + "\n")
-                    except:
-                        pass
+                        items_to_clean = glob.glob(cleandir)
+                        print("{} items to clean: {}".format(
+                            len(items_to_clean), ", ".join(items_to_clean)))
+                        for clean_item in items_to_clean:
+                            with open(self.cleanup_file, "a") as clean_script:
+                                if os.path.isfile(file): clean_script.write("rm " + clean_item + "\n")
+                                elif os.path.isdir(file): clean_script.write("rmdir " + clean_item + "\n")
+                    except Exception as e:
+                        print("Could not produce cleanup script for item '{}', "
+                              "skipping".format(cleandir))
 
 
     def _memory_usage(self, pid='self', category="hwm", container=None):

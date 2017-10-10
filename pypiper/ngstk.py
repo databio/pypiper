@@ -787,6 +787,7 @@ class NGSTk(_AttributeDict):
         preseq gc_extrap -o {0}.future_coverage.txt {1}
         """.format(output_prefix, bam_file)
 
+
     def bam2fastq(self, input_bam, output_fastq, output_fastq2=None, unpaired_fastq=None):
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
         cmd += " -jar " + self.tools.picard + " SamToFastq"
@@ -796,6 +797,7 @@ class NGSTk(_AttributeDict):
             cmd += " SECOND_END_FASTQ={0}".format(output_fastq2)
             cmd += " UNPAIRED_FASTQ={0}".format(unpaired_fastq)
         return cmd
+
 
     def trimmomatic(
             self, input_fastq1, output_fastq1, cpus, adapters, log,
@@ -817,6 +819,7 @@ class NGSTk(_AttributeDict):
         cmd += " SLIDINGWINDOW:4:10"
         cmd += " MINLEN:36"
         return cmd
+
 
     def skewer(
             self, input_fastq1, output_prefix, output_fastq1,
@@ -930,6 +933,7 @@ class NGSTk(_AttributeDict):
         cmd += " " + self.tools.samtools + " sort -o {0} -".format(output_bam)
         return cmd
 
+
     def sort_index_bam(self, input_bam, output_bam):
         import re
         tmp_bam = re.sub("\.bam", ".sorted", input_bam)
@@ -938,13 +942,32 @@ class NGSTk(_AttributeDict):
         cmd3 = self.tools.samtools + " index {0}".format(output_bam)
         return [cmd1, cmd2, cmd3]
 
+
     def index_bam(self, input_bam):
         cmd = self.tools.samtools + " index {0}".format(input_bam)
         return cmd
 
+
     def run_spp(self, input_bam, output, plot, cpus):
-        cmd = self.tools.Rscript + " " + self.tools.spp + " -rf -savp -savp={0} -s=0:5:500 -c={1} -out={2}".format(plot, input_bam, output)
+        """
+        Run the SPP read peak analysis tool.
+
+        :param input_bam: Path to reads file
+        :type input_bam: str
+        :param output: Path to output file
+        :type output: str
+        :param plot: Path to plot file
+        :type plot: str
+        :param cpus: Number of processors to use
+        :type cpus: int
+        :return: Command with which to run SPP
+        :rtype: str
+        """
+        base = "{} {} -rf -savp"
+        cmd = base + " -savp={} -s=0:5:500 -c={} -out={} -p={}".format(
+            plot, input_bam, output, cpus)
         return cmd
+
 
     def get_fragment_sizes(self, bam_file):
         try:
@@ -959,6 +982,7 @@ class NGSTk(_AttributeDict):
                 frag_sizes.append(read.tlen)
         bam.close()
         return np.array(frag_sizes)
+
 
     def plot_atacseq_insert_sizes(self, bam, plot, output_csv, max_insert=1500, smallest_insert=30):
         """
