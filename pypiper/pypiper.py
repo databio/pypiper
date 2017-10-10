@@ -1460,9 +1460,64 @@ class Tee(object):
 
 
 
-# @staticmethod
-def add_pypiper_args(parser, groups=["pypiper"], args=[None], 
-                     required=[None], all_args=False):
+
+def _determine_args(argument_groups, arguments, use_all_args=False):
+    """
+    Determine the arguments to add to a parser (for a pipeline).
+
+    :param argument_groups: Collection of names of groups of arguments to
+        add to an argument parser.
+    :type argument_groups: Iterable[str] | str
+    :param arguments: Collection of specific arguments to add to the parser;
+        these need not be defined/enumerated here.
+    :type arguments: Iterable[str] | str
+    :param use_all_args: Whether to use all arguments defined here.
+    :type use_all_args: bool
+    :return: Collection of (unique) argument names to add to a parser.
+    :rtype: Set[str]
+    """
+
+    # Define the argument groups.
+    args_by_group = {
+        "pypiper" : ["recover", "new-start", "dirty", "follow"],
+        "config" : ["config"],
+        "resource" : ["mem", "cores"],
+        "looper" : ["config", "output-parent", "mem", "cores"],
+        "common" : ["input", "sample-name"],
+        "ngs" : ["input", "sample-name", "input2", "genome", "single-or-paired"]
+    }
+
+    # Handle various types of group specifications.
+    if use_all_args:
+        groups = args_by_group.keys()
+    elif isinstance(argument_groups, str):
+        groups = {argument_groups}
+    else:
+        groups = set(argument_groups or [])
+
+    # Collect the groups of arguments.
+    final_args = set()
+    for g in groups:
+        try:
+            this_group_args = args_by_group[g]
+        except KeyError:
+            print("Skipping undefined pypiper argument group '{}'".format(g))
+        else:
+            final_args |= {this_group_args} if \
+                isinstance(this_group_args, str) else set(this_group_args)
+
+    # Handle various types of specific, individual argument specifications.
+    if isinstance(arguments, str):
+        arguments = {arguments}
+    else:
+        arguments = set(arguments or [])
+
+    return final_args | arguments
+
+
+
+def add_pypiper_args(parser, groups=("pypiper", ), args=None,
+                     required=None, all_args=False):
     """
     Adds default automatic args to an ArgumentParser. Use this to add standardized 
     pypiper arguments to your python pipeline.
@@ -1474,63 +1529,30 @@ def add_pypiper_args(parser, groups=["pypiper"], args=[None],
     looper-compatible pipeline, use `groups = ["pypiper", "looper"]`.
 
     :param parser: an ArgumentParser object from your pipeline
+    :type parser: argparse.ArgumentParser
     :param groups: Adds arguments belong to specified group of args.
          Options are: pypiper, config, looper, resources, common, ngs, all.
-    :type groups: list
+    :type groups: Iterable[str] | str
     :param args: You may specify a list of specific arguments one by one.
-    :param required: List arguments to be flagged as 'required' by argparse.
-    :type args: list
-
-    :returns: A new ArgumentParser object, with selected pypiper arguments added
+    :type args: Iterable[str] | str
+    :param required: Arguments to be flagged as 'required' by argparse.
+    :type required: Iterable[str]
+    :param all_args: Whether to include all of pypiper's arguments defined here.
+    :type all_args: bool
+    :return: A new ArgumentParser object, with selected pypiper arguments added
+    :rtype: argparse.ArgumentParser
     """
 
-    # A Dict that defines groups of arguments. If the keys in this dict
-    # are specified under "groups", then all of the arguments for any specified
-    # group will be added.
-
-    args_list = {"pypiper" : ["recover", "new-start", "dirty", "follow"],
-                "config" : ["config"],
-                "resource" : ["mem", "cores"],
-                "looper" : ["config", "output-parent", "mem", "cores"],
-                "common" : ["input", "sample-name"],
-                "ngs" : ["input", "sample-name", "input2", "genome", "single-or-paired"]
-                }
-
-
-
-    # any argument in any group is added to a new group called "all"
-    args_list["all"] = list(set(sum(args_list.values(), [])))
-
-    args_to_add = set()
-    # accumulate args to add based on parameters passed to this method
-
-    #if basic:
-    #   args_to_add.update(args_list["basic"])
-
-    if groups:
-        if type(groups) != list:
-            groups = [groups]
-
-        # For backwards-compatilibity
-        if all_args:
-            groups.append("all")
-
-        for group in groups:
-            args_to_add.update(args_list[group])
-
-    if args:
-        if type(args) != list:
-            args = [args]
-        args_to_add.update(args)
+    args_to_add = _determine_args(
+        argument_groups=groups, arguments=args, use_all_args=all_args)
 
     #print(args_to_add)
 
-    for arg in args_to_add:
+    required = [required] if isinstance(required, str) else set(required or [])
 
-        if arg in required:
-            req = True
-        else:
-            req = False
+    for arg in args_to_add:
+        req = arg in required
+
         # Basic pypiper arguments actually used by pypiper
         if arg == "recover":
             parser.add_argument(
