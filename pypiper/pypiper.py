@@ -7,16 +7,34 @@ Pypiper is a python module with two components:
 The PipelineManager class can be used to create a procedural pipeline in python.
 """
 
-import os, sys, subprocess, errno
-import re, glob
-import time
-import atexit, signal, platform
-import __main__
-from AttributeDict import AttributeDict
-from _version import __version__
-
-import shlex # for splitting commands like a shell does
+import atexit
 import datetime
+import errno
+import glob
+import os
+import platform
+import re
+import shlex  # for splitting commands like a shell does
+import signal
+import subprocess
+import sys
+import time
+
+from AttributeDict import AttributeDict
+from utils import check_shell
+from _version import __version__
+import __main__
+
+
+__all__ = ["PipelineManager"]
+
+
+RUN_FLAG = "running"
+COMPLETE_FLAG = "completed"
+FAIL_FLAG = "failed"
+WAIT_FLAG = "waiting"
+PAUSE_FLAG = "partial"
+FLAGS = [RUN_FLAG, COMPLETE_FLAG, FAIL_FLAG, WAIT_FLAG, PAUSE_FLAG]
 
 
 
@@ -152,8 +170,7 @@ class PipelineManager(object):
         self.status = "initializing"
         # as part of the beginning of the pipeline, clear any flags set by
         # previous runs of this pipeline
-        flags_to_delete = ["running", "completed", "failed", "waiting"]
-        for flag in flags_to_delete:
+        for flag in FLAGS:
             existing_flag = os.path.join(self.pipeline_outfolder, self.pipeline_name + "_" + flag + ".flag")
             try:
                 os.remove(existing_flag)
@@ -221,6 +238,16 @@ class PipelineManager(object):
             self.config = None
 
         self.stopping_point = None if stopping_point is None else stopping_point.upper()
+
+
+    @property
+    def failed(self):
+        return self.status == FAIL_FLAG
+
+
+    @property
+    def completed(self):
+        return self.status == COMPLETE_FLAG
 
 
     def _ignore_interrupts(self):
@@ -359,7 +386,7 @@ class PipelineManager(object):
                 arg_print = "`" + arg + "`"
                 print("* " + arg_print.rjust(20) + ":  " + "`" + str(argsDict[arg]) + "`")
         print("\n----------------------------------------\n")
-        self.set_status_flag("running")
+        self.set_status_flag(RUN_FLAG)
 
         # Record the start in PIPE_profile and PIPE_commands output files so we
         # can trace which run they belong to
@@ -586,7 +613,7 @@ class PipelineManager(object):
 
         self._report_command(cmd)
 
-        likely_shell = _check_shell(cmd)
+        likely_shell = check_shell(cmd)
 
         if shell == "guess":
             shell = likely_shell
@@ -646,7 +673,7 @@ class PipelineManager(object):
         proc_name = "".join(cmd).split()[0]
 
 
-        likely_shell = _check_shell(cmd)
+        likely_shell = check_shell(cmd)
 
         if shell == "guess":
             shell = likely_shell
@@ -769,7 +796,7 @@ class PipelineManager(object):
         while os.path.isfile(lock_file):
             if first_message_flag is False:
                 self.timestamp("Waiting for file lock: " + lock_file)
-                self.set_status_flag("waiting")
+                self.set_status_flag(WAIT_FLAG)
                 first_message_flag = True
             else:
                 sys.stdout.write(".")
@@ -781,7 +808,7 @@ class PipelineManager(object):
 
         if first_message_flag:
             self.timestamp("File unlocked.")
-            self.set_status_flag("running")
+            self.set_status_flag(RUN_FLAG)
 
 
     def _wait_for_file(self, file_name, lock_name = None):
@@ -1101,12 +1128,20 @@ class PipelineManager(object):
         :param str stage_name: name of the pipeline processing phase most
             recently completed.
         """
-        stage_name = stage_name.upper()
+
+        # If there's no stopping point, there's definitely nothing to do here.
         if not self.stopping_point:
-            pass
-        elif stage_name == self.stopping_point:
+            return
+
+        # Standardize on case.
+        stage_name = stage_name.upper()
+
+        # Decide what to do based on reported stage/phase and designated
+        # stopping point.
+        if stage_name == self.stopping_point:
             print("'{}' is the designated stopping point, halting pipeline".
                   format(stage_name))
+            self.stop_pipeline(PAUSE_FLAG)
         else:
             print("Just-completed stage '{}' doesn't match stopping point "
                   "'{}', continuing".format(stage_name, self.stopping_point))
@@ -1146,16 +1181,16 @@ class PipelineManager(object):
 
 
         # Finally, set the status to failed and close out with a timestamp
-        if self.status != "failed":  # and self.status != "completed":
+        if not self.failed:  # and not self.completed:
             self.timestamp("### Pipeline failed at: ")
             total_time = datetime.timedelta(seconds = self.time_elapsed(self.starttime))
             print("Total time: " + str(total_time))
-            self.set_status_flag("failed")
+            self.set_status_flag(FAIL_FLAG)
 
         raise e
 
 
-    def stop_pipeline(self, status="completed"):
+    def stop_pipeline(self, status=COMPLETE_FLAG):
         """
         Terminate the pipeline.
 
@@ -1231,7 +1266,7 @@ class PipelineManager(object):
         # If the pipeline hasn't completed successfully, or already been marked
         # as failed, then mark it as failed now.
 
-        if self.status != "completed" and self.status != "failed":
+        if not (self.completed or self.failed):
             print("Pipeline status is: " + self.status)
             self.fail_pipeline(Exception("Unknown exit failure"))
 
@@ -1393,7 +1428,7 @@ class PipelineManager(object):
 
         if len(self.cleanup_list_conditional) > 0:
             flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag")
-                          if "completed" not in os.path.basename(fn)
+                          if COMPLETE_FLAG not in os.path.basename(fn)
                           and not self.pipeline_name + "_running.flag" == os.path.basename(fn)]
             if len(flag_files) == 0 and not dry_run:
                 print("\nCleaning up conditional list...")
@@ -1488,205 +1523,10 @@ class PipelineManager(object):
             print(errmsg)
         if not nofail:
             self.fail_pipeline(e)
-        elif self.status is "failed":
+        elif self.failed:
             print("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
             raise e
         else:
             print(e)
             print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
         # TODO: return nonzero, or something...?
-
-
-
-# TODO: implement as context manager.
-class Tee(object):
-    def __init__(self, log_file):
-        self.file = open(log_file, "a")
-        self.stdout = sys.stdout
-        sys.stdout = self
-
-    def __del__(self):
-        sys.stdout = self.stdout
-        self.file.close()
-
-    def write(self, data):
-        self.file.write(data)
-        self.stdout.write(data)
-        self.file.flush()
-        self.stdout.flush()
-
-    def fileno(self):
-        return self.stdout.fileno()
-
-
-
-def add_pypiper_args(parser, groups=("pypiper", ), args=None,
-                     required=None, all_args=False):
-    """
-    Adds default automatic args to an ArgumentParser. Use this to add standardized
-    pypiper arguments to your python pipeline.
-
-    There are two ways to use `add_pypiper_args`: by specifying argument groups,
-    or by specifying individual arguments. Specifying argument groups will add
-    multiple arguments to your parser; these convenient argumenet groupings make it
-    easy to add arguments to certain types of pipeline. For example, to make a
-    looper-compatible pipeline, use `groups = ["pypiper", "looper"]`.
-
-    :param parser: an ArgumentParser object from your pipeline
-    :type parser: argparse.ArgumentParser
-    :param groups: Adds arguments belong to specified group of args.
-         Options are: pypiper, config, looper, resources, common, ngs, all.
-    :type groups: Iterable[str] | str
-    :param args: You may specify a list of specific arguments one by one.
-    :type args: Iterable[str] | str
-    :param required: Arguments to be flagged as 'required' by argparse.
-    :type required: Iterable[str]
-    :param all_args: Whether to include all of pypiper's arguments defined here.
-    :type all_args: bool
-    :return: A new ArgumentParser object, with selected pypiper arguments added
-    :rtype: argparse.ArgumentParser
-    """
-    args_to_add = _determine_args(
-        argument_groups=groups, arguments=args, use_all_args=all_args)
-    parser = _add_args(parser, args_to_add, required)
-    return parser
-
-
-
-def _determine_args(argument_groups, arguments, use_all_args=False):
-    """
-    Determine the arguments to add to a parser (for a pipeline).
-
-    :param argument_groups: Collection of names of groups of arguments to
-        add to an argument parser.
-    :type argument_groups: Iterable[str] | str
-    :param arguments: Collection of specific arguments to add to the parser.
-    :type arguments: Iterable[str] | str
-    :param use_all_args: Whether to use all arguments defined here.
-    :type use_all_args: bool
-    :return: Collection of (unique) argument names to add to a parser.
-    :rtype: Set[str]
-    """
-
-    # Define the argument groups.
-    args_by_group = {
-        "pypiper" : ["recover", "new-start", "dirty", "follow"],
-        "config" : ["config"],
-        "resource" : ["mem", "cores"],
-        "looper" : ["config", "output-parent", "mem", "cores"],
-        "common" : ["input", "sample-name"],
-        "ngs" : ["input", "sample-name", "input2", "genome", "single-or-paired"]
-    }
-
-    # Handle various types of group specifications.
-    if use_all_args:
-        groups = args_by_group.keys()
-    elif isinstance(argument_groups, str):
-        groups = {argument_groups}
-    else:
-        groups = set(argument_groups or [])
-
-    # Collect the groups of arguments.
-    final_args = set()
-    for g in groups:
-        try:
-            this_group_args = args_by_group[g]
-        except KeyError:
-            print("Skipping undefined pypiper argument group '{}'".format(g))
-        else:
-            final_args |= {this_group_args} if \
-                isinstance(this_group_args, str) else set(this_group_args)
-
-    # Handle various types of specific, individual argument specifications.
-    if isinstance(arguments, str):
-        arguments = {arguments}
-    else:
-        arguments = set(arguments or [])
-
-    return final_args | arguments
-
-
-
-def _add_args(parser, args, required):
-    """
-    Add new arguments to an ArgumentParser.
-
-    :param parser: ArgumentParser to update with new arguments
-    :type parser: argparse.ArgumentParser
-    :param args: Collection of names of arguments to add.
-    :type args: Iterable[str]
-    :param required: Collection of arguments to designate as required
-    :type required: Iterable[str]
-    :return: Updated ArgumentParser
-    :rtype: argparse.ArgumentParser
-    """
-
-    import copy
-
-    # Determine the default pipeline config file.
-    pipeline_script = os.path.basename(sys.argv[0])
-    default_config, _ = os.path.splitext(pipeline_script)
-    default_config += ".yaml"
-
-    # Define the arguments.
-    argument_data = {
-        "recover":
-            ("-R", {"action": "store_true",
-                    "help": "Recover mode, overwrite locks"}),
-        "new-start":
-            ("-N", {"dest": "fresh", "action": "store_true",
-                    "help": "Fresh start mode, overwrite all"}),
-        "dirty":
-            ("-D", {"dest": "manual_clean", "action": "store_true",
-                    "help": "Make all cleanups manual"}),
-        "follow":
-            ("-F", {"dest": "force_follow", "action": "store_true",
-                    "help": "Run all 'follow' commands, even if the "
-                            "primary command is not run"}),
-        "config":
-            ("-C", {"dest": "config_file", "metavar": "CONFIG_FILE",
-                    "default": default_config,
-                    "help": "Pipeline configuration file (YAML). "
-                            "Relative paths are with respect to the "
-                            "pipeline script."}),
-        "output-parent":
-            ("-O", {"metavar": "PARENT_OUTPUT_FOLDER",
-                    "help": "Parent output directory of project"}),
-        "cores":
-            ("-P", {"type": int, "default": 1, "metavar": "NUMBER_OF_CORES",
-                    "help": "Number of cores for parallelized processes"}),
-        "mem":
-            ("-M", {"default": "4000", "metavar": "MEMORY_LIMIT",
-                    "help": "Amount of memory (Mb) use to allow for "
-                            "processes for which that can be specified"}),
-        "input":
-            ("-I", {"nargs": "+", "metavar": "INPUT_FILES",
-                    "help": "One or more primary input files (required)"}),
-        "input2":
-            ("-I2", {"nargs": "*", "metavar": "INPUT_FILES2",
-                     "help": "Secondary input file(s), e.g. read2 for a "
-                             "paired-end protocol"}),
-        "genome":
-            ("-G", {"dest": "genome_assembly",
-                    "help": "Identifier for genome assembly"}),
-        "single-or-paired":
-            ("-Q", {"default": "single",
-                    "help": "Single- or paired-end sequencing protocol"})
-    }
-
-    # Configure the parser for each argument.
-    for arg in args:
-        try:
-            short_opt, argdata = copy.deepcopy(argument_data[arg])
-        except KeyError:
-            print("Skipping undefined pypiper argument: '{}'".format(arg))
-            continue
-        argdata["required"] = arg in required
-        parser.add_argument(short_opt, "--{}".format(arg), **argdata)
-
-    return parser
-
-
-
-def _check_shell(cmd):
-    return "|" in cmd or ">" in cmd or r"*" in cmd
