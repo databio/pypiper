@@ -47,12 +47,15 @@ class PipelineManager(object):
     :param str mem: amount of memory to use, in Mb
     :param str config_file: path to pipeline configuration file, optional
     :param str output_parent: path to folder in which output folder will live
+    :param str stopping_point: Name of pipeline stage/phase at which execution
+        should be stopped; optional, and only relevant for a pipeline that
+        reports checkpoints
     """
     def __init__(
         self, name, outfolder, version=None, args=None, multi=False,
         manual_clean=False, recover=False, fresh=False, force_follow=False,
-        cores=1, mem="1000",
-        config_file=None, output_parent=None
+        cores=1, mem="1000", config_file=None, output_parent=None,
+        stopping_point=None
     ):
         # Params defines the set of options that could be updated via
         # command line args to a pipeline run, that can be forwarded
@@ -537,10 +540,6 @@ class PipelineManager(object):
         return process_return_code
 
 
-    @staticmethod
-    def _check_shell(cmd):
-        return "|" in cmd or ">" in cmd or r"*" in cmd
-
 
     def checkprint(self, cmd, shell="guess", nofail=False, errmsg=None):
         """
@@ -566,7 +565,7 @@ class PipelineManager(object):
 
         self._report_command(cmd)
 
-        likely_shell = self._check_shell(cmd)
+        likely_shell = _check_shell(cmd)
 
         if shell == "guess":
             shell = likely_shell
@@ -626,7 +625,7 @@ class PipelineManager(object):
         proc_name = "".join(cmd).split()[0]
 
 
-        likely_shell = self._check_shell(cmd)
+        likely_shell = _check_shell(cmd)
 
         if shell == "guess":
             shell = likely_shell
@@ -1461,6 +1460,39 @@ class Tee(object):
 
 
 
+def add_pypiper_args(parser, groups=("pypiper", ), args=None,
+                     required=None, all_args=False):
+    """
+    Adds default automatic args to an ArgumentParser. Use this to add standardized
+    pypiper arguments to your python pipeline.
+
+    There are two ways to use `add_pypiper_args`: by specifying argument groups,
+    or by specifying individual arguments. Specifying argument groups will add
+    multiple arguments to your parser; these convenient argumenet groupings make it
+    easy to add arguments to certain types of pipeline. For example, to make a
+    looper-compatible pipeline, use `groups = ["pypiper", "looper"]`.
+
+    :param parser: an ArgumentParser object from your pipeline
+    :type parser: argparse.ArgumentParser
+    :param groups: Adds arguments belong to specified group of args.
+         Options are: pypiper, config, looper, resources, common, ngs, all.
+    :type groups: Iterable[str] | str
+    :param args: You may specify a list of specific arguments one by one.
+    :type args: Iterable[str] | str
+    :param required: Arguments to be flagged as 'required' by argparse.
+    :type required: Iterable[str]
+    :param all_args: Whether to include all of pypiper's arguments defined here.
+    :type all_args: bool
+    :return: A new ArgumentParser object, with selected pypiper arguments added
+    :rtype: argparse.ArgumentParser
+    """
+    args_to_add = _determine_args(
+        argument_groups=groups, arguments=args, use_all_args=all_args)
+    parser = _add_args(parser, args_to_add, required)
+    return parser
+
+
+
 def _determine_args(argument_groups, arguments, use_all_args=False):
     """
     Determine the arguments to add to a parser (for a pipeline).
@@ -1596,33 +1628,5 @@ def _add_args(parser, args, required):
 
 
 
-def add_pypiper_args(parser, groups=("pypiper", ), args=None,
-                     required=None, all_args=False):
-    """
-    Adds default automatic args to an ArgumentParser. Use this to add standardized 
-    pypiper arguments to your python pipeline.
-
-    There are two ways to use `add_pypiper_args`: by specifying argument groups,
-    or by specifying individual arguments. Specifying argument groups will add
-    multiple arguments to your parser; these convenient argumenet groupings make it
-    easy to add arguments to certain types of pipeline. For example, to make a
-    looper-compatible pipeline, use `groups = ["pypiper", "looper"]`.
-
-    :param parser: an ArgumentParser object from your pipeline
-    :type parser: argparse.ArgumentParser
-    :param groups: Adds arguments belong to specified group of args.
-         Options are: pypiper, config, looper, resources, common, ngs, all.
-    :type groups: Iterable[str] | str
-    :param args: You may specify a list of specific arguments one by one.
-    :type args: Iterable[str] | str
-    :param required: Arguments to be flagged as 'required' by argparse.
-    :type required: Iterable[str]
-    :param all_args: Whether to include all of pypiper's arguments defined here.
-    :type all_args: bool
-    :return: A new ArgumentParser object, with selected pypiper arguments added
-    :rtype: argparse.ArgumentParser
-    """
-    args_to_add = _determine_args(
-        argument_groups=groups, arguments=args, use_all_args=all_args)
-    parser = _add_args(parser, args_to_add, required)
-    return parser
+def _check_shell(cmd):
+    return "|" in cmd or ">" in cmd or r"*" in cmd
