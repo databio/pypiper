@@ -29,6 +29,9 @@ import __main__
 __all__ = ["PipelineManager"]
 
 
+
+# TODO: ultimately, these should migrate to pep as they're shared with,
+# e.g., looper check.
 RUN_FLAG = "running"
 COMPLETE_FLAG = "completed"
 FAIL_FLAG = "failed"
