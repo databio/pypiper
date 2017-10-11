@@ -242,11 +242,21 @@ class PipelineManager(object):
 
     @property
     def failed(self):
+        """
+        Is the managed pipeline in a failed state?
+
+        :return bool: Whether the managed pipeline is in a failed state.
+        """
         return self.status == FAIL_FLAG
 
 
     @property
     def completed(self):
+        """
+        Is the managed pipeline in a completed state?
+
+        :return bool: Whether the managed pipeline is in a completed state.
+        """
         return self.status == COMPLETE_FLAG
 
 
