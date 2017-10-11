@@ -966,12 +966,9 @@ class PipelineManager(object):
         filename = str(filename).strip()
 
         # better to use a relative path in this file
-        # convert any absoluate pathsinto relative paths
-        if os.path.isabs(filename):
-            relative_filename = os.path.relpath(filename,
-                                                self.pipeline_outfolder)
-        else:
-            relative_filename = filename
+        # convert any absolute paths into relative paths
+        relative_filename = os.path.relpath(filename, self.pipeline_outfolder) \
+                if os.path.isabs(filename) else filename
 
         message_raw = "{key}\t{filename}\t{annotation}".format(
             key=key, filename=relative_filename, annotation=annotation)
