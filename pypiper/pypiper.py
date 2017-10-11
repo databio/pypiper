@@ -30,6 +30,7 @@ __all__ = ["PipelineManager"]
 
 
 
+LOCK_PREFIX = "lock."
 # TODO: ultimately, these should migrate to pep as they're shared with,
 # e.g., looper check.
 RUN_FLAG = "running"
@@ -145,19 +146,23 @@ class PipelineManager(object):
         #if self.output_parent and not os.path.isabs(self.output_parent):
         #   self.output_parent = os.path.join(os.getcwd(), self.output_parent)
 
+        def _make_pipe_file_path(suffix):
+            filename = self.pipeline_name + suffix
+            return os.path.join(self.pipeline_outfolder, filename)
+
         # File paths:
-        self.pipeline_outfolder = os.path.join(outfolder, '')
-        self.pipeline_log_file = self.pipeline_outfolder + self.pipeline_name + "_log.md"
+        self.pipeline_outfolder = os.path.join(outfolder, '')  # trailing slash
+        self.pipeline_log_file = _make_pipe_file_path("_log.md")
 
-        self.pipeline_profile_file = self.pipeline_outfolder + self.pipeline_name + "_profile.tsv"
+        self.pipeline_profile_file = _make_pipe_file_path("_profile.tsv")
 
-        # stats and figures are general and so lack the pipeline name.
-        self.pipeline_stats_file = self.pipeline_outfolder + "stats.tsv"
-        self.pipeline_figures_file = self.pipeline_outfolder + "figures.tsv"
+        # Stats and figures are general and so lack the pipeline name.
+        self.pipeline_stats_file = os.path.join(outfolder, "stats.tsv")
+        self.pipeline_figures_file = os.path.join(outfolder, "figures.tsv")
 
-
-        self.pipeline_commands_file = self.pipeline_outfolder + self.pipeline_name + "_commands.sh"
-        self.cleanup_file = self.pipeline_outfolder + self.pipeline_name + "_cleanup.sh"
+        # Record commands used and provide manual cleanup script.
+        self.pipeline_commands_file = _make_pipe_file_path("_commands.sh")
+        self.cleanup_file = _make_pipe_file_path("_cleanup.sh")
 
         # Pipeline status variables
         self.peak_memory = 0  # memory high water mark
@@ -174,7 +179,7 @@ class PipelineManager(object):
         # as part of the beginning of the pipeline, clear any flags set by
         # previous runs of this pipeline
         for flag in FLAGS:
-            existing_flag = os.path.join(self.pipeline_outfolder, self.pipeline_name + "_" + flag + ".flag")
+            existing_flag = _make_pipe_file_path("_{}.flag".format(flag))
             try:
                 os.remove(existing_flag)
                 print("Removed existing flag: " + existing_flag)
@@ -499,14 +504,9 @@ class PipelineManager(object):
         # but placed in the parent pipeline outfolder, and not in a subfolder, if any.
         if lock_name is None:
             lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
-
-        # Prepend "lock." to make it easy to find the lock files.
-        lock_name = "lock." + lock_name
-
-        recover_name = "recover." + lock_name
-        recover_file = os.path.join(self.pipeline_outfolder, recover_name)
-        recover_mode = False
         lock_file = os.path.join(self.pipeline_outfolder, lock_name)
+        recover_file = self._recoverfile_from_lockfile(lock_file)
+        recover_mode = False
         process_return_code = 0
         local_maxmem = 0
 
@@ -546,24 +546,23 @@ class PipelineManager(object):
                     print("Found lock file; overwriting this target...")
                 elif os.path.isfile(recover_file):
                     print("Found lock file. Found dynamic recovery file. Overwriting this target...")
-                    # remove the lock file which will then be prompty re-created for the current run.
+                    # remove the lock file which will then be promptly re-created for the current run.
                     recover_mode = True
-                    # the recovery flag is now spent, so remove so we don't accidently re-recover a failed job
+                    # the recovery flag is now spent, so remove so we don't accidentally re-recover a failed job
                     os.remove(recover_file)
-                else:  # don't overwite locks
+                else:  # don't overwrite locks
                     self._wait_for_lock(lock_file)
                     # when it's done loop through again to try one more time (to see if the target exists now)
                     continue
 
             # If you get to this point, the target doesn't exist, and the lock_file doesn't exist 
             # (or we should overwrite). create the lock (if you can)
+            # Initialize lock in master lock list
+            self.locks.append(lock_file)
             if self.overwrite_locks or recover_mode:
-                # Initialize lock in master lock list
-                self.locks.append(lock_name)
                 self._create_file(lock_file)
             else:
                 try:
-                    self.locks.append(lock_name)
                     self._create_file_racefree(lock_file)  # Create lock
                 except OSError as e:
                     if e.errno == errno.EEXIST:  # File already exists
@@ -594,7 +593,7 @@ class PipelineManager(object):
 
             call_follow()
             os.remove(lock_file)  # Remove lock file
-            self.locks.remove(lock_name)
+            self.locks.remove(lock_file)
 
             # If you make it to the end of the while loop, you're done
             break
@@ -824,24 +823,21 @@ class PipelineManager(object):
             self.set_status_flag(RUN_FLAG)
 
 
-    def _wait_for_file(self, file_name, lock_name = None):
+    def _wait_for_file(self, file_name, lock_name=None):
         """
         Just sleep until the file_name DOES exist.
 
         :param file_name: File to wait for.
         :type file_name: str
+        :param lock_name: Name of lock file to wait for.
+        :type lock_name: str
         """
-        # Build default lock name:
-        if lock_name is None:
-            lock_name = file_name.replace(self.pipeline_outfolder, "").replace("/", "__")
 
-        lock_name = "lock." + lock_name
-        lock_file = os.path.join(self.pipeline_outfolder, lock_name)
-
-
+        # Waiting loop/state variables
         sleeptime = .5
         first_message_flag = False
         dot_count = 0
+
         while not os.path.isfile(file_name):
             if first_message_flag is False:
                 self.timestamp("Waiting for file: " + file_name)
@@ -857,6 +853,10 @@ class PipelineManager(object):
         if first_message_flag:
             self.timestamp("File exists.")
 
+        # Finalize lock file path and begin waiting.
+        if lock_name is None:
+            lock_name = file_name.replace(self.pipeline_outfolder, "").replace("/", "__")
+        lock_file = self._make_lock_path(lock_name)
         self._wait_for_lock(lock_file)
 
 
@@ -990,18 +990,17 @@ class PipelineManager(object):
         """
         target = file
         lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
-        lock_name = "lock." + lock_name
-        lock_file = os.path.join(self.pipeline_outfolder, lock_name)
+        lock_file = self._make_lock_path(lock_name)
 
         while True:
             if os.path.isfile(lock_file):
                 self._wait_for_lock(lock_file)
             else:
                 try:
-                    self.locks.append(lock_name)
-                    self._create_file_racefree(lock_file)  # Create lock
+                    self.locks.append(lock_file)
+                    self._create_file_racefree(lock_file)
                 except OSError as e:
-                    if e.errno == errno.EEXIST:  # File already exists
+                    if e.errno == errno.EEXIST:
                         print ("Lock file created after test! Looping again.")
                         continue  # Go back to start
 
@@ -1009,8 +1008,9 @@ class PipelineManager(object):
                 with open(file, "a") as myfile:
                     myfile.write(message + "\n")
 
-                os.remove(lock_file)  # Remove lock file
-                self.locks.remove(lock_name)
+                os.remove(lock_file)
+                self.locks.remove(lock_file)
+                
                 # If you make it to the end of the while loop, you're done
                 break
 
@@ -1032,8 +1032,9 @@ class PipelineManager(object):
 
     def _create_file(self, file):
         """
-        Creates a file, but will not fail if the file already exists. (Vulnerable to race conditions).
-        Use this for cases where it doesn't matter if this process is the one that created the file.
+        Creates a file, but will not fail if the file already exists. 
+        This is vulnerable to race conditions; use this for cases where it 
+        doesn't matter if this process is the one that created the file.
 
         :param file: File to create.
         :type file: str
@@ -1045,8 +1046,10 @@ class PipelineManager(object):
     def _create_file_racefree(self, file):
         """
         Creates a file, but fails if the file already exists.
-        This function will thus only succeed if this process actually creates the file;
-        if the file already exists, it will raise an OSError, solving race conditions.
+        
+        This function will thus only succeed if this process actually creates 
+        the file; if the file already exists, it will cause an OSError, 
+        solving race conditions.
 
         :param file: File to create.
         :type file: str
@@ -1055,12 +1058,45 @@ class PipelineManager(object):
         os.open(file, write_lock_flags)
 
 
+    @staticmethod
+    def _ensure_lock_prefix(lock_name_base):
+        return lock_name_base if lock_name_base.startswith(LOCK_PREFIX) \
+                else LOCK_PREFIX + lock_name_base
+
+
+    def _make_lock_path(self, lock_name_base):
+        """
+        Create path to lock file with given name as base.
+        
+        :param str lock_name_base: Lock file name, designed to not be prefixed 
+            with the lock file designation, but that's permitted.
+        :return str: Path to the lock file.
+        """
+        lock_name = self._ensure_lock_prefix(lock_name_base)
+        return os.path.join(self.pipeline_outfolder, lock_name)
+
+
+    def _recoverfile_from_lockfile(self, lockfile):
+        """
+        Create path to recovery file with given name as base.
+        
+        :param str lock_name_base: Name of file on which to base this path, 
+            perhaps already prefixed with the designation of a lock file.
+        :return str: Path to recovery file.
+        """
+        if not os.path.isabs(lockfile):
+            lockfile = self._make_lock_path(lockfile)
+        return lockfile.replace(LOCK_PREFIX, "recover." + LOCK_PREFIX)
+
+
     def make_sure_path_exists(self, path):
         """
-        Creates all directories in a path if it does not exist. Raise exception otherwise.
+        Creates all directories in a path if it does not exist.
 
         :param path: Path to create.
         :type path: str
+        :raises Exception: if the path creation attempt hits an error with 
+            a code indicating a cause other than pre-existence.
         """
         try:
             os.makedirs(path)
@@ -1181,12 +1217,11 @@ class PipelineManager(object):
                 print("No locked process. Dynamic recovery will be automatic.")
             # make a copy of self.locks to iterate over since we'll be clearing them as we go
             # set a recovery flag for each lock.
-            for lock_name in self.locks[:]:
-                recover_name = "recover." + lock_name
-                recover_file = os.path.join(self.pipeline_outfolder, recover_name)
+            for lock_file in self.locks[:]:
+                recover_file = self._recoverfile_from_lockfile(lock_file)
                 print("Setting dynamic recover file: " + recover_file)
                 self._create_file_racefree(recover_file)
-                self.locks.remove(lock_name)
+                self.locks.remove(lock_file)
 
         # Produce cleanup script
         self._cleanup(dry_run=True)
