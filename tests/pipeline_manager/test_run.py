@@ -58,12 +58,12 @@ class RunCheckpointTests:
     """ Tests for PipelineManager.run() with respect to checkpoint """
 
 
-    def _assert_checkpoint(self, captured, checkpoint_name=None):
+    def _assert_checkpoint(self, captured, filepath=None):
         """ Check that an existing file message was captured. """
-        message = "File exists for checkpoint"
-        if checkpoint_name is not None:
-            message = "{} '{}'".format(message, checkpoint_name)
+        message = "Checkpoint file exists"
         assert captured.startswith(message)
+        if filepath is not None:
+            assert filepath in captured
 
 
     @pytest.mark.parametrize(
@@ -93,7 +93,7 @@ class RunCheckpointTests:
         sys.stdout.write(err)
 
         # Check that the expected message was generated.
-        self._assert_checkpoint(captured=out, checkpoint_name=checkpoint)
+        self._assert_checkpoint(captured=out)
 
 
     @pytest.mark.parametrize(
@@ -125,9 +125,37 @@ class RunCheckpointTests:
         assert os.path.exists(path_dummy_file)
 
 
-    def test_checkpoint_file_is_satisfied(self):
+    @pytest.mark.parametrize(
+        argnames="chkpt_fname",
+        argvalues=["start.completed", "middle.done", "final.finished"])
+    @pytest.mark.parametrize(
+        argnames="test_type", argvalues=["test_effect", "test_message"])
+    def test_checkpoint_file_is_satisfied(
+            self, chkpt_fname, pl_mgr, test_type, tmpdir, capsys):
         """ Execution stops if checkpoint file exists. """
-        pass
+
+        # Create command target and ensure it doesn't exist.
+        dummy_target = tmpdir.join("dummy.txt").strpath
+        assert not os.path.exists(dummy_target)
+
+        # Create the empty checkpoint file.
+        chkpt_fpath = tmpdir.join(chkpt_fname).strpath
+        open(chkpt_fpath, 'w').close()
+
+        # Make the call under test.
+        cmd = "touch {}".format(dummy_target)
+        pl_mgr.run(cmd, target=dummy_target, checkpoint_filename=chkpt_fname)
+
+        # Conduct the test.
+        if test_type == "test_effect":
+            assert not os.path.exists(tmpdir.join(dummy_target).strpath)
+        elif test_type == "test_message":
+            out, err = capsys.readouterr()
+            sys.stdout.write(out)
+            sys.stderr.write(err)
+            self._assert_checkpoint(captured=out, filepath=chkpt_fpath)
+        else:
+            raise ValueError("Unrecognized test type: '{}'".format(test_type))
 
 
     def test_checkpoint_file_not_satisfied(self):
@@ -136,7 +164,7 @@ class RunCheckpointTests:
 
 
     def test_checkpoint_file_precludes_name(self):
-        """ The PipelineManager should continue if there's no checkpoint file. """
+        """ Direct checkpoint file takes precedence over name-derived ones. """
         pass
 
 

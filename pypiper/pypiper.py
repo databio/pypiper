@@ -528,8 +528,8 @@ class PipelineManager(object):
         for fname in check_names:
             path_check_file = pipeline_filepath(self, filename=fname)
             if os.path.isfile(path_check_file):
-                print("File exists for checkpoint '{}': {}, continuing".
-                        format(checkpoint, path_check_file))
+                print("Checkpoint file exists ('{}'), continuing".
+                      format(path_check_file))
                 return 0
 
         # If a checkpoint indication was provided, provide notice of absence.
