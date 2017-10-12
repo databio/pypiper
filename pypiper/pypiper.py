@@ -445,7 +445,8 @@ class PipelineManager(object):
         :param str status: flag file type to create, default to current status
         :return str: path to flag file of indicated or current status.
         """
-        flag_file_name = "{}_{}.flag".format(self.pipeline_name, status or self.status)
+        flag_file_name = "{}_{}.flag".format(
+                self.pipeline_name, status or self.status)
         return pipeline_filepath(self, filename=flag_file_name)
 
 
@@ -454,14 +455,19 @@ class PipelineManager(object):
     ###################################
     def run(self, cmd, target=None, lock_name=None, shell="guess",
             nofail=False, errmsg=None, clean=False, follow=None,
-            container=None, checkpoint_name=None):
+            container=None, checkpoint=None, checkpoint_filename=None):
         """
-        Runs a shell command. This is the primary workhorse function of PipelineManager. This is the command  execution
-        function, which enforces race-free file-locking, enables restartability, and multiple pipelines can produce/use
-        the same files. The function will wait for the file lock if it exists, and not produce new output (by default)
-        if the target output file already exists. If the output is to be created, it will first create a lock file to
-        prevent other calls to run (for example, in parallel pipelines) from touching the file while it is being
-        created. It also records the memory of the process and provides some logging output
+        The primary workhorse function of PipelineManager, this runs a command.
+
+        This is the command  execution function, which enforces
+        race-free file-locking, enables restartability, and multiple pipelines
+        can produce/use the same files. The function will wait for the file
+        lock if it exists, and not produce new output (by default) if the
+        target output file already exists. If the output is to be created,
+        it will first create a lock file to prevent other calls to run
+        (for example, in parallel pipelines) from touching the file while it
+        is being created. It also records the memory of the process and
+        provides some logging output.
 
         :param cmd: Shell command(s) to be run.
         :type cmd: str or list
@@ -469,8 +475,9 @@ class PipelineManager(object):
         :type target: str or None
         :param lock_name: Name of lock file. Optional.
         :type lock_name: str or None
-        :param shell: If command requires should be run in its own shell. Optional. Default: "guess" --
-            run will try to determine if the command requires a shell.
+        :param shell: If command requires should be run in its own shell.
+            Optional. Default: "guess" --will try to determine whether the
+            command requires a shell.
         :type shell: bool
         :param nofail: Whether the pipeline proceed past a nonzero return from
             a process, default False; nofail can be used to implement
@@ -482,31 +489,49 @@ class PipelineManager(object):
         :param clean: True means the target file will be automatically added
             to a auto cleanup list. Optional.
         :type clean: bool
-        :param follow: Function to call after executing cmd or each command therein.
+        :param follow: Function to call after executing (each) command.
         :type follow: callable
-        :param container: Runs commands in given named docker container.
+        :param container: Name for Docker container in which to run commands.
         :type container: str
-        :param checkpoint_name: Name of the corresponding checkpoint, to be
+        :param checkpoint: Name of the corresponding checkpoint, to be
             used to allow this command to be skipped if there's filesystem
             indication that the associated checkpoint has already been reached.
+            If no checkpoint_filename is specified, this filenames based on
+            this checkpoint name will be used to consider skipping this step.
+        :type checkpoint: str
+        :param checkpoint_filename: Name for a file whose existence means
+            that this step may be skipped.
         :return: Return code of process. If a list of commands is passed,
             this is the maximum of all return codes for all commands.
         :rtype: int
         """
 
         # Short-circuit if checkpoint file exists.
-        checkpoint_filename = \
-                translate_stage_name(checkpoint_name) + CHECKPOINT_EXTENSION
-        checkpoint_file = pipeline_filepath(self, filename=checkpoint_filename)
-        if checkpoint_name and os.path.isfile(checkpoint_file):
-            print("File exists for checkpoint '{}': {}, continuing".format(
-                    checkpoint_name, checkpoint_file))
-            
+        if checkpoint_filename is None:
+            check_names = [fname + CHECKPOINT_EXTENSION for fname in
+                           [checkpoint, translate_stage_name(checkpoint)]]
+        else:
+            check_names = [checkpoint_filename]
+        for fname in check_names:
+            path_check_file = pipeline_filepath(self, filename=fname)
+            if os.path.isfile(path_check_file):
+                print("File exists for checkpoint '{}': {}, continuing".
+                        format(checkpoint, path_check_file))
+                return 0
 
-        # The default lock name is based on the target name. Therefore, a targetless command that you want
+        # If a checkpoint indication was provided, provide notice of absence.
+        if checkpoint_filename:
+            print("Checkpoint file ('{}') doesn't exist; running...".
+                  format(checkpoint_filename))
+        elif checkpoint:
+            print("No checkpoint file for '{}'; running...".format(checkpoint))
+
+        # The default lock name is based on the target name.
+        # Therefore, a targetless command that you want
         # to lock must specify a lock_name manually.
         if target is None and lock_name is None:
-            self.fail_pipeline(Exception("You must provide either a target or a lock_name."))
+            self.fail_pipeline(Exception(
+                "You must provide either a target or a lock_name."))
 
         # If the target is a list, for now let's just strip it to the first target.
         # Really, it should just check for all of them.
@@ -595,12 +620,14 @@ class PipelineManager(object):
 
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
-                    list_ret, list_maxmem = self.callprint(cmd_i, shell, nofail, container)
+                    list_ret, list_maxmem = \
+                        self.callprint(cmd_i, shell, nofail, container)
                     local_maxmem = max(local_maxmem, list_maxmem)
                     process_return_code = max(process_return_code, list_ret)
 
             else:  # Single command (most common)
-                process_return_code, local_maxmem = self.callprint(cmd, shell, nofail, container)  # Run command
+                process_return_code, local_maxmem = \
+                    self.callprint(cmd, shell, nofail, container)  # Run command
 
             # For temporary files, you can specify a clean option to automatically
             # add them to the clean list, saving you a manual call to clean_add

@@ -65,8 +65,8 @@ class Pipeline(object):
         if not stages:
             raise ValueError("Empty stages")
 
-        # Check that each element is a pair, and get to list for
-        # multiple iteration.
+        # Check that each element is a pair, and standardize to list-of-pairs
+        # representation of stage name and (hopefully callable) stage.
         try:
             name_stage_pairs = [(name, stage) for name, stage in stages]
         except ValueError:
@@ -78,7 +78,7 @@ class Pipeline(object):
             raise
 
         # Enforce stage name uniqueness.
-        stage_names, _ = zip(*name_stage_pairs)
+        stage_names, _ = zip(*name_stage_pairs)    # Need non-emptiness
         stage_name_counts = Counter(stage_names)
         repeated = [(s, n) for s, n in stage_name_counts.items() if n > 1]
         if repeated:
@@ -105,7 +105,7 @@ class Pipeline(object):
     @abc.abstractproperty
     def stages(self):
         """
-        Define the names of pipeline processing stages
+        Define the names of pipeline processing stages.
 
         :return: Collection of pipeline stage names.
         :rtype: Iterable[str]
@@ -142,7 +142,7 @@ class Pipeline(object):
 
         # Ensure that a stage name--if specified--is supported.
         for s in [start, stop]:
-            if s and s not in self.stage_names:
+            if not (s is None or s in self.stage_names):
                 raise UnknownPipelineStageError(s, self)
 
         # Permit order-agnostic pipelines, but warn.

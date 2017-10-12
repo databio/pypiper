@@ -12,6 +12,18 @@ CHECKPOINT_EXTENSION = ".checkpoint"
 
 
 def translate_stage_name(stage_name):
+    """
+    Account for potential variability in stage/phase name definition.
+
+    Since a pipeline author is free to name his/her processing phases/stages
+    as desired, but these choices influence file names, enforce some
+    standardization. Specifically, prohibit potentially problematic spaces.
+
+    :param stage_name: Name of the pipeline phase/stage.
+    :type stage_name: str
+    :return: Standardized pipeline phase/stage name.
+    :rtype: str
+    """
     return stage_name.lower().replace(" ", "-")
 
 
