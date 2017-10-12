@@ -3,3 +3,4 @@ from .pypiper import *
 from .ngstk import *
 from .AttributeDict import *
 from .utils import *
+from .pipeline import *

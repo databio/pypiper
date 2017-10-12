@@ -1,9 +1,16 @@
 """ Shared utilities """
 
+import os
+import sys
+
+
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
+# What to export/attach to pypiper package namespace.
+# Conceptually, reserve this for functions expected to be used in other
+# packages, and import from utils within pypiper for other functions.
 __all__ = ["add_pypiper_args"]
 
 
@@ -49,6 +56,34 @@ def check_shell(cmd):
     :return bool: Whether the command appears to involve shell proccess(es).
     """
     return "|" in cmd or ">" in cmd or r"*" in cmd
+
+
+
+def pipeline_filepath(pm, filename=None, suffix=None):
+    """
+    Derive path to file for managed pipeline.
+
+    :param pm: Manager of a particular pipeline instance.
+    :type pm: pypiper.PipelineManager
+    :param filename: Name of file for which to create full path based
+        on pipeline's output folder.
+    :type filename: str
+    :param suffix: Suffix for the file; this can be added to the filename
+        if provided or added to the pipeline name if there's no filename.
+    :type suffix: str
+    :return: Path to file within managed pipeline's output folder, with
+        filename as given or determined by the pipeline name, and suffix
+        appended if given.
+    :rtype: str
+    :raises ValueError: If neither filename nor suffix is provided, raise a
+        ValueError, as in that case there's no substance from which to create
+        a filepath.
+    """
+    if filename is None and suffix is None:
+        raise ValueError("Provide filename and/or suffix to create "
+                         "path to a pipeline file.")
+    filename = (filename or pm.pipeline_name) + (suffix or "")
+    return os.path.join(pm.pipeline_outfolder, filename)
 
 
 

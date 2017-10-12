@@ -21,7 +21,8 @@ import sys
 import time
 
 from AttributeDict import AttributeDict
-from utils import check_shell
+from stage import translate_stage_name
+from utils import check_shell, pipeline_filepath
 from _version import __version__
 import __main__
 
@@ -146,23 +147,19 @@ class PipelineManager(object):
         #if self.output_parent and not os.path.isabs(self.output_parent):
         #   self.output_parent = os.path.join(os.getcwd(), self.output_parent)
 
-        def _make_pipe_file_path(suffix):
-            filename = self.pipeline_name + suffix
-            return os.path.join(self.pipeline_outfolder, filename)
-
         # File paths:
         self.pipeline_outfolder = os.path.join(outfolder, '')  # trailing slash
-        self.pipeline_log_file = _make_pipe_file_path("_log.md")
+        self.pipeline_log_file = pipeline_filepath(suffix="_log.md")
 
-        self.pipeline_profile_file = _make_pipe_file_path("_profile.tsv")
+        self.pipeline_profile_file = pipeline_filepath(suffix="_profile.tsv")
 
         # Stats and figures are general and so lack the pipeline name.
-        self.pipeline_stats_file = os.path.join(outfolder, "stats.tsv")
-        self.pipeline_figures_file = os.path.join(outfolder, "figures.tsv")
+        self.pipeline_stats_file = pipeline_filepath(self, filename="stats.tsv")
+        self.pipeline_figures_file = pipeline_filepath(self, filename="figures.tsv")
 
         # Record commands used and provide manual cleanup script.
-        self.pipeline_commands_file = _make_pipe_file_path("_commands.sh")
-        self.cleanup_file = _make_pipe_file_path("_cleanup.sh")
+        self.pipeline_commands_file = pipeline_filepath(self, suffix="_commands.sh")
+        self.cleanup_file = pipeline_filepath(self, suffix="_cleanup.sh")
 
         # Pipeline status variables
         self.peak_memory = 0  # memory high water mark
@@ -179,7 +176,7 @@ class PipelineManager(object):
         # as part of the beginning of the pipeline, clear any flags set by
         # previous runs of this pipeline
         for flag in FLAGS:
-            existing_flag = _make_pipe_file_path("_{}.flag".format(flag))
+            existing_flag = pipeline_filepath(self, suffix="_{}.flag".format(flag))
             try:
                 os.remove(existing_flag)
                 print("Removed existing flag: " + existing_flag)
@@ -449,13 +446,15 @@ class PipelineManager(object):
         :return str: path to flag file of indicated or current status.
         """
         flag_file_name = "{}_{}.flag".format(self.pipeline_name, status or self.status)
-        return os.path.join(self.pipeline_outfolder, flag_file_name)
+        return pipeline_filepath(self, filename=flag_file_name)
 
 
     ###################################
     # Process calling functions
     ###################################
-    def run(self, cmd, target=None, lock_name=None, shell="guess", nofail=False, errmsg=None, clean=False, follow=None, container=None):
+    def run(self, cmd, target=None, lock_name=None, shell="guess",
+            nofail=False, errmsg=None, clean=False, follow=None,
+            container=None, checkpoint_name=None):
         """
         Runs a shell command. This is the primary workhorse function of PipelineManager. This is the command  execution
         function, which enforces race-free file-locking, enables restartability, and multiple pipelines can produce/use
@@ -473,21 +472,31 @@ class PipelineManager(object):
         :param shell: If command requires should be run in its own shell. Optional. Default: "guess" --
             run will try to determine if the command requires a shell.
         :type shell: bool
-        :param nofail: Should the pipeline proceed past a nonzero return from a process? Default: False
-            Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
-            they will not cause the pipeline to bail out.
+        :param nofail: Whether the pipeline proceed past a nonzero return from
+            a process, default False; nofail can be used to implement
+            non-essential parts of the pipeline; if a 'nofail' command fails,
+            the pipeline is free to continue execution.
         :type nofail: bool
         :param errmsg: Message to print if there's an error.
         :type errmsg: str
-        :param clean: True means the target file will be automatically added to a auto cleanup list. Optional.
+        :param clean: True means the target file will be automatically added
+            to a auto cleanup list. Optional.
         :type clean: bool
         :param follow: Function to call after executing cmd or each command therein.
         :type follow: callable
         :param container: Runs commands in given named docker container.
         :type container: str
-        :returns: Return code of process. If a list of commands is passed, this is the maximum of all return codes for all commands.
+        :param checkpoint_name: Name of the corresponding checkpoint, to be
+            used to allow this command to be skipped if there's filesystem
+            indication that the associated checkpoint has already been reached.
+        :return: Return code of process. If a list of commands is passed,
+            this is the maximum of all return codes for all commands.
         :rtype: int
         """
+
+        checkpoint_file = 
+        if checkpoint_name and os.path.isfile():
+            
 
         # The default lock name is based on the target name. Therefore, a targetless command that you want
         # to lock must specify a lock_name manually.
@@ -504,7 +513,7 @@ class PipelineManager(object):
         # but placed in the parent pipeline outfolder, and not in a subfolder, if any.
         if lock_name is None:
             lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
-        lock_file = os.path.join(self.pipeline_outfolder, lock_name)
+        lock_file = self._make_lock_path(lock_name)
         recover_file = self._recoverfile_from_lockfile(lock_file)
         recover_mode = False
         process_return_code = 0
@@ -521,7 +530,8 @@ class PipelineManager(object):
             call_follow = lambda: None
         elif not hasattr(follow, "__call__"):
             # Warn about non-callable argument to follow-up function.
-            print("Follow-up function is not callable and won't be used: {}".format(type(follow)))
+            print("Follow-up function is not callable and won't be used: {}".
+                  format(type(follow)))
             call_follow = lambda: None
         else:
             # Wrap the follow-up function so that the log shows what's going on.
@@ -533,7 +543,8 @@ class PipelineManager(object):
             ##### Tests block
             # Base case: Target exists (and we don't overwrite); break loop, don't run process.
             # os.path.exists allows the target to be either a file or directory; .isfile is file-only
-            if target is not None and os.path.exists(target) and not os.path.isfile(lock_file):
+            if target is not None and os.path.exists(target) \
+                    and not os.path.isfile(lock_file):
                 print("\nTarget exists: `" + target + "`")
                 # Normally we don't run the follow, but if you want to force...
                 if self.force_follow:
@@ -1070,14 +1081,14 @@ class PipelineManager(object):
         :return str: Path to the lock file.
         """
         lock_name = self._ensure_lock_prefix(lock_name_base)
-        return os.path.join(self.pipeline_outfolder, lock_name)
+        return pipeline_filepath(self, filename=lock_name)
 
 
     def _recoverfile_from_lockfile(self, lockfile):
         """
         Create path to recovery file with given name as base.
         
-        :param str lock_name_base: Name of file on which to base this path, 
+        :param str lockfile: Name of file on which to base this path, 
             perhaps already prefixed with the designation of a lock file.
         :return str: Path to recovery file.
         """
