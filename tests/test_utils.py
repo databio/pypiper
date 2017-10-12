@@ -76,11 +76,31 @@ class PipelineFilepathTests:
             raise ValueError("Unrecognized test type: '{}'".format(test_type))
 
 
-    def test_direct_filename(self, pl_mgr):
+    @pytest.mark.parametrize(
+        argnames="filename",
+        argvalues=["testfile" + suffix for suffix in SUFFICES])
+    @pytest.mark.parametrize(
+        argnames="test_type", argvalues=["filename", "filepath"])
+    def test_direct_filename(self, tmpdir, filename, pl_mgr, test_type):
         """ When given, filename is used instead of pipeline name. """
-        pass
+        fullpath = pipeline_filepath(pl_mgr, filename=filename)
+        if test_type == "filename":
+            _, observed = os.path.split(fullpath)
+            assert filename == observed
+        elif test_type == "filepath":
+            expected = os.path.join(tmpdir.strpath, filename)
+            assert expected == fullpath
+        else:
+            raise ValueError("Unrecognized test type: '{}'".format(test_type))
 
 
-    def test_suffix_is_appended_to_filename_if_both_are_provided(self, pl_mgr):
+    @pytest.mark.parametrize(
+        argnames="filename", argvalues=["output", "testfile"])
+    @pytest.mark.parametrize(argnames="suffix", argvalues=SUFFICES)
+    def test_suffix_is_appended_to_filename_if_both_are_provided(
+            self, pl_mgr, filename, suffix):
         """ Suffix is appended to filename if both are provided. """
-        pass
+        expected = filename + suffix
+        fullpath = pipeline_filepath(pl_mgr, filename=filename, suffix=suffix)
+        _, observed = os.path.split(fullpath)
+        assert expected == observed
