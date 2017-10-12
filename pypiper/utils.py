@@ -59,6 +59,7 @@ def check_shell(cmd):
 
 
 
+# TODO: live with Pipeline?
 def pipeline_filepath(pm, filename=None, suffix=None):
     """
     Derive path to file for managed pipeline.
