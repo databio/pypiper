@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+import os
 import sys
 
 extra = {}
@@ -16,8 +17,9 @@ except ImportError:
         extra['dependencies'] = ['argparse']
 
 
-with open("pypiper/_version.py", 'r') as versionfile:
+with open(os.path.join("pypiper", "_version.py"), 'r') as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
+
 
 setup(
     name='pypiper',
@@ -27,5 +29,10 @@ setup(
     author='Nathan Sheffield, Johanna Klughammer, Andre Rendeiro',
     author_email='nathan@code.databio.org, jklughammer@cemm.oeaw.ac.at, arendeiro@cemm.oeaw.ac.at',
     url='https://github.com/epigen/pypiper/',
+    test_suite="tests",                  # python setup.py test
+    tests_require=["mock", "pytest"],    # Test-specific package dependencies
+    # Extra package if doing `python setup.py test`
+    setup_requires=(["pytest-runner"] if {"test", "pytest", "ptr"} & set(sys.argv) else []),
+    # Version-specific items
     **extra
 )

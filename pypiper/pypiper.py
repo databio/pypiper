@@ -104,7 +104,7 @@ class PipelineManager(object):
 
         # Define pipeline-level variables to keep track of global state and some pipeline stats
         # Pipeline settings
-        self.pipeline_name = name
+        self.name = name
         self.overwrite_locks = params['recover']
         self.fresh_start = params['fresh']
         self.force_follow = params['force_follow']
@@ -148,17 +148,21 @@ class PipelineManager(object):
         #   self.output_parent = os.path.join(os.getcwd(), self.output_parent)
 
         # File paths:
-        self.pipeline_outfolder = os.path.join(outfolder, '')  # trailing slash
-        self.pipeline_log_file = pipeline_filepath(suffix="_log.md")
+        self.outfolder = os.path.join(outfolder, '')  # trailing slash
+        self.pipeline_log_file = pipeline_filepath(self, suffix="_log.md")
 
-        self.pipeline_profile_file = pipeline_filepath(suffix="_profile.tsv")
+        self.pipeline_profile_file = \
+                pipeline_filepath(self, suffix="_profile.tsv")
 
         # Stats and figures are general and so lack the pipeline name.
-        self.pipeline_stats_file = pipeline_filepath(self, filename="stats.tsv")
-        self.pipeline_figures_file = pipeline_filepath(self, filename="figures.tsv")
+        self.pipeline_stats_file = \
+                pipeline_filepath(self, filename="stats.tsv")
+        self.pipeline_figures_file = \
+                pipeline_filepath(self, filename="figures.tsv")
 
         # Record commands used and provide manual cleanup script.
-        self.pipeline_commands_file = pipeline_filepath(self, suffix="_commands.sh")
+        self.pipeline_commands_file = \
+                pipeline_filepath(self, suffix="_commands.sh")
         self.cleanup_file = pipeline_filepath(self, suffix="_cleanup.sh")
 
         # Pipeline status variables
@@ -275,13 +279,13 @@ class PipelineManager(object):
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
 
-    def start_pipeline(self, args = None, multi = False):
+    def start_pipeline(self, args=None, multi=False):
         """
         Initialize setup. Do some setup, like tee output, print some diagnostics, create temp files.
         You provide only the output directory (used for pipeline stats, log, and status flag files).
         """
         # Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
-        self.make_sure_path_exists(self.pipeline_outfolder)
+        self.make_sure_path_exists(self.outfolder)
 
         # By default, Pypiper will mirror every operation so it is displayed both
         # on sys.stdout **and** to a log file. Unfortunately, interactive python sessions
@@ -289,16 +293,13 @@ class PipelineManager(object):
         # the tee subprocess, sending all output to screen only.
         # Starting multiple PipelineManagers in the same script has the same problem, and
         # must therefore be run in interactive_mode.
-        
-        interactive_mode = False  # Defaults to off
 
-        if multi or not hasattr(__main__, "__file__"):
-            print("Warning: You're running an interactive python session. This works, but pypiper cannot tee\
-                    the output, so results are only logged to screen.")
-
-            interactive_mode = True
-        
-        if not interactive_mode:
+        interactive_mode = multi or not hasattr(__main__, "__file__")
+        if interactive_mode:
+            print("Warning: You're running an interactive python session. "
+                  "This works, but pypiper cannot tee the output, so results "
+                  "are only logged to screen.")
+        else:
             sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
 
             # The tee subprocess must be instructed to ignore TERM and INT signals;
@@ -363,7 +364,7 @@ class PipelineManager(object):
         print("* " + "Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv))) + "`"
         print("* " + "Compute host".rjust(20) + ":  " + platform.node())
         print("* " + "Working dir".rjust(20) + ":  " + os.getcwd())
-        print("* " + "Outfolder".rjust(20) + ":  " + self.pipeline_outfolder)
+        print("* " + "Outfolder".rjust(20) + ":  " + self.outfolder)
 
         self.timestamp("* " + "Pipeline started at".rjust(20) + ":  ")
 
@@ -446,7 +447,7 @@ class PipelineManager(object):
         :return str: path to flag file of indicated or current status.
         """
         flag_file_name = "{}_{}.flag".format(
-                self.pipeline_name, status or self.status)
+                self.name, status or self.status)
         return pipeline_filepath(self, filename=flag_file_name)
 
 
@@ -542,7 +543,7 @@ class PipelineManager(object):
         # Default lock_name (if not provided) is based on the target file name,
         # but placed in the parent pipeline outfolder, and not in a subfolder, if any.
         if lock_name is None:
-            lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
+            lock_name = target.replace(self.outfolder, "").replace("/", "__")
         lock_file = self._make_lock_path(lock_name)
         recover_file = self._recoverfile_from_lockfile(lock_file)
         recover_mode = False
@@ -898,7 +899,7 @@ class PipelineManager(object):
 
         # Finalize lock file path and begin waiting.
         if lock_name is None:
-            lock_name = file_name.replace(self.pipeline_outfolder, "").replace("/", "__")
+            lock_name = file_name.replace(self.outfolder, "").replace("/", "__")
         lock_file = self._make_lock_path(lock_name)
         self._wait_for_lock(lock_file)
 
@@ -964,7 +965,7 @@ class PipelineManager(object):
         """
         # Default annotation is current pipeline name
         if not annotation:
-            annotation = self.pipeline_name
+            annotation = self.name
 
         # In case the value is passed with trailing whitespace
         value = str(value).strip()
@@ -1001,7 +1002,7 @@ class PipelineManager(object):
 
         # Default annotation is current pipeline name
         if not annotation:
-            annotation = self.pipeline_name
+            annotation = self.name
 
         annotation = str(annotation)
 
@@ -1010,7 +1011,7 @@ class PipelineManager(object):
 
         # better to use a relative path in this file
         # convert any absolute paths into relative paths
-        relative_filename = os.path.relpath(filename, self.pipeline_outfolder) \
+        relative_filename = os.path.relpath(filename, self.outfolder) \
                 if os.path.isabs(filename) else filename
 
         message_raw = "{key}\t{filename}\t{annotation}".format(
@@ -1029,7 +1030,7 @@ class PipelineManager(object):
         Writes a string to a file safely (with file locks).
         """
         target = file
-        lock_name = target.replace(self.pipeline_outfolder, "").replace("/", "__")
+        lock_name = target.replace(self.outfolder, "").replace("/", "__")
         lock_file = self._make_lock_path(lock_name)
 
         while True:
@@ -1156,7 +1157,7 @@ class PipelineManager(object):
         """
 
         # regex identifies all possible stats files.
-        #regex = self.pipeline_outfolder +  "*_stats.tsv"       
+        #regex = self.outfolder +  "*_stats.tsv"       
         #stats_files = glob.glob(regex)
         #stats_files.insert(self.pipeline_stats_file) # last one is the current pipeline
         #for stats_file in stats_files:
@@ -1172,7 +1173,7 @@ class PipelineManager(object):
                     except ValueError:
                         print("WARNING: Each row in a stats file is expected to have 3 columns")
 
-                    if annotation.rstrip() == self.pipeline_name or annotation.rstrip() == "shared":
+                    if annotation.rstrip() == self.name or annotation.rstrip() == "shared":
                         self.stats_dict[key] = value.strip()
 
 
@@ -1515,9 +1516,9 @@ class PipelineManager(object):
                     pass
 
         if len(self.cleanup_list_conditional) > 0:
-            flag_files = [fn for fn in glob.glob(self.pipeline_outfolder + "*.flag")
+            flag_files = [fn for fn in glob.glob(self.outfolder + "*.flag")
                           if COMPLETE_FLAG not in os.path.basename(fn)
-                          and not self.pipeline_name + "_running.flag" == os.path.basename(fn)]
+                          and not self.name + "_running.flag" == os.path.basename(fn)]
             if len(flag_files) == 0 and not dry_run:
                 print("\nCleaning up conditional list...")
                 for expr in self.cleanup_list_conditional:

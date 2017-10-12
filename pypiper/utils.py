@@ -50,10 +50,10 @@ def add_pypiper_args(parser, groups=("pypiper", ), args=None,
 
 def check_shell(cmd):
     """
-    Determine whether a command appears to involve shell proccess(es).
+    Determine whether a command appears to involve shell process(es).
 
     :param str cmd: Command to investigate.
-    :return bool: Whether the command appears to involve shell proccess(es).
+    :return bool: Whether the command appears to involve shell process(es).
     """
     return "|" in cmd or ">" in cmd or r"*" in cmd
 
@@ -71,19 +71,19 @@ def pipeline_filepath(pm, filename=None, suffix=None):
     :param suffix: Suffix for the file; this can be added to the filename
         if provided or added to the pipeline name if there's no filename.
     :type suffix: str
+    :raises TypeError: If neither filename nor suffix is provided, raise a
+        TypeError, as in that case there's no substance from which to create
+        a filepath.
     :return: Path to file within managed pipeline's output folder, with
         filename as given or determined by the pipeline name, and suffix
         appended if given.
     :rtype: str
-    :raises ValueError: If neither filename nor suffix is provided, raise a
-        ValueError, as in that case there's no substance from which to create
-        a filepath.
     """
     if filename is None and suffix is None:
-        raise ValueError("Provide filename and/or suffix to create "
-                         "path to a pipeline file.")
-    filename = (filename or pm.pipeline_name) + (suffix or "")
-    return os.path.join(pm.pipeline_outfolder, filename)
+        raise TypeError("Provide filename and/or suffix to create "
+                        "path to a pipeline file.")
+    filename = (filename or pm.name) + (suffix or "")
+    return os.path.join(pm.outfolder, filename)
 
 
 
