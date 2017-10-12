@@ -27,6 +27,18 @@ class PipelineManagerTester(PipelineManager):
 
 @pytest.fixture
 def pl_mgr(request, tmpdir):
+    """
+    Provide a test case with a PipelineManager that cleanly stops.
+
+    :param pytest.fixtures.FixtureRequest request: test case requesting this
+        fixture parameterization
+    :param py.path.local.LocalPath tmpdir: temporary test folder fixture
+    :return PipelineManagerTester: thin wrapper around normal PipelineManager,
+        that simply stops cleanly upon test cessation.
+    """
+
+    # Allow requesting test case to provide arguments for PipelineManager,
+    # but also provide defaults.
     if "name" in request.fixturenames:
         pipe_name = request.getfixturevalue("name")
     else:
@@ -35,7 +47,6 @@ def pl_mgr(request, tmpdir):
         outfolder = request.getfixturevalue("outfolder")
     else:
         outfolder = tmpdir.strpath
-
 
     # Set 'multi' to prevent interference with stdout/err.
     pm = PipelineManagerTester(pipe_name, outfolder, multi=True)
