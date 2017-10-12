@@ -21,7 +21,7 @@ import sys
 import time
 
 from AttributeDict import AttributeDict
-from stage import translate_stage_name
+from stage import translate_stage_name, CHECKPOINT_EXTENSION
 from utils import check_shell, pipeline_filepath
 from _version import __version__
 import __main__
@@ -494,8 +494,13 @@ class PipelineManager(object):
         :rtype: int
         """
 
-        checkpoint_file = 
-        if checkpoint_name and os.path.isfile():
+        # Short-circuit if checkpoint file exists.
+        checkpoint_filename = \
+                translate_stage_name(checkpoint_name) + CHECKPOINT_EXTENSION
+        checkpoint_file = pipeline_filepath(self, filename=checkpoint_filename)
+        if checkpoint_name and os.path.isfile(checkpoint_file):
+            print("File exists for checkpoint '{}': {}, continuing".format(
+                    checkpoint_name, checkpoint_file))
             
 
         # The default lock name is based on the target name. Therefore, a targetless command that you want
