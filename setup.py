@@ -21,6 +21,11 @@ with open(os.path.join("pypiper", "_version.py"), 'r') as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
 
 
+with open("requirements-test.txt", 'r') as test_reqs_file:
+    test_reqs = [l for l in test_reqs_file.readlines()
+                 if l and not l.startswith("#")]
+
+
 setup(
     name='pypiper',
     packages=['pypiper'],
@@ -29,8 +34,8 @@ setup(
     author='Nathan Sheffield, Johanna Klughammer, Andre Rendeiro',
     author_email='nathan@code.databio.org, jklughammer@cemm.oeaw.ac.at, arendeiro@cemm.oeaw.ac.at',
     url='https://github.com/epigen/pypiper/',
-    test_suite="tests",                  # python setup.py test
-    tests_require=["mock", "pytest"],    # Test-specific package dependencies
+    test_suite="tests",         # python setup.py test
+    tests_require=test_reqs,    # Test-specific package dependencies
     # Extra package if doing `python setup.py test`
     setup_requires=(["pytest-runner"] if {"test", "pytest", "ptr"} & set(sys.argv) else []),
     # Version-specific items
