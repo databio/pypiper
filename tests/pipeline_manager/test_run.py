@@ -188,6 +188,12 @@ class RunCheckpointTests:
         name_based_filename = checkpoint_filename(check_name)
         name_based_filepath = tmpdir.join(name_based_filename).strpath
 
+        # Value to pass as non-existent filename that will supersede the
+        # name-derived one that does exist, and thus fail to trigger
+        # the call to run() to be skipped.
+        # Thus, the target will in fact be created.
+        alternate_filename = checkpoint_filename("callpeak")
+
         # Create the checkpoint file derived from the checkpoint name to
         # specify in the call to run(). This will be ignored by run() since
         # a checkpoint filename (different than this one) will be directly
@@ -203,7 +209,7 @@ class RunCheckpointTests:
         # filename given directly to the call doesn't exist.
         cmd = "touch {}".format(dummy_target)
         pl_mgr.run(cmd, target=dummy_target, checkpoint=check_name,
-                   checkpoint_filename=name_based_filename)
+                   checkpoint_filename=alternate_filename)
         assert os.path.exists(dummy_target)
 
 
