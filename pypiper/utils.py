@@ -84,7 +84,8 @@ def pipeline_filepath(pm, filename=None, suffix=None):
         raise TypeError("Provide filename and/or suffix to create "
                         "path to a pipeline file.")
     filename = (filename or pm.name) + (suffix or "")
-    return os.path.join(pm.outfolder, filename)
+    return filename if os.path.isabs(filename) \
+            else os.path.join(pm.outfolder, filename)
 
 
 

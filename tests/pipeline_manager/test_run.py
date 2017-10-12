@@ -158,16 +158,89 @@ class RunCheckpointTests:
             raise ValueError("Unrecognized test type: '{}'".format(test_type))
 
 
-    def test_checkpoint_file_not_satisfied(self):
+    @pytest.mark.parametrize(argnames="stage_index", argvalues=range(1, 4))
+    def test_checkpoint_file_not_satisfied(self, stage_index, pl_mgr, tmpdir):
         """ Execution proceeds if the checkpoint file doesn't exist. """
-        pass
+
+        check_files = [checkpoint_filename("stage{}".format(i))
+                       for i in range(stage_index + 1)]
+
+        # Create empty checkpoint files for "preceding"-indexed stages,
+        # starting from 0, relative to the given stage index.
+        for fname in check_files[:-1]:
+            open(tmpdir.join(fname).strpath, 'w').close()
+
+        dummy_target = tmpdir.join("testfile.out").strpath
+        cmd = "touch {}".format(dummy_target)
+        curr_file = check_files[-1]
+        assert not os.path.exists(curr_file)
+        assert not os.path.exists(dummy_target)
+        pl_mgr.run(cmd, target=dummy_target, checkpoint_filename=curr_file)
+        assert os.path.exists(dummy_target)
 
 
-    def test_checkpoint_file_precludes_name(self):
-        """ Direct checkpoint file takes precedence over name-derived ones. """
-        pass
+    def test_name_based_file_exists_but_direct_filename_doesnt(
+            self, pl_mgr, tmpdir):
+        """ Directly specified checkpoint file must exist to skip run. """
+
+        # Checkpoint name, as perhaps specified by a pipeline author.
+        check_name = "Peak calling"
+        name_based_filename = checkpoint_filename(check_name)
+        name_based_filepath = tmpdir.join(name_based_filename).strpath
+
+        # Create the checkpoint file derived from the checkpoint name to
+        # specify in the call to run(). This will be ignored by run() since
+        # a checkpoint filename (different than this one) will be directly
+        # passed in the call.
+        open(name_based_filepath, 'w').close()
+        assert os.path.exists(name_based_filepath)
+
+        # Negative pre-test control
+        dummy_target = tmpdir.join("output.txt").strpath
+        assert not os.path.exists(dummy_target)
+
+        # Make the call under test, which should create the target since the
+        # filename given directly to the call doesn't exist.
+        cmd = "touch {}".format(dummy_target)
+        pl_mgr.run(cmd, target=dummy_target, checkpoint=check_name,
+                   checkpoint_filename=name_based_filename)
+        assert os.path.exists(dummy_target)
 
 
-    def test_no_checkpoint_specified(self):
+    def test_name_based_file_doesnt_exist_but_direct_filename_does(
+            self, pl_mgr, tmpdir):
+        """ Existence of directly-specified filename skips run. """
+
+        # Checkpoint name, as perhaps specified by a pipeline author.
+        check_name = "Peak calling"
+
+        # Actual file representing the checkpoint
+        true_file_name = checkpoint_filename("callpeak")
+        true_file_path = tmpdir.join(true_file_name).strpath
+
+        # Write the checkpoint file as a sort of placeholder indication;
+        # this is what should trigger the call to run() to short-circuit and
+        # not execute the underlying command.
+        open(true_file_path, 'w').close()
+        assert os.path.exists(true_file_path)
+
+        # Pre-call test control.
+        dummy_target = tmpdir.join("output.txt").strpath
+        assert not os.path.exists(dummy_target)
+
+        # Make the call under test.
+        cmd = "touch {}".format(dummy_target)
+        pl_mgr.run(cmd, target=dummy_target,
+                   checkpoint=check_name, checkpoint_filename=true_file_name)
+
+        # Call to run() should short-circuit and target still should not exist.
+        assert not os.path.exists(dummy_target)
+
+
+    def test_no_checkpoint_specified(self, pl_mgr, tmpdir):
         """ Execution proceeds if command to run is not checkpointed. """
-        pass
+        dummy_target = tmpdir.join("tempout.txt").strpath
+        assert not os.path.exists(dummy_target)
+        cmd = "touch {}".format(dummy_target)
+        pl_mgr.run(cmd, target=dummy_target)
+        assert os.path.exists(dummy_target)
