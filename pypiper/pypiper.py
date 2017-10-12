@@ -507,12 +507,24 @@ class PipelineManager(object):
         :rtype: int
         """
 
-        # Short-circuit if checkpoint file exists.
-        if checkpoint_filename is None:
+        # The default lock name is based on the target name.
+        # Therefore, a targetless command that you want
+        # to lock must specify a lock_name manually.
+        if target is None and lock_name is None:
+            self.fail_pipeline(Exception(
+                "You must provide either a target or a lock_name."))
+
+        # Allow lack of checkpoint, direct filename specification, or
+        # derivation of checkpoint filename from checkpoint name.
+        if checkpoint_filename is not None:
+            check_names = [checkpoint_filename]
+        elif checkpoint is not None:
             check_names = [fname + CHECKPOINT_EXTENSION for fname in
                            [checkpoint, translate_stage_name(checkpoint)]]
         else:
-            check_names = [checkpoint_filename]
+            check_names = []
+
+        # Short-circuit if checkpoint file exists.
         for fname in check_names:
             path_check_file = pipeline_filepath(self, filename=fname)
             if os.path.isfile(path_check_file):
@@ -526,13 +538,6 @@ class PipelineManager(object):
                   format(checkpoint_filename))
         elif checkpoint:
             print("No checkpoint file for '{}'; running...".format(checkpoint))
-
-        # The default lock name is based on the target name.
-        # Therefore, a targetless command that you want
-        # to lock must specify a lock_name manually.
-        if target is None and lock_name is None:
-            self.fail_pipeline(Exception(
-                "You must provide either a target or a lock_name."))
 
         # If the target is a list, for now let's just strip it to the first target.
         # Really, it should just check for all of them.

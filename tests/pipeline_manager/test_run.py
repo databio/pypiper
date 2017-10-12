@@ -1,14 +1,27 @@
 """ Tests for PipelineManager's run() method """
 
 import os
+import random
+import string
 import sys
+
 import pytest
+
 from pypiper import PipelineManager
-from pypiper.stage import checkpoint_filename
+from pypiper.stage import checkpoint_filename, checkpoint_filepath
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
+
+
+
+class PipelineManagerTester(PipelineManager):
+    """ When a test completes, ensure that a pipeline is stopped normally. """
+
+    def run(self, *args, **kwargs):
+        super(PipelineManagerTester, self).run(*args, **kwargs)
+        self.stop_pipeline()
 
 
 
@@ -22,8 +35,10 @@ def pl_mgr(request, tmpdir):
         outfolder = request.getfixturevalue("outfolder")
     else:
         outfolder = tmpdir.strpath
+
+
     # Set 'multi' to prevent interference with stdout/err.
-    pm = PipelineManager(pipe_name, outfolder, multi=True)
+    pm = PipelineManagerTester(pipe_name, outfolder, multi=True)
     return pm
 
 
@@ -38,11 +53,6 @@ class RunCheckpointTests:
         if checkpoint_name is not None:
             message = "{} '{}'".format(message, checkpoint_name)
         assert captured.startswith(message)
-
-
-    def _assert_not_checkpoint(self, captured):
-        """ Check that captured message indicates running status """
-        assert "running" in captured
 
 
     @pytest.mark.parametrize(
@@ -61,8 +71,8 @@ class RunCheckpointTests:
 
         # Make the call under test and ensure that we didn't create the
         # dummy file.
-        pl_mgr.run("touch {}".format(path_dummy_file), checkpoint=checkpoint)
-        pl_mgr.stop_pipeline()
+        pl_mgr.run("touch {}".format(path_dummy_file),
+                   target=path_dummy_file, checkpoint=checkpoint)
         assert not os.path.exists(path_dummy_file)
 
         # Store captured output, then re-write for display in case of
@@ -75,9 +85,33 @@ class RunCheckpointTests:
         self._assert_checkpoint(captured=out, checkpoint_name=checkpoint)
 
 
-    def test_checkpoint_name_not_satisfied(self):
+    @pytest.mark.parametrize(
+        argnames=["checkpoint", "previous"],
+        argvalues=[("step2", ["part1"]),
+                   ("phase_three", ["stage1", "part_zwei"])])
+    def test_checkpoint_name_not_satisfied(
+            self, checkpoint, previous, tmpdir, pl_mgr):
         """ Checkpoint file can be inferred from name.  """
-        pass
+
+        # Arbitrarily establish previous checkpoint files. This is irrelevant
+        # for determination of whether a single run() call should execute,
+        # but it implicitly tests specificity of checkpoint file name and
+        # more accurately reflects a true use case.
+        for prev in previous:
+            name = checkpoint_filename(prev)
+            path = tmpdir.join(name).strpath
+            open(path, 'w').close()
+
+        base_dummy_filename = "".join(
+                [random.choice(string.ascii_lowercase) for _ in range(20)])
+        path_dummy_file = tmpdir.join(base_dummy_filename + ".txt").strpath
+
+        assert not os.path.exists(path_dummy_file)
+        chkpt_file = checkpoint_filepath(checkpoint, pm=pl_mgr)
+        pl_mgr.run("touch {}".format(path_dummy_file),
+                   target=chkpt_file, checkpoint=checkpoint)
+
+        assert os.path.exists(path_dummy_file)
 
 
     def test_checkpoint_file_is_satisfied(self):
