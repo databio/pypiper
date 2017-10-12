@@ -26,7 +26,7 @@ def pl_mgr(request, tmpdir):
     :return mock.MagicMock: Mocked PipelineManager, sufficient for test.
     """
 
-    # Select the pipline name.
+    # Select the pipeline name.
     if "pipe_name" in request.fixturenames:
         pipe_name = request.getfixturevalue("pipe_name")
     else:
@@ -51,21 +51,29 @@ class PipelineFilepathTests:
 
     @pytest.mark.parametrize(argnames="pipe_name", argvalues=PIPELINE_NAMES)
     @pytest.mark.parametrize(argnames="suffix", argvalues=SUFFICES)
+    @pytest.mark.parametrize(
+        argnames="test_type",
+        argvalues=["has_pipe_name", "has_suffix", "full_path"])
     def test_uses_pipeline_name_if_no_filename(
-            self, pipe_name, suffix, pl_mgr, tmpdir):
+            self, pipe_name, suffix, test_type, pl_mgr, tmpdir):
         """ Pipeline name is proxy for filename if just suffix is given. """
-        expected = os.path.join(tmpdir.strpath, pipe_name + suffix)
+
         observed = pipeline_filepath(pl_mgr, suffix=suffix)
-        try:
-            assert expected == observed
-        except AssertionError:
-            print("OUTFOLDER: {}".format(pl_mgr.outfolder))
-            raise
 
-
-    def test_suffix_if_no_filename(self, pl_mgr):
-        """ Suffix is appended to pipeline name if filename isn't given. """
-        pass
+        # Allow test type to determine assertion.
+        if test_type == "has_pipe_name":
+            assert pipe_name in observed
+        elif test_type == "has_suffix":
+            assert observed.endswith(suffix)
+        elif test_type == "full_path":
+            try:
+                expected = os.path.join(tmpdir.strpath, pipe_name + suffix)
+                assert expected == observed
+            except AssertionError:
+                print("OUTFOLDER: {}".format(pl_mgr.outfolder))
+                raise
+        else:
+            raise ValueError("Unrecognized test type: '{}'".format(test_type))
 
 
     def test_direct_filename(self, pl_mgr):
