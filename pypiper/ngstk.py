@@ -619,43 +619,108 @@ class NGSTk(_AttributeDict):
         """
         return int(self.count_flag_reads(file_name, 512, paired_end))
 
+
     def samtools_view(self, file_name, param, postpend=""):
         """
-        Runs samtools view on a file, with flexible parameters and post-processing. Used internally to implement
-        the various count_reads functions.
-        :param file: file_name
+        Run samtools view, with flexible parameters and post-processing.
+
+        This is used internally to implement the various count_reads functions.
+
+        :param file_name: file_name
+        :type file_name: str
         :param param: String of parameters to pass to samtools view
+        :type param: str
         :param postpend: String to postpend to the samtools command;
-        useful to add cut, sort, wc operations to the samtools view output.
+            useful to add cut, sort, wc operations to the samtools view output.
+        :type postpend: str
         """
         x = subprocess.check_output(self.tools.samtools + " view " + param + " " + file_name + " " + postpend, shell=True)
         return x
 
+
     def count_reads(self, file_name, paired_end):
         """
+        Count reads in a file.
+
         Paired-end reads count as 2 in this function.
-        For paired-end reads, this function assumes that the reads are split into 2
-        fastq files, therefore, to count the reads, it divides by 2 instead of 4.
+        For paired-end reads, this function assumes that the reads are split
+        into 2 files, so it divides line count by 2 instead of 4.
         This will thus give an incorrect result if your paired-end fastq files
         are in only a single file (you must divide by 2 again).
+
+        :param file_name: Name/path of file whose reads are to be counted.
+        :type file_name: str
+        :param paired_end: Whether the file contains paired-end reads.
+        :type paired_end: bool
         """
-        if file_name.endswith("bam"):
-            return self.samtools_view(file_name, param="-c")
-        if file_name.endswith("sam"):
-            return self.samtools_view(file_name, param="-c -S")
-        if file_name.endswith("fastq") or file_name.endswith("fq"):
-            x = self.count_lines(file_name)
-            if (paired_end):
-                return int(x) / 2
-            else:
-                return int(x) / 4
-        if file_name.endswith("fastq.gz") or file_name.endswith("fq.gz"):
-            x = self.count_lines_zip(file_name)
-            if (paired_end):
-                return int(x) / 2
-            else:
-                return int(x) / 4
-        return -1
+
+        _, ext = os.path.splitext(file_name)
+        if not (self.is_sam_or_bam(file_name) or self.is_fastq(file_name)):
+            # TODO: make this an exception and force caller to handle that
+            # rather than relying on knowledge of possibility of negative value.
+            return -1
+
+        if self.is_sam_or_bam(file_name):
+            param_text = "-c" if ext == ".bam" else "-c -S"
+            return self.samtools_view(file_name, param=param_text)
+        else:
+            count_lines = self.count_lines_zip \
+                    if self.is_gzipped_fastq(file_name) else self.count_lines
+            num_lines = int(count_lines(file_name))
+            divisor = 2 if paired_end else 4
+            return num_lines / divisor
+
+
+    def is_sam_or_bam(self, file_name):
+        """
+        Determine whether a file appears to be in a SAM format.
+
+        :param file_name: Name/path of file to check as SAM-formatted.
+        :type file_name: str
+        :return: Whether file appears to be SAM-formatted
+        :rtype: bool
+        """
+        _, ext = os.path.splitext(file_name)
+        return ext in [".bam", ".sam"]
+
+
+    def is_fastq(self, file_name):
+        """
+        Determine whether indicated file appears to be in FASTQ format.
+
+        :param file_name: Name/path of file to check as FASTQ.
+        :type file_name: str
+        :return: Whether indicated file appears to be in FASTQ format, zipped
+            or unzipped.
+        :rtype bool
+        """
+        return self.is_unzipped_fastq(file_name) or self.is_gzipped_fastq(file_name)
+
+
+    def is_unzipped_fastq(self, file_name):
+        """
+        Determine whether indicated file appears to be an unzipped FASTQ.
+
+        :param file_name: Name/path of file to check as unzipped FASTQ.
+        :type file_name: str
+        :return: Whether indicated file appears to be in unzipped FASTQ format.
+        :rtype bool
+        """
+        _, ext = os.path.splitext(file_name)
+        return ext in [".fastq", ".fq"]
+
+
+    def is_gzipped_fastq(self, file_name):
+        """
+        Determine whether indicated file appears to be a gzipped FASTQ.
+
+        :param file_name: Name/path of file to check as gzipped FASTQ.
+        :type file_name: str
+        :return: Whether indicated file appears to be in gzipped FASTQ format.
+        :rtype bool
+        """
+        _, ext = os.path.splitext(file_name)
+        return ext in [".fq.gz", ".fastq.gz"]
 
 
     def count_mapped_reads(self, file_name, paired_end):
