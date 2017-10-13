@@ -217,7 +217,8 @@ class PipelineManager(object):
             else: 
                 # Relative custom config file specified
                 # Set path to be relative to pipeline script
-                abs_config = os.path.join(os.path.dirname(sys.argv[0]), args.config_file)
+                pipedir = os.path.dirname(sys.argv[0])
+                abs_config = os.path.join(pipedir, args.config_file)
                 if os.path.isfile(abs_config):
                     config_to_load = abs_config
                 else:
@@ -226,10 +227,12 @@ class PipelineManager(object):
                 print("Using custom config file: {}".format(config_to_load))
         else:
             # No custom config file specified. Check for default
-            default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
+            pipe_path_base, _ = os.path.splitext(os.path.basename(sys.argv[0]))
+            default_config = "{}.yaml".format(pipe_path_base)
             if os.path.isfile(default_config):
                 config_to_load = default_config
-                print("Using default pipeline config file: {}".format(config_to_load))
+                print("Using default pipeline config file: {}".
+                      format(config_to_load))
 
         # Finally load the config we found.
         if config_to_load is not None:
