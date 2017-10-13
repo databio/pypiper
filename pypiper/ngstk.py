@@ -7,6 +7,7 @@ from AttributeDict import AttributeDict as _AttributeDict
 from .exceptions import UnsupportedFiletypeException
 
 
+
 class NGSTk(_AttributeDict):
     """
     Class to hold functions to build command strings used during pipeline runs.
@@ -73,6 +74,7 @@ class NGSTk(_AttributeDict):
         else:
             self.ziptool = "gzip"
 
+
     def make_dir(self, path):
         try:
             os.makedirs(path)
@@ -80,9 +82,11 @@ class NGSTk(_AttributeDict):
             if exception.errno != errno.EEXIST:
                 raise
 
+
     def make_sure_path_exists(self, path):
         """ Alias for make_dir """
         self.make_dir(path)
+
 
     # Borrowed from looper
     def check_command(self, command):
@@ -101,6 +105,7 @@ class NGSTk(_AttributeDict):
         else:
             return True
 
+
     def get_file_size(self, filenames):
         """
         Get size of all files in string (space-separated) in megabytes (Mb).
@@ -117,6 +122,7 @@ class NGSTk(_AttributeDict):
 
         return round(sum([float(os.stat(f).st_size) for f in filenames.split(" ")]) / (1024 ** 2), 4)
 
+
     def mark_duplicates(self, aligned_file, out_file, metrics_file, remove_duplicates="True"):
         cmd = self.tools.java
         if self.pm.javamem:  # If a memory restriction exists.
@@ -127,6 +133,7 @@ class NGSTk(_AttributeDict):
         cmd += " METRICS_FILE=" + metrics_file
         cmd += " REMOVE_DUPLICATES=" + remove_duplicates
         return cmd
+
 
     def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
         """
@@ -151,6 +158,7 @@ class NGSTk(_AttributeDict):
         cmd += " VALIDATION_STRINGENCY=SILENT"
         return cmd
 
+
     def bam_to_fastq_awk(self, bam_file, out_fastq_pre, paired_end):
         """
         This converts bam file to fastq files, but using awk. As of 2016, this is much faster 
@@ -173,6 +181,7 @@ class NGSTk(_AttributeDict):
             cmd += r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + fq1 + '"; }'
             cmd += "'"
         return cmd, fq1, fq2
+
 
     def bam_to_fastq_bedtools(self, bam_file, out_fastq_pre, paired_end):
         """
@@ -226,7 +235,7 @@ class NGSTk(_AttributeDict):
         """
         self.make_sure_path_exists(raw_folder)
 
-        if type(input_args) != list:
+        if not isinstance(input_args, list):
             raise Exception("Input must be a list")
 
         if any(isinstance(i, list) for i in input_args):
@@ -289,7 +298,7 @@ class NGSTk(_AttributeDict):
                     self.pm.run(cmd, output_merge)
                     cmd2 = self.validate_bam(output_merge)
                     self.pm.run(cmd, output_merge, nofail=True)
-                    return(output_merge)
+                    return output_merge
 
                 # if multiple fastq
                 if all([self.get_input_ext(x) == ".fastq.gz" for x in input_args]):
@@ -303,14 +312,14 @@ class NGSTk(_AttributeDict):
                     # you can save yourself the decompression/recompression:
                     cmd = "cat " + " ".join(input_args) + " > " + output_merge_gz 
                     self.pm.run(cmd, output_merge_gz)
-                    return(output_merge_gz)
+                    return output_merge_gz
 
                 if all([self.get_input_ext(x) == ".fastq" for x in input_args]):
                     sample_merged = local_base + ".merged.fastq"
                     output_merge = os.path.join(raw_folder, sample_merged)
                     cmd = "cat " + " ".join(input_args) + " > " + output_merge
                     self.pm.run(cmd, output_merge)
-                    return(output_merge)
+                    return output_merge
 
                 # At this point, we don't recognize the input file types or they
                 # do not match.
@@ -350,7 +359,9 @@ class NGSTk(_AttributeDict):
             output_file = []
             for in_i, in_arg in enumerate(input_file):
                 output = fastq_prefix + "_R" + str(in_i + 1) + ".fastq"
-                result_cmd, uf, result_file = (self.input_to_fastq(in_arg, sample_name, paired_end, fastq_folder, output, multiclass=True))
+                result_cmd, uf, result_file = \
+                    self.input_to_fastq(in_arg, sample_name, paired_end,
+                                        fastq_folder, output, multiclass=True)
                 cmd.append(result_cmd)
                 output_file.append(result_file)
 
@@ -371,7 +382,9 @@ class NGSTk(_AttributeDict):
                 print("Found .fastq.gz file")
                 if paired_end and not multiclass:
                     # For paired-end reads in one fastq file, we must split the file into 2.
-                    cmd = self.tools.python + " -u " + os.path.join(self.tools.scripts_dir, "fastq_split.py")
+                    script_path = os.path.join(
+                            self.tools.scripts_dir, "fastq_split.py")
+                    cmd = self.tools.python + " -u " + script_path
                     cmd += " -i " + input_file
                     cmd += " -o " + fastq_prefix
                 else:
