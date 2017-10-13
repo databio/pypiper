@@ -247,6 +247,8 @@ class PipelineManager(object):
             print("No config file")
             self.config = None
 
+        # Allow there to be no stopping point (most frequent and therefore the
+        # default), but standardize letter casing of the name if given.
         self.stopping_point = None if stopping_point is None else stopping_point.upper()
 
 

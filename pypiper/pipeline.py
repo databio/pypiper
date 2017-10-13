@@ -37,7 +37,8 @@ class Pipeline(object):
     __metaclass__ = abc.ABCMeta
     
     
-    def __init__(self, name, manager=None, ask_complete=None, flag_complete=None):
+    def __init__(self, name, manager=None,
+                 ask_complete=None, flag_complete=None):
 
         super(Pipeline, self).__init__()
 
@@ -159,6 +160,11 @@ class Pipeline(object):
         for stage_name, stage in name_stage_pairs:
             # TODO: check against start point name and for checkpoints.
             pass
+
+
+    @staticmethod
+    def _exec_stage(func, *args, **kwargs):
+        func(*args, **kwargs)
 
 
     def is_complete(self, stage):

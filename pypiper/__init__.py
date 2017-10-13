@@ -5,3 +5,4 @@ from .AttributeDict import *
 from .utils import *
 from .pipeline import *
 from .exceptions import *
+from .stage import *

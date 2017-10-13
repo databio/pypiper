@@ -59,6 +59,31 @@ def check_shell(cmd):
 
 
 
+def parse_cores(cores, pm, default):
+    """
+    Framework to finalize number of cores for an operation.
+
+    Some calls to a function may directly provide a desired number of cores,
+    others may not. Similarly, some pipeline managers may define a cores count
+    while others will not. This utility provides a single via which the
+    count of cores to use for an operation may be determined. If a cores
+    count is given explicitly, use that. Then try pipeline manager for cores.
+    Finally, fall back to a default. Force default to be defined (this
+    function is intended to be partially applied, then reused within a
+    module, class, etc. to standardize the way in which this value is
+    determined within a scope.)
+
+    :param int | str cores: direct specification of cores count
+    :param pypiper.PipelineManager pm: pipeline manager perhaps defining cores
+    :param int | str default: default number of cores, used if a value isn't
+        directly given and the pipeline manager doesn't define core count.
+    :return int: number of cores
+    """
+    cores = cores or getattr(pm, "cores", default)
+    return int(cores)
+
+
+
 # TODO: live with Pipeline?
 def pipeline_filepath(pm, filename=None, suffix=None):
     """
