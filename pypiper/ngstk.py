@@ -4,6 +4,7 @@ import os
 import subprocess
 import errno
 from AttributeDict import AttributeDict as _AttributeDict
+from .exceptions import UnsupportedFiletypeException
 
 
 class NGSTk(_AttributeDict):
@@ -200,8 +201,11 @@ class NGSTk(_AttributeDict):
         elif input_file.endswith(".fastq") or input_file.endswith(".fq"):
             input_ext = ".fastq"
         else:
-            raise NotImplementedError("This pipeline can only deal with .bam, .fastq, or .fastq.gz files")
+            errmsg = "'{}'; this pipeline can only deal with .bam, .fastq, " \
+                     "or .fastq.gz files".format(input_file)
+            raise UnsupportedFiletypeException(errmsg)
         return input_ext
+
 
     def merge_or_link(self, input_args, raw_folder, local_base="sample"):
         """
@@ -209,14 +213,16 @@ class NGSTk(_AttributeDict):
         either .bam, .fastq, or .fastq.gz files into a local file; merging those
         if multiple files given.
 
-        :param local_base: Usually the sample name. This (plus file extension) will
-            be the name of the local file linked (or merged) by this function.
-
         :param input_args: This is a list of arguments, each one is a class of
             inputs (which can in turn be a string or a list). Typically, input_args
             is a list with 2 elements: first a list of read1 files; second
             an (optional!) list of read2 files.
         :type input_args: list
+        :param raw_folder: Name/path of folder for the merge/link.
+        :type raw_folder: str
+        :param local_base: Usually the sample name. This (plus file extension) will
+            be the name of the local file linked (or merged) by this function.
+        :type local_base: str
         """
         self.make_sure_path_exists(raw_folder)
 
@@ -237,7 +243,8 @@ class NGSTk(_AttributeDict):
                 else:
                     local_base_extended = local_base
                 if input_arg:
-                    out = self.merge_or_link(input_arg, raw_folder, local_base_extended)
+                    out = self.merge_or_link(
+                            input_arg, raw_folder, local_base_extended)
 
                     print("Local input file: " + out)
                     # Make sure file exists:
@@ -308,6 +315,7 @@ class NGSTk(_AttributeDict):
                 # At this point, we don't recognize the input file types or they
                 # do not match.
                 raise NotImplementedError("Input files must be of the same type; and can only merge bam or fastq.")
+
 
     def input_to_fastq(
         self, input_file, sample_name,
@@ -380,6 +388,7 @@ class NGSTk(_AttributeDict):
 
         return [cmd, fastq_prefix, output_file]
 
+
     def check_fastq(self, input_files, output_files, paired_end):
         """
         Returns a follow sanity-check function to be run after a fastq conversion.
@@ -424,6 +433,7 @@ class NGSTk(_AttributeDict):
 
         return temp_func
 
+
     def check_trim(self, trimmed_fastq, trimmed_fastq_R2, paired_end, fastqc_folder=None):
         """
         Returns a follow function for a trimming step. This will count the trimmed reads,
@@ -454,11 +464,13 @@ class NGSTk(_AttributeDict):
 
         return temp_func
 
+
     def validate_bam(self, input_bam):
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
         cmd += " -jar " + self.tools.picard + " ValidateSamFile"
         cmd += " INPUT=" + input_bam
         return(cmd)
+
 
     def merge_bams(self, input_bams, merged_bam, in_sorted="TRUE", tmp_dir=None):
         """
@@ -481,6 +493,7 @@ class NGSTk(_AttributeDict):
         if tmp_dir:
             cmd += " TMP_DIR=" + tmp_dir
         return cmd
+
 
     def count_lines(self, file_name):
         """

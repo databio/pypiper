@@ -3,7 +3,7 @@ API
 
 pypiper.PipelineManager
 -----------------------
-.. automodule:: pypiper.pypiper
+.. automodule:: pypiper.manager
     :members:
 
 
