@@ -68,7 +68,7 @@ class NGSTk(_AttributeDict):
 
         # If pigz is available, use that. Otherwise, default to gzip.
         if hasattr(self.pm, "cores") and self.pm.cores > 1 and self.check_command("pigz"):
-            self.ziptool = "pigz -p " + self.pm.cores
+            self.ziptool = "pigz -p {}".format(self.pm.cores)
         else:
             self.ziptool = "gzip"
 
@@ -480,7 +480,7 @@ class NGSTk(_AttributeDict):
         cmd += " VALIDATION_STRINGENCY=SILENT"
         if tmp_dir:
             cmd += " TMP_DIR=" + tmp_dir
-        return(cmd)
+        return cmd
 
     def count_lines(self, file_name):
         """
@@ -657,21 +657,30 @@ class NGSTk(_AttributeDict):
                 return int(x) / 4
         return -1
 
+
     def count_mapped_reads(self, file_name, paired_end):
         """
         Mapped_reads are not in fastq format, so this one doesn't need to accommodate fastq,
         and therefore, doesn't require a paired-end parameter because it only uses samtools view.
         Therefore, it's ok that it has a default parameter, since this is discarded.
-        :param pared_end: This parameter is ignored; samtools automatically correctly responds depending
+
+        :param file_name: File for which to count mapped reads.
+        :type file_name: str
+        :param paired_end: This parameter is ignored; samtools automatically correctly responds depending
         on the data in the bamfile. We leave the option here just for consistency, since all the other
         counting functions require the parameter. This makes it easier to swap counting functions during
         pipeline development.
+        :type paired_end: bool
+        :return: Either return code from samtools view command, or -1 to
+            indicate an error state.
+        :rtype: int
         """
         if file_name.endswith("bam"):
             return self.samtools_view(file_name, param="-c -F4")
         if file_name.endswith("sam"):
             return self.samtools_view(file_name, param="-c -F4 -S")
         return -1
+
 
     def sam_conversions(self, sam_file, depth=True):
         """
@@ -759,18 +768,6 @@ class NGSTk(_AttributeDict):
 
     def move_file(self, old, new):
         return "mv {0} {1}".format(old, new)
-
-    def make_dir(self, directory):
-        return "mkdir -p {0}".format(directory)
-
-    # REDUNDANT
-    # def merge_bams(self, input_bams, output_bam):
-    #   cmd = self.tools.java + " -Xmx" + self.pm.javamem
-    #   cmd += " -jar " + self.tools.picard + " MergeSamFiles"
-    #   cmd += " USE_THREADING=TRUE"
-    #   cmd += " " + (" ".join(["INPUT=%s"] * len(input_bams))) % tuple(input_bams)
-    #   cmd += " OUTPUT={0}".format(output_bam)
-    #   return cmd
 
     def preseq_curve(self, bam_file, output_prefix):
         return """
