@@ -537,6 +537,7 @@ class NGSTk(_AttributeDict):
             r2 = 0
         return int(r1) + int(r2)
 
+
     def count_unique_mapped_reads(self, file_name, paired_end):
         """
         For a bam or sam file with paired or or single-end reads, returns the
@@ -547,18 +548,29 @@ class NGSTk(_AttributeDict):
         :type file_name: str
         :param paired_end: True/False paired end data
         :type paired_end: bool
+        :return: Number of uniquely mapped reads.
+        :rtype: int
         """
-        if file_name.endswith("sam"):
+
+        _, ext = os.path.splitext(file_name)
+        ext = ext.lower()
+
+        if ext == ".sam":
             param = "-S -F4"
-        if file_name.endswith("bam"):
+        elif ext == "bam":
             param = "-F4"
+        else:
+            raise ValueError("Not a SAM or BAM: '{}'".format(file_name))
+
         if paired_end:
             r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
             r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
         else:
             r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
             r2 = 0
+
         return int(r1) + int(r2)
+
 
     def count_flag_reads(self, file_name, flag, paired_end):
         """
@@ -579,6 +591,7 @@ class NGSTk(_AttributeDict):
             param += " -S"
         return self.samtools_view(file_name, param=param)
 
+
     def count_multimapping_reads(self, file_name, paired_end):
         """
         Counts the number of reads that mapped to multiple locations. Warning:
@@ -595,6 +608,7 @@ class NGSTk(_AttributeDict):
         """
         return int(self.count_flag_reads(file_name, 256, paired_end))
 
+
     def count_uniquelymapping_reads(self, file_name, paired_end):
         """
         Counts the number of reads that mapped to a unique position.
@@ -608,6 +622,7 @@ class NGSTk(_AttributeDict):
         if file_name.endswith("sam"):
             param += " -S"
         return self.samtools_view(file_name, param=param)
+
 
     def count_fail_reads(self, file_name, paired_end):
         """
@@ -630,7 +645,7 @@ class NGSTk(_AttributeDict):
         :type file_name: str
         :param param: String of parameters to pass to samtools view
         :type param: str
-        :param postpend: String to postpend to the samtools command;
+        :param postpend: String to append to the samtools command;
             useful to add cut, sort, wc operations to the samtools view output.
         :type postpend: str
         """
