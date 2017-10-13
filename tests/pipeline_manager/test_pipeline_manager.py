@@ -17,10 +17,12 @@ __author__ = "Nathan Sheffield"
 class PipelineManagerTests(unittest.TestCase):
     """ Tests for pypiper's PipelineManager. """
 
+    OUTFOLDER = "pipeline_output"
+
 
     @classmethod
     def _clean(cls):
-        for d in glob.glob("pipeline_output*"):
+        for d in glob.glob(cls.OUTFOLDER + "*"):
             if os.path.isdir(d):
                 print("Removing " + d)
                 shutil.rmtree(d)
@@ -31,9 +33,9 @@ class PipelineManagerTests(unittest.TestCase):
         print("Setting up...")
         # Create a fixture
         self.pp = pypiper.PipelineManager(
-                "sample_pipeline", outfolder="pipeline_output", multi=True)
+                "sample_pipeline", outfolder=self.OUTFOLDER, multi=True)
         self.pp2 = pypiper.PipelineManager(
-                "sample_pipeline2", outfolder="pipeline_output", multi=True)
+                "sample_pipeline2", outfolder=self.OUTFOLDER, multi=True)
 
 
     def _make_pm_path(self, filename):
@@ -248,7 +250,7 @@ class PipelineManagerTests(unittest.TestCase):
 
         print("Test failure and nofail options...")
         self.pp3 = pypiper.PipelineManager(
-                "sample_pipeline3", outfolder="pipeline_output3", multi=True)
+                "sample_pipeline3", outfolder=self.OUTFOLDER + "3", multi=True)
 
         cmd = "thiscommandisbad"
 
