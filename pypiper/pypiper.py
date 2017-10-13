@@ -304,7 +304,7 @@ class PipelineManager(object):
 
             # The tee subprocess must be instructed to ignore TERM and INT signals;
             # Instead, I will clean up this process in the signal handler functions.
-            # This is required because otherwise, if pypiper recieves a TERM or INT,
+            # This is required because otherwise, if pypiper receives a TERM or INT,
             # the tee will be automatically terminated by python before I have a chance to
             # print some final output (for example, about when the process stopped),
             # and so those things don't end up in the log files because the tee
@@ -1106,6 +1106,7 @@ class PipelineManager(object):
 
     @staticmethod
     def _ensure_lock_prefix(lock_name_base):
+        """ Ensure that an alleged lock file is correctly prefixed. """
         return lock_name_base if lock_name_base.startswith(LOCK_PREFIX) \
                 else LOCK_PREFIX + lock_name_base
 
@@ -1118,7 +1119,17 @@ class PipelineManager(object):
             with the lock file designation, but that's permitted.
         :return str: Path to the lock file.
         """
-        lock_name = self._ensure_lock_prefix(lock_name_base)
+
+        print("Making pipeline-relative lockfile path from base: '{}'".
+              format(lock_name_base))
+
+        # For lock prefix validation, separate file name from other path
+        # components, as we care about the name prefix not path prefix.
+        base, name = os.path.split(lock_name_base)
+
+        lock_name = self._ensure_lock_prefix(name)
+        if base:
+            lock_name = os.path.join(base, lock_name)
         return pipeline_filepath(self, filename=lock_name)
 
 
@@ -1130,8 +1141,12 @@ class PipelineManager(object):
             perhaps already prefixed with the designation of a lock file.
         :return str: Path to recovery file.
         """
-        if not os.path.isabs(lockfile):
+        # Require that the lock file path be absolute, or at least relative
+        # and starting with the pipeline output folder.
+        if not (os.path.isabs(lockfile) or lockfile.startswith(self.outfolder)):
             lockfile = self._make_lock_path(lockfile)
+        print("Generating recovery file from lock file: '{}'".
+              format(lockfile))
         return lockfile.replace(LOCK_PREFIX, "recover." + LOCK_PREFIX)
 
 
@@ -1265,7 +1280,7 @@ class PipelineManager(object):
             # set a recovery flag for each lock.
             for lock_file in self.locks[:]:
                 recover_file = self._recoverfile_from_lockfile(lock_file)
-                print("Setting dynamic recover file: " + recover_file)
+                print("Setting dynamic recover file: {}".format(recover_file))
                 self._create_file_racefree(recover_file)
                 self.locks.remove(lock_file)
 
