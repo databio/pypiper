@@ -32,8 +32,7 @@ __all__ = ["PipelineManager"]
 
 
 LOCK_PREFIX = "lock."
-# TODO: ultimately, these should migrate to pep as they're shared with,
-# e.g., looper check.
+# TODO: ultimately, these should migrate to pep.
 RUN_FLAG = "running"
 COMPLETE_FLAG = "completed"
 FAIL_FLAG = "failed"
@@ -238,7 +237,6 @@ class PipelineManager(object):
             with open(config_to_load, 'r') as config_file:
                 # Set the args to the new config file, so it can be used
                 # later to pass to, for example, toolkits
-                args.config_file = config_to_load
                 import yaml
                 config = yaml.load(config_file)
                 self.config = AttributeDict(config, default=True)
