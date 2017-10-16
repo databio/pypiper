@@ -232,7 +232,7 @@ class Pipeline(object):
         # checkpoint completions.)
         start_index = self._start_index(start)
         stop_index = self._stop_index(stop_at, stop_after)
-        assert stop_index <= 1 + len(self._stages)
+        assert stop_index <= len(self._stages)
         if start_index >= stop_index:
             raise ValueError("Cannot start pipeline at or after stopping point")
 
@@ -271,7 +271,11 @@ class Pipeline(object):
 
         self.skipped.extend(self._stages[stop_index:])
 
-        if stop_index == 1 + len(self._stages):
+        # DEBUG
+        print("STOP INDEX: {}".format(stop_index))
+        print("NUM STAGES: {}".format(len(self._stages)))
+
+        if stop_index == len(self._stages):
             self.manager.complete()
         else:
             self.manager.halt()

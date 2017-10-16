@@ -129,7 +129,7 @@ class MostBasicPipelineTests:
 
         elif test_type == "pipe_flag":
             # The final flag should be correctly set.
-            assert _pipeline_completed(dummy_pipe)
+            assert _assert_pipeline_completed(dummy_pipe)
 
         else:
             raise ValueError("Unknown test type: {}".format(test_type))
@@ -173,7 +173,7 @@ class MostBasicPipelineTests:
             _assert_stage_labels(dummy_pipe, exp_skips, exp_execs)
 
         elif test_type == "pipe_flag":
-            assert _pipeline_completed(dummy_pipe)
+            _assert_pipeline_completed(dummy_pipe)
         else:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
@@ -254,12 +254,12 @@ def _has_expected_content(fpath, content):
     
 
 
-def _pipeline_completed(pl):
+def _assert_pipeline_completed(pl):
     flags = glob.glob(pipeline_filepath(pl.manager, filename=flag_name("*")))
     assert 1 == len(flags)
     exp_flag = pipeline_filepath(pl, suffix="_" + flag_name(COMPLETE_FLAG))
     try:
         assert os.path.isfile(exp_flag)
     except AssertionError:
-        print("FLAGS: {}".format(pipeline_filepath(pl.manager, filename="*.flag")))
+        print("FLAGS: {}".format(glob.glob(pipeline_filepath(pl.manager, filename="*.flag"))))
         raise
