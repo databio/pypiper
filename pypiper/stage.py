@@ -47,10 +47,12 @@ class Stage(object):
 
 
     def run(self, *args, **kwargs):
+        """ Alternate form for direct call; execute stage. """
         self(*args, **kwargs)
 
 
     def __call__(self, *args, **update_kwargs):
+        """ Execute the stage, allowing updates to args/kwargs. """
         kwargs = copy.deepcopy(self.f_kwargs)
         kwargs.update(update_kwargs)
         args = args or self.f_args
@@ -76,6 +78,7 @@ def checkpoint_filename(checkpoint):
     return name + CHECKPOINT_EXTENSION
 
 
+
 def checkpoint_filepath(checkpoint, pm):
     """
     Create filepath for indicated checkpoint.
@@ -87,6 +90,7 @@ def checkpoint_filepath(checkpoint, pm):
     """
     filename = checkpoint_filename(checkpoint)
     return pipeline_filepath(pm, filename)
+
 
 
 def translate_stage_name(stage_name):
@@ -104,4 +108,3 @@ def translate_stage_name(stage_name):
     """
     # Cast to string to ensure that indexed stages (ints are handled).
     return str(stage_name).lower().replace(" ", "-")
-

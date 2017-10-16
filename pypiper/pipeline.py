@@ -126,20 +126,30 @@ class Pipeline(object):
         return list(self._external_to_internal.keys())
 
 
-    def run(self, start=None, stop=None):
+    def run(self, start=None, stop_at=None, stop_after=None):
         """
         Run the pipeline, optionally specifying start and/or stop points.
 
         :param start: Name of stage at which to begin execution.
         :type start: str
-        :param stop: Name of stage at which to cease execution.
-        :type stop: str
+        :param stop_at: Name of stage at which to cease execution;
+            exclusive, i.e. this stage is not run
+        :type stop_at: str
+        :param stop_after: Name of stage at which to cease execution;
+            inclusive, i.e. this stage is the last one run
+        :type stop_after: str
+        :raise ValeError: If both inclusive (stop_after) and exclusive
+            (stop_at) halting points are provided, raise a ValueError.
         """
 
         # TODO: validate starting point against checkpoint flags for
         # TODO (cont.): earlier stages if the pipeline defines its stages as a
         # TODO (cont.): sequence (i.e., probably prohibit start point with
         # TODO (cont): nonexistent earlier checkpoint flag(s).)
+
+        if stop_at and stop_after:
+            raise ValueError("Inclusive and exclusive stopping points cannot "
+                             "both be specified")
 
         # Ensure that a stage name--if specified--is supported.
         for s in [start, stop]:
@@ -161,12 +171,16 @@ class Pipeline(object):
             # TODO (cont.) operation will find the first Stage, starting
             # TODO (cont.) the specified start point, either uncheckpointed or
             # TODO (cont.) for which the checkpoint file does not exist.
+            if stage.name == stop:
+                print("Stopping at designated checkpoint ")
             check_path = checkpoint_filepath(stage, self.manager)
             if stage.checkpoint and os.path.exists(check_path):
                 print("Checkpoint exists for stage: {} ('{}')".
                       format(stage.name, check_path))
                 continue
             stage.run()
+        else:
+            pass
 
 
     def is_complete(self, stage):
