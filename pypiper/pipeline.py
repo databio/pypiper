@@ -92,6 +92,13 @@ class Pipeline(object):
             _internal_to_external[internal_name] = name
             self._stages.append(stage)
 
+        self._skipped, self._executed = None, None
+
+
+    @property
+    def executed(self):
+        return [s.name for s in (self._skipped or [])]
+
 
     @property
     def outfolder(self):
@@ -102,6 +109,11 @@ class Pipeline(object):
         :rtype: str
         """
         return self.manager.outfolder
+
+
+    @property
+    def skipped(self):
+        return [s.name for s in (self._skipped or [])]
 
 
     @abc.abstractproperty
@@ -125,6 +137,37 @@ class Pipeline(object):
         :return:
         """
         return list(self._external_to_internal.keys())
+
+
+    def checkpoint(self, stage):
+        """
+        Touch checkpoint file for given stage.
+
+        :param stage: Stage for which to mark checkpoint
+        :type stage: pypiper.Stage
+        :return: Whether a checkpoint file was written.
+        :rtype: bool
+        """
+        if stage.checkpoint:
+            chkpt_fpath = checkpoint_filepath(stage, self.manager)
+            open(chkpt_fpath, 'w').close()
+            return True
+        return False
+
+
+    def completed_stage(self, stage):
+        """
+        Determine whether the pipeline's completed the stage indicated.
+
+        :param stage: Stage to check for completion status.
+        :type stage: Stage
+        :return: Whether this pipeline's completed the indicated stage.
+        :rtype: bool
+        :raises UnknownStageException: If the stage name given is undefined
+            for the pipeline, a ValueError arises.
+        """
+        check_path = checkpoint_filepath(stage, self.manager)
+        return stage.checkpoint and os.path.exists(check_path)
 
 
     def list_flags(self, only_name=False):
@@ -156,9 +199,12 @@ class Pipeline(object):
         :param stop_after: Name of stage at which to cease execution;
             inclusive, i.e. this stage is the last one run
         :type stop_after: str
-        :raise ValeError: If both inclusive (stop_after) and exclusive
+        :raise ValueError: If both inclusive (stop_after) and exclusive
             (stop_at) halting points are provided, raise a ValueError.
         """
+
+        # Start the run with a clean slate of Stage status/label tracking.
+        self._reset()
 
         # TODO: validate starting point against checkpoint flags for
         # TODO (cont.): earlier stages if the pipeline defines its stages as a
@@ -185,73 +231,55 @@ class Pipeline(object):
         # Determine where to start (but perhaps skip further based on
         # checkpoint completions.)
         start_index = self._start_index(start)
+        stop_index = self._stop_index(stop_at, stop_after)
+        assert stop_index <= 1 + len(self._stages)
+        if start_index >= stop_index:
+            raise ValueError("Cannot start pipeline at or after stopping point")
 
-        for stage in self._stages[start_index:]:
+        # TODO: consider storing just stage name rather than entire stage.
+        # TODO (cont.): the bad case for whole-Stage is if associated data
+        # TODO (cont.): (i.e., one or more args) are large.
+        self.skipped.extend(self._stages[:start_index])
+
+        # TODO: support both courses of action for non-continuous checkpoints.
+        # TODO (cont.): That is, what if there's a stage with a checkpoint
+        # TODO (cont.): file downstream of one without it? Naively, we'll
+        # TODO (cont.): skip it, but we may want to re-run.
+        skip_mode = True
+
+        for stage in self._stages[start_index:stop_index]:
+
             # TODO: Note that there's no way to tell whether a non-checkpointed
             # TODO (cont.) Stage has been completed, and thus this seek
             # TODO (cont.) operation will find the first Stage, starting
             # TODO (cont.) the specified start point, either uncheckpointed or
             # TODO (cont.) for which the checkpoint file does not exist.
-            if stage.name == stop_at:
-                print("Stopping just before checkpoint '{}'".format(stop_at))
-                self.manager.halt()
-                break
-
             # Look for checkpoint file.
-            if self.completed_stage(stage):
+            if skip_mode and self.completed_stage(stage):
                 print("Skipping completed checkpoint stage: {}".format(stage))
+                self.skipped.append(stage)
                 continue
 
+            # Once we've found where to being execution, ignore checkpoint
+            # flags downstream if they exist since there may be dependence
+            # between results from different stages.
+            skip_mode = False
+
             stage.run()
+            self.executed.append(stage)
             self.checkpoint(stage)
 
-            # Have we just completed the last designated stage to run?
-            if stage.name == stop_after:
-                print("Halting just after checkpoint '{}'".format(stop_after))
-                self.manager.halt()
-                # If this is a checkpoint, ensure checkpoint file existence.
-                expected_checkpoint_filepath = \
-                    checkpoint_filepath(stage, self.manager)
-                if expected_checkpoint_filepath and \
-                        not os.path.exists(expected_checkpoint_filepath):
-                    raise MissingCheckpointError(
-                            stage.name, expected_checkpoint_filepath)
-                break
+        self.skipped.extend(self._stages[stop_index:])
 
-        else:
-            # If we did not break early from stage iteration, we completed.
+        if stop_index == 1 + len(self._stages):
             self.manager.complete()
+        else:
+            self.manager.halt()
 
 
-    def checkpoint(self, stage):
-        """
-        Touch checkpoint file for given stage.
-
-        :param stage: Stage for which to mark checkpoint
-        :type stage: pypiper.Stage
-        :return: Whether a checkpoint file was written.
-        :rtype: bool
-        """
-        if stage.checkpoint:
-            chkpt_fpath = checkpoint_filepath(stage, self.manager)
-            open(chkpt_fpath, 'w').close()
-            return True
-        return False
-
-
-    def completed_stage(self, stage):
-        """
-        Determine whether the pipeline's completed the stage indicated.
-        
-        :param stage: Stage to check for completion status.
-        :type stage: Stage
-        :return: Whether this pipeline's completed the indicated stage.
-        :rtype: bool
-        :raises UnknownStageException: If the stage name given is undefined 
-            for the pipeline, a ValueError arises.
-        """
-        check_path = checkpoint_filepath(stage, self.manager)
-        return stage.checkpoint and os.path.exists(check_path)
+    def _reset(self):
+        """ Scrub decks with respect to Stage status/label tracking. """
+        self._skipped, self._executed = [], []
 
 
     def _start_index(self, start=None):
@@ -264,6 +292,20 @@ class Pipeline(object):
             return internal_names.index(start_stage)
         except ValueError:
             raise UnknownPipelineStageError(start, self)
+
+
+    def _stop_index(self, stop_at=None, stop_after=None):
+        if not (stop_at is None or stop_after is None):
+            raise ValueError("Cannot specify both inclusive and exclusive "
+                             "pipeline stopping point")
+        if stop_at is None and stop_after is None:
+            return len(self._stages)
+        stop_point = stop_at or stop_after
+        try:
+            stop_index = self.stage_names.index(stop_point)
+        except ValueError:
+            raise UnknownPipelineStageError(stop_point, self)
+        return stop_index + 1 if stop_after else stop_index
 
 
 

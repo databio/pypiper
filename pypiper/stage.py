@@ -63,7 +63,7 @@ class Stage(object):
     def __repr__(self):
         return "{klass} '{n}': f={f}, args={pos}, kwargs={kwd}, " \
                "checkpoint={check}".format(klass=self.__class__.__name__,
-                n=self.name, pos=self.f_args, kwd=self.f_kwargs,
+                f=self.f, n=self.name, pos=self.f_args, kwd=self.f_kwargs,
                 check=self.checkpoint)
 
 
@@ -85,6 +85,8 @@ def checkpoint_filename(checkpoint):
         null if the input is a Stage that's designated as a non-checkpoint
     :rtype: str | NoneType
     """
-    base = checkpoint.checkpoint_name if isinstance(checkpoint, Stage) \
-        else translate_stage_name(checkpoint)
+    if isinstance(checkpoint, Stage):
+        base = checkpoint.checkpoint_name
+    else:
+        base = translate_stage_name(checkpoint)
     return base + CHECKPOINT_EXTENSION

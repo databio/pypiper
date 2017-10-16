@@ -7,7 +7,7 @@ import pytest
 from pypiper import Pipeline, PipelineManager
 from pypiper.manager import COMPLETE_FLAG
 from pypiper.pipeline import checkpoint_filepath, pipeline_filepath
-from pypiper.stage import Stage
+from pypiper.stage import Stage, CHECKPOINT_EXTENSION
 from pypiper.utils import flag_name
 
 
@@ -15,9 +15,11 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-FILE1_NAME = "file1.txt"
-FILE2_NAME = "file2.txt"
-FILE3_NAME = "file3.txt"
+# Use a weird suffix for glob specificity.
+OUTPUT_SUFFIX = ".testout"
+FILE1_NAME = "file1{}".format(OUTPUT_SUFFIX)
+FILE2_NAME = "file2{}".format(OUTPUT_SUFFIX)
+FILE3_NAME = "file3{}".format(OUTPUT_SUFFIX)
 FILENAMES = [FILE1_NAME, FILE2_NAME, FILE3_NAME]
 
 FILE1_TEXT = "hello there"
@@ -32,8 +34,10 @@ TEST_PIPE_NAME = "test-pipe"
 def pytest_generate_tests(metafunc):
     if "test_type" in metafunc.fixturenames and \
             metafunc.cls == MostBasicPipelineTests:
-        metafunc.parametrize(argnames="test_type", 
-                             argvalues=["effects", "checkpoints", "pipe_flag"])
+        metafunc.parametrize(
+                argnames="test_type", 
+                argvalues=["effects", "stage_labels", 
+                           "checkpoints", "pipe_flag"])
 
 
 @pytest.fixture
@@ -93,18 +97,23 @@ class MostBasicPipelineTests:
     """ Test pipeline defined with notion of 'absolute minimum' config. """
 
 
-    def test_runs_through_full(self, dummy_pipe, test_type, tmpdir):
+    def test_runs_through_full(self, dummy_pipe, test_type):
+
+        # Start with clean output folder.
+        assert [] == os.listdir(dummy_pipe.outfolder)
+
+        # Make the call under test.
         dummy_pipe.run(start=None, stop_at=None, stop_after=None)
+        
         if test_type == "effects":
-            fpath_text_pairs = [(os.path.join(tmpdir.strpath, fname), content)
+            # We're interested in existence and content of targets.
+            fpath_text_pairs = [(pipeline_filepath(dummy_pipe, fname), content)
                                 for fname, content in FILE_TEXT_PAIRS]
             for fpath, content in fpath_text_pairs:
-                assert os.path.isfile(fpath)
-                exp_content = content.split(os.linesep)
-                with open(fpath, 'r') as f:
-                    obs_content = [l.rstrip(os.linesep) for l in f.readlines()]
-                assert exp_content == obs_content
+                assert _has_expected_content(fpath, content)
+
         elif test_type == "checkpoints":
+            # Interest is on checkpoint file existence.
             for stage in dummy_pipe.stages:
                 chkpt_fpath = checkpoint_filepath(stage, dummy_pipe)
                 try:
@@ -113,40 +122,140 @@ class MostBasicPipelineTests:
                     print("Stage '{}' file doesn't exist: '{}'".format(
                         stage.name, chkpt_fpath))
                     raise
+
+        elif test_type == "stage_labels":
+            # Did the Pipeline correctly track it's execution?
+            _assert_stage_labels(dummy_pipe, [], dummy_pipe.stages)
+
         elif test_type == "pipe_flag":
-            flags = glob.glob(os.path.join(tmpdir.strpath, flag_name("*")))
-            assert 1 == len(flags)
-            exp_flag = pipeline_filepath(
-                    dummy_pipe, suffix="_" + flag_name(COMPLETE_FLAG))
-            assert os.path.isfile(exp_flag)
+            # The final flag should be correctly set.
+            assert _pipeline_completed(dummy_pipe)
+
         else:
             raise ValueError("Unknown test type: {}".format(test_type))
 
 
-    def test_skip_completed(self, dummy_pipe, test_type, tmpdir):
+    def test_skip_completed(self, dummy_pipe, test_type):
         """ Pre-completed stage(s) are skipped. """
+        
+        
+        first_stage = dummy_pipe.stages[0]
+        first_stage_chkpt_fpath = checkpoint_filepath(first_stage, dummy_pipe)
+        open(first_stage_chkpt_fpath, 'w').close()
+
+        exp_skips = [first_stage]
+        exp_execs = dummy_pipe.stages[1:]
+
+        # This should neither exist nor be created.
+        first_stage_outfile = pipeline_filepath(
+                dummy_pipe.manager, filename=FILE1_NAME)
+        assert not os.path.isfile(first_stage_outfile)
+        
+        # Do the action.
+        dummy_pipe.run()
+        
+        if test_type == "effects":
+            # We should not have generated the first stage's output file.
+            # That notion is covered in the outfiles assertion.
+            _assert_output(dummy_pipe, FILENAMES[1:])
+            assert not os.path.isfile(first_stage_outfile)
+            # We should have the correct content in files from stages run.
+            for fname, content in FILE_TEXT_PAIRS[1:]:
+                fpath = os.path.join(dummy_pipe.outfolder, fname)
+                assert _has_expected_content(fpath, content)
+
+        elif test_type == "checkpoints":
+            # We've manually created the first checkpoint file, and the
+            # others should've been created by the run() call.
+            _assert_checkpoints(dummy_pipe, exp_stages=dummy_pipe.stages)
+
+        elif test_type == "stage_labels":
+            _assert_stage_labels(dummy_pipe, exp_skips, exp_execs)
+
+        elif test_type == "pipe_flag":
+            assert _pipeline_completed(dummy_pipe)
+        else:
+            raise ValueError("Unknown test type: '{}'".format(test_type))
+
+
+    def test_start_point(self, dummy_pipe, test_type):
+        """ A pipeline may be started from an intermediate checkpoint. """
         pass
 
-    def test_start_point(self, dummy_pipe, test_type, tmpdir):
+
+    def test_start_before_completed_checkpoint(self, dummy_pipe, test_type):
         pass
 
-    def test_start_before_completed_checkpoint(self, dummy_pipe, test_type, tmpdir):
+
+    def test_same_start_stop(self, dummy_pipe, test_type):
         pass
 
-    def test_same_start_stop(self, dummy_pipe, test_type, tmpdir):
+
+    def test_stop_before_start(self, dummy_pipe, test_type):
         pass
 
-    def test_stop_before_start(self, dummy_pipe, test_type, tmpdir):
+
+    def test_can_skip_downstream_completed(self, dummy_pipe, test_type):
         pass
 
-    def test_can_skip_downstream_completed(self, dummy_pipe, test_type, tmpdir):
+
+    def test_can_rerun_downstream_completed(self, dummy_pipe, test_type):
         pass
 
-    def test_can_rerun_downstream_completed(self, dummy_pipe, test_type, tmpdir):
+
+    def test_stop_at(self, dummy_pipe, test_type):
         pass
 
-    def test_stop_at(self, dummy_pipe, test_type, tmpdir):
+
+    def test_stop_after(self, dummy_pipe, test_type):
         pass
 
-    def test_stop_after(self, dummy_pipe, test_type, tmpdir):
-        pass
+
+
+def _assert_output(pl, expected_outfiles):
+    obs_outfiles = glob.glob(pipeline_filepath(
+            pl.manager, "*{}".format(OUTPUT_SUFFIX)))
+    assert expected_outfiles == obs_outfiles
+
+
+def _assert_checkpoints(pl, exp_stages):
+
+    # DEBUG
+    print("EXPECTED STAGES ({}): {}".format(type(exp_stages), exp_stages))
+
+    exp_fpaths = [checkpoint_filepath(s, pl.manager) for s in exp_stages]
+
+    # DEBUG
+    print("EXPECTED CHECKPOINT FILEPATHS:{}".format(exp_fpaths))
+
+    obs_fpaths = glob.glob(checkpoint_filepath("*", pm=pl.manager))
+    assert len(exp_fpaths) == len(obs_fpaths)
+    assert set(exp_fpaths) == set(obs_fpaths)
+
+
+def _assert_stage_labels(pl, expected_skipped, expected_executed):
+    assert expected_skipped == pl.skipped
+    assert expected_executed == pl.expected_executed
+
+
+def _has_expected_content(fpath, content):
+    """
+    Determine whether a filepath has the expected content.
+    
+    :param str fpath: Path to file of interest.
+    :param str content: Expected file content.
+    :return bool: Whether observation matches expectation.
+    """
+    assert os.path.isfile(fpath)
+    exp_content = content.split(os.linesep)
+    with open(fpath, 'r') as f:
+        obs_content = [l.rstrip(os.linesep) for l in f.readlines()]
+    assert exp_content == obs_content
+    
+
+
+def _pipeline_completed(pl):
+    flags = glob.glob(pipeline_filepath(pl.manager, filename=flag_name("*")))
+    assert 1 == len(flags)
+    exp_flag = pipeline_filepath(pl, suffix="_" + flag_name(COMPLETE_FLAG))
+    assert os.path.isfile(exp_flag) 
