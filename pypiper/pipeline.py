@@ -4,11 +4,11 @@ import abc
 from collections import Counter, OrderedDict
 import sys
 if sys.version_info < (3, 3):
-    from collections import Sequence
+    from collections import Iterable, Mapping
 else:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Mapping
 
-from stage import translate_stage_name
+from stage import Stage, translate_stage_name
 
 
 __author__ = "Vince Reuter"
@@ -27,80 +27,66 @@ class Pipeline(object):
     :type name: str
     :param manager: The pipeline manager to
     :type manager: pypiper.PipelineManager
-    :param ask_complete: How to determine whether a stage has been completed.
-    :type ask_complete: function
-    :param flag_complete: How to indicate to indicate to the pipeline manager
-        (e.g., via the filesystem) that a stage has been completed.
-    :type flag_complete: function
     """
     
     __metaclass__ = abc.ABCMeta
     
     
-    def __init__(self, name, manager=None,
-                 ask_complete=None, flag_complete=None):
+    def __init__(self, name, manager=None):
 
         super(Pipeline, self).__init__()
 
         self.name = name
-        
-        if manager is None:
-            if not (hasattr(ask_complete, "__call__") and 
-                    hasattr(flag_complete, "__call__")):
-                raise ValueError(
-                    "If no pipeline manager is provided, callable stage query "
-                    "and stage writing strategies must be ")
-        else:
-            print("Pipeline manager provided: {}".format(manager.name))
-        
         self.manager = manager
 
         # Translate stage names; do this here to complicate a hypothetical
         # attempt to override or otherwise redefine the way in which
         # stage names are handled, parsed, and translated.
-        try:
-            stages = self.stages.items()
-        except AttributeError:
-            stages = self.stages
+        self._unordered = _is_unordered(self.stages)
+        if self._unordered:
+            print("NOTICE: Unordered definition of stages for "
+                  "pipeline {}".format(self.name))
 
+        # Get to a sequence of pairs of key (possibly in need of translation)
+        # and actual callable. Key is stage name and value is either stage
+        # callable or an already-made stage object.
+        stages = self.stages.items() \
+                if isinstance(self.stages, Mapping) else self.stages
+        # Stage spec. parser handles callable validation.
+        name_stage_pairs = [_parse_stage_spec(s) for s in stages]
+
+        # Pipeline must have non-empty definition of stages.
         if not stages:
             raise ValueError("Empty stages")
 
-        # Check that each element is a pair, and standardize to list-of-pairs
-        # representation of stage name and (hopefully callable) stage.
-        try:
-            name_stage_pairs = [(name, stage) for name, stage in stages]
-        except ValueError:
-            print(
-                "Error unpacking stage name and stage itself for {}; {} stages "
-                "must be defined as a name-to-callable mapping or as a "
-                "collection of such pairs".format(
-                    self.name, self.__class__.__name__, ))
-            raise
-
-        # Enforce stage name uniqueness.
-        stage_names, _ = zip(*name_stage_pairs)    # Need non-emptiness
-        stage_name_counts = Counter(stage_names)
-        repeated = [(s, n) for s, n in stage_name_counts.items() if n > 1]
-        if repeated:
-            raise ValueError("Duplicate stage name(s): {}".format(
-                ", ".join(["{} ({})".format(s, n) for s, n in repeated])))
-
         # Ensure that each pipeline stage is callable, and map names
         # between external specification and internal representation.
-        self._internal_to_external = OrderedDict()
-        self._external_to_internal = OrderedDict()
-        self._stages = []
+        self._internal_to_external = dict()
+        self._external_to_internal = dict()
+        self._name_stage_pairs = []
+
         for name, stage in name_stage_pairs:
-            if not hasattr(stage, "__call__"):
-                raise TypeError(
-                    "Uncallable stage for stage name: {}".format(name))
+
             # Use external translator to further confound redefinition.
             internal_name = translate_stage_name(name)
+
+            # Check that there's not a checkpoint name collision.
+            if internal_name in self._internal_to_external:
+                already_mapped = self._internal_to_external[internal_name]
+                errmsg = "Duplicate stage name resolution (stage names are too " \
+                         "similar.) '{}' and '{}' both resolve to '{}'".\
+                    format(name, already_mapped, internal_name)
+                raise ValueError(errmsg)
+
+            # Store the stage name translations and the stage itself.
             self._external_to_internal[name] = internal_name
             self._internal_to_external[internal_name] = name
-            self._stages.append(stage)
+            self._name_stage_pairs.append((internal_name, stage))
 
+
+    def _seek_start(self, start=None):
+        """ Seek to the first stage to run. """
+        pass
 
 
     @abc.abstractproperty
@@ -143,21 +129,18 @@ class Pipeline(object):
 
         # Ensure that a stage name--if specified--is supported.
         for s in [start, stop]:
-            if not (s is None or s in self.stage_names):
-                raise UnknownPipelineStageError(s, self)
+            if s is None or s in self.stage_names:
+                continue
+            raise UnknownPipelineStageError(s, self)
 
         # Permit order-agnostic pipelines, but warn.
-        if not isinstance(self.stages, Sequence):
-            print("NOTICE: Unordered definition of stages for pipeline {}".
-                  format(self.name))
-            if start or stop:
-                print("WARNING: Starting and stopping points are nonsense for "
-                      "pipeline with unordered stages.")
+        if self._unordered and (start or stop):
+            print("WARNING: Starting and stopping points are nonsense for "
+                  "pipeline with unordered stages.")
 
         # TODO: consider context manager based on start/stop points.
 
-        name_stage_pairs = zip(self._internal_to_external.keys(), self._stages)
-        for stage_name, stage in name_stage_pairs:
+        for name, stage in self._name_stage_pairs:
             # TODO: check against start point name and for checkpoints.
             pass
 
@@ -205,3 +188,71 @@ class UnknownPipelineStageError(Exception):
                 message = "{}; defined stages: {}".\
                         format(message, ", ".join(stages))
         super(UnknownPipelineStageError, self).__init__(message)
+
+
+
+def _is_unordered(collection):
+    """
+    Determine whether a collection appears to be unordered.
+
+    This is a conservative implementation, allowing for the possibility that
+    someone's implemented Mapping or Set, for example, and provided an
+    __iter__ implementation that defines a consistent ordering of the
+    collection's elements.
+
+    :param collection: Object to check as an unordered collection.
+    :type collection object
+    :return: Whether the given object appears to be unordered
+    :rtype: bool
+    :raises TypeError: If the given "collection" is non-iterable, it's
+        illogical to investigate whether it's ordered.
+    """
+    if not isinstance(collection, Iterable):
+        raise TypeError("Non-iterable alleged collection: {}".
+                        format(type(collection)))
+    return isinstance(collection, set) or \
+           (isinstance(collection, dict) and
+            not isinstance(collection, OrderedDict))
+
+
+
+def _parse_stage_spec(stage_spec):
+    """
+    Handle alternate Stage specifications, returning Stage or TypeError.
+
+    Isolate this parsing logic from any iteration. TypeError as single
+    exception type funnel also provides a more uniform way for callers to
+    handle specification errors (e.g., skip a stage, warn, re-raise, etc.)
+
+    :param stage_spec:
+    :type stage_spec: (str, callable) | callable
+    :return: Pair of name and Stage instance from parsing input specification
+    :rtype: (name, Stage)
+    """
+
+    # The logic used here, a message to a user about how to specify Stage.
+    req_msg = "Stage specification must be either a {0} itself, a " \
+              "(<name>, {0}) pair, or a callable with a __name__ attribute " \
+              "(e.g., a function)".format(Stage.__name__)
+
+    # Simplest case is stage itself.
+    if isinstance(stage_spec, Stage):
+        return stage_spec
+
+    # Handle alternate forms of specification.
+    try:
+        # Unpack pair of name and stage, requiring name first.
+        name, stage = stage_spec
+    except ValueError:
+        # Attempt to parse stage_spec as a single named callable.
+        try:
+            name = stage_spec.__name__
+        except AttributeError:
+            raise TypeError(req_msg)
+        stage = stage_spec
+
+    # Ensure that the stage is callable.
+    if not hasattr(stage, "__call__"):
+        raise TypeError(req_msg)
+
+    return name, Stage(stage, name=name)
