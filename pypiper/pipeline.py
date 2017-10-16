@@ -1,14 +1,15 @@
 """ Pipeline base class """
 
 import abc
-from collections import Counter, OrderedDict
+from collections import OrderedDict
+import os
 import sys
 if sys.version_info < (3, 3):
     from collections import Iterable, Mapping
 else:
     from collections.abc import Iterable, Mapping
 
-from stage import Stage, translate_stage_name
+from stage import checkpoint_filepath, Stage, translate_stage_name
 
 
 __author__ = "Vince Reuter"
@@ -32,7 +33,7 @@ class Pipeline(object):
     __metaclass__ = abc.ABCMeta
     
     
-    def __init__(self, name, manager=None):
+    def __init__(self, name, manager):
 
         super(Pipeline, self).__init__()
 
@@ -60,10 +61,16 @@ class Pipeline(object):
             raise ValueError("Empty stages")
 
         # Ensure that each pipeline stage is callable, and map names
-        # between external specification and internal representation.
-        self._internal_to_external = dict()
+        # between from external specification and internal representation.
+        # We don't need to store the internal-to-external mapping, as each
+        # stage will store its own name that is equivalent to the "external"
+        # one, and we can use the checkpoint name derivation functions
+        # to determine checkpoint name/path from stage/stage name.
+        # We just use this internal-to-external mapping here, ephemerally,
+        # to pretest whether there'd be a checkpoint name resolution collision.
+        _internal_to_external = dict()
         self._external_to_internal = dict()
-        self._name_stage_pairs = []
+        self._stages = []
 
         for name, stage in name_stage_pairs:
 
@@ -71,8 +78,8 @@ class Pipeline(object):
             internal_name = translate_stage_name(name)
 
             # Check that there's not a checkpoint name collision.
-            if internal_name in self._internal_to_external:
-                already_mapped = self._internal_to_external[internal_name]
+            if internal_name in _internal_to_external:
+                already_mapped = _internal_to_external[internal_name]
                 errmsg = "Duplicate stage name resolution (stage names are too " \
                          "similar.) '{}' and '{}' both resolve to '{}'".\
                     format(name, already_mapped, internal_name)
@@ -80,13 +87,20 @@ class Pipeline(object):
 
             # Store the stage name translations and the stage itself.
             self._external_to_internal[name] = internal_name
-            self._internal_to_external[internal_name] = name
-            self._name_stage_pairs.append((internal_name, stage))
+            _internal_to_external[internal_name] = name
+            self._stages.append(stage)
 
 
-    def _seek_start(self, start=None):
+    def _start_index(self, start=None):
         """ Seek to the first stage to run. """
-        pass
+        if start is None:
+            return self._stages
+        start_stage = translate_stage_name(start)
+        internal_names = [translate_stage_name(s.name) for s in self._stages]
+        try:
+            return internal_names.index(start_stage)
+        except ValueError:
+            raise UnknownPipelineStageError(start, self)
 
 
     @abc.abstractproperty
@@ -140,9 +154,20 @@ class Pipeline(object):
 
         # TODO: consider context manager based on start/stop points.
 
-        for name, stage in self._name_stage_pairs:
-            # TODO: check against start point name and for checkpoints.
-            pass
+        start_index = self._start_index(start)
+        for stage in self._stages[start_index:]:
+            # TODO: Note that there's no way to tell whether a non-checkpointed
+            # TODO (cont.) Stage has been completed, and thus this seek
+            # TODO (cont.) operation will find the first Stage, starting
+            # TODO (cont.) the specified start point, either uncheckpointed or
+            # TODO (cont.) for which the checkpoint file does not exist.
+            check_path = checkpoint_filepath(stage, self.manager)
+            if stage.checkpoint and os.path.exists(check_path):
+                print("Checkpoint exists for stage: {} ('{}')".
+                      format(stage.name, check_path))
+                continue
+            stage.run()
+
 
 
     @staticmethod
