@@ -258,4 +258,8 @@ def _pipeline_completed(pl):
     flags = glob.glob(pipeline_filepath(pl.manager, filename=flag_name("*")))
     assert 1 == len(flags)
     exp_flag = pipeline_filepath(pl, suffix="_" + flag_name(COMPLETE_FLAG))
-    assert os.path.isfile(exp_flag) 
+    try:
+        assert os.path.isfile(exp_flag)
+    except AssertionError:
+        print("FLAGS: {}".format(pipeline_filepath(pl.manager, filename="*.flag")))
+        raise
