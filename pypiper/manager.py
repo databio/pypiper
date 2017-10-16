@@ -436,7 +436,8 @@ class PipelineManager(object):
         prev_status = self.status
         self.status = status
         self._create_file(self._flag_file_path())
-        print("\nChanged status from " + prev_status + " to " + self.status)
+        print("\nChanged status from {} to {}.".format(
+                prev_status, self.status))
 
 
     def _flag_file_path(self, status=None):
@@ -971,13 +972,11 @@ class PipelineManager(object):
             another pipeline (using get_stat()).
         :type annotation: str
         """
-        # Default annotation is current pipeline name
-        if not annotation:
-            annotation = self.name
+        # Default annotation is current pipeline name.
+        annotation = str(annotation or self.name)
 
-        # In case the value is passed with trailing whitespace
+        # In case the value is passed with trailing whitespace.
         value = str(value).strip()
-        annotation = str(annotation)
 
         # keep the value in memory:
         self.stats_dict[key] = value
@@ -1008,13 +1007,10 @@ class PipelineManager(object):
         :type annotation: str
         """
 
-        # Default annotation is current pipeline name
-        if not annotation:
-            annotation = self.name
+        # Default annotation is current pipeline name.
+        annotation = str(annotation or self.name)
 
-        annotation = str(annotation)
-
-        # In case the value is passed with trailing whitespace
+        # In case the value is passed with trailing whitespace.
         filename = str(filename).strip()
 
         # better to use a relative path in this file
