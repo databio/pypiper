@@ -1,11 +1,12 @@
 """ Tests for the Pipeline data type """
 
 from functools import partial
+import glob
 import os
 import pytest
 from pypiper import Pipeline, PipelineManager
 from pypiper.manager import COMPLETE_FLAG
-from pypiper.pipeline import checkpoint_filepath
+from pypiper.pipeline import checkpoint_filepath, pipeline_filepath
 from pypiper.stage import Stage
 from pypiper.utils import flag_name
 
@@ -113,9 +114,10 @@ class MostBasicPipelineTests:
                         stage.__name__, chkpt_fpath))
                     raise
         elif test_type == "pipe_flag":
-            flags = os.listdir(dummy_pipe.outfolder)
+            flags = glob.glob(os.path.join(tmpdir.strpath, flag_name("*")))
             assert 1 == len(flags)
-            exp_flag = os.path.join(tmpdir.strpath, flag_name(COMPLETE_FLAG))
+            exp_flag = pipeline_filepath(
+                    dummy_pipe, suffix="_" + flag_name(COMPLETE_FLAG))
             assert os.path.isfile(exp_flag)
         else:
             raise ValueError("Unknown test type: {}".format(test_type))

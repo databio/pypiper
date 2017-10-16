@@ -272,7 +272,7 @@ def pipeline_filepath(pm, filename=None, suffix=None):
     Derive path to file for managed pipeline.
 
     :param pm: Manager of a particular pipeline instance.
-    :type pm: pypiper.PipelineManager
+    :type pm: pypiper.PipelineManager | pypiper.Pipeline
     :param filename: Name of file for which to create full path based
         on pipeline's output folder.
     :type filename: str
@@ -287,10 +287,16 @@ def pipeline_filepath(pm, filename=None, suffix=None):
         appended if given.
     :rtype: str
     """
+
     if filename is None and suffix is None:
         raise TypeError("Provide filename and/or suffix to create "
                         "path to a pipeline file.")
+
     filename = (filename or pm.name) + (suffix or "")
+
+    # Note that Pipeline and PipelineManager define the same outfolder.
+    # In fact, a Pipeline just references its manager's outfolder.
+    # So we can handle argument of either type to pm parameter.
     return filename if os.path.isabs(filename) \
             else os.path.join(pm.outfolder, filename)
 
