@@ -111,7 +111,7 @@ class MostBasicPipelineTests:
                     assert os.path.isfile(chkpt_fpath)
                 except AssertionError:
                     print("Stage '{}' file doesn't exist: '{}'".format(
-                        stage.__name__, chkpt_fpath))
+                        stage.name, chkpt_fpath))
                     raise
         elif test_type == "pipe_flag":
             flags = glob.glob(os.path.join(tmpdir.strpath, flag_name("*")))

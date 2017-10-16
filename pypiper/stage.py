@@ -85,7 +85,6 @@ def checkpoint_filename(checkpoint):
         null if the input is a Stage that's designated as a non-checkpoint
     :rtype: str | NoneType
     """
-    if isinstance(checkpoint, Stage):
-        return checkpoint.checkpoint_name
-    name = translate_stage_name(checkpoint)
-    return name + CHECKPOINT_EXTENSION
+    base = checkpoint.checkpoint_name if isinstance(checkpoint, Stage) \
+        else translate_stage_name(checkpoint)
+    return base + CHECKPOINT_EXTENSION
