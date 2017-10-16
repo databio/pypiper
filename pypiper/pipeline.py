@@ -240,7 +240,7 @@ class Pipeline(object):
     def _start_index(self, start=None):
         """ Seek to the first stage to run. """
         if start is None:
-            return self._stages
+            return 0
         start_stage = translate_stage_name(start)
         internal_names = [translate_stage_name(s.name) for s in self._stages]
         try:
