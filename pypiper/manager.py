@@ -22,7 +22,7 @@ import time
 
 from AttributeDict import AttributeDict
 from stage import translate_stage_name, CHECKPOINT_EXTENSION
-from utils import check_shell, pipeline_filepath
+from utils import check_shell, flag_name, pipeline_filepath
 from _version import __version__
 import __main__
 
@@ -179,7 +179,7 @@ class PipelineManager(object):
         # as part of the beginning of the pipeline, clear any flags set by
         # previous runs of this pipeline
         for flag in FLAGS:
-            existing_flag = pipeline_filepath(self, suffix="_{}.flag".format(flag))
+            existing_flag = pipeline_filepath(self, suffix="_{}".format(flag_name(flag)))
             try:
                 os.remove(existing_flag)
                 print("Removed existing flag: " + existing_flag)
@@ -450,8 +450,8 @@ class PipelineManager(object):
         :param str status: flag file type to create, default to current status
         :return str: path to flag file of indicated or current status.
         """
-        flag_file_name = "{}_{}.flag".format(
-                self.name, status or self.status)
+        flag_file_name = "{}_{}".format(
+                self.name, flag_name(status or self.status))
         return pipeline_filepath(self, filename=flag_file_name)
 
 
@@ -1545,9 +1545,10 @@ class PipelineManager(object):
                     pass
 
         if len(self.cleanup_list_conditional) > 0:
-            flag_files = [fn for fn in glob.glob(self.outfolder + "*.flag")
+            run_flag = flag_name(RUN_FLAG)
+            flag_files = [fn for fn in glob.glob(self.outfolder + flag_name("*"))
                           if COMPLETE_FLAG not in os.path.basename(fn)
-                          and not self.name + "_running.flag" == os.path.basename(fn)]
+                          and not "{}_{}".format(self.name, run_flag) == os.path.basename(fn)]
             if len(flag_files) == 0 and not dry_run:
                 print("\nCleaning up conditional list...")
                 for expr in self.cleanup_list_conditional:

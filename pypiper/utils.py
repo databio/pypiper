@@ -59,6 +59,19 @@ def check_shell(cmd):
 
 
 
+def flag_name(status):
+    """
+    Determine the name for a flag file of the status indicated.
+
+    :param status: Name of status for which to create flag file name.
+    :type status: str
+    :return: Name of flag file corresponding to given status.
+    :rtype: str
+    """
+    return status + ".flag"
+
+
+
 def parse_cores(cores, pm, default):
     """
     Framework to finalize number of cores for an operation.

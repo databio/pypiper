@@ -91,16 +91,15 @@ class Pipeline(object):
             self._stages.append(stage)
 
 
-    def _start_index(self, start=None):
-        """ Seek to the first stage to run. """
-        if start is None:
-            return self._stages
-        start_stage = translate_stage_name(start)
-        internal_names = [translate_stage_name(s.name) for s in self._stages]
-        try:
-            return internal_names.index(start_stage)
-        except ValueError:
-            raise UnknownPipelineStageError(start, self)
+    @property
+    def outfolder(self):
+        """
+        Determine the path to the output folder for this pipeline instance.
+
+        :return: Path to output folder for this pipeline instance.
+        :rtype: str
+        """
+        return self.manager.outfolder
 
 
     @abc.abstractproperty
@@ -180,7 +179,7 @@ class Pipeline(object):
                 break
 
             # Look for checkpoint file.
-            if self.has_completed(stage):
+            if self.completed_stage(stage):
                 print("Skipping completed checkpoint stage: {}".format(stage))
                 continue
 
@@ -204,7 +203,7 @@ class Pipeline(object):
             self.manager.complete()
 
 
-    def has_completed(self, stage):
+    def completed_stage(self, stage):
         """
         Determine whether the pipeline's completed the stage indicated.
         
@@ -217,6 +216,18 @@ class Pipeline(object):
         """
         check_path = checkpoint_filepath(stage, self.manager)
         return stage.checkpoint and os.path.exists(check_path)
+
+
+    def _start_index(self, start=None):
+        """ Seek to the first stage to run. """
+        if start is None:
+            return self._stages
+        start_stage = translate_stage_name(start)
+        internal_names = [translate_stage_name(s.name) for s in self._stages]
+        try:
+            return internal_names.index(start_stage)
+        except ValueError:
+            raise UnknownPipelineStageError(start, self)
 
 
 
