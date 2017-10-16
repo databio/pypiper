@@ -152,51 +152,80 @@ class Pipeline(object):
                              "both be specified")
 
         # Ensure that a stage name--if specified--is supported.
-        for s in [start, stop]:
+        for s in [start, stop_at, stop_after]:
             if s is None or s in self.stage_names:
                 continue
             raise UnknownPipelineStageError(s, self)
 
         # Permit order-agnostic pipelines, but warn.
-        if self._unordered and (start or stop):
+        if self._unordered and (start or stop_at or stop_after):
             print("WARNING: Starting and stopping points are nonsense for "
                   "pipeline with unordered stages.")
 
         # TODO: consider context manager based on start/stop points.
 
+        # Determine where to start (but perhaps skip further based on
+        # checkpoint completions.)
         start_index = self._start_index(start)
+
         for stage in self._stages[start_index:]:
             # TODO: Note that there's no way to tell whether a non-checkpointed
             # TODO (cont.) Stage has been completed, and thus this seek
             # TODO (cont.) operation will find the first Stage, starting
             # TODO (cont.) the specified start point, either uncheckpointed or
             # TODO (cont.) for which the checkpoint file does not exist.
-            if stage.name == stop:
-                print("Stopping at designated checkpoint ")
-            check_path = checkpoint_filepath(stage, self.manager)
-            if stage.checkpoint and os.path.exists(check_path):
-                print("Checkpoint exists for stage: {} ('{}')".
-                      format(stage.name, check_path))
+            if stage.name == stop_at:
+                print("Stopping just before checkpoint '{}'".format(stop_at))
+                self.manager.halt()
+                break
+
+            # Look for checkpoint file.
+            if self.has_completed(stage):
+                print("Skipping completed checkpoint stage: {}".format(stage))
                 continue
+
             stage.run()
+
+            # Have we just completed the last designated stage to run?
+            if stage.name == stop_after:
+                print("Halting just after checkpoint '{}'".format(stop_after))
+                self.manager.halt()
+                # If this is a checkpoint, ensure checkpoint file existence.
+                expected_checkpoint_filepath = \
+                    checkpoint_filepath(stage, self.manager)
+                if expected_checkpoint_filepath and \
+                        not os.path.exists(expected_checkpoint_filepath):
+                    raise MissingCheckpointError(
+                            stage.name, expected_checkpoint_filepath)
+                break
+
         else:
-            pass
+            # If we did not break early from stage iteration, we completed.
+            self.manager.complete()
 
 
-    def is_complete(self, stage):
+    def has_completed(self, stage):
         """
         Determine whether the pipeline's completed the stage indicated.
         
-        :param stage: Name of stage to check for completion status.
-        :type stage: str
+        :param stage: Stage to check for completion status.
+        :type stage: Stage
         :return: Whether this pipeline's completed the indicated stage.
         :rtype: bool
         :raises UnknownStageException: If the stage name given is undefined 
             for the pipeline, a ValueError arises.
         """
-        if stage not in self.stages:
-            raise UnknownPipelineStageError(stage, self)
+        check_path = checkpoint_filepath(stage, self.manager)
+        return stage.checkpoint and os.path.exists(check_path)
 
+
+
+class MissingCheckpointError(Exception):
+    """ Represent case of expected but absent checkpoint file """
+
+    def __init__(self, checkpoint, filepath):
+        msg = "{}: '{}'".format(checkpoint, filepath)
+        super(MissingCheckpointError, self).__init__(msg)
 
 
 class UnknownPipelineStageError(Exception):

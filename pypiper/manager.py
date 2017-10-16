@@ -1254,10 +1254,15 @@ class PipelineManager(object):
         if stage_name == self.stopping_point:
             print("'{}' is the designated stopping point, halting pipeline".
                   format(stage_name))
-            self.stop_pipeline(PAUSE_FLAG)
+            self.halt()
         else:
             print("Just-completed stage '{}' doesn't match stopping point "
                   "'{}', continuing".format(stage_name, self.stopping_point))
+
+
+    def complete(self):
+        """ Stop a completely finished pipeline. """
+        self.stop_pipeline(status=COMPLETE_FLAG)
 
 
     def fail_pipeline(self, e, dynamic_recover=False):
@@ -1300,6 +1305,11 @@ class PipelineManager(object):
             self.set_status_flag(FAIL_FLAG)
 
         raise e
+
+
+    def halt(self):
+        """ Stop the pipeline before completion point. """
+        self.stop_pipeline(PAUSE_FLAG)
 
 
     def stop_pipeline(self, status=COMPLETE_FLAG):

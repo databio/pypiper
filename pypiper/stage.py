@@ -40,8 +40,9 @@ class Stage(object):
         """
         Determine the checkpoint name for this Stage.
 
-        :return str | NoneType: Checkpoint name for this stage; null if this
-            Stage is designated as a non-checkpoint.
+        :return: Checkpoint name for this stage; null if this Stage is
+            designated as a non-checkpoint.
+        :rtype: str | NoneType
         """
         return translate_stage_name(self.name) if self.checkpoint else None
 
@@ -59,6 +60,17 @@ class Stage(object):
         self.f(*args, **kwargs)
 
 
+    def __repr__(self):
+        return "{klass} '{n}': f={f}, args={pos}, kwargs={kwd}, " \
+               "checkpoint={check}".format(klass=self.__class__.__name__,
+                n=self.name, pos=self.f_args, kwd=self.f_kwargs,
+                check=self.checkpoint)
+
+
+    def __str__(self):
+        return "{}: '{}'".format(self.__class__.__name__, self.name)
+
+
 
 def checkpoint_filename(checkpoint):
     """
@@ -67,10 +79,11 @@ def checkpoint_filename(checkpoint):
     This not only adds the checkpoint file extension but also standardizes the
     way in which checkpoint names are mapped to filenames.
 
-    :param str | Stage checkpoint: name of a pipeline phase/stage
-    :return str | NoneType: standardized checkpoint name for file, plus
-        extension; null if the input is a Stage that's designated as a
-        non-checkpoint
+    :param checkpoint: name of a pipeline phase/stage
+    :type checkpoint: str | Stage
+    :return: standardized checkpoint name for file, plus extension;
+        null if the input is a Stage that's designated as a non-checkpoint
+    :rtype: str | NoneType
     """
     if isinstance(checkpoint, Stage):
         return checkpoint.checkpoint_name
@@ -83,7 +96,8 @@ def checkpoint_filepath(checkpoint, pm):
     """
     Create filepath for indicated checkpoint.
 
-    :param str checkpoint: name of a pipeline phase/stage
+    :param checkpoint: Pipeline phase/stage or one's name
+    :type checkpoint: str | Stage
     :param pypiper.PipelineManager pm: manager of a pipeline instance,
         relevant here for output folder path.
     :return str: standardized checkpoint name for file, plus extension
