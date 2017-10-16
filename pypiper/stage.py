@@ -28,6 +28,7 @@ class Stage(object):
         :param dict f_kwargs: Keyword arguments for func
         :param str name: name for the phase/stage
         """
+        super(Stage, self).__init__()
         self.f = func
         self.f_args = f_args or tuple()
         self.f_kwargs = f_kwargs or dict()
@@ -58,6 +59,17 @@ class Stage(object):
         kwargs.update(update_kwargs)
         args = args or self.f_args
         self.f(*args, **kwargs)
+
+
+    def __eq__(self, other):
+        return isinstance(other, Stage) and \
+               self.f.__name__ == other.f.__name__ and \
+               ({k: v for k, v in self.__dict__.items() if k != "f"} ==
+                {k: v for k, v in other.__dict__.items() if k != "f"})
+
+
+    def __ne__(self, other):
+        return not (self == other)
 
 
     def __repr__(self):

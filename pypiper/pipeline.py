@@ -92,12 +92,7 @@ class Pipeline(object):
             _internal_to_external[internal_name] = name
             self._stages.append(stage)
 
-        self._skipped, self._executed = None, None
-
-
-    @property
-    def executed(self):
-        return [s.name for s in (self._skipped or [])]
+        self.skipped, self.executed = None, None
 
 
     @property
@@ -109,11 +104,6 @@ class Pipeline(object):
         :rtype: str
         """
         return self.manager.outfolder
-
-
-    @property
-    def skipped(self):
-        return [s.name for s in (self._skipped or [])]
 
 
     @abc.abstractproperty
@@ -167,6 +157,10 @@ class Pipeline(object):
             for the pipeline, a ValueError arises.
         """
         check_path = checkpoint_filepath(stage, self.manager)
+
+        # DEBUG
+        print("CHECKPOINT FILEPATH: {}".format(check_path))
+
         return stage.checkpoint and os.path.exists(check_path)
 
 
@@ -231,6 +225,10 @@ class Pipeline(object):
         # Determine where to start (but perhaps skip further based on
         # checkpoint completions.)
         start_index = self._start_index(start)
+
+        # DEBUG
+        print("START INDEX: {}".format(start_index))
+
         stop_index = self._stop_index(stop_at, stop_after)
         assert stop_index <= len(self._stages)
         if start_index >= stop_index:
@@ -269,12 +267,10 @@ class Pipeline(object):
             self.executed.append(stage)
             self.checkpoint(stage)
 
+        # Add any unused stages to the collection of skips.
         self.skipped.extend(self._stages[stop_index:])
 
-        # DEBUG
-        print("STOP INDEX: {}".format(stop_index))
-        print("NUM STAGES: {}".format(len(self._stages)))
-
+        # Where we stopped determines the shutdown mode.
         if stop_index == len(self._stages):
             self.manager.complete()
         else:
@@ -283,7 +279,7 @@ class Pipeline(object):
 
     def _reset(self):
         """ Scrub decks with respect to Stage status/label tracking. """
-        self._skipped, self._executed = [], []
+        self.skipped, self.executed = [], []
 
 
     def _start_index(self, start=None):

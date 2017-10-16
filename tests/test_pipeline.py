@@ -142,6 +142,10 @@ class MostBasicPipelineTests:
         first_stage = dummy_pipe.stages[0]
         first_stage_chkpt_fpath = checkpoint_filepath(first_stage, dummy_pipe)
         open(first_stage_chkpt_fpath, 'w').close()
+        assert os.path.isfile(first_stage_chkpt_fpath)
+
+        # DEBUG
+        print("WROTE: {}".format(first_stage_chkpt_fpath))
 
         exp_skips = [first_stage]
         exp_execs = dummy_pipe.stages[1:]
@@ -235,7 +239,7 @@ def _assert_checkpoints(pl, exp_stages):
 
 def _assert_stage_labels(pl, expected_skipped, expected_executed):
     assert expected_skipped == pl.skipped
-    assert expected_executed == pl.expected_executed
+    assert expected_executed == pl.executed
 
 
 def _has_expected_content(fpath, content):
