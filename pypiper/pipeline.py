@@ -2,6 +2,7 @@
 
 import abc
 from collections import OrderedDict
+import glob
 import os
 import sys
 if sys.version_info < (3, 3):
@@ -9,7 +10,8 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Iterable, Mapping
 
-from stage import checkpoint_filepath, Stage, translate_stage_name
+from stage import checkpoint_filename, translate_stage_name, Stage
+from utils import flag_name
 
 
 __author__ = "Vince Reuter"
@@ -125,6 +127,23 @@ class Pipeline(object):
         return list(self._external_to_internal.keys())
 
 
+    def list_flags(self, only_name=False):
+        """
+        Determine the flag files associated with this pipeline.
+
+        :param only_name: Whether to return only flag file name(s) (True),
+            or full flag file paths (False); default False (paths)
+        :type only_name: bool
+        :return: List of flag files associated with this pipeline.
+        :rtype: list[str]
+        """
+        paths = glob.glob(os.path.join(self.outfolder, flag_name("*")))
+        if only_name:
+            return [os.path.split(p)[1] for p in paths]
+        else:
+            return paths
+
+
     def run(self, start=None, stop_at=None, stop_after=None):
         """
         Run the pipeline, optionally specifying start and/or stop points.
@@ -228,6 +247,52 @@ class Pipeline(object):
             return internal_names.index(start_stage)
         except ValueError:
             raise UnknownPipelineStageError(start, self)
+
+
+
+def checkpoint_filepath(checkpoint, pm):
+    """
+    Create filepath for indicated checkpoint.
+
+    :param checkpoint: Pipeline phase/stage or one's name
+    :type checkpoint: str | Stage
+    :param pypiper.PipelineManager pm: manager of a pipeline instance,
+        relevant here for output folder path.
+    :return str: standardized checkpoint name for file, plus extension
+    """
+    if isinstance(pm, Pipeline):
+        pm = pm.manager
+    filename = checkpoint_filename(checkpoint)
+    return pipeline_filepath(pm, filename)
+
+
+
+def pipeline_filepath(pm, filename=None, suffix=None):
+    """
+    Derive path to file for managed pipeline.
+
+    :param pm: Manager of a particular pipeline instance.
+    :type pm: pypiper.PipelineManager
+    :param filename: Name of file for which to create full path based
+        on pipeline's output folder.
+    :type filename: str
+    :param suffix: Suffix for the file; this can be added to the filename
+        if provided or added to the pipeline name if there's no filename.
+    :type suffix: str
+    :raises TypeError: If neither filename nor suffix is provided, raise a
+        TypeError, as in that case there's no substance from which to create
+        a filepath.
+    :return: Path to file within managed pipeline's output folder, with
+        filename as given or determined by the pipeline name, and suffix
+        appended if given.
+    :rtype: str
+    """
+    if filename is None and suffix is None:
+        raise TypeError("Provide filename and/or suffix to create "
+                        "path to a pipeline file.")
+    filename = (filename or pm.name) + (suffix or "")
+    return filename if os.path.isabs(filename) \
+            else os.path.join(pm.outfolder, filename)
 
 
 

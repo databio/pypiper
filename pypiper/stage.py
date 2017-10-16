@@ -1,7 +1,7 @@
 """ Conceptualize a pipeline processing phase/stage. """
 
 import copy
-from utils import pipeline_filepath
+from utils import translate_stage_name
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -89,36 +89,3 @@ def checkpoint_filename(checkpoint):
         return checkpoint.checkpoint_name
     name = translate_stage_name(checkpoint)
     return name + CHECKPOINT_EXTENSION
-
-
-
-def checkpoint_filepath(checkpoint, pm):
-    """
-    Create filepath for indicated checkpoint.
-
-    :param checkpoint: Pipeline phase/stage or one's name
-    :type checkpoint: str | Stage
-    :param pypiper.PipelineManager pm: manager of a pipeline instance,
-        relevant here for output folder path.
-    :return str: standardized checkpoint name for file, plus extension
-    """
-    filename = checkpoint_filename(checkpoint)
-    return pipeline_filepath(pm, filename)
-
-
-
-def translate_stage_name(stage_name):
-    """
-    Account for potential variability in stage/phase name definition.
-
-    Since a pipeline author is free to name his/her processing phases/stages
-    as desired, but these choices influence file names, enforce some
-    standardization. Specifically, prohibit potentially problematic spaces.
-
-    :param stage_name: Name of the pipeline phase/stage.
-    :type stage_name: str
-    :return: Standardized pipeline phase/stage name.
-    :rtype: str
-    """
-    # Cast to string to ensure that indexed stages (ints are handled).
-    return str(stage_name).lower().replace(" ", "-")

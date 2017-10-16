@@ -48,6 +48,24 @@ def add_pypiper_args(parser, groups=("pypiper", ), args=None,
 
 
 
+def translate_stage_name(stage_name):
+    """
+    Account for potential variability in stage/phase name definition.
+
+    Since a pipeline author is free to name his/her processing phases/stages
+    as desired, but these choices influence file names, enforce some
+    standardization. Specifically, prohibit potentially problematic spaces.
+
+    :param stage_name: Name of the pipeline phase/stage.
+    :type stage_name: str
+    :return: Standardized pipeline phase/stage name.
+    :rtype: str
+    """
+    # Cast to string to ensure that indexed stages (ints are handled).
+    return str(stage_name).lower().replace(" ", "-")
+
+
+
 def check_shell(cmd):
     """
     Determine whether a command appears to involve shell process(es).
@@ -94,36 +112,6 @@ def parse_cores(cores, pm, default):
     """
     cores = cores or getattr(pm, "cores", default)
     return int(cores)
-
-
-
-# TODO: live with Pipeline?
-def pipeline_filepath(pm, filename=None, suffix=None):
-    """
-    Derive path to file for managed pipeline.
-
-    :param pm: Manager of a particular pipeline instance.
-    :type pm: pypiper.PipelineManager
-    :param filename: Name of file for which to create full path based
-        on pipeline's output folder.
-    :type filename: str
-    :param suffix: Suffix for the file; this can be added to the filename
-        if provided or added to the pipeline name if there's no filename.
-    :type suffix: str
-    :raises TypeError: If neither filename nor suffix is provided, raise a
-        TypeError, as in that case there's no substance from which to create
-        a filepath.
-    :return: Path to file within managed pipeline's output folder, with
-        filename as given or determined by the pipeline name, and suffix
-        appended if given.
-    :rtype: str
-    """
-    if filename is None and suffix is None:
-        raise TypeError("Provide filename and/or suffix to create "
-                        "path to a pipeline file.")
-    filename = (filename or pm.name) + (suffix or "")
-    return filename if os.path.isabs(filename) \
-            else os.path.join(pm.outfolder, filename)
 
 
 

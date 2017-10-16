@@ -1,9 +1,13 @@
 """ Tests for the Pipeline data type """
 
+from functools import partial
 import os
 import pytest
 from pypiper import Pipeline, PipelineManager
 from pypiper.manager import COMPLETE_FLAG
+from pypiper.pipeline import checkpoint_filepath
+from pypiper.stage import Stage
+from pypiper.utils import flag_name
 
 
 __author__ = "Vince Reuter"
@@ -24,13 +28,11 @@ FILE_TEXT_PAIRS = list(zip(FILENAMES, CONTENTS))
 TEST_PIPE_NAME = "test-pipe"
 
 
-
 def pytest_generate_tests(metafunc):
     if "test_type" in metafunc.fixturenames and \
             metafunc.cls == MostBasicPipelineTests:
         metafunc.parametrize(argnames="test_type", 
                              argvalues=["effects", "checkpoints", "pipe_flag"])
-
 
 
 @pytest.fixture
@@ -43,12 +45,28 @@ def pl_mgr(request, tmpdir):
     return pm
 
 
-
 @pytest.fixture
 def dummy_pipe(pl_mgr):
     """ Provide a basic Pipeline instance for a test case. """
     return DummyPipeline(pl_mgr)
 
+
+def _write_file1(folder):
+    _write(*FILE_TEXT_PAIRS[0], folder=folder)
+
+
+def _write_file2(folder):
+    _write(*FILE_TEXT_PAIRS[1], folder=folder)
+
+
+def _write_file3(folder):
+    _write(*FILE_TEXT_PAIRS[2], folder=folder)
+
+
+def _write(filename, content, folder=None):
+    path = os.path.join(folder, filename)
+    with open(path, 'w') as f:
+        f.write(content)
 
 
 class DummyPipeline(Pipeline):
@@ -58,28 +76,18 @@ class DummyPipeline(Pipeline):
         super(DummyPipeline, self).__init__(TEST_PIPE_NAME, manager=manager)
 
     def stages(self):
-        return [self._write_file1, self._write_file2]
-
-    def _write_file1(self):
-        self._write(*FILE_TEXT_PAIRS[0])
-
-    def _write_file2(self):
-        self._write(*FILE_TEXT_PAIRS[1])
-
-    def _write_file3(self):
-        self._write(*FILE_TEXT_PAIRS[2])
-
-    def _write(self, filename, content):
-        path = os.path.join(self.manager.outfolder, filename)
-        with open(path, 'w') as f:
-            f.write(content)
+        # File content writers parameterized with output folder.
+        return [Stage(partial(f, folder=self.outfolder))
+                for f in [_write_file1, _write_file2, _write_file3]]
 
 
 
 class MostBasicPipelineTests:
     """ Test pipeline defined with notion of 'absolute minimum' config. """
 
+
     def test_runs_through_full(self, dummy_pipe, test_type, tmpdir):
+        dummy_pipe.run(start=None, stop_at=None, stop_after=None)
         if test_type == "effects":
             fpath_text_pairs = [(os.path.join(tmpdir.strpath, fname), content)
                                 for fname, content in FILE_TEXT_PAIRS]
@@ -90,14 +98,25 @@ class MostBasicPipelineTests:
                     obs_content = [l.rstrip(os.linesep) for l in f.readlines()]
                 assert exp_content == obs_content
         elif test_type == "checkpoints":
-            pass
+            for stage in [_write_file1, _write_file2, _write_file3]:
+                chkpt_fpath = checkpoint_filepath(stage, dummy_pipe)
+                try:
+                    assert os.path.isfile(chkpt_fpath)
+                except AssertionError:
+                    print("Stage '{}' file doesn't exist: '{}'".format(
+                        stage.__name__, chkpt_fpath))
+                    raise
         elif test_type == "pipe_flag":
-            exp_flag = os.path.join(tmpdir.strpath, COMPLETE_FLAG)
-            assert os.path
+            flags = os.listdir(dummy_pipe.outfolder)
+            assert 1 == len(flags)
+            exp_flag = os.path.join(tmpdir.strpath, flag_name(COMPLETE_FLAG))
+            assert os.path.isfile(exp_flag)
         else:
             raise ValueError("Unknown test type: {}".format(test_type))
 
+
     def test_skip_completed(self, dummy_pipe, test_type, tmpdir):
+        """ Pre-completed stage(s) are skipped. """
         pass
 
     def test_start_point(self, dummy_pipe, test_type, tmpdir):
