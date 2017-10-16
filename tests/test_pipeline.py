@@ -105,7 +105,7 @@ class MostBasicPipelineTests:
                     obs_content = [l.rstrip(os.linesep) for l in f.readlines()]
                 assert exp_content == obs_content
         elif test_type == "checkpoints":
-            for stage in [_write_file1, _write_file2, _write_file3]:
+            for stage in dummy_pipe.stages:
                 chkpt_fpath = checkpoint_filepath(stage, dummy_pipe)
                 try:
                     assert os.path.isfile(chkpt_fpath)
