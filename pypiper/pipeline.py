@@ -203,6 +203,7 @@ class Pipeline(object):
                 continue
 
             stage.run()
+            self.checkpoint(stage)
 
             # Have we just completed the last designated stage to run?
             if stage.name == stop_after:
@@ -220,6 +221,22 @@ class Pipeline(object):
         else:
             # If we did not break early from stage iteration, we completed.
             self.manager.complete()
+
+
+    def checkpoint(self, stage):
+        """
+        Touch checkpoint file for given stage.
+
+        :param stage: Stage for which to mark checkpoint
+        :type stage: pypiper.Stage
+        :return: Whether a checkpoint file was written.
+        :rtype: bool
+        """
+        if stage.checkpoint:
+            chkpt_fpath = checkpoint_filepath(stage, self.manager)
+            open(chkpt_fpath, 'w').close()
+            return True
+        return False
 
 
     def completed_stage(self, stage):
@@ -256,8 +273,8 @@ def checkpoint_filepath(checkpoint, pm):
 
     :param checkpoint: Pipeline phase/stage or one's name
     :type checkpoint: str | Stage
-    :param pypiper.PipelineManager pm: manager of a pipeline instance,
-        relevant here for output folder path.
+    :param pm: manager of a pipeline instance, relevant for output folder path.
+    :type pm: pypiper.PipelineManager | pypiper.Pipeline
     :return str: standardized checkpoint name for file, plus extension
     """
     if isinstance(pm, Pipeline):
