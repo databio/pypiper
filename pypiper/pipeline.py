@@ -169,12 +169,6 @@ class Pipeline(object):
             stage.run()
 
 
-
-    @staticmethod
-    def _exec_stage(func, *args, **kwargs):
-        func(*args, **kwargs)
-
-
     def is_complete(self, stage):
         """
         Determine whether the pipeline's completed the stage indicated.
