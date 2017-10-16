@@ -8,7 +8,9 @@ import sys
 import pytest
 
 from pypiper import PipelineManager
-from pypiper.stage import checkpoint_filename, checkpoint_filepath
+from pypiper.pipeline import checkpoint_filepath
+from pypiper.stage import checkpoint_filename
+
 
 
 __author__ = "Vince Reuter"

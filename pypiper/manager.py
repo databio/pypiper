@@ -21,8 +21,9 @@ import sys
 import time
 
 from AttributeDict import AttributeDict
+from pipeline import pipeline_filepath
 from stage import translate_stage_name, CHECKPOINT_EXTENSION
-from utils import check_shell, flag_name, pipeline_filepath
+from utils import check_shell, flag_name
 from _version import __version__
 import __main__
 

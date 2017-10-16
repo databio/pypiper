@@ -375,7 +375,7 @@ def _parse_stage_spec(stage_spec):
 
     # Simplest case is stage itself.
     if isinstance(stage_spec, Stage):
-        return stage_spec
+        return stage_spec.name, stage_spec
 
     # Handle alternate forms of specification.
     try:

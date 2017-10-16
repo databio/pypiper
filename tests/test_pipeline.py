@@ -38,7 +38,8 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture
 def pl_mgr(request, tmpdir):
     """ Provide a PipelineManager and ensure that it's stopped. """
-    pm = PipelineManager(name=TEST_PIPE_NAME, outfolder=tmpdir.strpath)
+    pm = PipelineManager(
+            name=TEST_PIPE_NAME, outfolder=tmpdir.strpath, multi=True)
     def _ensure_stopped():
         pm.stop_pipeline()
     request.addfinalizer(_ensure_stopped)
@@ -75,10 +76,15 @@ class DummyPipeline(Pipeline):
     def __init__(self, manager):
         super(DummyPipeline, self).__init__(TEST_PIPE_NAME, manager=manager)
 
+    @property
     def stages(self):
         # File content writers parameterized with output folder.
-        return [Stage(partial(f, folder=self.outfolder))
-                for f in [_write_file1, _write_file2, _write_file3]]
+        fixed_folder_funcs = []
+        for f in [_write_file1, _write_file2, _write_file3]:
+            f_fixed = partial(f, folder=self.outfolder)
+            f_fixed.__name__ = f.__name__
+            fixed_folder_funcs.append(f_fixed)
+        return [Stage(f) for f in fixed_folder_funcs]
 
 
 
