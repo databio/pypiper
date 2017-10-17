@@ -74,12 +74,50 @@ def _write_file3(folder):
 
 
 BASIC_ACTIONS = [_write_file1, _write_file2, _write_file3]
+STAGE_SPECS = ["stage", "name", "function"]
 
 
 def _write(filename, content, folder=None):
     path = os.path.join(folder, filename)
     with open(path, 'w') as f:
         f.write(content)
+
+
+
+@pytest.fixture
+def stage(request):
+    """
+    Provide a test case with a pipeline stage.
+
+    :param pytest.fixtures.FixtureRequest request: Test case in need of the
+        parameterization
+    :return str | pypiper.Stage | function: The stage provided, in the
+        desired format.
+    """
+    # Ensure that the test case has the needed fixtures.
+    stage_fixture_name = "point"
+    spec_type_name = "spec_type"
+    for fixture_name in [stage_fixture_name, spec_type_name]:
+        if fixture_name not in request.fixturenames:
+            raise ValueError("No '{}' fixture".format(stage_fixture_name))
+    stage = request.getfixturevalue(stage_fixture_name)
+    spec_type = request.getfixturevalue(spec_type_name)
+    stage = _parse_stage(stage, spec_type)
+    return stage
+
+
+
+def _parse_stage(stage, spec_type):
+    # Determine how point is to be specified.
+    if spec_type == "stage":
+        stage = Stage(stage)
+    elif spec_type == "name":
+        stage = Stage(stage).name
+    elif spec_type == "function":
+        assert hasattr(stage, "__call__")
+    else:
+        raise ValueError("Unknown specification type: {}".format(spec_type))
+    return stage
 
 
 
@@ -110,60 +148,67 @@ class RunPipelineCornerCaseTests:
 
 
     @named_param(argnames="point", argvalues=BASIC_ACTIONS)
-    @named_param(argnames="spec_type", argvalues=["stage", "name", "function"])
+    @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
     @named_param(argnames="inclusive", argvalues=[False, True])
-    def test_start_equals_stop(self, dummy_pipe, point, spec_type, inclusive):
+    def test_start_equals_stop(
+            self, dummy_pipe, point, spec_type, stage, inclusive):
         """ Start=stop is only permitted if stop should be run. """
 
         _assert_pipeline_initialization(dummy_pipe)
 
-        # Determine how point is to be specified.
-        if spec_type == "stage":
-            point = Stage(point)
-        elif spec_type == "name":
-            point = Stage(point).name
-        elif spec_type == "function":
-            assert hasattr(point, "__call__")
-        else:
-            raise ValueError("Unknown specification type: {}".format(spec_type))
-
         # Inclusion determines how to make the call, and the expectation.
         if inclusive:
             # start = inclusive stop --> single stage runs.
-            dummy_pipe.run(start=point, stop_after=point)
-            _assert_checkpoints(dummy_pipe, [point])
+            dummy_pipe.run(start=stage, stop_after=stage)
+            _assert_checkpoints(dummy_pipe, [stage])
         else:
-            # start = exlusive stop --> exception
+            # start = exclusive stop --> exception
             with pytest.raises(IllegalPipelineExecutionError):
-                dummy_pipe.run(start=point, stop_at=point)
+                dummy_pipe.run(start=stage, stop_at=stage)
 
 
-    def test_start_after_stop(self):
+    @pytest.mark.parametrize(
+            argnames=["start", "stop"],
+            argvalues=[(_write_file2, _write_file1),
+                       (_write_file3, _write_file2),
+                       (_write_file3, _write_file1)])
+    @pytest.mark.parametrize(argnames="spec_type", argvalues=STAGE_SPECS)
+    @pytest.mark.parametrize(argnames="stop_type", argvalues=["stop_at", "stop_after"])
+    def test_start_after_stop(
+            self, dummy_pipe, start, stop, stop_type, spec_type):
+        """ Regardless of specification type, start > stop is prohibited. """
+        start = _parse_stage(start, spec_type)
+        stop = _parse_stage(stop, spec_type)
         with pytest.raises(IllegalPipelineExecutionError):
-            pass
+            dummy_pipe.run(**{"start": start, stop_type: stop})
 
 
     def test_unknown_start(self):
+        """ Start specification must be of known stage name. """
         with pytest.raises(UnknownPipelineStageError):
             pass
 
 
     def test_unknown_stop(self):
+        """ Stop specification must be of known stage name. """
         with pytest.raises(UnknownPipelineStageError):
             pass
 
 
     def test_stop_at_and_stop_after(self):
+        """ Inclusive and exclusive stop cannot both be provided. """
         with pytest.raises(IllegalPipelineExecutionError):
             pass
 
 
-    def test_empty_stages(self):
+    def test_empty_stages_is_prohibited(self):
+        """ Pipeline must have non-empty stages """
         with pytest.raises(IllegalPipelineDefinitionError):
             pass
 
 
-    def test_stage_name_collision(self):
+    def test_stage_name_collision_is_prohibited(self):
+        """ Each stage needs unique translation, used for checkpoint file. """
         with pytest.raises(IllegalPipelineDefinitionError):
             pass
 
