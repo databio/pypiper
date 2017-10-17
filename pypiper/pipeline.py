@@ -129,7 +129,7 @@ class Pipeline(object):
         :return: Sequence of names of this pipeline's defined stages.
         :rtype: list[str]
         """
-        return list(self._external_to_internal.keys())
+        return [parse_stage_name(s) for s in self._stages]
 
 
     def checkpoint(self, stage):
@@ -235,6 +235,12 @@ class Pipeline(object):
         stop_index = self._stop_index(stop, inclusive=inclusive_stop)
         assert stop_index <= len(self._stages)
         if start_index >= stop_index:
+
+            # DEBUG
+            print("START: {}".format(start_index))
+            print("STOP: {}".format(stop_index))
+            print("STAGE NAMES: {}".format(self.stage_names))
+
             raise IllegalPipelineExecutionError(
                     "Cannot start pipeline at or after stopping point")
 
