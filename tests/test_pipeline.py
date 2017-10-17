@@ -107,10 +107,12 @@ class MostBasicPipelineTests:
         
         if test_type == "effects":
             # We're interested in existence and content of targets.
+            exp_files, _ = zip(*FILE_TEXT_PAIRS)
+            _assert_output(dummy_pipe, exp_files)
             fpath_text_pairs = [(pipeline_filepath(dummy_pipe, fname), content)
                                 for fname, content in FILE_TEXT_PAIRS]
             for fpath, content in fpath_text_pairs:
-                assert _has_expected_content(fpath, content)
+                _assert_expected_content(fpath, content)
 
         elif test_type == "checkpoints":
             # Interest is on checkpoint file existence.
@@ -125,7 +127,7 @@ class MostBasicPipelineTests:
 
         elif test_type == "stage_labels":
             # Did the Pipeline correctly track it's execution?
-            _assert_stage_labels(dummy_pipe, [], dummy_pipe.stages)
+            _assert_stage_states(dummy_pipe, [], dummy_pipe.stages)
 
         elif test_type == "pipe_flag":
             # The final flag should be correctly set.
@@ -166,7 +168,7 @@ class MostBasicPipelineTests:
             # We should have the correct content in files from stages run.
             for fname, content in FILE_TEXT_PAIRS[1:]:
                 fpath = os.path.join(dummy_pipe.outfolder, fname)
-                assert _has_expected_content(fpath, content)
+                _assert_expected_content(fpath, content)
 
         elif test_type == "checkpoints":
             # We've manually created the first checkpoint file, and the
@@ -174,7 +176,7 @@ class MostBasicPipelineTests:
             _assert_checkpoints(dummy_pipe, exp_stages=dummy_pipe.stages)
 
         elif test_type == "stage_labels":
-            _assert_stage_labels(dummy_pipe, exp_skips, exp_execs)
+            _assert_stage_states(dummy_pipe, exp_skips, exp_execs)
 
         elif test_type == "pipe_flag":
             _assert_pipeline_completed(dummy_pipe)
@@ -216,10 +218,25 @@ class MostBasicPipelineTests:
 
 
 
-def _assert_output(pl, expected_outfiles):
+def _assert_output(pl, expected_filenames):
+    """
+    Assert equivalence--with respect to presence only--between expected
+    collection of output file and the observed output file collection for a
+    pipeline.
+
+    :param pypiper.Pipeline pl: pipeline for which output is to be checked
+    :param Iterable[str] expected_filenames:
+    :return:
+    """
     obs_outfiles = glob.glob(pipeline_filepath(
             pl.manager, "*{}".format(OUTPUT_SUFFIX)))
-    assert expected_outfiles == obs_outfiles
+    assert len(expected_filenames) == len(obs_outfiles)
+    expected_filepaths = []
+    for fname in expected_filenames:
+        fpath = fname if os.path.isabs(fname) else \
+                pipeline_filepath(pl.manager, filename=fname)
+        expected_filepaths.append(fpath)
+    assert set(expected_filepaths) == set(obs_outfiles)
 
 
 def _assert_checkpoints(pl, exp_stages):
@@ -237,12 +254,13 @@ def _assert_checkpoints(pl, exp_stages):
     assert set(exp_fpaths) == set(obs_fpaths)
 
 
-def _assert_stage_labels(pl, expected_skipped, expected_executed):
+def _assert_stage_states(pl, expected_skipped, expected_executed):
+    """ Assert equivalence between expected and observed stage states. """
     assert expected_skipped == pl.skipped
     assert expected_executed == pl.executed
 
 
-def _has_expected_content(fpath, content):
+def _assert_expected_content(fpath, content):
     """
     Determine whether a filepath has the expected content.
     
@@ -259,6 +277,7 @@ def _has_expected_content(fpath, content):
 
 
 def _assert_pipeline_completed(pl):
+    """ Assert, based on flag file presence, that a pipeline's completed. """
     flags = glob.glob(pipeline_filepath(pl.manager, filename=flag_name("*")))
     assert 1 == len(flags)
     exp_flag = pipeline_filepath(pl, suffix="_" + flag_name(COMPLETE_FLAG))
