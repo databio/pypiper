@@ -346,8 +346,8 @@ class MostBasicPipelineTests:
             self, dummy_pipe, test_type, start_index, start_spec_type):
         """ A pipeline may be started from an arbitrary checkpoint. """
         _assert_pipeline_initialization(dummy_pipe)
-        stage = _parse_stage(BASIC_ACTIONS[start_index], start_spec_type)
-        dummy_pipe.run(start=stage)
+        s = _parse_stage(BASIC_ACTIONS[start_index], start_spec_type)
+        dummy_pipe.run(start=s)
         if test_type == "effects":
             exp_files = FILENAMES[start_index:]
             _assert_output(dummy_pipe, exp_files)
