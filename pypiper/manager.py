@@ -1256,7 +1256,7 @@ class PipelineManager(object):
         else:
             if not is_checkpoint:
                 print("Not a checkpoint: {}".format(stage))
-            return False
+                return False
 
         print("Checkpointing: '{}'".format(stage))
         check_fpath = checkpoint_filepath(stage, pm=self)
@@ -1278,7 +1278,9 @@ class PipelineManager(object):
         """
         if os.path.isabs(check_file):
             folder, _ = os.path.split(check_file)
-            if folder != self.outfolder:
+            # For raw string comparison, ensure that each path
+            # bears the final path separator.
+            if os.path.join(folder, "") != os.path.join(self.outfolder, ""):
                 errmsg = "Path provided as checkpoint file isn't in pipeline " \
                          "output folder. '{}' is not in '{}'".format(
                         check_file, self.outfolder)

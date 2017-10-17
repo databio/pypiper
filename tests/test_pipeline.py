@@ -295,9 +295,12 @@ def _assert_pipeline_initialization(pl):
     # TODO: implement.
     suffices = {"_commands.sh", "_profile.tsv",
                 "_{}".format(flag_name(RUN_FLAG))}
-    exp_init_contents = [pipeline_filepath(pl.manager, suffix=s)
-                         for s in suffices]
-    assert exp_init_contents == set(os.listdir(pl.outfolder))
+    exp_init_contents = \
+            [pipeline_filepath(pl.manager, suffix=s) for s in suffices]
+    obs_init_contents = [pipeline_filepath(pl.manager, filename=n)
+                         for n in os.listdir(pl.outfolder)]
+    assert len(exp_init_contents) == len(obs_init_contents)
+    assert set(exp_init_contents) == set(obs_init_contents)
 
 
 

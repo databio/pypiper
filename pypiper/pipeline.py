@@ -218,7 +218,6 @@ class Pipeline(object):
         # Determine where to start (but perhaps skip further based on
         # checkpoint completions.)
         start_index = self._start_index(start)
-
         stop_index = self._stop_index(stop_at, stop_after)
         assert stop_index <= len(self._stages)
         if start_index >= stop_index:
@@ -252,6 +251,8 @@ class Pipeline(object):
             # flags downstream if they exist since there may be dependence
             # between results from different stages.
             skip_mode = False
+
+            print("Running stage: {}".format(stage))
 
             stage.run()
             self.executed.append(stage)
