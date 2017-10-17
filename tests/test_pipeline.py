@@ -6,9 +6,13 @@ import os
 import pytest
 from pypiper import Pipeline, PipelineManager
 from pypiper.manager import COMPLETE_FLAG, RUN_FLAG
-from pypiper.pipeline import checkpoint_filepath, pipeline_filepath
+from pypiper.pipeline import \
+        checkpoint_filepath, pipeline_filepath, \
+        IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
+        UnknownPipelineStageError
 from pypiper.stage import Stage
 from pypiper.utils import flag_name
+from helpers import named_param
 
 
 __author__ = "Vince Reuter"
@@ -69,10 +73,14 @@ def _write_file3(folder):
     _write(*FILE_TEXT_PAIRS[2], folder=folder)
 
 
+BASIC_ACTIONS = [_write_file1, _write_file2, _write_file3]
+
+
 def _write(filename, content, folder=None):
     path = os.path.join(folder, filename)
     with open(path, 'w') as f:
         f.write(content)
+
 
 
 class DummyPipeline(Pipeline):
@@ -83,6 +91,11 @@ class DummyPipeline(Pipeline):
 
     @property
     def stages(self):
+        """
+        Establish the stages/phases for this test pipeline.
+
+        :return list[pypiper.Stage]: Sequence of stages for this pipeline.
+        """
         # File content writers parameterized with output folder.
         fixed_folder_funcs = []
         for f in [_write_file1, _write_file2, _write_file3]:
@@ -90,6 +103,69 @@ class DummyPipeline(Pipeline):
             f_fixed.__name__ = f.__name__
             fixed_folder_funcs.append(f_fixed)
         return [Stage(f) for f in fixed_folder_funcs]
+
+
+class RunPipelineCornerCaseTests:
+    """ Tests for exceptional cases of pipeline execution. """
+
+
+    @named_param(argnames="point", argvalues=BASIC_ACTIONS)
+    @named_param(argnames="spec_type", argvalues=["stage", "name", "function"])
+    @named_param(argnames="inclusive", argvalues=[False, True])
+    def test_start_equals_stop(self, dummy_pipe, point, spec_type, inclusive):
+        """ Start=stop is only permitted if stop should be run. """
+
+        _assert_pipeline_initialization(dummy_pipe)
+
+        # Determine how point is to be specified.
+        if spec_type == "stage":
+            point = Stage(point)
+        elif spec_type == "name":
+            point = Stage(point).name
+        elif spec_type == "function":
+            assert type(point) is function
+        else:
+            raise ValueError("Unknown specification type: {}".format(spec_type))
+
+        # Inclusion determines how to make the call, and the expectation.
+        if inclusive:
+            # start = inclusive stop --> single stage runs.
+            dummy_pipe.run(start=point, stop_after=point)
+            _assert_checkpoints(dummy_pipe, [point])
+        else:
+            # start = exlusive stop --> exception
+            with pytest.raises(IllegalPipelineExecutionError):
+                dummy_pipe.run(start=point, stop_at=point)
+
+
+    def test_start_after_stop(self):
+        with pytest.raises(IllegalPipelineExecutionError):
+            pass
+
+
+    def test_unknown_start(self):
+        with pytest.raises(UnknownPipelineStageError):
+            pass
+
+
+    def test_unknown_stop(self):
+        with pytest.raises(UnknownPipelineStageError):
+            pass
+
+
+    def test_stop_at_and_stop_after(self):
+        with pytest.raises(IllegalPipelineExecutionError):
+            pass
+
+
+    def test_empty_stages(self):
+        with pytest.raises(IllegalPipelineDefinitionError):
+            pass
+
+
+    def test_stage_name_collision(self):
+        with pytest.raises(IllegalPipelineDefinitionError):
+            pass
 
 
 
@@ -185,8 +261,11 @@ class MostBasicPipelineTests:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
 
-    @pytest.mark.parametrize(argnames=[], argvalues=[])
-    def test_start_point(self, dummy_pipe, test_type):
+    @named_param(argnames="stop_index", argvalues=range(len(BASIC_ACTIONS) + 1))
+    @named_param(argnames="stop_spec_type",
+                 argvalues=["stage", "function", "name"])
+    def test_start_point(
+            self, dummy_pipe, test_type, stop_index, stop_spec_type):
         """ A pipeline may be started from an arbitrary checkpoint. """
         pass
 

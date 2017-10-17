@@ -30,6 +30,8 @@ class Pipeline(object):
     :type name: str
     :param manager: The pipeline manager to
     :type manager: pypiper.PipelineManager
+    :raise IllegalPipelineDefinitionError: Definition of collection of stages
+        must be non-empty.
     """
     
     __metaclass__ = abc.ABCMeta
@@ -60,7 +62,7 @@ class Pipeline(object):
 
         # Pipeline must have non-empty definition of stages.
         if not stages:
-            raise ValueError("Empty stages")
+            raise IllegalPipelineDefinitionError("Empty stages")
 
         # Ensure that each pipeline stage is callable, and map names
         # between from external specification and internal representation.
@@ -85,7 +87,7 @@ class Pipeline(object):
                 errmsg = "Duplicate stage name resolution (stage names are too " \
                          "similar.) '{}' and '{}' both resolve to '{}'".\
                     format(name, already_mapped, internal_name)
-                raise ValueError(errmsg)
+                raise IllegalPipelineDefinitionError(errmsg)
 
             # Store the stage name translations and the stage itself.
             self._external_to_internal[name] = internal_name
@@ -186,8 +188,10 @@ class Pipeline(object):
         :param stop_after: Name of stage at which to cease execution;
             inclusive, i.e. this stage is the last one run
         :type stop_after: str
-        :raise ValueError: If both inclusive (stop_after) and exclusive
-            (stop_at) halting points are provided, raise a ValueError.
+        :raise IllegalPipelineExecutionError: If both inclusive (stop_after)
+            and exclusive (stop_at) halting points are provided, or if that
+            start stage is the same as or after the stop stage, raise an
+            IllegalPipelineExecutionError.
         """
 
         # Start the run with a clean slate of Stage status/label tracking.
@@ -199,8 +203,8 @@ class Pipeline(object):
         # TODO (cont): nonexistent earlier checkpoint flag(s).)
 
         if stop_at and stop_after:
-            raise ValueError("Inclusive and exclusive stopping points cannot "
-                             "both be specified.")
+            raise IllegalPipelineExecutionError(
+                    "Cannot specify both inclusive and exclusive stops.")
 
         if stop_at:
             stop = stop_at
@@ -210,6 +214,7 @@ class Pipeline(object):
             inclusive_stop = True
         else:
             stop = None
+            inclusive_stop = None
 
         # Ensure that a stage name--if specified--is supported.
         for s in [start, stop]:
@@ -230,7 +235,8 @@ class Pipeline(object):
         stop_index = self._stop_index(stop, inclusive=inclusive_stop)
         assert stop_index <= len(self._stages)
         if start_index >= stop_index:
-            raise ValueError("Cannot start pipeline at or after stopping point")
+            raise IllegalPipelineExecutionError(
+                    "Cannot start pipeline at or after stopping point")
 
         # TODO: consider storing just stage name rather than entire stage.
         # TODO (cont.): the bad case for whole-Stage is if associated data
@@ -372,6 +378,17 @@ def pipeline_filepath(pm, filename=None, suffix=None):
     # So we can handle argument of either type to pm parameter.
     return filename if os.path.isabs(filename) \
             else os.path.join(pm.outfolder, filename)
+
+
+
+class IllegalPipelineDefinitionError(Exception):
+    pass
+
+
+
+class IllegalPipelineExecutionError(Exception):
+    """ Represent cases of illogical start/stop run() declarations. """
+    pass
 
 
 
