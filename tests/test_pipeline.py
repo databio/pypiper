@@ -131,7 +131,7 @@ class MostBasicPipelineTests:
 
         elif test_type == "pipe_flag":
             # The final flag should be correctly set.
-            assert _assert_pipeline_completed(dummy_pipe)
+            _assert_pipeline_completed(dummy_pipe)
 
         else:
             raise ValueError("Unknown test type: {}".format(test_type))
