@@ -253,6 +253,7 @@ class MostBasicPipelineTests:
 
 
     def test_runs_through_full(self, dummy_pipe, test_type):
+        """ The entire basic pipeline should execute. """
 
         # Start with clean output folder.
         _assert_pipeline_initialization(dummy_pipe)
@@ -347,14 +348,6 @@ class MostBasicPipelineTests:
 
 
     def test_start_before_completed_checkpoint(self, dummy_pipe, test_type):
-        pass
-
-
-    def test_same_start_stop(self, dummy_pipe, test_type):
-        pass
-
-
-    def test_stop_before_start(self, dummy_pipe, test_type):
         pass
 
 
