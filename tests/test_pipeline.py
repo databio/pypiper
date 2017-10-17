@@ -140,7 +140,8 @@ class MostBasicPipelineTests:
     def test_skip_completed(self, dummy_pipe, test_type):
         """ Pre-completed stage(s) are skipped. """
         
-        
+
+
         first_stage = dummy_pipe.stages[0]
         first_stage_chkpt_fpath = checkpoint_filepath(first_stage, dummy_pipe)
         open(first_stage_chkpt_fpath, 'w').close()
@@ -218,6 +219,38 @@ class MostBasicPipelineTests:
 
 
 
+def _assert_checkpoints(pl, exp_stages):
+
+    # DEBUG
+    print("EXPECTED STAGES ({}): {}".format(type(exp_stages), exp_stages))
+
+    exp_fpaths = [checkpoint_filepath(s, pl.manager) for s in exp_stages]
+
+    # DEBUG
+    print("EXPECTED CHECKPOINT FILEPATHS:{}".format(exp_fpaths))
+
+    obs_fpaths = glob.glob(checkpoint_filepath("*", pm=pl.manager))
+    assert len(exp_fpaths) == len(obs_fpaths)
+    assert set(exp_fpaths) == set(obs_fpaths)
+
+
+
+def _assert_expected_content(fpath, content):
+    """
+    Determine whether a filepath has the expected content.
+
+    :param str fpath: Path to file of interest.
+    :param str content: Expected file content.
+    :return bool: Whether observation matches expectation.
+    """
+    assert os.path.isfile(fpath)
+    exp_content = content.split(os.linesep)
+    with open(fpath, 'r') as f:
+        obs_content = [l.rstrip(os.linesep) for l in f.readlines()]
+    assert exp_content == obs_content
+
+
+
 def _assert_output(pl, expected_filenames):
     """
     Assert equivalence--with respect to presence only--between expected
@@ -239,42 +272,6 @@ def _assert_output(pl, expected_filenames):
     assert set(expected_filepaths) == set(obs_outfiles)
 
 
-def _assert_checkpoints(pl, exp_stages):
-
-    # DEBUG
-    print("EXPECTED STAGES ({}): {}".format(type(exp_stages), exp_stages))
-
-    exp_fpaths = [checkpoint_filepath(s, pl.manager) for s in exp_stages]
-
-    # DEBUG
-    print("EXPECTED CHECKPOINT FILEPATHS:{}".format(exp_fpaths))
-
-    obs_fpaths = glob.glob(checkpoint_filepath("*", pm=pl.manager))
-    assert len(exp_fpaths) == len(obs_fpaths)
-    assert set(exp_fpaths) == set(obs_fpaths)
-
-
-def _assert_stage_states(pl, expected_skipped, expected_executed):
-    """ Assert equivalence between expected and observed stage states. """
-    assert expected_skipped == pl.skipped
-    assert expected_executed == pl.executed
-
-
-def _assert_expected_content(fpath, content):
-    """
-    Determine whether a filepath has the expected content.
-    
-    :param str fpath: Path to file of interest.
-    :param str content: Expected file content.
-    :return bool: Whether observation matches expectation.
-    """
-    assert os.path.isfile(fpath)
-    exp_content = content.split(os.linesep)
-    with open(fpath, 'r') as f:
-        obs_content = [l.rstrip(os.linesep) for l in f.readlines()]
-    assert exp_content == obs_content
-    
-
 
 def _assert_pipeline_completed(pl):
     """ Assert, based on flag file presence, that a pipeline's completed. """
@@ -284,5 +281,19 @@ def _assert_pipeline_completed(pl):
     try:
         assert os.path.isfile(exp_flag)
     except AssertionError:
-        print("FLAGS: {}".format(glob.glob(pipeline_filepath(pl.manager, filename="*.flag"))))
+        print("FLAGS: {}".format(flags))
         raise
+
+
+def _assert_pipeline_initialization(pl):
+    exp_init_contents = ["_", ]
+
+
+
+def _assert_stage_states(pl, expected_skipped, expected_executed):
+    """ Assert equivalence between expected and observed stage states. """
+    assert expected_skipped == pl.skipped
+    assert expected_executed == pl.executed
+
+
+

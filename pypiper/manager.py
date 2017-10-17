@@ -21,7 +21,7 @@ import sys
 import time
 
 from AttributeDict import AttributeDict
-from pipeline import pipeline_filepath
+from pipeline import checkpoint_filepath, pipeline_filepath
 from stage import translate_stage_name, CHECKPOINT_EXTENSION
 from utils import check_shell, flag_name
 from _version import __version__
@@ -73,6 +73,8 @@ class PipelineManager(object):
     :param str stopping_point: Name of pipeline stage/phase at which execution
         should be stopped; optional, and only relevant for a pipeline that
         reports checkpoints
+    :raise TypeError: if stop and/or start points are provided and are
+        not text
     """
     def __init__(
         self, name, outfolder, version=None, args=None, multi=False,
@@ -250,7 +252,14 @@ class PipelineManager(object):
 
         # Allow there to be no stopping point (most frequent and therefore the
         # default), but standardize letter casing of the name if given.
-        self.stopping_point = None if stopping_point is None else stopping_point.upper()
+        try:
+            self.stopping_point = stopping_point.upper()
+        except AttributeError:
+            if stopping_point is None:
+                self.stopping_point = None
+            else:
+                raise TypeError("Non-string stopping point specifed: {} ({})".
+                                format(stopping_point, type(stopping_point)))
 
 
     @property
@@ -1226,35 +1235,83 @@ class PipelineManager(object):
     # Pipeline termination functions
     ###################################
 
-    def checkpoint(self, stage_name):
+    # TODO: support checkpointing via stage, basic name, function, or filename (prohibit filepath)
+
+    def checkpoint(self, stage):
         """
-        Decide whether to stop processing of a pipeline.
+        Decide whether to stop processing of a pipeline. This is the hook
 
         A pipeline can report various "checkpoints" as sort of status markers
         that designate the logical processing phase that's just been completed.
         The initiation of a pipeline can preordain one of those as a "stopping
         point" that when reached, should stop the pipeline's execution.
 
-        :param str stage_name: name of the pipeline processing phase most
-            recently completed.
+        :param stage: Pipeline processing stage/phase just completed.
+        :type stage: pypiper.Stage | str
+        :return: Whether a checkpoint was created (i.e., whether it didn't
+            already exist)
+        :rtype: bool
+        :raise TypeError: Stage/checkpoint name must be text.
         """
 
-        # If there's no stopping point, there's definitely nothing to do here.
-        if not self.stopping_point:
-            return
+        try:
+            if not stage.checkpoint:
+                print("Not a checkpoint: {}".format(stage))
+            return False
+        except AttributeError:
+            # Maybe we have a stage name not a Stage.
+            pass
 
-        # Standardize on case.
-        stage_name = stage_name.upper()
-
-        # Decide what to do based on reported stage/phase and designated
-        # stopping point.
-        if stage_name == self.stopping_point:
-            print("'{}' is the designated stopping point, halting pipeline".
-                  format(stage_name))
-            self.halt()
+        check_fpath = checkpoint_filepath(stage, pm=self)
+        if os.path.isfile(check_fpath):
+            print("Checkpoint file exists for stage {}: '{}'".
+                  format(stage, check_fpath))
+            return False
         else:
-            print("Just-completed stage '{}' doesn't match stopping point "
-                  "'{}', continuing".format(stage_name, self.stopping_point))
+            print("Creating checkpoint file for stage {}: '{}'".
+                  format(stage, check_fpath))
+            open(check_fpath, 'w').close()
+            return True
+
+        # TODO: warn about file-like inputs; check against stopping point.
+        print("Checkpoint complete: '{}'".format(stage_name))
+        try:
+            stage_name == stage_name.upper()
+        except AttributeError:
+            raise TypeError("Non-string checkpoint: {} ({})".
+                            format(stage_name, type(stage_name)))
+        if stage_name.upper() == self.stopping_point:
+            print("This is the designated stopping point; halting pipeline...")
+            self.halt()
+
+
+    def touch_checkpoint(self, check_file):
+        """
+        Alternative way for a pipeline to designate a checkpoint.
+
+        :param check_file: Name or path of file to use as checkpoint.
+        :type check_file: str
+        :return: Whether a file was written (equivalent to whether the
+            checkpoint file already existed).
+        :rtype: bool
+        :raise ValueError: Raise a ValueError if the argument provided as the
+            checkpoint file is an absolute path and that doesn't correspond
+            to a location within the main output folder.
+        """
+        if os.path.isabs(check_file):
+            folder, _ = os.path.split(check_file)
+            if folder != self.outfolder:
+                errmsg = "Path provided as checkpoint file isn't in pipeline " \
+                         "output folder. '{}' is not in '{}'".format(
+                        check_file, self.outfolder)
+                raise ValueError(errmsg)
+            fpath = check_file
+        else:
+            fpath = pipeline_filepath(self, filename=check_file)
+        if os.path.isfile(fpath):
+            return False
+        open(fpath, 'w').close()
+        return True
 
 
     def complete(self):

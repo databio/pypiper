@@ -124,7 +124,8 @@ class Pipeline(object):
         class author (i.e., not necessarily those that are used for the
         checkpoint files)
 
-        :return:
+        :return: Sequence of names of this pipeline's defined stages.
+        :rtype: list[str]
         """
         return list(self._external_to_internal.keys())
 
@@ -138,11 +139,7 @@ class Pipeline(object):
         :return: Whether a checkpoint file was written.
         :rtype: bool
         """
-        if stage.checkpoint:
-            chkpt_fpath = checkpoint_filepath(stage, self.manager)
-            open(chkpt_fpath, 'w').close()
-            return True
-        return False
+        return self.manager.checkpoint(stage)
 
 
     def completed_stage(self, stage):
