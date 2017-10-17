@@ -338,13 +338,35 @@ class MostBasicPipelineTests:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
 
-    @named_param(argnames="stop_index", argvalues=range(len(BASIC_ACTIONS) + 1))
-    @named_param(argnames="stop_spec_type",
+    @named_param(argnames="start_index",
+                 argvalues=range(len(BASIC_ACTIONS) - 1))
+    @named_param(argnames="start_spec_type",
                  argvalues=["stage", "function", "name"])
     def test_start_point(
-            self, dummy_pipe, test_type, stop_index, stop_spec_type):
+            self, dummy_pipe, test_type, start_index, start_spec_type):
         """ A pipeline may be started from an arbitrary checkpoint. """
-        pass
+        _assert_pipeline_initialization(dummy_pipe)
+        stage = _parse_stage(BASIC_ACTIONS[start_index], start_spec_type)
+        dummy_pipe.run(start=stage)
+        if test_type == "effects":
+            exp_files = FILENAMES[start_index:]
+            _assert_output(dummy_pipe, exp_files)
+            fpaths = [pipeline_filepath(dummy_pipe.manager, filename=fn)
+                      for fn in exp_files]
+            for fp, content in zip(fpaths, CONTENTS):
+                _assert_expected_content(fp, content)
+        elif test_type == "checkpoints":
+            # Ensure exact collection of checkpoint files (no more, no less).
+            _assert_checkpoints(dummy_pipe, BASIC_ACTIONS[start_index:])
+        elif test_type == "stage_labels":
+            # Ensure match between skipped and executed stage expectations
+            # and observations.
+            _assert_stage_states(dummy_pipe, BASIC_ACTIONS[:start_index],
+                                 BASIC_ACTIONS[start_index:])
+        elif test_type == "pipe_flag":
+            _assert_pipeline_completed(dummy_pipe)
+        else:
+            raise ValueError("Unknown test type: '{}'".format(test_type))
 
 
     def test_start_before_completed_checkpoint(self, dummy_pipe, test_type):
@@ -454,5 +476,9 @@ def _assert_pipeline_initialization(pl):
 
 def _assert_stage_states(pl, expected_skipped, expected_executed):
     """ Assert equivalence between expected and observed stage states. """
+    def _ensure_stage(s):
+        return s if isinstance(s, Stage) else Stage(s)
+    expected_skipped = [_ensure_stage(s) for s in expected_skipped]
+    expected_executed = [_ensure_stage(s) for s in expected_executed]
     assert expected_skipped == pl.skipped
     assert expected_executed == pl.executed
