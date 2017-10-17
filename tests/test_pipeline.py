@@ -100,7 +100,7 @@ class MostBasicPipelineTests:
     def test_runs_through_full(self, dummy_pipe, test_type):
 
         # Start with clean output folder.
-        assert [] == os.listdir(dummy_pipe.outfolder)
+        _assert_pipeline_initialization(dummy_pipe)
 
         # Make the call under test.
         dummy_pipe.run(start=None, stop_at=None, stop_after=None)
@@ -220,15 +220,14 @@ class MostBasicPipelineTests:
 
 
 def _assert_checkpoints(pl, exp_stages):
+    """
+    Assert equivalence between expected and observed checkpoint files.
 
-    # DEBUG
-    print("EXPECTED STAGES ({}): {}".format(type(exp_stages), exp_stages))
-
+    :param pypiper.Pipeline pl: Pipeline for which to validate checkpoints.
+    :param Iterable[str | pypiper.Stage] exp_stages: Stage(s) or name(s)
+        that are expected to have checkpoint file present.
+    """
     exp_fpaths = [checkpoint_filepath(s, pl.manager) for s in exp_stages]
-
-    # DEBUG
-    print("EXPECTED CHECKPOINT FILEPATHS:{}".format(exp_fpaths))
-
     obs_fpaths = glob.glob(checkpoint_filepath("*", pm=pl.manager))
     assert len(exp_fpaths) == len(obs_fpaths)
     assert set(exp_fpaths) == set(obs_fpaths)
