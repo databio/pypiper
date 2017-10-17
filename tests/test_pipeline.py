@@ -3,6 +3,7 @@
 from functools import partial
 import glob
 import os
+import time
 import pytest
 from pypiper import Pipeline, PipelineManager
 from pypiper.manager import COMPLETE_FLAG, PAUSE_FLAG, RUN_FLAG
@@ -369,10 +370,40 @@ class MostBasicPipelineTests:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
 
-    def test_checkpoints_are_overwritten_if_after_executed_stage(
+    def test_all_checkpoints_after_first_executed_are_overwritten(
             self, dummy_pipe, test_type):
         """ Potential for dependent results means execution is contiguous. """
-        pass
+
+        # Start fresh.
+        _assert_pipeline_initialization(dummy_pipe)
+
+        # Create checkpoint files for all but first stage.
+        fpath_time_pairs = []
+        for s in BASIC_ACTIONS[1:]:
+            check_fpath = checkpoint_filepath(s, dummy_pipe.manager)
+            open(check_fpath, 'w').close()
+            fpath_time_pairs.append((check_fpath, os.path.getmtime(check_fpath)))
+            assert os.path.isfile(check_fpath)
+
+        # Ensure that we have checkpoint file for each but first stage.
+        _assert_checkpoints(dummy_pipe, BASIC_ACTIONS[1:])
+        # We should have output for no stage.
+        _assert_output(dummy_pipe, [])
+
+        # Make the call under test.
+        dummy_pipe.run()
+
+        if test_type == "effects":
+            _assert_output(dummy_pipe, FILENAMES)
+        elif test_type == "checkpoints":
+            _assert_checkpoints(dummy_pipe, BASIC_ACTIONS)
+        elif test_type == "stage_labels":
+            _assert_stage_states(dummy_pipe, expected_skipped=[],
+                                 expected_executed=BASIC_ACTIONS)
+        elif test_type == "pipe_flag":
+            _assert_pipeline_completed(dummy_pipe)
+        else:
+            raise ValueError("Unknown test type: {}".format(test_type))
 
 
     @named_param(argnames="stop_index", argvalues=range(1, len(BASIC_ACTIONS)))
@@ -415,12 +446,6 @@ class MostBasicPipelineTests:
                     (stop_type == "stop_after"):
                 _assert_pipeline_completed(dummy_pipe)
             else:
-
-                # DEBUG
-                print("INDEX: {}".format(stop_index))
-                print("ACTIONS: {}".format(len(BASIC_ACTIONS)))
-                print("STOP TYPE: {}".format(stop_type))
-
                 _assert_pipeline_halted(dummy_pipe)
         else:
             raise ValueError("Unknown test type: '{}'".format(test_type))

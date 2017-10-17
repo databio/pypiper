@@ -70,6 +70,14 @@ class PipelineManager(object):
     :param str mem: amount of memory to use, in Mb
     :param str config_file: path to pipeline configuration file, optional
     :param str output_parent: path to folder in which output folder will live
+    :param bool overwrite_checkpoints: Whether to override the stage-skipping
+        logic provided by the checkpointing system. This is useful if the
+        calls to this manager's run() method will be coming from a class
+        that implements pypiper.Pipeline, as such a class will handle
+        checkpointing logic automatically, and will set this to True to
+        protect from a case in which a restart begins upstream of a stage
+        for which a checkpoint file already exists, but that depends on the
+        upstream stage and thus should be rerun if it's "parent" is rerun.
     :raise TypeError: if stop and/or start points are provided and are
         not text
     """
@@ -77,7 +85,7 @@ class PipelineManager(object):
         self, name, outfolder, version=None, args=None, multi=False,
         manual_clean=False, recover=False, fresh=False, force_follow=False,
         cores=1, mem="1000", config_file=None, output_parent=None,
-        stopping_point=None
+        overwrite_checkpoints=False
     ):
         # Params defines the set of options that could be updated via
         # command line args to a pipeline run, that can be forwarded
@@ -246,6 +254,8 @@ class PipelineManager(object):
         else:
             print("No config file")
             self.config = None
+
+        self.overwrite_checkpoints = overwrite_checkpoints
 
 
     @property
@@ -456,7 +466,8 @@ class PipelineManager(object):
     ###################################
     def run(self, cmd, target=None, lock_name=None, shell="guess",
             nofail=False, errmsg=None, clean=False, follow=None,
-            container=None, checkpoint=None, checkpoint_filename=None):
+            container=None, checkpoint=None, checkpoint_filename=None,
+            overwrite_checkpoint=False):
         """
         The primary workhorse function of PipelineManager, this runs a command.
 
@@ -502,6 +513,10 @@ class PipelineManager(object):
         :type checkpoint: str
         :param checkpoint_filename: Name for a file whose existence means
             that this step may be skipped.
+        :param overwrite_checkpoint: Whether to disregard a checkpoint file
+            and overwrite it. This is useful when a pipeline stage downstream
+            of another depends on results from one upstream, and that upstream
+            one's been rerun and now the downstream one needs to be rerun, too.
         :return: Return code of process. If a list of commands is passed,
             this is the maximum of all return codes for all commands.
         :rtype: int
@@ -525,19 +540,32 @@ class PipelineManager(object):
             check_names = []
 
         # Short-circuit if checkpoint file exists.
+        check_exists = False
         for fname in check_names:
+            # Determine full path from pipeline.
             path_check_file = pipeline_filepath(self, filename=fname)
+            # Break or return if we find a checkpoint file.
             if os.path.isfile(path_check_file):
-                print("Checkpoint file exists ('{}'), continuing".
-                      format(path_check_file))
-                return 0
+                # Set flag that determines messaging.
+                check_exists = True
+                if self.overwrite_checkpoints or overwrite_checkpoint:
+                    # Stop the checkpoint search after messaging.
+                    print("Running stage and overwriting checkpoint: '{}'".
+                          format(path_check_file))
+                    break
+                else:
+                    # Message and short-circuit the call.
+                    print("Checkpoint file exists ('{}'), skipping".
+                          format(path_check_file))
+                    return 0
 
         # If a checkpoint indication was provided, provide notice of absence.
-        if checkpoint_filename:
-            print("Checkpoint file ('{}') doesn't exist; running...".
-                  format(checkpoint_filename))
-        elif checkpoint:
-            print("No checkpoint file for '{}'; running...".format(checkpoint))
+        if not check_exists:
+            if checkpoint_filename:
+                print("Checkpoint file ('{}') doesn't exist; running...".
+                      format(checkpoint_filename))
+            elif checkpoint:
+                print("No checkpoint file for '{}'; running...".format(checkpoint))
 
         # If the target is a list, for now let's just strip it to the first target.
         # Really, it should just check for all of them.
@@ -1288,12 +1316,15 @@ class PipelineManager(object):
             fpath = check_file
         else:
             fpath = pipeline_filepath(self, filename=check_file)
-        if os.path.isfile(fpath):
-            print("Checkpoint file exists: '{}'".format(fpath))
-            return False
-        print("Creating checkpoint file: '{}'".format(fpath))
+
+        # Create/update timestamp for checkpoint, but base return value on
+        # whether the action was a simple update or a novel creation.
+        already_exists = os.path.isfile(fpath)
         open(fpath, 'w').close()
-        return True
+        action = "Updated" if already_exists else "Created"
+        print("{} checkpoint file: '{}'".format(action, fpath))
+
+        return already_exists
 
 
     def complete(self):

@@ -43,6 +43,7 @@ class Pipeline(object):
 
         self.name = name
         self.manager = manager
+        self.manager.overwrite_checkpoints = True
 
         # Translate stage names; do this here to complicate a hypothetical
         # attempt to override or otherwise redefine the way in which
