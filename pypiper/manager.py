@@ -70,9 +70,6 @@ class PipelineManager(object):
     :param str mem: amount of memory to use, in Mb
     :param str config_file: path to pipeline configuration file, optional
     :param str output_parent: path to folder in which output folder will live
-    :param str stopping_point: Name of pipeline stage/phase at which execution
-        should be stopped; optional, and only relevant for a pipeline that
-        reports checkpoints
     :raise TypeError: if stop and/or start points are provided and are
         not text
     """
@@ -249,17 +246,6 @@ class PipelineManager(object):
         else:
             print("No config file")
             self.config = None
-
-        # Allow there to be no stopping point (most frequent and therefore the
-        # default), but standardize letter casing of the name if given.
-        try:
-            self.stopping_point = stopping_point.upper()
-        except AttributeError:
-            if stopping_point is None:
-                self.stopping_point = None
-            else:
-                raise TypeError("Non-string stopping point specifed: {} ({})".
-                                format(stopping_point, type(stopping_point)))
 
 
     @property
@@ -1251,38 +1237,30 @@ class PipelineManager(object):
         :return: Whether a checkpoint was created (i.e., whether it didn't
             already exist)
         :rtype: bool
-        :raise TypeError: Stage/checkpoint name must be text.
+        :raise ValueError: If the stage is specified as an absolute filepath,
+            and that path indicates a location that's not immediately within
+            the main output folder, raise a ValueError.
         """
 
         try:
-            if not stage.checkpoint:
-                print("Not a checkpoint: {}".format(stage))
-            return False
+            is_checkpoint = stage.checkpoint
         except AttributeError:
             # Maybe we have a stage name not a Stage.
-            pass
-
-        check_fpath = checkpoint_filepath(stage, pm=self)
-        if os.path.isfile(check_fpath):
-            print("Checkpoint file exists for stage {}: '{}'".
-                  format(stage, check_fpath))
-            return False
+            # In that case, we can proceed as-is, with downstream
+            # processing handling Stage vs. stage name disambiguation.
+            # Here, though, warn about an input that appear filename/path-like.
+            base, ext = os.path.splitext(stage)
+            if ext and "." not in base:
+                print("WARNING: '{}' looks like it may be the name or path of "
+                      "a file; for such a checkpoint, use touch_checkpoint.")
         else:
-            print("Creating checkpoint file for stage {}: '{}'".
-                  format(stage, check_fpath))
-            open(check_fpath, 'w').close()
-            return True
+            if not is_checkpoint:
+                print("Not a checkpoint: {}".format(stage))
+            return False
 
-        # TODO: warn about file-like inputs; check against stopping point.
-        print("Checkpoint complete: '{}'".format(stage_name))
-        try:
-            stage_name == stage_name.upper()
-        except AttributeError:
-            raise TypeError("Non-string checkpoint: {} ({})".
-                            format(stage_name, type(stage_name)))
-        if stage_name.upper() == self.stopping_point:
-            print("This is the designated stopping point; halting pipeline...")
-            self.halt()
+        print("Checkpointing: '{}'".format(stage))
+        check_fpath = checkpoint_filepath(stage, pm=self)
+        return self.touch_checkpoint(check_fpath)
 
 
     def touch_checkpoint(self, check_file):
@@ -1309,7 +1287,9 @@ class PipelineManager(object):
         else:
             fpath = pipeline_filepath(self, filename=check_file)
         if os.path.isfile(fpath):
+            print("Checkpoint file exists: '{}'".format(fpath))
             return False
+        print("Creating checkpoint file: '{}'".format(fpath))
         open(fpath, 'w').close()
         return True
 
