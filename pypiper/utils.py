@@ -115,6 +115,29 @@ def parse_cores(cores, pm, default):
 
 
 
+def parse_stage_name(stage):
+    """
+    Determine the name of a stage.
+
+    The stage may be provided already as a name, as a Stage object, or as a
+    callable with __name__ (e.g., function).
+
+    :param stage: Object representing a stage, from which to obtain name.
+    :type stage: str | pypiper.Stage | function
+    :return: Name of putative pipeline Stage.
+    :rtype: str
+    """
+    if isinstance(stage, str):
+        return stage
+    try:
+        return stage.name
+    except AttributeError:
+        try:
+            return stage.__name__
+        except AttributeError:
+            raise TypeError("Unsupported stage type: {}".format(type(stage)))
+
+
 # TODO: implement as context manager.
 class Tee(object):
     def __init__(self, log_file):

@@ -11,7 +11,7 @@ else:
     from collections.abc import Iterable, Mapping
 
 from stage import checkpoint_filename, translate_stage_name, Stage
-from utils import flag_name
+from utils import flag_name, parse_stage_name
 
 
 __author__ = "Vince Reuter"
@@ -295,17 +295,31 @@ class Pipeline(object):
 
 
     def _stop_index(self, stop_point, inclusive):
-        if not (stop_at is None or stop_after is None):
-            raise ValueError("Cannot specify both inclusive and exclusive "
-                             "pipeline stopping point")
-        if stop_at is None and stop_after is None:
+        """
+        Determine index of stage of stopping point for run().
+
+        :param stop_point: Stopping point itself or name of it.
+        :type stop_point: str | pypiper.Stage | function
+        :param inclusive: Whether the stopping point is to be regarded as
+            inclusive (i.e., whether it's the final stage to run, or the one
+            just beyond)
+        :type inclusive: bool
+        :return: Index into sequence of Pipeline's stages that indicates
+            where to stop; critically, the value of the inclusive parameter
+            here is used to contextualize this index such that it's always
+            returned as an exclusive stopping index (i.e., execute up to the
+            stage indexed by the value returned from this function.)
+        :rtype: int
+        """
+        if not stop_point:
+            # Null case, no stopping point
             return len(self._stages)
-        stop_point = stop_at or stop_after
+        stop_name = parse_stage_name(stop_point)
         try:
-            stop_index = self.stage_names.index(stop_point)
+            stop_index = self.stage_names.index(stop_name)
         except ValueError:
-            raise UnknownPipelineStageError(stop_point, self)
-        return stop_index + 1 if stop_after else stop_index
+            raise UnknownPipelineStageError(stop_name, self)
+        return stop_index + 1 if inclusive else stop_index
 
 
 
