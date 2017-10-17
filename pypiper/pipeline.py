@@ -154,10 +154,6 @@ class Pipeline(object):
             for the pipeline, a ValueError arises.
         """
         check_path = checkpoint_filepath(stage, self.manager)
-
-        # DEBUG
-        print("CHECKPOINT FILEPATH: {}".format(check_path))
-
         return stage.checkpoint and os.path.exists(check_path)
 
 
@@ -222,9 +218,6 @@ class Pipeline(object):
         # Determine where to start (but perhaps skip further based on
         # checkpoint completions.)
         start_index = self._start_index(start)
-
-        # DEBUG
-        print("START INDEX: {}".format(start_index))
 
         stop_index = self._stop_index(stop_at, stop_after)
         assert stop_index <= len(self._stages)

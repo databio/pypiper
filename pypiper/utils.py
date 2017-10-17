@@ -61,10 +61,6 @@ def translate_stage_name(stage_name):
     :return: Standardized pipeline phase/stage name.
     :rtype: str
     """
-
-    # DEBUG
-    print("Translating {}: {}".format(type(stage_name), stage_name))
-
     # Cast to string to ensure that indexed stages (ints are handled).
     return str(stage_name).lower().replace(" ", "-")
 

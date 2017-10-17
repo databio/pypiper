@@ -5,9 +5,9 @@ import glob
 import os
 import pytest
 from pypiper import Pipeline, PipelineManager
-from pypiper.manager import COMPLETE_FLAG
+from pypiper.manager import COMPLETE_FLAG, RUN_FLAG
 from pypiper.pipeline import checkpoint_filepath, pipeline_filepath
-from pypiper.stage import Stage, CHECKPOINT_EXTENSION
+from pypiper.stage import Stage
 from pypiper.utils import flag_name
 
 
@@ -139,8 +139,8 @@ class MostBasicPipelineTests:
 
     def test_skip_completed(self, dummy_pipe, test_type):
         """ Pre-completed stage(s) are skipped. """
-        
 
+        _assert_pipeline_initialization(dummy_pipe)
 
         first_stage = dummy_pipe.stages[0]
         first_stage_chkpt_fpath = checkpoint_filepath(first_stage, dummy_pipe)
@@ -285,8 +285,19 @@ def _assert_pipeline_completed(pl):
         raise
 
 
+
 def _assert_pipeline_initialization(pl):
-    exp_init_contents = ["_", ]
+    """
+    Assert that a test case begins with output folder in expected state.
+
+    :param pypiper.Pipeline pl: Pipeline instance for test case.
+    """
+    # TODO: implement.
+    suffices = {"_commands.sh", "_profile.tsv",
+                "_{}".format(flag_name(RUN_FLAG))}
+    exp_init_contents = [pipeline_filepath(pl.manager, suffix=s)
+                         for s in suffices]
+    assert exp_init_contents == set(os.listdir(pl.outfolder))
 
 
 
@@ -294,6 +305,3 @@ def _assert_stage_states(pl, expected_skipped, expected_executed):
     """ Assert equivalence between expected and observed stage states. """
     assert expected_skipped == pl.skipped
     assert expected_executed == pl.executed
-
-
-
