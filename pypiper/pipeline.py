@@ -200,10 +200,19 @@ class Pipeline(object):
 
         if stop_at and stop_after:
             raise ValueError("Inclusive and exclusive stopping points cannot "
-                             "both be specified")
+                             "both be specified.")
+
+        if stop_at:
+            stop = stop_at
+            inclusive_stop = False
+        elif stop_after:
+            stop = stop_after
+            inclusive_stop = True
+        else:
+            stop = None
 
         # Ensure that a stage name--if specified--is supported.
-        for s in [start, stop_at, stop_after]:
+        for s in [start, stop]:
             if s is None or s in self.stage_names:
                 continue
             raise UnknownPipelineStageError(s, self)
@@ -218,7 +227,7 @@ class Pipeline(object):
         # Determine where to start (but perhaps skip further based on
         # checkpoint completions.)
         start_index = self._start_index(start)
-        stop_index = self._stop_index(stop_at, stop_after)
+        stop_index = self._stop_index(stop, inclusive=inclusive_stop)
         assert stop_index <= len(self._stages)
         if start_index >= stop_index:
             raise ValueError("Cannot start pipeline at or after stopping point")
@@ -285,7 +294,7 @@ class Pipeline(object):
             raise UnknownPipelineStageError(start, self)
 
 
-    def _stop_index(self, stop_at=None, stop_after=None):
+    def _stop_index(self, stop_point, inclusive):
         if not (stop_at is None or stop_after is None):
             raise ValueError("Cannot specify both inclusive and exclusive "
                              "pipeline stopping point")

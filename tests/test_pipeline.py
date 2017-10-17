@@ -185,8 +185,9 @@ class MostBasicPipelineTests:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
 
+    @pytest.mark.parametrize(argnames=[], argvalues=[])
     def test_start_point(self, dummy_pipe, test_type):
-        """ A pipeline may be started from an intermediate checkpoint. """
+        """ A pipeline may be started from an arbitrary checkpoint. """
         pass
 
 
