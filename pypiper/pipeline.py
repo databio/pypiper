@@ -218,7 +218,7 @@ class Pipeline(object):
 
         # Ensure that a stage name--if specified--is supported.
         for s in [start, stop]:
-            if s is None or s in self.stage_names:
+            if s is None or parse_stage_name(s) in self.stage_names:
                 continue
             raise UnknownPipelineStageError(s, self)
 
@@ -420,7 +420,7 @@ class UnknownPipelineStageError(Exception):
                 pass
             else:
                 message = "{}; defined stages: {}".\
-                        format(message, ", ".join(stages))
+                        format(message, ", ".join(map(str, stages)))
         super(UnknownPipelineStageError, self).__init__(message)
 
 

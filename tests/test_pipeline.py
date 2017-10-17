@@ -123,7 +123,7 @@ class RunPipelineCornerCaseTests:
         elif spec_type == "name":
             point = Stage(point).name
         elif spec_type == "function":
-            assert type(point) is function
+            assert hasattr(point, "__call__")
         else:
             raise ValueError("Unknown specification type: {}".format(spec_type))
 

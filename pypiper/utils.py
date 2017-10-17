@@ -48,7 +48,7 @@ def add_pypiper_args(parser, groups=("pypiper", ), args=None,
 
 
 
-def translate_stage_name(stage_name):
+def translate_stage_name(stage):
     """
     Account for potential variability in stage/phase name definition.
 
@@ -56,13 +56,15 @@ def translate_stage_name(stage_name):
     as desired, but these choices influence file names, enforce some
     standardization. Specifically, prohibit potentially problematic spaces.
 
-    :param stage_name: Name of the pipeline phase/stage.
-    :type stage_name: str
+    :param stage: Pipeline stage, its name, or a representative function.
+    :type stage: str | pypiper.Stage | function
     :return: Standardized pipeline phase/stage name.
     :rtype: str
     """
+    # First ensure that we have text.
+    name = parse_stage_name(stage)
     # Cast to string to ensure that indexed stages (ints are handled).
-    return str(stage_name).lower().replace(" ", "-")
+    return str(name).lower().replace(" ", "-")
 
 
 
