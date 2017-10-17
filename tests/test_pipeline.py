@@ -5,7 +5,7 @@ import glob
 import os
 import pytest
 from pypiper import Pipeline, PipelineManager
-from pypiper.manager import COMPLETE_FLAG, RUN_FLAG
+from pypiper.manager import COMPLETE_FLAG, PAUSE_FLAG, RUN_FLAG
 from pypiper.pipeline import \
         checkpoint_filepath, pipeline_filepath, \
         IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
@@ -106,17 +106,17 @@ def stage(request):
 
 
 
-def _parse_stage(stage, spec_type):
+def _parse_stage(s, spec_type):
     # Determine how point is to be specified.
     if spec_type == "stage":
-        stage = Stage(stage)
+        s = Stage(s)
     elif spec_type == "name":
-        stage = Stage(stage).name
+        s = Stage(s).name
     elif spec_type == "function":
-        assert hasattr(stage, "__call__")
+        assert hasattr(s, "__call__")
     else:
         raise ValueError("Unknown specification type: {}".format(spec_type))
-    return stage
+    return s
 
 
 
@@ -369,24 +369,61 @@ class MostBasicPipelineTests:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
 
-    def test_start_before_completed_checkpoint(self, dummy_pipe, test_type):
+    def test_checkpoints_are_overwritten_if_after_executed_stage(
+            self, dummy_pipe, test_type):
+        """ Potential for dependent results means execution is contiguous. """
         pass
 
 
-    def test_can_skip_downstream_completed(self, dummy_pipe, test_type):
-        pass
+    @named_param(argnames="stop_index", argvalues=range(1, len(BASIC_ACTIONS)))
+    @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
+    @named_param(argnames="stop_type", argvalues=["stop_at", "stop_after"])
+    def test_stop(self, dummy_pipe, test_type, stop_index, spec_type, stop_type):
+        """ A pipeline is capable of halting at/after a specified stage. """
 
+        # Negative control / pretest.
+        _assert_pipeline_initialization(dummy_pipe)
 
-    def test_can_rerun_downstream_completed(self, dummy_pipe, test_type):
-        pass
+        # Get the stop point in the correct format.
+        stop = _parse_stage(BASIC_ACTIONS[stop_index], spec_type)
 
+        # Make the call under test.
+        dummy_pipe.run(**{stop_type: stop})
 
-    def test_stop_at(self, dummy_pipe, test_type):
-        pass
+        # For forming expectations, indexing is exclusive.
+        # So if the initial specification was inclusive, we need to
+        # increment our expectation-indexing bound.
+        if stop_type == "stop_after":
+            stop_index += 1
 
+        if test_type == "effects":
+            exp_files = FILENAMES[:stop_index]
+            _assert_output(dummy_pipe, exp_files)
+            fpaths = [pipeline_filepath(dummy_pipe.manager, filename=fn)
+                      for fn in exp_files]
+            for fp, content in zip(fpaths, CONTENTS[:stop_index]):
+                _assert_expected_content(fp, content)
 
-    def test_stop_after(self, dummy_pipe, test_type):
-        pass
+        elif test_type == "checkpoints":
+            _assert_checkpoints(dummy_pipe, BASIC_ACTIONS[:stop_index])
+        elif test_type == "stage_labels":
+            _assert_stage_states(
+                    dummy_pipe, expected_skipped=BASIC_ACTIONS[stop_index:],
+                    expected_executed=BASIC_ACTIONS[:stop_index])
+        elif test_type == "pipe_flag":
+            if (stop_index == len(BASIC_ACTIONS)) and \
+                    (stop_type == "stop_after"):
+                _assert_pipeline_completed(dummy_pipe)
+            else:
+
+                # DEBUG
+                print("INDEX: {}".format(stop_index))
+                print("ACTIONS: {}".format(len(BASIC_ACTIONS)))
+                print("STOP TYPE: {}".format(stop_type))
+
+                _assert_pipeline_halted(dummy_pipe)
+        else:
+            raise ValueError("Unknown test type: '{}'".format(test_type))
 
 
 
@@ -443,16 +480,22 @@ def _assert_output(pl, expected_filenames):
 
 
 
-def _assert_pipeline_completed(pl):
+def _assert_pipeline_status(pl, flag):
     """ Assert, based on flag file presence, that a pipeline's completed. """
     flags = glob.glob(pipeline_filepath(pl.manager, filename=flag_name("*")))
     assert 1 == len(flags)
-    exp_flag = pipeline_filepath(pl, suffix="_" + flag_name(COMPLETE_FLAG))
+    exp_flag = pipeline_filepath(pl, suffix="_" + flag_name(flag))
     try:
         assert os.path.isfile(exp_flag)
     except AssertionError:
         print("FLAGS: {}".format(flags))
         raise
+
+
+
+_assert_pipeline_completed = partial(
+        _assert_pipeline_status, flag=COMPLETE_FLAG)
+_assert_pipeline_halted = partial(_assert_pipeline_status, flag=PAUSE_FLAG)
 
 
 

@@ -218,9 +218,11 @@ class Pipeline(object):
 
         # Ensure that a stage name--if specified--is supported.
         for s in [start, stop]:
-            if s is None or parse_stage_name(s) in self.stage_names:
+            if s is None:
                 continue
-            raise UnknownPipelineStageError(s, self)
+            name = parse_stage_name(s)
+            if name not in self.stage_names:
+                raise UnknownPipelineStageError(name, self)
 
         # Permit order-agnostic pipelines, but warn.
         if self._unordered and (start or stop_at or stop_after):
