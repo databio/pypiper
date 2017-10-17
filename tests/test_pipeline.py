@@ -11,7 +11,7 @@ from pypiper.pipeline import \
         IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
         UnknownPipelineStageError
 from pypiper.stage import Stage
-from pypiper.utils import flag_name
+from pypiper.utils import flag_name, translate_stage_name
 from helpers import named_param
 
 
@@ -100,10 +100,9 @@ def stage(request):
     for fixture_name in [stage_fixture_name, spec_type_name]:
         if fixture_name not in request.fixturenames:
             raise ValueError("No '{}' fixture".format(stage_fixture_name))
-    stage = request.getfixturevalue(stage_fixture_name)
+    s = request.getfixturevalue(stage_fixture_name)
     spec_type = request.getfixturevalue(spec_type_name)
-    stage = _parse_stage(stage, spec_type)
-    return stage
+    return _parse_stage(s, spec_type)
 
 
 
@@ -143,6 +142,34 @@ class DummyPipeline(Pipeline):
         return [Stage(f) for f in fixed_folder_funcs]
 
 
+
+class EmptyStagesPipeline(Pipeline):
+    """ Illegal (via empty stages) Pipeline definition. """
+
+    def __init__(self, manager):
+        super(EmptyStagesPipeline, self).__init__(
+                TEST_PIPE_NAME, manager=manager)
+
+    @property
+    def stages(self):
+        return []
+
+
+class NameCollisionPipeline(Pipeline):
+    """ Illegal (via empty stages) Pipeline definition. """
+
+    def __init__(self, manager):
+        super(NameCollisionPipeline, self).__init__(
+                TEST_PIPE_NAME, manager=manager)
+
+    @property
+    def stages(self):
+        name = "write file1"
+        return [("write file1", _write_file1),
+                (translate_stage_name(name), _write_file1)]
+
+
+
 class RunPipelineCornerCaseTests:
     """ Tests for exceptional cases of pipeline execution. """
 
@@ -173,7 +200,8 @@ class RunPipelineCornerCaseTests:
                        (_write_file3, _write_file2),
                        (_write_file3, _write_file1)])
     @pytest.mark.parametrize(argnames="spec_type", argvalues=STAGE_SPECS)
-    @pytest.mark.parametrize(argnames="stop_type", argvalues=["stop_at", "stop_after"])
+    @pytest.mark.parametrize(
+            argnames="stop_type", argvalues=["stop_at", "stop_after"])
     def test_start_after_stop(
             self, dummy_pipe, start, stop, stop_type, spec_type):
         """ Regardless of specification type, start > stop is prohibited. """
@@ -183,34 +211,40 @@ class RunPipelineCornerCaseTests:
             dummy_pipe.run(**{"start": start, stop_type: stop})
 
 
-    def test_unknown_start(self):
+    @named_param(
+            argnames="undefined_stage",
+            argvalues=["unsupported-pipeline-stage", "unknown_phase"])
+    @named_param(argnames="stage_point",
+                 argvalues=["start", "stop_at", "stop_after"])
+    def test_unknown_stage(self, dummy_pipe, undefined_stage, stage_point):
         """ Start specification must be of known stage name. """
         with pytest.raises(UnknownPipelineStageError):
-            pass
+            dummy_pipe.run(**{stage_point: undefined_stage})
 
 
-    def test_unknown_stop(self):
-        """ Stop specification must be of known stage name. """
-        with pytest.raises(UnknownPipelineStageError):
-            pass
-
-
-    def test_stop_at_and_stop_after(self):
+    @named_param(argnames="stop_at", argvalues=BASIC_ACTIONS)
+    @named_param(argnames="stop_after", argvalues=BASIC_ACTIONS)
+    @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
+    def test_stop_at_and_stop_after(
+            self, dummy_pipe, stop_at, stop_after, spec_type):
         """ Inclusive and exclusive stop cannot both be provided. """
+        inclusive_stop = _parse_stage(stop_after, spec_type)
+        exclusive_stop = _parse_stage(stop_at, spec_type)
+        kwargs = {"stop_at": exclusive_stop, "stop_after": inclusive_stop}
         with pytest.raises(IllegalPipelineExecutionError):
-            pass
+            dummy_pipe.run(**kwargs)
 
 
-    def test_empty_stages_is_prohibited(self):
+    def test_empty_stages_is_prohibited(self, pl_mgr):
         """ Pipeline must have non-empty stages """
         with pytest.raises(IllegalPipelineDefinitionError):
-            pass
+            EmptyStagesPipeline(manager=pl_mgr)
 
 
-    def test_stage_name_collision_is_prohibited(self):
+    def test_stage_name_collision_is_prohibited(self, pl_mgr):
         """ Each stage needs unique translation, used for checkpoint file. """
         with pytest.raises(IllegalPipelineDefinitionError):
-            pass
+            NameCollisionPipeline(manager=pl_mgr)
 
 
 
@@ -267,9 +301,6 @@ class MostBasicPipelineTests:
         first_stage_chkpt_fpath = checkpoint_filepath(first_stage, dummy_pipe)
         open(first_stage_chkpt_fpath, 'w').close()
         assert os.path.isfile(first_stage_chkpt_fpath)
-
-        # DEBUG
-        print("WROTE: {}".format(first_stage_chkpt_fpath))
 
         exp_skips = [first_stage]
         exp_execs = dummy_pipe.stages[1:]

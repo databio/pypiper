@@ -15,6 +15,10 @@ __all__ = ["add_pypiper_args"]
 
 
 
+STAGE_NAME_SPACE_REPLACEMENT = "-"
+
+
+
 def add_pypiper_args(parser, groups=("pypiper", ), args=None,
                      required=None, all_args=False):
     """
@@ -64,7 +68,7 @@ def translate_stage_name(stage):
     # First ensure that we have text.
     name = parse_stage_name(stage)
     # Cast to string to ensure that indexed stages (ints are handled).
-    return str(name).lower().replace(" ", "-")
+    return str(name).lower().replace(" ", STAGE_NAME_SPACE_REPLACEMENT)
 
 
 
