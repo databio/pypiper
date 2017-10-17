@@ -342,7 +342,7 @@ class MostBasicPipelineTests:
                  argvalues=range(len(BASIC_ACTIONS) - 1))
     @named_param(argnames="start_spec_type",
                  argvalues=["stage", "function", "name"])
-    def test_start_point(
+    def test_execution_allows_specific_starting_point(
             self, dummy_pipe, test_type, start_index, start_spec_type):
         """ A pipeline may be started from an arbitrary checkpoint. """
         _assert_pipeline_initialization(dummy_pipe)
@@ -353,7 +353,7 @@ class MostBasicPipelineTests:
             _assert_output(dummy_pipe, exp_files)
             fpaths = [pipeline_filepath(dummy_pipe.manager, filename=fn)
                       for fn in exp_files]
-            for fp, content in zip(fpaths, CONTENTS):
+            for fp, content in zip(fpaths, CONTENTS[start_index:]):
                 _assert_expected_content(fp, content)
         elif test_type == "checkpoints":
             # Ensure exact collection of checkpoint files (no more, no less).
