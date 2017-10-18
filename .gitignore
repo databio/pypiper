@@ -31,3 +31,7 @@ pipeline_output/
 
 # Sphinx documentation - build folder
 doc/build/
+
+# Track requirements files
+!requirements*.txt
+
