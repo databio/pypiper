@@ -183,7 +183,8 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
 
     # Define the argument groups.
     args_by_group = {
-        "pypiper" : ["recover", "new-start", "dirty", "follow"],
+        "pypiper" : ["recover", "new-start", "dirty", "follow",
+                     "start", "stop-at", "stop-after"],
         "config" : ["config"],
         "resource" : ["mem", "cores"],
         "looper" : ["config", "output-parent", "mem", "cores"],
@@ -256,6 +257,14 @@ def _add_args(parser, args, required):
             ("-F", {"dest": "force_follow", "action": "store_true",
                     "help": "Run all 'follow' commands, even if the "
                             "primary command is not run"}),
+        "start":
+            {"help": "Name of pipeline stage at which to begin"},
+        "stop-at":
+            {"help": "Name of pipeline stage at which to stop "
+                     "(exclusive, not run)"},
+        "stop-after":
+            {"help": "Name of pipeline stage at which to stop "
+                     "(inclusive, run)"},
         "config":
             ("-C", {"dest": "config_file", "metavar": "CONFIG_FILE",
                     "default": default_config,
@@ -290,11 +299,23 @@ def _add_args(parser, args, required):
     # Configure the parser for each argument.
     for arg in args:
         try:
-            short_opt, argdata = copy.deepcopy(argument_data[arg])
+            argdata = copy.deepcopy(argument_data[arg])
         except KeyError:
             print("Skipping undefined pypiper argument: '{}'".format(arg))
             continue
+        if isinstance(argdata, dict):
+            short_opt = None
+        else:
+            try:
+                short_opt, argdata = argdata
+            except ValueError:
+                raise TypeError(
+                        "Option name must map to dict or two-tuple (short "
+                        "name and dict) of argument command-line argument "
+                        "specification data.")
         argdata["required"] = arg in required
-        parser.add_argument(short_opt, "--{}".format(arg), **argdata)
+        long_opt = "--{}".format(arg)
+        opts = (short_opt, long_opt) if short_opt else (long_opt, )
+        parser.add_argument(*opts, **argdata)
 
     return parser
