@@ -237,6 +237,8 @@ def _add_args(parser, args, required):
 
     import copy
 
+    required = required or []
+
     # Determine the default pipeline config file.
     pipeline_script = os.path.basename(sys.argv[0])
     default_config, _ = os.path.splitext(pipeline_script)
