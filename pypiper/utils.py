@@ -187,9 +187,9 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
                      "start", "stop_at", "stop_after"],
         "config" : ["config"],
         "resource" : ["mem", "cores"],
-        "looper" : ["config", "output-parent", "mem", "cores"],
-        "common" : ["input", "sample-name"],
-        "ngs" : ["input", "sample-name", "input2", "genome", "single-or-paired"]
+        "looper" : ["config", "output_parent", "mem", "cores"],
+        "common" : ["input", "sample_name"],
+        "ngs" : ["input", "sample_name", "input2", "genome", "single_or_paired"]
     }
 
     # Handle various types of group specifications.
@@ -273,7 +273,10 @@ def _add_args(parser, args, required):
                     "help": "Pipeline configuration file (YAML). "
                             "Relative paths are with respect to the "
                             "pipeline script."}),
-        "output-parent":
+        "sample_name":
+            ("-S", {"metavar": "SAMPLE_NAME",
+                    "help": "Name for sample to run"}),
+        "output_parent":
             ("-O", {"metavar": "PARENT_OUTPUT_FOLDER",
                     "help": "Parent output directory of project"}),
         "cores":
@@ -293,7 +296,7 @@ def _add_args(parser, args, required):
         "genome":
             ("-G", {"dest": "genome_assembly",
                     "help": "Identifier for genome assembly"}),
-        "single-or-paired":
+        "single_or_paired":
             ("-Q", {"default": "single",
                     "help": "Single- or paired-end sequencing protocol"})
     }
