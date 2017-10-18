@@ -107,7 +107,11 @@ class PipelineManager(object):
         # Update them with any passed via 'args'
         if args is not None:
             # vars(...) transforms ArgumentParser's Namespace into a dict
-            params.update(vars(args))
+            cmdl_args = vars(args)
+            print("Updating pipeline manager parameters based on command-line "
+                  "options: {}".format(", ".join(
+                ["{}={}".format(opt, arg) for opt, arg in cmdl_args.items()])))
+            params.update(cmdl_args)
 
         # Define pipeline-level variables to keep track of global state and some pipeline stats
         # Pipeline settings
