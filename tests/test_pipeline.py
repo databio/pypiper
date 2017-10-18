@@ -127,7 +127,6 @@ class DummyPipeline(Pipeline):
     def __init__(self, manager):
         super(DummyPipeline, self).__init__(TEST_PIPE_NAME, manager=manager)
 
-    @property
     def stages(self):
         """
         Establish the stages/phases for this test pipeline.
@@ -151,7 +150,6 @@ class EmptyStagesPipeline(Pipeline):
         super(EmptyStagesPipeline, self).__init__(
                 TEST_PIPE_NAME, manager=manager)
 
-    @property
     def stages(self):
         return []
 
@@ -163,7 +161,6 @@ class NameCollisionPipeline(Pipeline):
         super(NameCollisionPipeline, self).__init__(
                 TEST_PIPE_NAME, manager=manager)
 
-    @property
     def stages(self):
         name = "write file1"
         return [("write file1", _write_file1),
@@ -273,7 +270,7 @@ class MostBasicPipelineTests:
 
         elif test_type == "checkpoints":
             # Interest is on checkpoint file existence.
-            for stage in dummy_pipe.stages:
+            for stage in dummy_pipe.stages():
                 chkpt_fpath = checkpoint_filepath(stage, dummy_pipe)
                 try:
                     assert os.path.isfile(chkpt_fpath)
@@ -284,7 +281,7 @@ class MostBasicPipelineTests:
 
         elif test_type == "stage_labels":
             # Did the Pipeline correctly track it's execution?
-            _assert_stage_states(dummy_pipe, [], dummy_pipe.stages)
+            _assert_stage_states(dummy_pipe, [], dummy_pipe.stages())
 
         elif test_type == "pipe_flag":
             # The final flag should be correctly set.
@@ -299,13 +296,13 @@ class MostBasicPipelineTests:
 
         _assert_pipeline_initialization(dummy_pipe)
 
-        first_stage = dummy_pipe.stages[0]
+        first_stage = dummy_pipe.stages()[0]
         first_stage_chkpt_fpath = checkpoint_filepath(first_stage, dummy_pipe)
         open(first_stage_chkpt_fpath, 'w').close()
         assert os.path.isfile(first_stage_chkpt_fpath)
 
         exp_skips = [first_stage]
-        exp_execs = dummy_pipe.stages[1:]
+        exp_execs = dummy_pipe.stages()[1:]
 
         # This should neither exist nor be created.
         first_stage_outfile = pipeline_filepath(
@@ -328,7 +325,7 @@ class MostBasicPipelineTests:
         elif test_type == "checkpoints":
             # We've manually created the first checkpoint file, and the
             # others should've been created by the run() call.
-            _assert_checkpoints(dummy_pipe, exp_stages=dummy_pipe.stages)
+            _assert_checkpoints(dummy_pipe, exp_stages=dummy_pipe.stages())
 
         elif test_type == "stage_labels":
             _assert_stage_states(dummy_pipe, exp_skips, exp_execs)

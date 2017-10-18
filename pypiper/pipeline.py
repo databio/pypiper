@@ -48,7 +48,7 @@ class Pipeline(object):
         # Translate stage names; do this here to complicate a hypothetical
         # attempt to override or otherwise redefine the way in which
         # stage names are handled, parsed, and translated.
-        self._unordered = _is_unordered(self.stages)
+        self._unordered = _is_unordered(self.stages())
         if self._unordered:
             print("NOTICE: Unordered definition of stages for "
                   "pipeline {}".format(self.name))
@@ -56,8 +56,8 @@ class Pipeline(object):
         # Get to a sequence of pairs of key (possibly in need of translation)
         # and actual callable. Key is stage name and value is either stage
         # callable or an already-made stage object.
-        stages = self.stages.items() \
-                if isinstance(self.stages, Mapping) else self.stages
+        stages = self.stages().items() \
+                if isinstance(self.stages(), Mapping) else self.stages()
         # Stage spec. parser handles callable validation.
         name_stage_pairs = [_parse_stage_spec(s) for s in stages]
 
@@ -109,7 +109,7 @@ class Pipeline(object):
         return self.manager.outfolder
 
 
-    @abc.abstractproperty
+    @abc.abstractmethod
     def stages(self):
         """
         Define the names of pipeline processing stages.
@@ -417,7 +417,7 @@ class UnknownPipelineStageError(Exception):
         message = stage_name
         if pipeline is not None:
             try:
-                stages = pipeline.stages
+                stages = pipeline.stages()
             except AttributeError:
                 # Just don't contextualize the error with known stages.
                 pass
