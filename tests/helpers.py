@@ -26,4 +26,3 @@ def named_param(argnames, argvalues):
     return partial(pytest.mark.parametrize(
                    argnames=argnames, argvalues=argvalues,
                    ids=lambda val: "{}={}".format(argnames, val)))
-
