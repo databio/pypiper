@@ -479,20 +479,43 @@ class NGSTk(_AttributeDict):
 
 
     def validate_bam(self, input_bam):
+        """
+        Wrapper for Picard's ValidateSamFile.
+
+        :param input_bam: Path to file to validate.
+        :type input_bam: str
+        :return: Command to run for the validation.
+        :rtype: str
+        """
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
         cmd += " -jar " + self.tools.picard + " ValidateSamFile"
         cmd += " INPUT=" + input_bam
-        return(cmd)
+        return cmd
 
 
     def merge_bams(self, input_bams, merged_bam, in_sorted="TRUE", tmp_dir=None):
         """
-        The tmp_dir parameter is important because the default can sometimes fill up on
-        poorly configured systems.
+        Combine multiple files into one.
+
+        The tmp_dir parameter is important because on poorly configured
+        systems, the default can sometimes fill up.
+
+        :param input_bams: Paths to files to combine
+        :type input_bams: Iterable[str]
+        :param merged_bam: Path to which to write combined result.
+        :type merged_bam: str
+        :param in_sorted: Whether the inputs are sorted
+        :type in_sorted: bool | str
+        :param tmp_dir: Path to temporary directory.
+        :type tmp_dir: str
         """
         if not len(input_bams) > 1:
             print("No merge required")
             return 0
+
+        # Handle more intuitive boolean argument.
+        if in_sorted in [False, True]:
+            in_sorted = "TRUE" if in_sorted else "FALSE"
 
         print("Merging multiple bams: " + str(input_bams))
         input_string = " INPUT=" + " INPUT=".join(input_bams)
