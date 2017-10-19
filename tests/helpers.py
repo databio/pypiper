@@ -10,7 +10,11 @@ __email__ = "vreuter@virginia.edu"
 
 def named_param(argnames, argvalues):
     """
+    Improve pytest's native labeling of test case parameterization.
 
+    This function thinly wraps the 'parametrize' mark from pytest, adding
+    clearer labeling of each individual parameterized test case, overriding
+    the index-based labeling that pytest uses by default.
 
     :param str argnames: Single parameter name, named in the plural only for
         concordance with the native pytest name.
