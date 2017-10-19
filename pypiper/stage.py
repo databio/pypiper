@@ -27,7 +27,10 @@ class Stage(object):
         :param tuple f_args: Positional arguments for func
         :param dict f_kwargs: Keyword arguments for func
         :param str name: name for the phase/stage
+        :param callable func: Object that defines how the stage will execute.
         """
+        if isinstance(func, Stage):
+            raise TypeError("Cannot create Stage from Stage")
         super(Stage, self).__init__()
         self.f = func
         self.f_args = f_args or tuple()
