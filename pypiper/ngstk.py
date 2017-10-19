@@ -513,6 +513,11 @@ class NGSTk(_AttributeDict):
             print("No merge required")
             return 0
 
+        outdir, _ = os.path.split(merged_bam)
+        if outdir and not os.path.exists(outdir):
+            print("Creating path to merge file's folder: '{}'".format(outdir))
+            os.makedirs(outdir)
+
         # Handle more intuitive boolean argument.
         if in_sorted in [False, True]:
             in_sorted = "TRUE" if in_sorted else "FALSE"
