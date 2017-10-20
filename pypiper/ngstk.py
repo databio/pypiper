@@ -76,6 +76,12 @@ class NGSTk(_AttributeDict):
 
 
     def make_dir(self, path):
+        """
+        Forge path to directory, creating intermediates as needed.
+
+        :param path: Path to create.
+        :type path: str
+        """
         try:
             os.makedirs(path)
         except OSError as exception:
@@ -447,24 +453,42 @@ class NGSTk(_AttributeDict):
         return temp_func
 
 
-    def check_trim(self, trimmed_fastq, trimmed_fastq_R2, paired_end, fastqc_folder=None):
+    def check_trim(self, trimmed_fastq, paired_end, trimmed_fastq_R2=None, fastqc_folder=None):
         """
-        Returns a follow function for a trimming step. This will count the trimmed reads,
-        and run fastqc on the trimmed fastq files.
+        Build function to evaluate read trimming, and optionally run fastqc.
+
+        This is useful to construct an argument for the 'follow' parameter of
+        a PipelineManager's 'run' method.
+
+        :param trimmed_fastq: Path to trimmed reads file.
+        :type trimmed_fastq: str
+        :param paired_end: Whether the processing is being done with
+            paired-end sequencing data.
+        :type paired_end: bool
+        :param trimmed_fastq_R2: Path to read 2 file for the paired-end case.
+        :type trimmed_fastq_R2: str
+        :param fastqc_folder: Path to folder within which to place fastqc
+            output files; if unspecified, fastqc will not be run.
+        :return: Function to evaluate read trimming and possibly run fastqc.
+        :rtype: callable
         """
 
-        def temp_func(
-            trimmed_fastq=trimmed_fastq,
-            trimmed_fastq_R2=trimmed_fastq_R2,
-            paired_end=paired_end,
-            fastqc_folder=fastqc_folder):
+        def temp_func():
+
+            print("Evaluating read trimming")
+
+            if paired_end and not trimmed_fastq_R2:
+                print("WARNING: specified paired-end but no R2 file")
+
             n_trim = float(self.count_reads(trimmed_fastq, paired_end))
             self.pm.report_result("Trimmed_reads", int(n_trim))
             try:
                 rr = float(self.pm.get_stat("Raw_reads"))
-                self.pm.report_result("Trim_loss_rate", round((rr - n_trim) * 100 / rr, 2))
             except:
                 print("Can't calculate trim loss rate without raw read result.")
+            else:
+                self.pm.report_result(
+                    "Trim_loss_rate", round((rr - n_trim) * 100 / rr, 2))
 
             # Also run a fastqc (if installed/requested)
             if fastqc_folder:
@@ -828,6 +852,7 @@ class NGSTk(_AttributeDict):
             cmd += self.tools.samtools + " depth " + sam_file.replace(".sam", "_sorted.bam") + " > " + sam_file.replace(".sam", "_sorted.depth") + "\n"
         return cmd
 
+
     def bam_conversions(self, bam_file, depth=True):
         """
         Sort and index bam files for later use.
@@ -840,27 +865,49 @@ class NGSTk(_AttributeDict):
             cmd += self.tools.samtools + " depth " + bam_file.replace(".bam", "_sorted.bam") + " > " + bam_file.replace(".bam", "_sorted.depth") + "\n"
         return cmd
 
+
     def fastqc(self, file, output_dir):
         """Call fastqc on a bam file (or fastq file, right?).
         # You can find the fastqc help with fastqc --help"""
-        cmd = self.tools.fastqc + " --noextract --outdir " + output_dir + " " + file
-        return cmd
+        return "{} --noextract --outdir {} {}".format(self.tools.fastqc, output_dir, file)
+
 
     def fastqc_rename(self, input_bam, output_dir, sample_name):
+        """
+        Create pair of commands to run fastqc and organize files.
+
+        The first command returned is the one that actually runs fastqc when
+        it's executed; the second moves the output files to the output
+        folder for the sample indicated.
+
+        :param input_bam: Path to file for which to run fastqc.
+        :type input_bam: str
+        :param output_dir: Path to folder in which fastqc output will be
+            written, and within which the sample's output folder lives.
+        :type output_dir: str
+        :param sample_name: Sample name, which determines subfolder within
+            output_dir for the fastqc files.
+        :type sample_name: str
+        :return: Pair of commands, to run fastqc and then move the files to
+            their intended destination based on sample name.
+        :rtype: list[str]
+        """
         import os
         cmds = list()
         initial = os.path.splitext(os.path.basename(input_bam))[0]
-        cmd1 = self.tools.fastqc + " --noextract --outdir {0} {1}".format(output_dir, input_bam)
+        cmd1 = self.fastqc(input_bam, output_dir)
         cmds.append(cmd1)
         cmd2 = "if [[ ! -s {1}_fastqc.html ]]; then mv {0}_fastqc.html {1}_fastqc.html; mv {0}_fastqc.zip {1}_fastqc.zip; fi".format(
             os.path.join(output_dir, initial), os.path.join(output_dir, sample_name))
         cmds.append(cmd2)
         return cmds
 
+
     def samtools_index(self, bam_file):
         """Index a bam file."""
         cmd = self.tools.samtools + " index {0}".format(bam_file)
         return cmd
+
 
     def slurm_header(
         self, job_name, output, queue="shortq", n_tasks=1, time="10:00:00",
@@ -1525,7 +1572,8 @@ class NGSTk(_AttributeDict):
         import subprocess
         from collections import Counter
         try:
-            p = subprocess.Popen([self.tools.samtools, 'view', bam_file], stdout=subprocess.PIPE)
+            p = subprocess.Popen([self.tools.samtools, 'view', bam_file],
+                                 stdout=subprocess.PIPE)
             # Count paired alignments
             paired = 0
             read_length = Counter()
@@ -1543,9 +1591,10 @@ class NGSTk(_AttributeDict):
         read_length = sorted(read_length)[-1]
         # If at least half is paired, return True
         if paired > (n / 2.):
-            return ("PE", read_length)
+            return "PE", read_length
         else:
-            return ("SE", read_length)
+            return "SE", read_length
+
 
     def parse_bowtie_stats(self, stats_file):
         """
@@ -1583,6 +1632,7 @@ class NGSTk(_AttributeDict):
             pass
         return stats
 
+
     def parse_duplicate_stats(self, stats_file):
         """
         Parses sambamba markdup output, returns series with values.
@@ -1608,12 +1658,13 @@ class NGSTk(_AttributeDict):
             pass
         return series
 
-    def parse_qc(self, sample_name, qc_file):
+
+    def parse_qc(self, qc_file):
         """
-        Parses QC table produced by phantompeakqualtools (spp) and returns sample quality metrics.
-        :param sample_name: Sample name.
-        :type sample_name: str
-        :param qc_file: phantompeakqualtools output file sample quality measurements.
+        Parse phantompeakqualtools (spp) QC table and return quality metrics.
+
+        :param qc_file: Path to phantompeakqualtools output file, which
+            contains sample quality measurements.
         :type qc_file: str
         """
         import pandas as pd
@@ -1628,11 +1679,12 @@ class NGSTk(_AttributeDict):
             pass
         return series
 
+
     def get_peak_number(self, sample):
         """
         Counts number of peaks from a sample's peak file.
         :param sample: A Sample object with the "peaks" attribute.
-        :type sample_name: pipelines.Sample
+        :type sample: pipelines.Sample
         """
         import subprocess
         import re
@@ -1641,11 +1693,12 @@ class NGSTk(_AttributeDict):
         sample["peakNumber"] = re.sub("\D.*", "", out)
         return sample
 
+
     def get_frip(self, sample):
         """
         Calculates the fraction of reads in peaks for a given sample.
         :param sample: A Sample object with the "peaks" attribute.
-        :type sample_name: pipelines.Sample
+        :type sample: pipelines.Sample
         """
         import re
         import pandas as pd
