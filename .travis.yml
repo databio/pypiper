@@ -9,8 +9,8 @@ os:
 install:
   - pip install --upgrade six
   - pip install .
-  - pip install -r requirements/requirements-dev.txt
-  - pip install -r requirements/requirements-test.txt
+  - pip install -r requirements/reqs-ngstk.txt
+  - pip install -r requirements/reqs-test.txt
 script: pytest
 branches:
   only:
