@@ -33,5 +33,5 @@ pipeline_output/
 doc/build/
 
 # Track requirements files
-!requirements*.txt
+!requirements/*.txt
 

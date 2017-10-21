@@ -1,6 +1,7 @@
 #!/usr/env python
 
 import os
+import re
 import subprocess
 import errno
 from AttributeDict import AttributeDict as _AttributeDict
@@ -99,7 +100,6 @@ class NGSTk(_AttributeDict):
         """
         Check if command can be called.
         """
-        import os
 
         # Use `command` to see if command is callable, store exit code
         code = os.system("command -v {0} >/dev/null 2>&1 || {{ exit 1; }}".format(command))
@@ -892,7 +892,6 @@ class NGSTk(_AttributeDict):
             their intended destination based on sample name.
         :rtype: list[str]
         """
-        import os
         cmds = list()
         initial = os.path.splitext(os.path.basename(input_bam))[0]
         cmd1 = self.fastqc(input_bam, output_dir)
@@ -941,7 +940,6 @@ class NGSTk(_AttributeDict):
         return "     date"
 
     def slurm_submit_job(self, job_file):
-        import os
         return os.system("sbatch %s" % job_file)
 
     def remove_file(self, file_name):
@@ -1053,7 +1051,6 @@ class NGSTk(_AttributeDict):
         return cmd
 
     def picard_mark_duplicates(self, input_bam, output_bam, metrics_file, temp_dir="."):
-        import re
         transient_file = re.sub("\.bam$", "", output_bam) + ".dups.nosort.bam"
         output_bam = re.sub("\.bam$", "", output_bam)
         cmd1 = self.tools.java + " -Xmx" + self.pm.javamem
@@ -1087,7 +1084,6 @@ class NGSTk(_AttributeDict):
         Remove duplicates, filter for >Q, remove multiple mapping reads.
         For paired-end reads, keep only proper pairs.
         """
-        import re
         nodups = re.sub("\.bam$", "", output_bam) + ".nodups.nofilter.bam"
         cmd1 = self.tools.sambamba + " markdup -t {0} -r --compression-level=0 {1} {2} 2> {3}".format(cpus, input_bam, nodups, metrics_file)
         cmd2 = self.tools.sambamba + ' view -t {0} -f bam --valid'.format(cpus)
@@ -1103,7 +1099,6 @@ class NGSTk(_AttributeDict):
         return [cmd1, cmd2, cmd3, cmd4]
 
     def shift_reads(self, input_bam, genome, output_bam):
-        # import re
         # output_bam = re.sub("\.bam$", "", output_bam)
         cmd = self.tools.samtools + " view -h {0} |".format(input_bam)
         cmd += " shift_reads.py {0} |".format(genome)
@@ -1113,7 +1108,6 @@ class NGSTk(_AttributeDict):
 
 
     def sort_index_bam(self, input_bam, output_bam):
-        import re
         tmp_bam = re.sub("\.bam", ".sorted", input_bam)
         cmd1 = self.tools.samtools + " sort {0} {1}".format(input_bam, tmp_bam)
         cmd2 = "mv {0}.bam {1}".format(tmp_bam, output_bam)
@@ -1294,8 +1288,6 @@ class NGSTk(_AttributeDict):
 
     # TODO: parameterize in terms of normalization factor.
     def bam_to_bigwig(self, input_bam, output_bigwig, genome_sizes, genome, tagmented=False, normalize=False):
-        import os
-        import re
         # TODO:
         # addjust fragment length dependent on read size and real fragment size
         # (right now it asssumes 50bp reads with 180bp fragments)
@@ -1487,7 +1479,6 @@ class NGSTk(_AttributeDict):
         return cmd
 
     def macs2_plot_model(self, r_peak_model_file, sample_name, output_dir):
-        import os
         # run macs r script
         cmd1 = "{} {}".format(self.tools.Rscript, r_peak_model_file)
         # move output plot to sample dir
@@ -1569,7 +1560,6 @@ class NGSTk(_AttributeDict):
         :returns: tuple of (read_type=string, read_length=int).
         :rtype: tuple
         """
-        import subprocess
         from collections import Counter
         try:
             p = subprocess.Popen([self.tools.samtools, 'view', bam_file],
@@ -1603,7 +1593,6 @@ class NGSTk(_AttributeDict):
         :type stats_file: str
         """
         import pandas as pd
-        import re
         stats = pd.Series(index=["readCount", "unpaired", "unaligned", "unique", "multiple", "alignmentRate"])
         try:
             with open(stats_file) as handle:
@@ -1640,7 +1629,6 @@ class NGSTk(_AttributeDict):
         :type stats_file: str
         """
         import pandas as pd
-        import re
         series = pd.Series()
         try:
             with open(stats_file) as handle:
@@ -1686,8 +1674,6 @@ class NGSTk(_AttributeDict):
         :param sample: A Sample object with the "peaks" attribute.
         :type sample: pipelines.Sample
         """
-        import subprocess
-        import re
         proc = subprocess.Popen(["wc", "-l", sample.peaks], stdout=subprocess.PIPE)
         out, err = proc.communicate()
         sample["peakNumber"] = re.sub("\D.*", "", out)
@@ -1700,7 +1686,6 @@ class NGSTk(_AttributeDict):
         :param sample: A Sample object with the "peaks" attribute.
         :type sample: pipelines.Sample
         """
-        import re
         import pandas as pd
         with open(sample.frip, "r") as handle:
             content = handle.readlines()
