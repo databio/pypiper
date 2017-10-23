@@ -11,7 +11,7 @@ __email__ = "vreuter@virginia.edu"
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
 # packages, and import from utils within pypiper for other functions.
-__all__ = ["add_pypiper_args"]
+__all__ = ["add_pypiper_args", "build_command"]
 
 
 
@@ -52,23 +52,48 @@ def add_pypiper_args(parser, groups=("pypiper", ), args=None,
 
 
 
-def translate_stage_name(stage):
+def build_command(chunks):
     """
-    Account for potential variability in stage/phase name definition.
+    Create a command from various parts.
 
-    Since a pipeline author is free to name his/her processing phases/stages
-    as desired, but these choices influence file names, enforce some
-    standardization. Specifically, prohibit potentially problematic spaces.
+    The parts provided may include a base, flags, option-bound arguments, and
+    positional arguments. Each element must be either a string or a two-tuple.
+    Raw strings are interpreted as either the command base, a pre-joined
+    pair (or multiple pairs) of option and argument, a series of positional
+    arguments, or a combination of those elements. The only modification they
+    undergo is trimming of any space characters from each end.
 
-    :param stage: Pipeline stage, its name, or a representative function.
-    :type stage: str | pypiper.Stage | function
-    :return: Standardized pipeline phase/stage name.
-    :rtype: str
+    :param Iterable[str | (str, str | NoneType)] chunks: the collection of the
+        command components to interpret, modify, and join to create a
+        single meaningful command
+    :return str: the single meaningful command built from the given components
+    :raise ValueError: if no command parts are provided
     """
-    # First ensure that we have text.
-    name = parse_stage_name(stage)
-    # Cast to string to ensure that indexed stages (ints are handled).
-    return str(name).lower().replace(" ", STAGE_NAME_SPACE_REPLACEMENT)
+
+    if not chunks:
+        raise ValueError("No command parts: {} ({})".format(chunks, type(chunks)))
+
+    if isinstance(chunks, str):
+        return chunks
+
+    parsed_pieces = []
+
+    for cmd_part in chunks:
+        if cmd_part is None:
+            continue
+        try:
+            # Trim just space, not all whitespace.
+            # This prevents damage to an option that specifies,
+            # say, tab as a delimiter.
+            parsed_pieces.append(cmd_part.strip(" "))
+        except AttributeError:
+            option, argument = cmd_part
+            if argument is None or argument == "":
+                continue
+            option, argument = option.strip(" "), str(argument).strip(" ")
+            parsed_pieces.append("{} {}".format(option, argument))
+
+    return " ".join(parsed_pieces)
 
 
 
@@ -142,6 +167,27 @@ def parse_stage_name(stage):
             return stage.__name__
         except AttributeError:
             raise TypeError("Unsupported stage type: {}".format(type(stage)))
+
+
+
+def translate_stage_name(stage):
+    """
+    Account for potential variability in stage/phase name definition.
+
+    Since a pipeline author is free to name his/her processing phases/stages
+    as desired, but these choices influence file names, enforce some
+    standardization. Specifically, prohibit potentially problematic spaces.
+
+    :param stage: Pipeline stage, its name, or a representative function.
+    :type stage: str | pypiper.Stage | function
+    :return: Standardized pipeline phase/stage name.
+    :rtype: str
+    """
+    # First ensure that we have text.
+    name = parse_stage_name(stage)
+    # Cast to string to ensure that indexed stages (ints are handled).
+    return str(name).lower().replace(" ", STAGE_NAME_SPACE_REPLACEMENT)
+
 
 
 # TODO: implement as context manager.

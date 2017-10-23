@@ -999,7 +999,7 @@ class NGSTk(_AttributeDict):
 
     def skewer(
             self, input_fastq1, output_prefix, output_fastq1,
-            trim_log, cpus, adapters, input_fastq2=None, output_fastq2=None):
+            log, cpus, adapters, input_fastq2=None, output_fastq2=None):
 
         pe = False if input_fastq2 is None else True
         mode = "pe" if pe else "any"
@@ -1024,7 +1024,7 @@ class NGSTk(_AttributeDict):
             cmds.append(cmd2)
             cmd3 = "mv {0} {1}".format(output_prefix + "-trimmed-pair2.fastq", output_fastq2)
             cmds.append(cmd3)
-        cmd4 = "mv {0} {1}".format(output_prefix + "-trimmed.log", trim_log)
+        cmd4 = "mv {0} {1}".format(output_prefix + "-trimmed.log", log)
         cmds.append(cmd4)
         return cmds
 
