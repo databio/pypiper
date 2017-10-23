@@ -157,7 +157,7 @@ class Pipeline(object):
             for the pipeline, a ValueError arises.
         """
         check_path = checkpoint_filepath(stage, self.manager)
-        return stage.checkpoint and os.path.exists(check_path)
+        return os.path.exists(check_path)
 
 
     def list_flags(self, only_name=False):
@@ -342,10 +342,21 @@ def checkpoint_filepath(checkpoint, pm):
     :type pm: pypiper.PipelineManager | pypiper.Pipeline
     :return str: standardized checkpoint name for file, plus extension
     """
+
     if isinstance(pm, Pipeline):
         pm = pm.manager
-    filename = checkpoint_filename(checkpoint)
-    return pipeline_filepath(pm, filename)
+
+    # We want the checkpoint filename itself to become a suffix, with a
+    # delimiter intervening between the pipeline name and the checkpoint
+    # name + extension. This is to handle the case in which a single, e.g.,
+    # sample's output folder is the destination for output from multiple
+    # pipelines, and we thus want to be able to distinguish between
+    # checkpoint files from different pipelines for that sample that may
+    # well define one or more stages with the same name (e.g., trim_reads,
+    # align_reads, etc.)
+    suffix = "_" + checkpoint_filename(checkpoint)
+
+    return pipeline_filepath(pm, suffix=suffix)
 
 
 

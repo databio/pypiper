@@ -85,8 +85,8 @@ class PipelineManager(object):
         self, name, outfolder, version=None, args=None, multi=False,
         manual_clean=False, recover=False, fresh=False, force_follow=False,
         cores=1, mem="1000", config_file=None, output_parent=None,
-        overwrite_checkpoints=False
-    ):
+        overwrite_checkpoints=False):
+
         # Params defines the set of options that could be updated via
         # command line args to a pipeline run, that can be forwarded
         # to Pypiper. If any pypiper arguments are passed
@@ -1273,21 +1273,35 @@ class PipelineManager(object):
         try:
             is_checkpoint = stage.checkpoint
         except AttributeError:
-            # Maybe we have a stage name not a Stage.
-            # In that case, we can proceed as-is, with downstream
-            # processing handling Stage vs. stage name disambiguation.
-            # Here, though, warn about an input that appear filename/path-like.
-            base, ext = os.path.splitext(stage)
-            if ext and "." not in base:
-                print("WARNING: '{}' looks like it may be the name or path of "
-                      "a file; for such a checkpoint, use touch_checkpoint.")
+            # Maybe we have a raw function, not a stage.
+            if hasattr(stage, "__call__"):
+                stage = stage.__name__
+            else:
+                # Maybe we have a stage name not a Stage.
+                # In that case, we can proceed as-is, with downstream
+                # processing handling Stage vs. stage name disambiguation.
+                # Here, though, warn about inputs that appear filename/path-like.
+                # We can't rely on raw text being a filepath or filename,
+                # because that would ruin the ability to pass stage name rather
+                # than actual stage. We can issue a warning message based on the
+                # improbability of a stage name containing the '.' that would
+                # be expected to characterize the extension of a file name/path.
+                base, ext = os.path.splitext(stage)
+                if ext and "." not in base:
+                    print("WARNING: '{}' looks like it may be the name or path of "
+                          "a file; for such a checkpoint, use touch_checkpoint.".
+                          format(stage))
         else:
             if not is_checkpoint:
                 print("Not a checkpoint: {}".format(stage))
                 return False
+            stage = stage.name
 
         print("Checkpointing: '{}'".format(stage))
-        check_fpath = checkpoint_filepath(stage, pm=self)
+        if os.path.isabs(stage):
+            check_fpath = stage
+        else:
+            check_fpath = checkpoint_filepath(stage, pm=self)
         return self.touch_checkpoint(check_fpath)
 
 
@@ -1308,7 +1322,9 @@ class PipelineManager(object):
             folder, _ = os.path.split(check_file)
             # For raw string comparison, ensure that each path
             # bears the final path separator.
-            if os.path.join(folder, "") != os.path.join(self.outfolder, ""):
+            other_folder = os.path.join(folder, "")
+            this_folder = os.path.join(self.outfolder, "")
+            if other_folder != this_folder:
                 errmsg = "Path provided as checkpoint file isn't in pipeline " \
                          "output folder. '{}' is not in '{}'".format(
                         check_file, self.outfolder)

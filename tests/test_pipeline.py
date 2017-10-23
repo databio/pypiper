@@ -3,85 +3,39 @@
 from functools import partial
 import glob
 import os
-import time
 import pytest
-from pypiper import Pipeline, PipelineManager
+from pypiper import Pipeline
 from pypiper.manager import COMPLETE_FLAG, PAUSE_FLAG, RUN_FLAG
 from pypiper.pipeline import \
         checkpoint_filepath, pipeline_filepath, \
         IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
         UnknownPipelineStageError
-from pypiper.stage import Stage
+from pypiper.stage import Stage, CHECKPOINT_EXTENSION
 from pypiper.utils import flag_name, translate_stage_name
 from helpers import named_param
+from tests.conftest import \
+    write_file1, write_file2, write_file3, \
+    CONTENTS, FILE1_NAME, FILE_TEXT_PAIRS, OUTPUT_SUFFIX, TEST_PIPE_NAME
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-# Use a weird suffix for glob specificity.
-OUTPUT_SUFFIX = ".testout"
-FILE1_NAME = "file1{}".format(OUTPUT_SUFFIX)
-FILE2_NAME = "file2{}".format(OUTPUT_SUFFIX)
-FILE3_NAME = "file3{}".format(OUTPUT_SUFFIX)
-FILENAMES = [FILE1_NAME, FILE2_NAME, FILE3_NAME]
 
-FILE1_TEXT = "hello there"
-FILE2_TEXT = "hello2"
-FILE3_TEXT = "third"
-CONTENTS = [FILE1_TEXT, FILE2_TEXT, FILE3_TEXT]
+BASIC_ACTIONS = [write_file1, write_file2, write_file3]
+STAGE_SPECS = ["stage", "name", "function"]
 
-FILE_TEXT_PAIRS = list(zip(FILENAMES, CONTENTS))
-TEST_PIPE_NAME = "test-pipe"
 
 
 def pytest_generate_tests(metafunc):
+    """ Dynamic creation and parameterization of cases in this module. """
     if "test_type" in metafunc.fixturenames and \
             metafunc.cls == MostBasicPipelineTests:
         metafunc.parametrize(
                 argnames="test_type", 
                 argvalues=["effects", "stage_labels", 
                            "checkpoints", "pipe_flag"])
-
-
-@pytest.fixture
-def pl_mgr(request, tmpdir):
-    """ Provide a PipelineManager and ensure that it's stopped. """
-    pm = PipelineManager(
-            name=TEST_PIPE_NAME, outfolder=tmpdir.strpath, multi=True)
-    def _ensure_stopped():
-        pm.stop_pipeline()
-    request.addfinalizer(_ensure_stopped)
-    return pm
-
-
-@pytest.fixture
-def dummy_pipe(pl_mgr):
-    """ Provide a basic Pipeline instance for a test case. """
-    return DummyPipeline(pl_mgr)
-
-
-def _write_file1(folder):
-    _write(*FILE_TEXT_PAIRS[0], folder=folder)
-
-
-def _write_file2(folder):
-    _write(*FILE_TEXT_PAIRS[1], folder=folder)
-
-
-def _write_file3(folder):
-    _write(*FILE_TEXT_PAIRS[2], folder=folder)
-
-
-BASIC_ACTIONS = [_write_file1, _write_file2, _write_file3]
-STAGE_SPECS = ["stage", "name", "function"]
-
-
-def _write(filename, content, folder=None):
-    path = os.path.join(folder, filename)
-    with open(path, 'w') as f:
-        f.write(content)
 
 
 
@@ -121,28 +75,6 @@ def _parse_stage(s, spec_type):
 
 
 
-class DummyPipeline(Pipeline):
-    """ Basic pipeline implementation for tests """
-
-    def __init__(self, manager):
-        super(DummyPipeline, self).__init__(TEST_PIPE_NAME, manager=manager)
-
-    def stages(self):
-        """
-        Establish the stages/phases for this test pipeline.
-
-        :return list[pypiper.Stage]: Sequence of stages for this pipeline.
-        """
-        # File content writers parameterized with output folder.
-        fixed_folder_funcs = []
-        for f in [_write_file1, _write_file2, _write_file3]:
-            f_fixed = partial(f, folder=self.outfolder)
-            f_fixed.__name__ = f.__name__
-            fixed_folder_funcs.append(f_fixed)
-        return [Stage(f) for f in fixed_folder_funcs]
-
-
-
 class EmptyStagesPipeline(Pipeline):
     """ Illegal (via empty stages) Pipeline definition. """
 
@@ -163,8 +95,8 @@ class NameCollisionPipeline(Pipeline):
 
     def stages(self):
         name = "write file1"
-        return [("write file1", _write_file1),
-                (translate_stage_name(name), _write_file1)]
+        return [("write file1", write_file1),
+                (translate_stage_name(name), write_file1)]
 
 
 
@@ -194,9 +126,9 @@ class RunPipelineCornerCaseTests:
 
     @pytest.mark.parametrize(
             argnames=["start", "stop"],
-            argvalues=[(_write_file2, _write_file1),
-                       (_write_file3, _write_file2),
-                       (_write_file3, _write_file1)])
+            argvalues=[(write_file2, write_file1),
+                       (write_file3, write_file2),
+                       (write_file3, write_file1)])
     @pytest.mark.parametrize(argnames="spec_type", argvalues=STAGE_SPECS)
     @pytest.mark.parametrize(
             argnames="stop_type", argvalues=["stop_at", "stop_after"])
@@ -446,6 +378,44 @@ class MostBasicPipelineTests:
                 _assert_pipeline_halted(dummy_pipe)
         else:
             raise ValueError("Unknown test type: '{}'".format(test_type))
+
+
+
+@named_param(
+    argnames="spec_type",
+    argvalues=["filename", "filepath", "stage", "stage_name"])
+@named_param(argnames="completed", argvalues=[False, True])
+def test_stage_completion_determination(dummy_pipe, spec_type, completed):
+    """ Pipeline responds to variety of request forms of checkpoint status. """
+
+    # Allow dummy stage definition and determination of filename.
+    def dummy_test_func():
+        pass
+
+    chkpt_fname = dummy_test_func.__name__ + CHECKPOINT_EXTENSION
+    chkpt_fpath = os.path.join(dummy_pipe.outfolder, chkpt_fname)
+
+    # Determine how to request the checkpoint completion status.
+    if spec_type in ["filename", "filepath"]:
+        s = dummy_test_func.__name__ + CHECKPOINT_EXTENSION
+        if spec_type == "filepath":
+            s = os.path.join(dummy_pipe.outfolder, s)
+    elif spec_type in ["stage", "stage_name"]:
+        s = Stage(dummy_test_func)
+        if spec_type == "stage_name":
+            s = s.name
+    else:
+        raise ValueError("Unknown test spec type: {}".format(spec_type))
+
+    # Touch the checkpoint file.
+    open(chkpt_fpath, 'w').close()
+
+    # Check the completion status for concordance with expectation.
+    observed_completion = dummy_pipe.completed_stage(s)
+    if completed:
+        assert observed_completion
+    else:
+        assert not observed_completion
 
 
 
