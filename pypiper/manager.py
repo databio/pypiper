@@ -203,18 +203,19 @@ class PipelineManager(object):
         # to locate a config file.
         config_to_load = None  # start with nothing
 
-        if args and args.config_file is not None:
-            if os.path.isabs(args.config_file):
+        cmdl_config_file = getattr(args, "config_file", None)
+        if cmdl_config_file:
+            if os.path.isabs(cmdl_config_file):
                 # Absolute custom config file specified
-                if os.path.isfile(args.config_file):
-                    config_to_load = args.config_file
+                if os.path.isfile(cmdl_config_file):
+                    config_to_load = cmdl_config_file
                 else:
-                    print("Can't find custom config file: " + args.config_file)
+                    print("Can't find custom config file: " + cmdl_config_file)
             else: 
                 # Relative custom config file specified
                 # Set path to be relative to pipeline script
                 pipedir = os.path.dirname(sys.argv[0])
-                abs_config = os.path.join(pipedir, args.config_file)
+                abs_config = os.path.join(pipedir, cmdl_config_file)
                 if os.path.isfile(abs_config):
                     config_to_load = abs_config
                 else:
@@ -233,11 +234,11 @@ class PipelineManager(object):
         # Finally load the config we found.
         if config_to_load is not None:
             print("Loading config file: {}".format(config_to_load))
-            with open(config_to_load, 'r') as config_file:
+            with open(config_to_load, 'r') as conf:
                 # Set the args to the new config file, so it can be used
                 # later to pass to, for example, toolkits
                 import yaml
-                config = yaml.load(config_file)
+                config = yaml.load(conf)
                 self.config = AttributeDict(config, default=True)
         else:
             print("No config file")
