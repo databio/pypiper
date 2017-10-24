@@ -10,8 +10,9 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Iterable, Mapping
 
-from stage import checkpoint_filename, translate_stage_name, Stage
-from utils import flag_name, parse_stage_name
+from stage import \
+    checkpoint_filename, translate_stage_name, Stage, CHECKPOINT_EXTENSION
+from utils import flag_name, is_in_file_tree, parse_stage_name
 
 
 __author__ = "Vince Reuter"
@@ -341,7 +342,26 @@ def checkpoint_filepath(checkpoint, pm):
     :param pm: manager of a pipeline instance, relevant for output folder path.
     :type pm: pypiper.PipelineManager | pypiper.Pipeline
     :return str: standardized checkpoint name for file, plus extension
+    :raise ValueError: if the checkpoint is given as absolute path that does
+        not point within pipeline output folder
     """
+
+    # Handle case in which checkpoint is given not just as a string, but
+    # as a checkpoint-like filename. Don't worry about absolute path status
+    # of a potential filename input, or whether it's in the pipeline's
+    # output folder. That's handled upstream. While this isn't a protected
+    # function, there's no real reason to call this from outside the package.
+    if isinstance(checkpoint, str):
+        if os.path.isabs(checkpoint):
+            if is_in_file_tree(checkpoint, pm.outfolder):
+                return checkpoint
+            else:
+                raise ValueError(
+                    "Absolute checkpoint path '{}' is not in pipeline output "
+                    "folder '{}'".format(checkpoint, pm.outfolder))
+        _, ext = os.path.splitext(checkpoint)
+        if ext == CHECKPOINT_EXTENSION:
+            return pipeline_filepath(pm, filename=checkpoint)
 
     if isinstance(pm, Pipeline):
         pm = pm.manager
@@ -354,9 +374,8 @@ def checkpoint_filepath(checkpoint, pm):
     # checkpoint files from different pipelines for that sample that may
     # well define one or more stages with the same name (e.g., trim_reads,
     # align_reads, etc.)
-    suffix = "_" + checkpoint_filename(checkpoint)
-
-    return pipeline_filepath(pm, suffix=suffix)
+    chkpt_name = checkpoint_filename(checkpoint, pipeline_name=pm.name)
+    return pipeline_filepath(pm, filename=chkpt_name)
 
 
 

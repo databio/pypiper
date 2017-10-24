@@ -189,6 +189,20 @@ def make_lock_name(original_path, path_base_folder):
 
 
 
+def is_in_file_tree(fpath, folder):
+    """
+    Determine whether a file is in a folder.
+
+    :param str fpath: filepath to investigate
+    :param folder: path to folder to query
+    :return bool: whether the path indicated is in the folder indicated
+    """
+    file_folder, _ = os.path.split(fpath)
+    other_folder = os.path.join(folder, "")
+    return other_folder.startswith(file_folder)
+
+
+
 def translate_stage_name(stage):
     """
     Account for potential variability in stage/phase name definition.

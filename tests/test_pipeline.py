@@ -10,12 +10,13 @@ from pypiper.pipeline import \
         checkpoint_filepath, pipeline_filepath, \
         IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
         UnknownPipelineStageError
-from pypiper.stage import Stage, CHECKPOINT_EXTENSION
+from pypiper.stage import checkpoint_filename, Stage, CHECKPOINT_EXTENSION
 from pypiper.utils import flag_name, translate_stage_name
 from helpers import named_param
 from tests.conftest import \
     write_file1, write_file2, write_file3, \
-    CONTENTS, FILE1_NAME, FILE_TEXT_PAIRS, OUTPUT_SUFFIX, TEST_PIPE_NAME
+    CONTENTS, FILENAMES, FILE1_NAME, FILE_TEXT_PAIRS, \
+    OUTPUT_SUFFIX, TEST_PIPE_NAME
 
 
 __author__ = "Vince Reuter"
@@ -62,7 +63,13 @@ def stage(request):
 
 
 def _parse_stage(s, spec_type):
-    # Determine how point is to be specified.
+    """
+    Do a type transformation on a Stage function.
+
+    :param callable s: the callable hypothetically backing a Stage
+    :param str spec_type: indication of the type transformation to perform
+    :return object: representation of Stage, of requested type
+    """
     if spec_type == "stage":
         s = Stage(s)
     elif spec_type == "name":
@@ -392,14 +399,15 @@ def test_stage_completion_determination(dummy_pipe, spec_type, completed):
     def dummy_test_func():
         pass
 
-    chkpt_fname = dummy_test_func.__name__ + CHECKPOINT_EXTENSION
-    chkpt_fpath = os.path.join(dummy_pipe.outfolder, chkpt_fname)
+    chkpt_name = checkpoint_filename(
+            dummy_test_func.__name__, pipeline_name=dummy_pipe.name)
+    chkpt_fpath = checkpoint_filepath(chkpt_name, dummy_pipe.manager)
 
     # Determine how to request the checkpoint completion status.
-    if spec_type in ["filename", "filepath"]:
-        s = dummy_test_func.__name__ + CHECKPOINT_EXTENSION
-        if spec_type == "filepath":
-            s = os.path.join(dummy_pipe.outfolder, s)
+    if spec_type == "filename":
+        s = chkpt_name
+    elif spec_type == "filepath":
+        s = chkpt_fpath
     elif spec_type in ["stage", "stage_name"]:
         s = Stage(dummy_test_func)
         if spec_type == "stage_name":
@@ -407,10 +415,18 @@ def test_stage_completion_determination(dummy_pipe, spec_type, completed):
     else:
         raise ValueError("Unknown test spec type: {}".format(spec_type))
 
-    # Touch the checkpoint file.
-    open(chkpt_fpath, 'w').close()
+    # Touch the checkpoint file iff we're positively testing completion.
+    if completed:
+        open(chkpt_fpath, 'w').close()
 
     # Check the completion status for concordance with expectation.
+    # Print a bit of info to inform hypotheses about the source of a
+    # hypothetical test error/failure.
+    outfolder_contents = os.listdir(dummy_pipe.outfolder)
+    print("Pipeline outfolder contents: {}".format(outfolder_contents))
+    print("Contents as pipeline files: {}".format(
+        [pipeline_filepath(dummy_pipe.manager, f) for f in outfolder_contents]))
+    print("Checking completion status: {} ({})".format(s, type(s)))
     observed_completion = dummy_pipe.completed_stage(s)
     if completed:
         assert observed_completion

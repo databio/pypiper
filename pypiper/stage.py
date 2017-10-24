@@ -11,6 +11,7 @@ __all__ = ["Stage"]
 
 
 CHECKPOINT_EXTENSION = ".checkpoint"
+PIPELINE_CHECKPOINT_DELIMITER = "_"
 
 
 
@@ -87,7 +88,7 @@ class Stage(object):
 
 
 
-def checkpoint_filename(checkpoint):
+def checkpoint_filename(checkpoint, pipeline_name=None):
     """
     Translate a checkpoint to a filename.
 
@@ -96,6 +97,13 @@ def checkpoint_filename(checkpoint):
 
     :param checkpoint: name of a pipeline phase/stage
     :type checkpoint: str | Stage
+    :param pipeline_name: name of pipeline to prepend to the checkpoint
+        filename; this differentiates checkpoint files, e.g. within the
+        same sample output folder but associated with different pipelines,
+        in case of the (somewhat probable) scenario of a stage name
+        collision between pipelines the processed the same sample and
+        wrote to the same output folder
+    :type pipeline_name: str
     :return: standardized checkpoint name for file, plus extension;
         null if the input is a Stage that's designated as a non-checkpoint
     :rtype: str | NoneType
@@ -104,4 +112,7 @@ def checkpoint_filename(checkpoint):
         base = checkpoint.checkpoint_name
     else:
         base = translate_stage_name(checkpoint)
+    if pipeline_name:
+        base = "{}{}{}".format(
+                pipeline_name, PIPELINE_CHECKPOINT_DELIMITER, base)
     return base + CHECKPOINT_EXTENSION
