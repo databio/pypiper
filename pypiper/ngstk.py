@@ -912,7 +912,13 @@ class NGSTk(_AttributeDict):
 
 
     def fastqc(self, file, output_dir):
-        """ Call fastqc on a bam file (or fastq file, right?). """
+        """
+        Create command to run fastqc on a BAM file (or FASTQ file, right?)
+
+        :param str file: Path to file with sequencing reads
+        :param str output_dir: Path to folder in which to place output
+        :return str: Command with which to run fastqc
+        """
         # You can find the fastqc help with fastqc --help
         try:
             pm = self.pm
@@ -922,10 +928,9 @@ class NGSTk(_AttributeDict):
         else:
             if not os.path.isabs(output_dir) and pm is not None:
                 output_dir = os.path.join(pm.outfolder, output_dir)
-        if not os.path.exists(output_dir):
-            print("WARNING: fastqc output directory '{}' doesn't exist, and "
-                  "fastqc won't create it.")
-        return "{} --noextract --outdir {} {}".format(self.tools.fastqc, output_dir, file)
+        self.make_sure_path_exists(output_dir)
+        return "{} --noextract --outdir {} {}".\
+                format(self.tools.fastqc, output_dir, file)
 
 
     def fastqc_rename(self, input_bam, output_dir, sample_name):
