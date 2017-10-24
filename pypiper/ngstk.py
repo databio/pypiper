@@ -76,6 +76,29 @@ class NGSTk(_AttributeDict):
             self.ziptool = "gzip"
 
 
+    def _ensure_folders(self, *paths):
+        """
+        Ensure that paths to folder(s) exist.
+
+        Some command-line tools will not attempt to create folder(s) needed
+        for output path to exist. They instead assume that they already are
+        present and will fail if that assumption does not hold.
+
+        :param Iterable[str] paths: Collection of path for which
+        :return:
+        """
+        for p in paths:
+            # Only provide assurance for absolute paths.
+            if not p or not os.path.isabs(p):
+                continue
+            # See if what we're assuring is file- or folder-like.
+            fpath, fname = os.path.split(p)
+            base, ext = os.path.splitext(fname)
+            # If there's no extension, ensure that we have the whole path.
+            # Otherwise, just ensure that we have path to file's folder.
+            self.make_dir(fpath if ext else p)
+
+
     def make_dir(self, path):
         """
         Forge path to directory, creating intermediates as needed.
@@ -138,6 +161,28 @@ class NGSTk(_AttributeDict):
         cmd += " OUTPUT=" + out_file
         cmd += " METRICS_FILE=" + metrics_file
         cmd += " REMOVE_DUPLICATES=" + remove_duplicates
+        return cmd
+
+
+    def bam2fastq(self, input_bam, output_fastq,
+                  output_fastq2=None, unpaired_fastq=None):
+        """
+        Create command to convert BAM(s) to FASTQ(s).
+
+        :param str input_bam: Path to sequencing reads file to convert
+        :param output_fastq: Path to FASTQ to write
+        :param output_fastq2: Path to (R2) FASTQ to write
+        :param unpaired_fastq: Path to unpaired FASTQ to write
+        :return str: Command to convert BAM(s) to FASTQ(s)
+        """
+        self._ensure_folders(output_fastq, output_fastq2, unpaired_fastq)
+        cmd = self.tools.java + " -Xmx" + self.pm.javamem
+        cmd += " -jar " + self.tools.picard + " SamToFastq"
+        cmd += " INPUT={0}".format(input_bam)
+        cmd += " FASTQ={0}".format(output_fastq)
+        if output_fastq2 is not None and unpaired_fastq is not None:
+            cmd += " SECOND_END_FASTQ={0}".format(output_fastq2)
+            cmd += " UNPAIRED_FASTQ={0}".format(unpaired_fastq)
         return cmd
 
 
@@ -947,43 +992,39 @@ class NGSTk(_AttributeDict):
 
         return cmd
 
+
     def slurm_footer(self):
         return "     date"
+
 
     def slurm_submit_job(self, job_file):
         return os.system("sbatch %s" % job_file)
 
+
     def remove_file(self, file_name):
         return "rm {0}".format(file_name)
 
+
     def move_file(self, old, new):
         return "mv {0} {1}".format(old, new)
+
 
     def preseq_curve(self, bam_file, output_prefix):
         return """
         preseq c_curve -B -P -o {0}.yield.txt {1}
         """.format(output_prefix, bam_file)
 
+
     def preseq_extrapolate(self, bam_file, output_prefix):
         return """
         preseq lc_extrap -v -B -P -e 1e+9 -o {0}.future_yield.txt {1}
         """.format(output_prefix, bam_file)
 
+
     def preseq_coverage(self, bam_file, output_prefix):
         return """
         preseq gc_extrap -o {0}.future_coverage.txt {1}
         """.format(output_prefix, bam_file)
-
-
-    def bam2fastq(self, input_bam, output_fastq, output_fastq2=None, unpaired_fastq=None):
-        cmd = self.tools.java + " -Xmx" + self.pm.javamem
-        cmd += " -jar " + self.tools.picard + " SamToFastq"
-        cmd += " INPUT={0}".format(input_bam)
-        cmd += " FASTQ={0}".format(output_fastq)
-        if output_fastq2 is not None and unpaired_fastq is not None:
-            cmd += " SECOND_END_FASTQ={0}".format(output_fastq2)
-            cmd += " UNPAIRED_FASTQ={0}".format(unpaired_fastq)
-        return cmd
 
 
     def trimmomatic(
