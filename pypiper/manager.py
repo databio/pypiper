@@ -23,7 +23,7 @@ import time
 from AttributeDict import AttributeDict
 from pipeline import checkpoint_filepath, pipeline_filepath
 from stage import translate_stage_name, CHECKPOINT_EXTENSION
-from utils import check_shell, flag_name
+from utils import check_shell, flag_name, make_lock_name
 from _version import __version__
 import __main__
 
@@ -575,8 +575,7 @@ class PipelineManager(object):
         # Create lock file:
         # Default lock_name (if not provided) is based on the target file name,
         # but placed in the parent pipeline outfolder, and not in a subfolder, if any.
-        if lock_name is None:
-            lock_name = target.replace(self.outfolder, "").replace("/", "__")
+        lock_name = lock_name or make_lock_name(target, self.outfolder)
         lock_file = self._make_lock_path(lock_name)
         recover_file = self._recoverfile_from_lockfile(lock_file)
         recover_mode = False
@@ -931,8 +930,7 @@ class PipelineManager(object):
             self.timestamp("File exists.")
 
         # Finalize lock file path and begin waiting.
-        if lock_name is None:
-            lock_name = file_name.replace(self.outfolder, "").replace("/", "__")
+        lock_name = lock_name or make_lock_name(file_name, self.outfolder)
         lock_file = self._make_lock_path(lock_name)
         self._wait_for_lock(lock_file)
 
@@ -1058,7 +1056,7 @@ class PipelineManager(object):
         Writes a string to a file safely (with file locks).
         """
         target = file
-        lock_name = target.replace(self.outfolder, "").replace("/", "__")
+        lock_name = make_lock_name(target, self.outfolder)
         lock_file = self._make_lock_path(lock_name)
 
         while True:

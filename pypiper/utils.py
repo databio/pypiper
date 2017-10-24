@@ -170,6 +170,25 @@ def parse_stage_name(stage):
 
 
 
+def make_lock_name(original_path, path_base_folder):
+    """
+    Create name for lock file from an absolute path.
+
+    The original path must be absolute, and it should point to a location
+    within the location indicated by the base folder path provided. This is
+    particularly useful for deleting a sample's output folder path from
+    within the path of a target file to generate a lock file corresponding
+    to the original target.
+
+    :param str original_path: Full original filepath.
+    :param str path_base_folder: Portion of original path to delete
+    :return str: Name or perhaps relative (to the base folder path indicated)
+        path to lock file
+    """
+    return original_path.replace(path_base_folder, "").replace(os.sep, "__")
+
+
+
 def translate_stage_name(stage):
     """
     Account for potential variability in stage/phase name definition.
