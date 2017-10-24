@@ -471,17 +471,28 @@ class NGSTk(_AttributeDict):
         # This is AFTER merge, so if there are multiple files it means the
         # files were split into read1/read2; therefore I must divide by number
         # of files for final reads.
-        def temp_func(input_files=input_files, output_files=output_files, paired_end=paired_end):
+        def temp_func(input_files=input_files, output_files=output_files,
+                      paired_end=paired_end):
+
             if type(input_files) != list:
                 input_files = [input_files]
             if type(output_files) != list:
                 output_files = [output_files]
+
             print(input_files)
             print(output_files)
+
             n_input_files = len(filter(bool, input_files))
-            raw_reads = sum([int(self.count_reads(input_file, paired_end)) for input_file in input_files]) / n_input_files
+
+            total_reads = sum([int(self.count_reads(input_file, paired_end))
+                               for input_file in input_files])
+            raw_reads = total_reads / n_input_files
             self.pm.report_result("Raw_reads", str(raw_reads))
-            fastq_reads = sum([int(self.count_reads(output_file, paired_end)) for output_file in output_files]) / n_input_files
+
+            total_fastq_reads = sum(
+                [int(self.count_reads(output_file, paired_end))
+                 for output_file in output_files])
+            fastq_reads = total_fastq_reads / n_input_files
 
             self.pm.report_result("Fastq_reads", fastq_reads)
             input_ext = self.get_input_ext(input_files[0])
