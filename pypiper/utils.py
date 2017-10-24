@@ -121,6 +121,40 @@ def flag_name(status):
 
 
 
+def is_in_file_tree(fpath, folder):
+    """
+    Determine whether a file is in a folder.
+
+    :param str fpath: filepath to investigate
+    :param folder: path to folder to query
+    :return bool: whether the path indicated is in the folder indicated
+    """
+    file_folder, _ = os.path.split(fpath)
+    other_folder = os.path.join(folder, "")
+    return other_folder.startswith(file_folder)
+
+
+
+def make_lock_name(original_path, path_base_folder):
+    """
+    Create name for lock file from an absolute path.
+
+    The original path must be absolute, and it should point to a location
+    within the location indicated by the base folder path provided. This is
+    particularly useful for deleting a sample's output folder path from
+    within the path of a target file to generate a lock file corresponding
+    to the original target.
+
+    :param str original_path: Full original filepath.
+    :param str path_base_folder: Portion of original path to delete
+    :return str: Name or perhaps relative (to the base folder path indicated)
+        path to lock file
+    """
+    return original_path.replace(path_base_folder, "").replace(os.sep, "__")
+
+
+
+
 def parse_cores(cores, pm, default):
     """
     Framework to finalize number of cores for an operation.
@@ -167,39 +201,6 @@ def parse_stage_name(stage):
             return stage.__name__
         except AttributeError:
             raise TypeError("Unsupported stage type: {}".format(type(stage)))
-
-
-
-def make_lock_name(original_path, path_base_folder):
-    """
-    Create name for lock file from an absolute path.
-
-    The original path must be absolute, and it should point to a location
-    within the location indicated by the base folder path provided. This is
-    particularly useful for deleting a sample's output folder path from
-    within the path of a target file to generate a lock file corresponding
-    to the original target.
-
-    :param str original_path: Full original filepath.
-    :param str path_base_folder: Portion of original path to delete
-    :return str: Name or perhaps relative (to the base folder path indicated)
-        path to lock file
-    """
-    return original_path.replace(path_base_folder, "").replace(os.sep, "__")
-
-
-
-def is_in_file_tree(fpath, folder):
-    """
-    Determine whether a file is in a folder.
-
-    :param str fpath: filepath to investigate
-    :param folder: path to folder to query
-    :return bool: whether the path indicated is in the folder indicated
-    """
-    file_folder, _ = os.path.split(fpath)
-    other_folder = os.path.join(folder, "")
-    return other_folder.startswith(file_folder)
 
 
 

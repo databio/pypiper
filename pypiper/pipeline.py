@@ -10,6 +10,7 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Iterable, Mapping
 
+from flags import FLAGS
 from stage import \
     checkpoint_filename, translate_stage_name, Stage, CHECKPOINT_EXTENSION
 from utils import flag_name, is_in_file_tree, parse_stage_name
@@ -376,6 +377,36 @@ def checkpoint_filepath(checkpoint, pm):
     # align_reads, etc.)
     chkpt_name = checkpoint_filename(checkpoint, pipeline_name=pm.name)
     return pipeline_filepath(pm, filename=chkpt_name)
+
+
+
+def clear_flags(pm, flag_names=None):
+    """
+
+    :param pm: Pipeline or PipelineManager for which to remove flags
+    :type pm: pypiper.PipelineManager | pypiper.Pipeline
+    :param flag_names: Names of flags to remove, optional; if unspecified,
+        all known flag names will be used.
+    :type flag_names: Iterable[str]
+    :return: Collection of names of flags removed
+    """
+    if isinstance(pm, Pipeline):
+        pm = pm.manager
+    flag_names = flag_names or FLAGS
+    if isinstance(flag_names, str):
+        flag_names = [flag_names]
+    removed = []
+    for f in flag_names:
+        flag_file_suffix = "_{}".format(flag_name(f))
+        path_flag_file = pipeline_filepath(pm, suffix=flag_file_suffix)
+        try:
+            os.remove(path_flag_file)
+        except:
+            pass
+        else:
+            print("Removed existing flag: '{}'".format(path_flag_file))
+            removed.append(f)
+    return removed
 
 
 

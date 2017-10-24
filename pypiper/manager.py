@@ -21,7 +21,8 @@ import sys
 import time
 
 from AttributeDict import AttributeDict
-from pipeline import checkpoint_filepath, pipeline_filepath
+from flags import *
+from pipeline import checkpoint_filepath, clear_flags, pipeline_filepath
 from stage import translate_stage_name, CHECKPOINT_EXTENSION
 from utils import check_shell, flag_name, make_lock_name
 from _version import __version__
@@ -33,13 +34,6 @@ __all__ = ["PipelineManager"]
 
 
 LOCK_PREFIX = "lock."
-# TODO: ultimately, these should migrate to pep.
-RUN_FLAG = "running"
-COMPLETE_FLAG = "completed"
-FAIL_FLAG = "failed"
-WAIT_FLAG = "waiting"
-PAUSE_FLAG = "partial"
-FLAGS = [RUN_FLAG, COMPLETE_FLAG, FAIL_FLAG, WAIT_FLAG, PAUSE_FLAG]
 
 
 
@@ -186,13 +180,7 @@ class PipelineManager(object):
         self.status = "initializing"
         # as part of the beginning of the pipeline, clear any flags set by
         # previous runs of this pipeline
-        for flag in FLAGS:
-            existing_flag = pipeline_filepath(self, suffix="_{}".format(flag_name(flag)))
-            try:
-                os.remove(existing_flag)
-                print("Removed existing flag: " + existing_flag)
-            except:
-                pass
+        clear_flags(self)
 
         # In-memory holder for report_result
         self.stats_dict = {}
