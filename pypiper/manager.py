@@ -1129,9 +1129,6 @@ class PipelineManager(object):
         :return str: Path to the lock file.
         """
 
-        print("Making pipeline-relative lockfile path from base: '{}'".
-              format(lock_name_base))
-
         # For lock prefix validation, separate file name from other path
         # components, as we care about the name prefix not path prefix.
         base, name = os.path.split(lock_name_base)
