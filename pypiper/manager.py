@@ -247,6 +247,16 @@ class PipelineManager(object):
 
 
     @property
+    def completed(self):
+        """
+        Is the managed pipeline in a completed state?
+
+        :return bool: Whether the managed pipeline is in a completed state.
+        """
+        return self.status == COMPLETE_FLAG
+
+
+    @property
     def failed(self):
         """
         Is the managed pipeline in a failed state?
@@ -257,13 +267,24 @@ class PipelineManager(object):
 
 
     @property
-    def completed(self):
+    def halted(self):
         """
-        Is the managed pipeline in a completed state?
+        Is the managed pipeline in a paused/halted state?
 
-        :return bool: Whether the managed pipeline is in a completed state.
+        :return bool: Whether the managed pipeline is in a paused/halted state.
         """
-        return self.status == COMPLETE_FLAG
+        return self.status == PAUSE_FLAG
+
+
+    @property
+    def has_exit_status(self):
+        """
+        Has the pipeline been safely stopped?
+
+        :return bool: Whether the managed pipeline's status indicates that it
+            has been safely stopped.
+        """
+        return self.completed or self.halted or self.failed
 
 
     def _ignore_interrupts(self):
@@ -1454,8 +1475,8 @@ class PipelineManager(object):
         # If the pipeline hasn't completed successfully, or already been marked
         # as failed, then mark it as failed now.
 
-        if not (self.completed or self.failed):
-            print("Pipeline status is: " + self.status)
+        if not self.has_exit_status:
+            print("Pipeline status: {}".format(self.status))
             self.fail_pipeline(Exception("Unknown exit failure"))
 
 
