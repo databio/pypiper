@@ -497,12 +497,15 @@ class NGSTk(_AttributeDict):
             self.pm.report_result("Fastq_reads", fastq_reads)
             input_ext = self.get_input_ext(input_files[0])
             # We can only assess pass filter reads in bam files with flags.
-            if input_ext == "bam":
-                fail_filter_reads = self.count_fail_reads(input_file, paired_end)
-                pf_reads = int(raw_reads) - int(fail_filter_reads)
+            if input_ext == ".bam":
+                num_failed_filter = sum(
+                    [int(self.count_fail_reads(f, paired_end))
+                     for f in input_files])
+                pf_reads = int(raw_reads) - num_failed_filter
                 self.pm.report_result("PF_reads", str(pf_reads))
             if fastq_reads != int(raw_reads):
-                raise Exception("Fastq conversion error? Number of reads doesn't match unaligned bam")
+                raise Exception("Fastq conversion error? Number of reads "
+                                "doesn't match unaligned bam")
 
             return fastq_reads
 
