@@ -867,8 +867,19 @@ class NGSTk(_AttributeDict):
 
 
     def fastqc(self, file, output_dir):
-        """Call fastqc on a bam file (or fastq file, right?).
-        # You can find the fastqc help with fastqc --help"""
+        """ Call fastqc on a bam file (or fastq file, right?). """
+        # You can find the fastqc help with fastqc --help
+        try:
+            pm = self.pm
+        except AttributeError:
+            # Do nothing, this is just for path construction.
+            pass
+        else:
+            if not os.path.isabs(output_dir) and pm is not None:
+                output_dir = os.path.join(pm.outfolder, output_dir)
+        if not os.path.exists(output_dir):
+            print("WARNING: fastqc output directory '{}' doesn't exist, and "
+                  "fastqc won't create it.")
         return "{} --noextract --outdir {} {}".format(self.tools.fastqc, output_dir, file)
 
 
