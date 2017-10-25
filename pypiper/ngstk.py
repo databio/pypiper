@@ -1071,6 +1071,20 @@ class NGSTk(_AttributeDict):
     def skewer(
             self, input_fastq1, output_prefix, output_fastq1,
             log, cpus, adapters, input_fastq2=None, output_fastq2=None):
+        """
+        Create commands with which to run skewer.
+
+        :param str input_fastq1: Path to input (read 1) FASTQ file
+        :param str output_prefix: Prefix for output FASTQ file names
+        :param str output_fastq1: Path to (read 1) output FASTQ file
+        :param str log: Path to file to which to write logging information
+        :param int | str cpus: Number of processing cores to allow
+        :param str adapters: Path to file with sequencing adapters
+        :param str input_fastq2: Path to read 2 input FASTQ file
+        :param str output_fastq2: Path to read 2 output FASTQ file
+        :return list[str]: Sequence of commands to run to trim reads with
+            skewer and rename files as desired.
+        """
 
         pe = False if input_fastq2 is None else True
         mode = "pe" if pe else "any"
