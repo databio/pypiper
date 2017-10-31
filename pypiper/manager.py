@@ -210,7 +210,8 @@ class PipelineManager(object):
                 if os.path.isfile(cmdl_config_file):
                     config_to_load = cmdl_config_file
                 else:
-                    print("Can't find custom config file: " + cmdl_config_file)
+                    #print("Can't find custom config file: " + cmdl_config_file)
+                    pass
             else: 
                 # Relative custom config file specified
                 # Set path to be relative to pipeline script
@@ -219,7 +220,8 @@ class PipelineManager(object):
                 if os.path.isfile(abs_config):
                     config_to_load = abs_config
                 else:
-                    print("Can't find custom config file: " + abs_config)
+                    #print("Can't find custom config file: " + abs_config)
+                    pass
             if config_to_load is not None:
                 print("Using custom config file: {}".format(config_to_load))
         else:
@@ -445,7 +447,11 @@ class PipelineManager(object):
         try:
             os.remove(flag_file_path)
         except:
-            print("Could not remove flag file: '{}'".format(flag_file_path))
+            # Print message only if the failure to remove the status flag
+            # is unexpected; there's no flag for initialization, so we
+            # can't remove the file.
+            if self.status != "initializing":
+                print("Could not remove flag file: '{}'".format(flag_file_path))
             pass
 
         # Set new status.
