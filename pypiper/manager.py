@@ -1381,8 +1381,6 @@ class PipelineManager(object):
         # Produce cleanup script
         self._cleanup(dry_run=True)
 
-
-
         # Finally, set the status to failed and close out with a timestamp
         if not self.failed:  # and not self.completed:
             self.timestamp("### Pipeline failed at: ")
@@ -1463,7 +1461,11 @@ class PipelineManager(object):
         This function I register with atexit to run whenever the script is completing.
         A catch-all for uncaught exceptions, setting status flag file to failed.
         """
-        # print("Exit handler")
+
+        # TODO: consider handling sys.stderr/sys.stdout exceptions related to
+        # TODO (cont.): order of interpreter vs. subprocess shutdown signal receipt.
+        # TODO (cont.): see https://bugs.python.org/issue11380
+
         # Make the cleanup file executable if it exists
         if os.path.isfile(self.cleanup_file):
             # Make the cleanup file self destruct.
