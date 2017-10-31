@@ -1173,8 +1173,6 @@ class PipelineManager(object):
         # and starting with the pipeline output folder.
         if not (os.path.isabs(lockfile) or lockfile.startswith(self.outfolder)):
             lockfile = self._make_lock_path(lockfile)
-        print("Generating recovery file from lock file: '{}'".
-              format(lockfile))
         return lockfile.replace(LOCK_PREFIX, "recover." + LOCK_PREFIX)
 
 
