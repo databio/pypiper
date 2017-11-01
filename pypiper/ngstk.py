@@ -353,9 +353,7 @@ class NGSTk(_AttributeDict):
 
                 # if multiple fastq
                 if all([self.get_input_ext(x) == ".fastq.gz" for x in input_args]):
-                    sample_merged = local_base + ".merged.fastq"
                     sample_merged_gz = local_base + ".merged.fastq.gz"
-                    output_merge = os.path.join(raw_folder, sample_merged)
                     output_merge_gz = os.path.join(raw_folder, sample_merged_gz)
                     #cmd1 = self.ziptool + "-d -c " + " ".join(input_args) + " > " + output_merge
                     #cmd2 = self.ziptool + " " + output_merge
@@ -374,7 +372,9 @@ class NGSTk(_AttributeDict):
 
                 # At this point, we don't recognize the input file types or they
                 # do not match.
-                raise NotImplementedError("Input files must be of the same type; and can only merge bam or fastq.")
+                raise NotImplementedError(
+                        "Input files must be of the same type, and can only "
+                        "merge bam or fastq.")
 
 
     def input_to_fastq(
@@ -786,8 +786,9 @@ class NGSTk(_AttributeDict):
             useful to add cut, sort, wc operations to the samtools view output.
         :type postpend: str
         """
-        x = subprocess.check_output(self.tools.samtools + " view " + param + " " + file_name + " " + postpend, shell=True)
-        return x
+        cmd = "{} view {} {} {}".format(
+                self.tools.samtools, param, file_name, postpend)
+        return subprocess.check_output(cmd, shell=True)
 
 
     def count_reads(self, file_name, paired_end):
@@ -817,8 +818,8 @@ class NGSTk(_AttributeDict):
             return self.samtools_view(file_name, param=param_text)
         else:
             num_lines = self.count_lines_zip(file_name) \
-                    if self.is_gzipped_fastq(file_name) else self.count_lines(file_name)
-            #num_lines = int(self.count_lines(file_name))
+                    if self.is_gzipped_fastq(file_name) \
+                    else self.count_lines(file_name)
             divisor = 2 if paired_end else 4
             return int(num_lines) / divisor
 
@@ -871,12 +872,8 @@ class NGSTk(_AttributeDict):
         :return: Whether indicated file appears to be in gzipped FASTQ format.
         :rtype bool
         """
-        pre, ext = os.path.splitext(file_name)
-        if self.is_unzipped_fastq(pre):
-	    return ext ==  ".gz"
-        else:
-	    return False
-
+        _, ext = os.path.splitext(file_name)
+        return file_name.endswith(".fastq.gz") or file_name.endswith(".fq.gz")
 
 
     def count_mapped_reads(self, file_name, paired_end):
