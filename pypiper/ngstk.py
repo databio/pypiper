@@ -818,7 +818,7 @@ class NGSTk(_AttributeDict):
         else:
             count_lines = self.count_lines_zip(file_name) \
                     if self.is_gzipped_fastq(file_name) else self.count_lines(file_name)
-            num_lines = int(count_lines(file_name))
+            num_lines = int(self.count_lines(file_name))
             divisor = 2 if paired_end else 4
             return num_lines / divisor
 
