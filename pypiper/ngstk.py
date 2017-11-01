@@ -871,8 +871,12 @@ class NGSTk(_AttributeDict):
         :return: Whether indicated file appears to be in gzipped FASTQ format.
         :rtype bool
         """
-        _, ext = os.path.splitext(file_name)
-        return ext in [".fq.gz", ".fastq.gz"]
+        pre, ext = os.path.splitext(file_name)
+        if self.is_unzipped_fastq(pre):
+	    return ext ==  ".gz"
+        else:
+	    return False
+
 
 
     def count_mapped_reads(self, file_name, paired_end):
