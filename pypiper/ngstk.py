@@ -816,11 +816,11 @@ class NGSTk(_AttributeDict):
             param_text = "-c" if ext == ".bam" else "-c -S"
             return self.samtools_view(file_name, param=param_text)
         else:
-            count_lines = self.count_lines_zip(file_name) \
+            num_lines = self.count_lines_zip(file_name) \
                     if self.is_gzipped_fastq(file_name) else self.count_lines(file_name)
-            num_lines = int(self.count_lines(file_name))
+            #num_lines = int(self.count_lines(file_name))
             divisor = 2 if paired_end else 4
-            return num_lines / divisor
+            return int(num_lines) / divisor
 
 
     def is_sam_or_bam(self, file_name):
