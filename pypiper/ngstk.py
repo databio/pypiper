@@ -618,6 +618,31 @@ class NGSTk(_AttributeDict):
             cmd += " TMP_DIR=" + tmp_dir
         return cmd
 
+    
+    def merge_fastq(self, inputs, output, run=False, remove_inputs=False):
+        """
+        Merge FASTQ files (zipped or not) into one.
+        
+        :param Iterable[str] inputs: Collection of paths to files to merge.
+        :param str output: Path to single output file.
+        :param bool run: Whether to run the command.
+        :param bool remove_inputs: Whether to keep the original files.
+        :return NoneType | str: Null if running the command, otherwise the 
+            command itself
+        :raise ValueError: Raise ValueError if the call is such that 
+            inputs are to be deleted but command is not run.
+        """
+        if remove_inputs and not run:
+            raise ValueError("Can't delete files if command isn't run")
+        cmd = "cat {} > {}".format(" ".join(inputs), output)
+        if run:
+            subprocess.check_call(cmd.split(), shell=True)
+            if remove_inputs:
+                cmd = "rm {}".format(" ".join(inputs))
+                subprocess.check_call(cmd.split(), shell=True)
+        else:
+            return cmd
+
 
     def count_lines(self, file_name):
         """
