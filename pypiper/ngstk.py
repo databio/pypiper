@@ -6,7 +6,7 @@ import subprocess
 import errno
 from .AttributeDict import AttributeDict as _AttributeDict
 from .exceptions import UnsupportedFiletypeException
-from .utils import is_fastq, is_gzipped_fastq, is_sam_or_bam, is_unzipped_fastq
+from .utils import is_fastq, is_gzipped_fastq, is_sam_or_bam
 
 
 
@@ -86,7 +86,6 @@ class NGSTk(_AttributeDict):
         present and will fail if that assumption does not hold.
 
         :param Iterable[str] paths: Collection of path for which
-        :return:
         """
         for p in paths:
             # Only provide assurance for absolute paths.

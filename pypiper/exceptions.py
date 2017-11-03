@@ -4,7 +4,13 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-__all__ = ["UnsupportedFiletypeException"]
+__all__ = ["PipelineError", "UnsupportedFiletypeException"]
+
+
+
+class PipelineError(Exception):
+    """ General pipeline error. """
+    pass
 
 
 
