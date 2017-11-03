@@ -6,6 +6,7 @@ import subprocess
 import errno
 from AttributeDict import AttributeDict as _AttributeDict
 from .exceptions import UnsupportedFiletypeException
+from .utils import is_fastq, is_gzipped_fastq, is_sam_or_bam, is_unzipped_fastq
 
 
 
@@ -833,72 +834,20 @@ class NGSTk(_AttributeDict):
         """
 
         _, ext = os.path.splitext(file_name)
-        if not (self.is_sam_or_bam(file_name) or self.is_fastq(file_name)):
+        if not (is_sam_or_bam(file_name) or is_fastq(file_name)):
             # TODO: make this an exception and force caller to handle that
             # rather than relying on knowledge of possibility of negative value.
             return -1
 
-        if self.is_sam_or_bam(file_name):
+        if is_sam_or_bam(file_name):
             param_text = "-c" if ext == ".bam" else "-c -S"
             return self.samtools_view(file_name, param=param_text)
         else:
             num_lines = self.count_lines_zip(file_name) \
-                    if self.is_gzipped_fastq(file_name) \
+                    if is_gzipped_fastq(file_name) \
                     else self.count_lines(file_name)
             divisor = 2 if paired_end else 4
             return int(num_lines) / divisor
-
-
-    def is_sam_or_bam(self, file_name):
-        """
-        Determine whether a file appears to be in a SAM format.
-
-        :param file_name: Name/path of file to check as SAM-formatted.
-        :type file_name: str
-        :return: Whether file appears to be SAM-formatted
-        :rtype: bool
-        """
-        _, ext = os.path.splitext(file_name)
-        return ext in [".bam", ".sam"]
-
-
-    def is_fastq(self, file_name):
-        """
-        Determine whether indicated file appears to be in FASTQ format.
-
-        :param file_name: Name/path of file to check as FASTQ.
-        :type file_name: str
-        :return: Whether indicated file appears to be in FASTQ format, zipped
-            or unzipped.
-        :rtype bool
-        """
-        return self.is_unzipped_fastq(file_name) or self.is_gzipped_fastq(file_name)
-
-
-    def is_unzipped_fastq(self, file_name):
-        """
-        Determine whether indicated file appears to be an unzipped FASTQ.
-
-        :param file_name: Name/path of file to check as unzipped FASTQ.
-        :type file_name: str
-        :return: Whether indicated file appears to be in unzipped FASTQ format.
-        :rtype bool
-        """
-        _, ext = os.path.splitext(file_name)
-        return ext in [".fastq", ".fq"]
-
-
-    def is_gzipped_fastq(self, file_name):
-        """
-        Determine whether indicated file appears to be a gzipped FASTQ.
-
-        :param file_name: Name/path of file to check as gzipped FASTQ.
-        :type file_name: str
-        :return: Whether indicated file appears to be in gzipped FASTQ format.
-        :rtype bool
-        """
-        _, ext = os.path.splitext(file_name)
-        return file_name.endswith(".fastq.gz") or file_name.endswith(".fq.gz")
 
 
     def count_mapped_reads(self, file_name, paired_end):

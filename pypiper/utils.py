@@ -153,6 +153,62 @@ def is_in_file_tree(fpath, folder):
 
 
 
+def is_fastq(file_name):
+    """
+    Determine whether indicated file appears to be in FASTQ format.
+
+    :param file_name: Name/path of file to check as FASTQ.
+    :type file_name: str
+    :return: Whether indicated file appears to be in FASTQ format, zipped
+        or unzipped.
+    :rtype bool
+    """
+    return is_unzipped_fastq(file_name) or is_gzipped_fastq(file_name)
+
+
+
+def is_gzipped_fastq(file_name):
+    """
+    Determine whether indicated file appears to be a gzipped FASTQ.
+
+    :param file_name: Name/path of file to check as gzipped FASTQ.
+    :type file_name: str
+    :return: Whether indicated file appears to be in gzipped FASTQ format.
+    :rtype bool
+    """
+    _, ext = os.path.splitext(file_name)
+    return file_name.endswith(".fastq.gz") or file_name.endswith(".fq.gz")
+
+
+
+def is_unzipped_fastq(file_name):
+    """
+    Determine whether indicated file appears to be an unzipped FASTQ.
+
+    :param file_name: Name/path of file to check as unzipped FASTQ.
+    :type file_name: str
+    :return: Whether indicated file appears to be in unzipped FASTQ format.
+    :rtype bool
+    """
+    _, ext = os.path.splitext(file_name)
+    return ext in [".fastq", ".fq"]
+
+
+
+def is_sam_or_bam(file_name):
+    """
+    Determine whether a file appears to be in a SAM format.
+
+    :param file_name: Name/path of file to check as SAM-formatted.
+    :type file_name: str
+    :return: Whether file appears to be SAM-formatted
+    :rtype: bool
+            """
+    _, ext = os.path.splitext(file_name)
+    return ext in [".bam", ".sam"]
+
+
+
 def make_lock_name(original_path, path_base_folder):
     """
     Create name for lock file from an absolute path.
