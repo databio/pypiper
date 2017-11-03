@@ -110,7 +110,7 @@ def build_sample_paths(sample):
         base, ext = os.path.splitext(path)
         if ext:
             print("Skipping file-like: '[}'".format(path))
-        if not os.path.isdir(base):
+        elif not os.path.isdir(base):
             os.makedirs(base)
 
 
