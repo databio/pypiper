@@ -97,6 +97,24 @@ def build_command(chunks):
 
 
 
+def build_sample_paths(sample):
+    """
+    Ensure existence of folders for a Sample.
+
+    :param looper.models.Sample sample: Sample (or instance supporting get()
+        that stores folders paths in a 'paths' key, in which the value is a
+        mapping from path name to actual folder path)
+    """
+    for path_name, path in getattr(sample, "paths", dict()).items():
+        print("{}: '{}'".format(path_name, path))
+        base, ext = os.path.splitext(path)
+        if ext:
+            print("Skipping file-like: '[}'".format(path))
+        if not os.path.isdir(base):
+            os.makedirs(base)
+
+
+
 def check_shell(cmd):
     """
     Determine whether a command appears to involve shell process(es).
