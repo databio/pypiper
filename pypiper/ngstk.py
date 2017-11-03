@@ -4,7 +4,7 @@ import os
 import re
 import subprocess
 import errno
-from AttributeDict import AttributeDict as _AttributeDict
+from .AttributeDict import AttributeDict as _AttributeDict
 from .exceptions import UnsupportedFiletypeException
 from .utils import is_fastq, is_gzipped_fastq, is_sam_or_bam, is_unzipped_fastq
 
@@ -307,10 +307,10 @@ class NGSTk(_AttributeDict):
                     out = self.merge_or_link(
                             input_arg, raw_folder, local_base_extended)
 
-                    print("Local input file: " + out)
+                    print("Local input file: '{}'".format(out))
                     # Make sure file exists:
                     if not os.path.isfile(out):
-                        print out + " is not a file"
+                        print("Not a file: '{}'".format(out))
 
                     local_input_files.append(out)
 

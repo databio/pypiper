@@ -1,7 +1,7 @@
 """ Conceptualize a pipeline processing phase/stage. """
 
 import copy
-from utils import translate_stage_name
+from .utils import translate_stage_name
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"

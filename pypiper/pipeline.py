@@ -10,10 +10,10 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Iterable, Mapping
 
-from flags import FLAGS
-from stage import \
+from .flags import FLAGS
+from .stage import \
     checkpoint_filename, translate_stage_name, Stage, CHECKPOINT_EXTENSION
-from utils import flag_name, is_in_file_tree, parse_stage_name
+from .utils import flag_name, is_in_file_tree, parse_stage_name
 
 
 __author__ = "Vince Reuter"

@@ -20,12 +20,12 @@ import subprocess
 import sys
 import time
 
-from AttributeDict import AttributeDict
-from flags import *
-from pipeline import checkpoint_filepath, clear_flags, pipeline_filepath
-from stage import translate_stage_name, CHECKPOINT_EXTENSION
-from utils import check_shell, flag_name, make_lock_name
-from _version import __version__
+from .AttributeDict import AttributeDict
+from .flags import *
+from .pipeline import checkpoint_filepath, clear_flags, pipeline_filepath
+from .stage import translate_stage_name, CHECKPOINT_EXTENSION
+from .utils import check_shell, flag_name, make_lock_name
+from ._version import __version__
 import __main__
 
 
@@ -382,7 +382,7 @@ class PipelineManager(object):
         # Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
         print("----------------------------------------")
         print("##### [Pipeline run code and environment:]")
-        print("* " + "Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv))) + "`"
+        print("* " + "Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv)) + "`")
         print("* " + "Compute host".rjust(20) + ":  " + platform.node())
         print("* " + "Working dir".rjust(20) + ":  " + os.getcwd())
         print("* " + "Outfolder".rjust(20) + ":  " + self.outfolder)
@@ -394,11 +394,11 @@ class PipelineManager(object):
         try:
             print("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
             print("* " + "Pypiper version".rjust(20) + ":  " + __version__)
-            print("* " + "Pypiper hash".rjust(20) + ":  " + gitvars['pypiper_hash'].strip())
-            print("* " + "Pypiper branch".rjust(20) + ":  " + gitvars['pypiper_branch'].strip())
-            print("* " + "Pypiper date".rjust(20) + ":  " + gitvars['pypiper_date'].strip())
-            if (gitvars['pypiper_diff'] != ""):
-                print("* " + "Pypiper diff".rjust(20) + ":  " + gitvars['pypiper_diff'].strip())
+            print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash']).strip())
+            print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch']).strip())
+            print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date']).strip())
+            if "" != str(gitvars['pypiper_diff']):
+                print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff']).strip())
         except KeyError:
             # It is ok if keys aren't set, it means pypiper isn't in a  git repo.
             pass
@@ -406,11 +406,11 @@ class PipelineManager(object):
         try:
             print("* " + "Pipeline dir".rjust(20) + ":  " + "`" + gitvars['pipe_dir'].strip() + "`")
             print("* " + "Pipeline version".rjust(20) + ":  " + str(self.pl_version))
-            print("* " + "Pipeline hash".rjust(20) + ":  " + gitvars['pipe_hash'].strip())
-            print("* " + "Pipeline branch".rjust(20) + ":  " + gitvars['pipe_branch'].strip())
-            print("* " + "Pipeline date".rjust(20) + ":  " + gitvars['pipe_date'].strip())
+            print("* " + "Pipeline hash".rjust(20) + ":  " + str(gitvars['pipe_hash']).strip())
+            print("* " + "Pipeline branch".rjust(20) + ":  " + str(gitvars['pipe_branch']).strip())
+            print("* " + "Pipeline date".rjust(20) + ":  " + str(gitvars['pipe_date']).strip())
             if (gitvars['pipe_diff'] != ""):
-                print("* " + "Pipeline diff".rjust(20) + ":  " + gitvars['pipe_diff'].strip())
+                print("* " + "Pipeline diff".rjust(20) + ":  " + str(gitvars['pipe_diff']).strip())
         except KeyError:
             # It is ok if keys aren't set, it means the pipeline isn't a git repo.
             pass
@@ -1216,7 +1216,7 @@ class PipelineManager(object):
 
         stats_file = self.pipeline_stats_file
         if os.path.isfile(self.pipeline_stats_file):
-            with open(stats_file, "rb") as stat_file:
+            with open(stats_file, 'r') as stat_file:
                 for line in stat_file:
                     try:
                         # Someone may have put something that's not 3 columns in the stats file

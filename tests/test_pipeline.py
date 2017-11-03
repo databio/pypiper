@@ -10,9 +10,9 @@ from pypiper.pipeline import \
         checkpoint_filepath, pipeline_filepath, \
         IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
         UnknownPipelineStageError
-from pypiper.stage import checkpoint_filename, Stage, CHECKPOINT_EXTENSION
+from pypiper.stage import checkpoint_filename, Stage
 from pypiper.utils import flag_name, translate_stage_name
-from helpers import named_param
+from .helpers import named_param
 from tests.conftest import \
     write_file1, write_file2, write_file3, \
     CONTENTS, FILENAMES, FILE1_NAME, FILE_TEXT_PAIRS, \
