@@ -105,7 +105,7 @@ def build_sample_paths(sample):
         that stores folders paths in a 'paths' key, in which the value is a
         mapping from path name to actual folder path)
     """
-    for path_name, path in getattr(sample, "paths", dict()).items():
+    for path_name, path in sample.paths.items():
         print("{}: '{}'".format(path_name, path))
         base, ext = os.path.splitext(path)
         if ext:
