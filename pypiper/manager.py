@@ -417,7 +417,7 @@ class PipelineManager(object):
 
         # Print all arguments (if any)
         print("\n##### [Arguments passed to pipeline:]")
-        for arg, val in (args or dict()).items():
+        for arg, val in (vars(args) if args else dict()).items():
             argtext = "`{}`".format(arg)
             valtext = "`{}`".format(val)
             print("* {}:  {}".format(argtext.rjust(20), valtext))
