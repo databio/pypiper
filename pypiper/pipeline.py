@@ -290,7 +290,7 @@ class Pipeline(object):
 
     def wrapup(self):
         """ Hook for basic final stage to run, after last one completes. """
-        return
+        self.manager.stop_pipeline()
 
 
     def _reset(self):
