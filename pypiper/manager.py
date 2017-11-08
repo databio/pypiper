@@ -417,11 +417,10 @@ class PipelineManager(object):
 
         # Print all arguments (if any)
         print("\n##### [Arguments passed to pipeline:]")
-        if args is not None:
-            argsDict = vars(args)
-            for arg in argsDict:
-                arg_print = "`" + arg + "`"
-                print("* " + arg_print.rjust(20) + ":  " + "`" + str(argsDict[arg]) + "`")
+        for arg, val in (args or dict()).items():
+            argtext = "`{}`".format(arg)
+            valtext = "`{}`".format(val)
+            print("* {}:  {}".format(argtext.rjust(20), valtext))
         print("\n----------------------------------------\n")
         self.set_status_flag(RUN_FLAG)
 
