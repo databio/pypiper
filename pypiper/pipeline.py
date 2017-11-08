@@ -289,8 +289,8 @@ class Pipeline(object):
 
 
     def wrapup(self):
-        """ Hook for basic final stage to run, after last one completes. """
-        self.manager.stop_pipeline()
+        """ Final mock stage to run after final one finishes. """
+        self.manager.complete()
 
 
     def _reset(self):
