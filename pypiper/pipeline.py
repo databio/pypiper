@@ -288,6 +288,11 @@ class Pipeline(object):
             self.manager.halt()
 
 
+    def wrapup(self):
+        """ Hook for basic final stage to run, after last one completes. """
+        return
+
+
     def _reset(self):
         """ Scrub decks with respect to Stage status/label tracking. """
         self.skipped, self.executed = [], []
