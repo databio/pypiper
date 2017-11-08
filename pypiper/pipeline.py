@@ -283,7 +283,7 @@ class Pipeline(object):
 
         # Where we stopped determines the shutdown mode.
         if stop_index == len(self._stages):
-            self.manager.complete()
+            self.wrapup()
         else:
             self.manager.halt()
 
