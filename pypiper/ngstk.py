@@ -1194,7 +1194,7 @@ class NGSTk(_AttributeDict):
         :return: Command with which to run SPP
         :rtype: str
         """
-        base = "{} {} -rf -savp"
+        base = "{} {} -rf -savp".format(self.tools.Rscript, self.tools.spp)
         cmd = base + " -savp={} -s=0:5:500 -c={} -out={} -p={}".format(
             plot, input_bam, output, cpus)
         return cmd
