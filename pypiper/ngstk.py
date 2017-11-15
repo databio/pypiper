@@ -1060,7 +1060,7 @@ class NGSTk(_AttributeDict):
             skewer and rename files as desired.
         """
 
-        pe = False if input_fastq2 is None else True
+        pe = input_fastq2 is not None
         mode = "pe" if pe else "any"
         cmds = list()
         cmd1 = self.tools.skewer + " --quiet"
