@@ -551,7 +551,8 @@ class NGSTk(_AttributeDict):
 
             # Also run a fastqc (if installed/requested)
             if fastqc_folder:
-                self.make_sure_path_exists(fastqc_folder)
+                if fastqc_folder and os.path.isabs(fastqc_folder):
+                    self.make_sure_path_exists(fastqc_folder)
                 cmd = self.fastqc(trimmed_fastq, fastqc_folder)
                 self.pm.run(cmd, lock_name="trimmed_fastqc", nofail=True)
                 if paired_end and trimmed_fastq_R2:
