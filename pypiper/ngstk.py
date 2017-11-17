@@ -1499,7 +1499,7 @@ class NGSTk(_AttributeDict):
         # Whether to specify to MACS2 a value for statistical significance
         # can be either directly indicated, but if not, it's determined by
         # whether the mark is associated with broad peaks. By default, we
-        # specify a signficance value to MACS2 for a mark associated with a
+        # specify a significance value to MACS2 for a mark associated with a
         # broad peak.
         if include_significance is None:
             include_significance = broad
@@ -1527,7 +1527,7 @@ class NGSTk(_AttributeDict):
             if qvalue is not None:
                 cmd += " --qvalue {}".format(qvalue)
             else:
-                cmd += " --pvalue {}".format(pvalue or 0.001)
+                cmd += " --pvalue {}".format(pvalue or 0.00001)
         cmd += " -g {0} -n {1} --outdir {2}".format(sizes[genome], sample_name, output_dir)
 
         return cmd
