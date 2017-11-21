@@ -9,6 +9,15 @@ than 15 minutes to build your first pipeline. Learning all the
 the same time, Pypiper provides immediate advantages over a
 simple shell script.
 
+Pypiper is an example of a simple  `bioinformatics pipeline framework
+<http://databio.org/pipeline_frameworks/>`_.
+
+Many bioinformatics pipelines are written by students or technicians who don't have time to learn a full-scale pipelining framework, so they just end up using simple bash scripts to piece together commands. Pypiper tries to give 80% of the benefits of a professional-scale pipelining system while requiring very little additional effort.
+
+Just take your bash script and pass those commands through ``PipelineManager.run()`` and you will get automatic restartability, process monitoring for memory use and compute time, pipeline status monitoring, copious log output, robust error handling, easy debugging tools, guaranteed file output integrity, and a bunch of useful pipeline development helper functions.
+
+With Pypiper, simplicity is paramount. A user can start building useful pipelines using Pypiper in under 15 minutes. At the same time, using Pypiper provides immediately clear and significant advantages over a simple bash script.
+
 Who should use Pypiper?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
