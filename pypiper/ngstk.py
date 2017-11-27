@@ -1346,7 +1346,21 @@ class NGSTk(_AttributeDict):
             pass
 
     # TODO: parameterize in terms of normalization factor.
-    def bam_to_bigwig(self, input_bam, output_bigwig, genome_sizes, genome, tagmented=False, normalize=False):
+    def bam_to_bigwig(
+            self, input_bam, output_bigwig, genome_sizes, genome,
+            tagmented=False, normalize=False, norm_factor=1000):
+        """
+        Convert a BAM file to a bigWig file.
+
+        :param str input_bam: path to BAM file to convert
+        :param str output_bigwig: path to which to write file in bigwig format
+        :param str genome_sizes: path to file with chromosome size information
+        :param str genome: name of genomic assembly
+        :param bool tagmented: flag related to read-generating protocol
+        :param bool normalize: whether to normalize coverage
+        :param int norm_factor: number of bases to use for normalization
+        :return list[str]: sequence of commands to execute
+        """
         # TODO:
         # addjust fragment length dependent on read size and real fragment size
         # (right now it asssumes 50bp reads with 180bp fragments)
@@ -1363,7 +1377,7 @@ class NGSTk(_AttributeDict):
         )
         cmds.append(cmd1)
         if normalize:
-            cmds.append("""awk 'NR==FNR{{sum+= $4; next}}{{ $4 = ($4 / sum) * 1000; print}}' {0}.cov {0}.cov | sort -k1,1 -k2,2n > {0}.normalized.cov""".format(transient_file))
+            cmds.append("""awk 'NR==FNR{{sum+= $4; next}}{{ $4 = ($4 / sum) * {1}; print}}' {0}.cov {0}.cov | sort -k1,1 -k2,2n > {0}.normalized.cov""".format(transient_file, norm_factor))
         cmds.append(self.tools.bedGraphToBigWig + " {0}{1}.cov {2} {3}".format(transient_file, ".normalized" if normalize else "", genome_sizes, output_bigwig))
         # remove tmp files
         cmds.append("if [[ -s {0}.cov ]]; then rm {0}.cov; fi".format(transient_file))
