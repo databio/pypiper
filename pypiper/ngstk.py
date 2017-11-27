@@ -606,7 +606,6 @@ class NGSTk(_AttributeDict):
         if in_sorted in [False, True]:
             in_sorted = "TRUE" if in_sorted else "FALSE"
 
-        print("Merging multiple bams: " + str(input_bams))
         input_string = " INPUT=" + " INPUT=".join(input_bams)
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
         cmd += " -jar " + self.tools.picard + " MergeSamFiles"
