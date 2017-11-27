@@ -203,35 +203,38 @@ class PipelineManager(object):
         # to locate a config file.
         config_to_load = None  # start with nothing
 
-        cmdl_config_file = getattr(args, "config_file", None)
-        if cmdl_config_file:
-            if os.path.isabs(cmdl_config_file):
-                # Absolute custom config file specified
-                if os.path.isfile(cmdl_config_file):
-                    config_to_load = cmdl_config_file
-                else:
-                    #print("Can't find custom config file: " + cmdl_config_file)
-                    pass
-            else: 
-                # Relative custom config file specified
-                # Set path to be relative to pipeline script
-                pipedir = os.path.dirname(sys.argv[0])
-                abs_config = os.path.join(pipedir, cmdl_config_file)
-                if os.path.isfile(abs_config):
-                    config_to_load = abs_config
-                else:
-                    #print("Can't find custom config file: " + abs_config)
-                    pass
-            if config_to_load is not None:
-                print("Using custom config file: {}".format(config_to_load))
+        if config_file:
+            config_to_load = config_file
         else:
-            # No custom config file specified. Check for default
-            pipe_path_base, _ = os.path.splitext(os.path.basename(sys.argv[0]))
-            default_config = "{}.yaml".format(pipe_path_base)
-            if os.path.isfile(default_config):
-                config_to_load = default_config
-                print("Using default pipeline config file: {}".
-                      format(config_to_load))
+            cmdl_config_file = getattr(args, "config_file", None)
+            if cmdl_config_file:
+                if os.path.isabs(cmdl_config_file):
+                    # Absolute custom config file specified
+                    if os.path.isfile(cmdl_config_file):
+                        config_to_load = cmdl_config_file
+                    else:
+                        #print("Can't find custom config file: " + cmdl_config_file)
+                        pass
+                else:
+                    # Relative custom config file specified
+                    # Set path to be relative to pipeline script
+                    pipedir = os.path.dirname(sys.argv[0])
+                    abs_config = os.path.join(pipedir, cmdl_config_file)
+                    if os.path.isfile(abs_config):
+                        config_to_load = abs_config
+                    else:
+                        #print("Can't find custom config file: " + abs_config)
+                        pass
+                if config_to_load is not None:
+                    print("Using custom config file: {}".format(config_to_load))
+            else:
+                # No custom config file specified. Check for default
+                pipe_path_base, _ = os.path.splitext(os.path.basename(sys.argv[0]))
+                default_config = "{}.yaml".format(pipe_path_base)
+                if os.path.isfile(default_config):
+                    config_to_load = default_config
+                    print("Using default pipeline config file: {}".
+                          format(config_to_load))
 
         # Finally load the config we found.
         if config_to_load is not None:
