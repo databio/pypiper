@@ -1673,8 +1673,6 @@ class PipelineManager(object):
                 for cleandir in self.cleanup_list_conditional:
                     try:
                         items_to_clean = glob.glob(cleandir)
-                        print("{} items to clean: {}".format(
-                            len(items_to_clean), ", ".join(items_to_clean)))
                         for clean_item in items_to_clean:
                             with open(self.cleanup_file, "a") as clean_script:
                                 if os.path.isfile(file): clean_script.write("rm " + clean_item + "\n")
