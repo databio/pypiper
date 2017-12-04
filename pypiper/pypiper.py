@@ -1216,9 +1216,28 @@ class PipelineManager(object):
             if proc_name:
                 msg += "(" + proc_name + ")"
             print(msg)
-            
+
+            # First a gentle kill            
             os.kill(child_pid, signal.SIGTERM)
-            print("child process terminated")
+
+            # If not terminated after 10 seconds, send a SIGKILL
+            time_waiting = 0
+            still_running = True
+            while still_running and time_waiting < 10:
+                try:
+                    os.kill(child_pid, 0)  # check if process is running
+                    time.sleep(2)
+                    time_waiting = time_waiting + 2
+                except OSError:
+                    still_running = False
+
+            if still_running:
+                # still running after 10 seconds!?
+                print("Child not responding to SIGTERM, trying SIGKILL...")
+                os.kill(child_pid, signal.SIGKILL)
+
+            print("Child process terminated")
+            sys.stdout.flush()
 
 
 
