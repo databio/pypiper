@@ -1085,6 +1085,7 @@ class PipelineManager(object):
         :type dynamic_recover: bool
         """
         # Take care of any active running subprocess
+        sys.stdout.flush()
         self._terminate_running_subprocesses()
 
         if dynamic_recover:
@@ -1192,7 +1193,7 @@ class PipelineManager(object):
         
             if proc_dict["pre_block"]:
                 print("</pre>")
-
+                sys.stdout.flush()
             self._kill_child_process(pid, proc_dict["proc_name"])
             del self.procs[pid]
 
@@ -1215,7 +1216,7 @@ class PipelineManager(object):
             if proc_name:
                 msg += "(" + proc_name + ")"
             print(msg)
-            # sys.stdout.flush()
+            
             os.kill(child_pid, signal.SIGTERM)
             print("child process terminated")
 
