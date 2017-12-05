@@ -18,7 +18,7 @@ PIPELINE_CHECKPOINT_DELIMITER = "_"
 class Stage(object):
     """
     Single stage/phase of a pipeline; a logical processing "unit". A stage is a
-    collection of commands that is checkpointed
+    collection of commands that is checkpointed.
     """
 
 
