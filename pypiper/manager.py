@@ -343,7 +343,7 @@ class PipelineManager(object):
 
             # If the pipeline is terminated with SIGTERM/SIGINT,
             # make sure we kill this spawned tee subprocess as well.
-            atexit.register(self._kill_child_process, tee.pid)
+            atexit.register(self._kill_child_process, tee.pid, proc_name="tee")
             os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
             os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
 
@@ -1529,16 +1529,20 @@ class PipelineManager(object):
             print(msg)
 
             # First a gentle kill            
+            sys.stdout.flush()
+            os.kill(child_pid, signal.SIGINT)
             os.kill(child_pid, signal.SIGTERM)
 
             # If not terminated after 10 seconds, send a SIGKILL
+            sleeptime = .25
             time_waiting = 0
             still_running = True
-            while still_running and time_waiting < 10:
+            while still_running and time_waiting < 5:
                 try:
                     os.kill(child_pid, 0)  # check if process is running
-                    time.sleep(2)
-                    time_waiting = time_waiting + 2
+                    time.sleep(sleeptime)
+                    time_waiting = time_waiting + sleeptime
+                    # sleep incrementally longer each time
                 except OSError:
                     still_running = False
 
@@ -1547,9 +1551,7 @@ class PipelineManager(object):
                 print("Child not responding to SIGTERM, trying SIGKILL...")
                 os.kill(child_pid, signal.SIGKILL)
 
-            print("Child process terminated")
-            sys.stdout.flush()
-
+            print("Child process terminated after " + str(time_waiting) + " seconds.")
 
 
     def atexit_register(self, *args):
