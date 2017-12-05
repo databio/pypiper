@@ -12,26 +12,25 @@ as sufficiently significant to warrant designation.
 
 ### `Pipeline`
 
-Since a pipeline author detemines how to compose logical units, processing 
-steps, or phases to define the notion of a pipeline, this class is 
-inherently abstract. We prefer to be able to impose and enforce the requirement 
-for stage definitions up front. This precludes the definition or creation of 
-a `Pipeline` without stages as we declare `stages` as an `abc.abstractproperty` 
-in the definition of `Pipeline`. This also permits us to validate the 
-stage definitions up front, at time of pipeline creation rather than waiting 
-until invocation of something like `run`. A further benefit of this design is 
-the ability to store the parsed, validated form of the stage definitions 
-obtained during instance construction. This eliminates a potential need 
-to pass the stage definitions among methods for which they're needed, thereby 
-simplifying our function signatures.
+Since a pipeline author determines how to compose logical units, steps, or
+phases to define the pipeline, this class is inherently abstract. We
+prefer to be able to impose and enforce the requirement for stage definitions up
+front. This precludes the definition or creation of a `Pipeline` without stages
+as we declare `stages` as an `abc.abstractproperty` in the definition of
+`Pipeline`. This also permits us to validate the stage definitions up front, at
+time of pipeline creation rather than waiting until invocation of something like
+`run`. A further benefit of this design is the ability to store the parsed,
+validated form of the stage definitions obtained during instance construction.
+This eliminates a potential need to pass the stage definitions among methods for
+which they're needed, thereby simplifying our function signatures.
 
-Not only do we want to provide a simple framework in 
-which processing stage/phases may be enumerated and defined in sequence, 
-but we also want to facilitate allow the possibility of non-sequential stages 
-to be defined by the pipeline author. In the context of say, testing multiple 
-alternative ways to do the same conceptual task (e.g., read trimming or peak 
-calling) within the same pipeline, in early pipeline development, it's 
-particularly likely that the desire to define unordered stages may arise.
+Not only do we want to provide a simple framework in which processing
+stage/phases may be enumerated and defined in sequence, but we also want to
+facilitate non-sequential stages to be defined by the pipeline author. In the
+context of say, testing multiple alternative ways to do the same conceptual task
+(e.g., read trimming or peak calling) within the same pipeline, in early
+pipeline development, it's particularly likely that the desire to define
+unordered stages may arise.
 
 Additionally, it would be nice to support varying degrees of expressive power 
 and simplicity. To some extent, this is likely to present a trade-off, with 

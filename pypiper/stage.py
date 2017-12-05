@@ -16,7 +16,10 @@ PIPELINE_CHECKPOINT_DELIMITER = "_"
 
 
 class Stage(object):
-    """ Single stage/phase of a pipeline; a logical processing "unit". """
+    """
+    Single stage/phase of a pipeline; a logical processing "unit". A stage is a
+    collection of commands that is checkpointed.
+    """
 
 
     def __init__(self, func, f_args=None, f_kwargs=None,

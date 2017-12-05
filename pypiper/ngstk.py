@@ -438,6 +438,8 @@ class NGSTk(_AttributeDict):
                     cmd = self.tools.python + " -u " + script_path
                     cmd += " -i " + input_file
                     cmd += " -o " + fastq_prefix
+                    # Must also return the set of output files
+                    output_file = [fastq_prefix + "_R1.fastq", fastq_prefix + "_R2.fastq"]
                 else:
                     # For single-end reads, we just unzip the fastq.gz file.
                     # or, paired-end reads that were already split.
