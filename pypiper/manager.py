@@ -22,9 +22,10 @@ import time
 
 from .AttributeDict import AttributeDict
 from .flags import *
-from .pipeline import checkpoint_filepath, clear_flags, pipeline_filepath
-from .stage import translate_stage_name, CHECKPOINT_EXTENSION
-from .utils import check_shell, flag_name, make_lock_name
+from .pipeline import checkpoint_filepath
+from .utils import \
+    check_shell, clear_flags, flag_name, make_lock_name, pipeline_filepath, \
+    CHECKPOINT_SPECIFICATIONS
 from ._version import __version__
 import __main__
 
@@ -101,9 +102,9 @@ class PipelineManager(object):
         # Parse and store stage specifications that can determine pipeline
         # start and/or stop point.
         args_dict = vars(args) if args else dict()
-        for stage_spec in ["start", "stop_before", "stop_after"]:
-            checkpoint = args_dict.pop(stage_spec, None)
-            setattr(self, stage_spec, checkpoint)
+        for optname in CHECKPOINT_SPECIFICATIONS:
+            checkpoint = args_dict.pop(optname, None)
+            setattr(self, optname, checkpoint)
         # Update this manager's parameters with non-checkpoint-related
         # command-line parameterization.
         params.update(args_dict)
@@ -111,8 +112,10 @@ class PipelineManager(object):
         # If no starting point was specified, assume that the pipeline's
         # execution is to begin right away and set the internal flag so that
         # run() is let loose to execute instructions given.
-        if not self.start:
+        if not self.start_point:
             self._has_started = True
+        else:
+            self._has_started = False
 
         # Pipeline-level variables to track global state and pipeline stats
         # Pipeline settings
@@ -261,6 +264,8 @@ class PipelineManager(object):
             self.config = None
 
         self.overwrite_checkpoints = overwrite_checkpoints
+        self.halt_on_next = False
+        self.curr_checkpoint = None
 
 
     @property
@@ -495,8 +500,7 @@ class PipelineManager(object):
     ###################################
     def run(self, cmd, target=None, lock_name=None, shell="guess",
             nofail=False, errmsg=None, clean=False, follow=None,
-            container=None, checkpoint=None, checkpoint_filename=None,
-            overwrite_checkpoint=False):
+            container=None):
         """
         The primary workhorse function of PipelineManager, this runs a command.
 
@@ -534,26 +538,28 @@ class PipelineManager(object):
         :type follow: callable
         :param container: Name for Docker container in which to run commands.
         :type container: str
-        :param checkpoint: Name of the corresponding checkpoint, to be
-            used to allow this command to be skipped if there's filesystem
-            indication that the associated checkpoint has already been reached.
-            If no checkpoint_filename is specified, this filenames based on
-            this checkpoint name will be used to consider skipping this step.
-        :type checkpoint: str
-        :param checkpoint_filename: Name for a file whose existence means
-            that this step may be skipped.
-        :param overwrite_checkpoint: Whether to disregard a checkpoint file
-            and overwrite it. This is useful when a pipeline stage downstream
-            of another depends on results from one upstream, and that upstream
-            one's been rerun and now the downstream one needs to be rerun, too.
         :return: Return code of process. If a list of commands is passed,
             this is the maximum of all return codes for all commands.
         :rtype: int
         """
 
+        # If the pipeline's not been started, skip ahead.
         if not self._has_started:
             print("Start point ({}) not yet reached, skipping command '{}'".
-                  format(self.start, cmd))
+                  format(self.start_point, cmd))
+            return 0
+
+        # Short-circuit if the checkpoint file exists and the manager's not
+        # been configured to overwrite such files.
+        if self.curr_checkpoint is not None:
+            check_fpath = pipeline_filepath(self.curr_checkpoint)
+            if os.path.isfile(check_fpath) and not self.overwrite_checkpoints:
+                print("Checkpoint file exists for '{}' ('{}'), and the {} has "
+                      "been configured to not overwrite checkpoints; "
+                      "skipping command '{}'".format(
+                    self.curr_checkpoint, check_fpath,
+                    self.__class__.__name__, cmd))
+                return 0
 
         # The default lock name is based on the target name.
         # Therefore, a targetless command that you want
@@ -561,44 +567,6 @@ class PipelineManager(object):
         if target is None and lock_name is None:
             self.fail_pipeline(Exception(
                 "You must provide either a target or a lock_name."))
-
-        # Allow lack of checkpoint, direct filename specification, or
-        # derivation of checkpoint filename from checkpoint name.
-        if checkpoint_filename is not None:
-            check_names = [checkpoint_filename]
-        elif checkpoint is not None:
-            check_names = [fname + CHECKPOINT_EXTENSION for fname in
-                           [checkpoint, translate_stage_name(checkpoint)]]
-        else:
-            check_names = []
-
-        # Short-circuit if checkpoint file exists.
-        check_exists = False
-        for fname in check_names:
-            # Determine full path from pipeline.
-            path_check_file = pipeline_filepath(self, filename=fname)
-            # Break or return if we find a checkpoint file.
-            if os.path.isfile(path_check_file):
-                # Set flag that determines messaging.
-                check_exists = True
-                if self.overwrite_checkpoints or overwrite_checkpoint:
-                    # Stop the checkpoint search after messaging.
-                    print("Running stage and overwriting checkpoint: '{}'".
-                          format(path_check_file))
-                    break
-                else:
-                    # Message and short-circuit the call.
-                    print("Checkpoint file exists ('{}'), skipping".
-                          format(path_check_file))
-                    return 0
-
-        # If a checkpoint indication was provided, provide notice of absence.
-        if not check_exists:
-            if checkpoint_filename:
-                print("Checkpoint file ('{}') doesn't exist; running...".
-                      format(checkpoint_filename))
-            elif checkpoint:
-                print("No checkpoint file for '{}'; running...".format(checkpoint))
 
         # If the target is a list, for now let's just strip it to the first target.
         # Really, it should just check for all of them.
@@ -998,6 +966,31 @@ class PipelineManager(object):
             conceptual unit of a pipeline's processing
         :type finished: bool, default False
         """
+
+        # Halt if the manager's state has been set such that this call
+        # should halt the pipeline.
+        if self.halt_on_next:
+            self.halt()
+
+        # Determine action to take with respect to halting if needed.
+        if checkpoint:
+            # Write the file.
+            self._checkpoint(checkpoint)    # Write the file.
+            # Handle the two halting conditions.
+            if (finished and checkpoint == self.stop_after) or \
+                    (not finished and checkpoint == self.stop_before):
+                self.halt()
+            # Determine if we've started executing.
+            elif checkpoint == self.start_point:
+                self._has_started = True
+            # If this is a prospective checkpoint, set the current checkpoint
+            # accordingly and whether we should halt the pipeline on the
+            # next timestamp call.
+            if not finished:
+                self.curr_checkpoint = checkpoint
+                if checkpoint == self.stop_after:
+                    self.halt_on_next = True
+
         message += " (" + time.strftime("%m-%d %H:%M:%S") + ")"
         elapsed = self.time_elapsed(self.last_timestamp)
         message += " elapsed:" + str(datetime.timedelta(seconds=elapsed))
@@ -1006,15 +999,6 @@ class PipelineManager(object):
             message = "\n" + message + "\n"
         print(message)
         self.last_timestamp = time.time()
-
-        if checkpoint:
-            self.checkpoint(checkpoint)
-            if finished and checkpoint == self.stop_after:
-                self.halt()
-            elif not finished and checkpoint == self.stop_before:
-                self.halt()
-            elif checkpoint == self.start:
-                self._has_started = True
 
 
     def time_elapsed(self, time_since):
@@ -1304,7 +1288,7 @@ class PipelineManager(object):
 
     # TODO: support checkpointing via stage, basic name, function, or filename (prohibit filepath)
 
-    def checkpoint(self, stage):
+    def _checkpoint(self, stage):
         """
         Decide whether to stop processing of a pipeline. This is the hook
 
@@ -1355,10 +1339,10 @@ class PipelineManager(object):
             check_fpath = stage
         else:
             check_fpath = checkpoint_filepath(stage, pm=self)
-        return self.touch_checkpoint(check_fpath)
+        return self._touch_checkpoint(check_fpath)
 
 
-    def touch_checkpoint(self, check_file):
+    def _touch_checkpoint(self, check_file):
         """
         Alternative way for a pipeline to designate a checkpoint.
 

@@ -10,10 +10,11 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Iterable, Mapping
 
-from .flags import FLAGS
+from .manager import PipelineManager
 from .stage import \
     checkpoint_filename, translate_stage_name, Stage, CHECKPOINT_EXTENSION
-from .utils import flag_name, is_in_file_tree, parse_stage_name
+from .utils import \
+    flag_name, is_in_file_tree, parse_stage_name, pipeline_filepath
 
 
 __author__ = "Vince Reuter"
@@ -28,10 +29,20 @@ class Pipeline(object):
     """
     Generic pipeline framework.
 
+    Note that either a PipelineManager or an output folder path is required
+    to create the Pipeline. If both are provided, the output folder path is
+    ignored and that of the PipelineManager that's passed is used instead.
+
     :param name: Name for the pipeline; arbitrary, just used for messaging.
     :type name: str
-    :param manager: The pipeline manager to
+    :param manager: The pipeline manager to use for this pipeline.
     :type manager: pypiper.PipelineManager
+    :param outfolder: Path to main output folder for this pipeline
+    :type outfolder: str
+    :param args: command-line options and arguments for PipelineManager
+    :type args: argparse.Namespace, optional
+    :raise TypeError: Either PipelineManager or output folder path must be
+        provided.
     :raise IllegalPipelineDefinitionError: Definition of collection of stages
         must be non-empty.
     """
@@ -39,12 +50,25 @@ class Pipeline(object):
     __metaclass__ = abc.ABCMeta
     
     
-    def __init__(self, name, manager):
+    def __init__(self, name, manager=None, outfolder=None, args=None):
 
         super(Pipeline, self).__init__()
-
         self.name = name
-        self.manager = manager
+
+        # Determine the PipelineManager.
+        if manager:
+            self.manager = manager
+            if outfolder:
+                print("Ignoring explicit output folder ({}) and using that of "
+                      "pipeline manager ({})".format(outfolder,
+                                                     manager.outfolder))
+        elif outfolder:
+            self.manager = PipelineManager(name, outfolder, args=args)
+        else:
+            raise TypeError("To create a {} instance, 'manager' or 'outfolder' "
+                            "is required".format(self.__class__.__name__))
+
+        # Require that checkpoints be overwritten.
         self.manager.overwrite_checkpoints = True
 
         # Translate stage names; do this here to complicate a hypothetical
@@ -135,16 +159,24 @@ class Pipeline(object):
         return [parse_stage_name(s) for s in self._stages]
 
 
-    def checkpoint(self, stage):
+    def checkpoint(self, stage, msg=""):
         """
-        Touch checkpoint file for given stage.
+        Touch checkpoint file for given stage and provide timestamp message.
 
         :param stage: Stage for which to mark checkpoint
         :type stage: pypiper.Stage
+        :param msg: Message to embed in timestamp.
+        :type msg: str
         :return: Whether a checkpoint file was written.
         :rtype: bool
         """
-        return self.manager.checkpoint(stage)
+        # Canonical usage model for Pipeline checkpointing through
+        # implementations of this class is by automatically creating a
+        # checkpoint when a conceptual unit or group of operations of a
+        # pipeline completes, so fix the 'finished' parameter to the manager's
+        # timestamp method to be True.
+        return self.manager.timestamp(
+                message=msg, checkpoint=stage.checkpoint_name, finished=True)
 
 
     def completed_stage(self, stage):
@@ -179,20 +211,20 @@ class Pipeline(object):
             return paths
 
 
-    def run(self, start=None, stop_at=None, stop_after=None):
+    def run(self, start_point=None, stop_before=None, stop_after=None):
         """
         Run the pipeline, optionally specifying start and/or stop points.
 
-        :param start: Name of stage at which to begin execution.
-        :type start: str
-        :param stop_at: Name of stage at which to cease execution;
+        :param start_point: Name of stage at which to begin execution.
+        :type start_point: str
+        :param stop_before: Name of stage at which to cease execution;
             exclusive, i.e. this stage is not run
-        :type stop_at: str
+        :type stop_before: str
         :param stop_after: Name of stage at which to cease execution;
             inclusive, i.e. this stage is the last one run
         :type stop_after: str
         :raise IllegalPipelineExecutionError: If both inclusive (stop_after)
-            and exclusive (stop_at) halting points are provided, or if that
+            and exclusive (stop_before) halting points are provided, or if that
             start stage is the same as or after the stop stage, raise an
             IllegalPipelineExecutionError.
         """
@@ -205,12 +237,12 @@ class Pipeline(object):
         # TODO (cont.): sequence (i.e., probably prohibit start point with
         # TODO (cont): nonexistent earlier checkpoint flag(s).)
 
-        if stop_at and stop_after:
+        if stop_before and stop_after:
             raise IllegalPipelineExecutionError(
                     "Cannot specify both inclusive and exclusive stops.")
 
-        if stop_at:
-            stop = stop_at
+        if stop_before:
+            stop = stop_before
             inclusive_stop = False
         elif stop_after:
             stop = stop_after
@@ -220,7 +252,7 @@ class Pipeline(object):
             inclusive_stop = None
 
         # Ensure that a stage name--if specified--is supported.
-        for s in [start, stop]:
+        for s in [start_point, stop]:
             if s is None:
                 continue
             name = parse_stage_name(s)
@@ -228,7 +260,7 @@ class Pipeline(object):
                 raise UnknownPipelineStageError(name, self)
 
         # Permit order-agnostic pipelines, but warn.
-        if self._unordered and (start or stop_at or stop_after):
+        if self._unordered and (start_point or stop_before or stop_after):
             print("WARNING: Starting and stopping points are nonsense for "
                   "pipeline with unordered stages.")
 
@@ -236,7 +268,7 @@ class Pipeline(object):
 
         # Determine where to start (but perhaps skip further based on
         # checkpoint completions.)
-        start_index = self._start_index(start)
+        start_index = self._start_index(start_point)
         stop_index = self._stop_index(stop, inclusive=inclusive_stop)
         assert stop_index <= len(self._stages)
         if start_index >= stop_index:
@@ -382,71 +414,6 @@ def checkpoint_filepath(checkpoint, pm):
     # align_reads, etc.)
     chkpt_name = checkpoint_filename(checkpoint, pipeline_name=pm.name)
     return pipeline_filepath(pm, filename=chkpt_name)
-
-
-
-def clear_flags(pm, flag_names=None):
-    """
-
-    :param pm: Pipeline or PipelineManager for which to remove flags
-    :type pm: pypiper.PipelineManager | pypiper.Pipeline
-    :param flag_names: Names of flags to remove, optional; if unspecified,
-        all known flag names will be used.
-    :type flag_names: Iterable[str]
-    :return: Collection of names of flags removed
-    """
-    if isinstance(pm, Pipeline):
-        pm = pm.manager
-    flag_names = flag_names or FLAGS
-    if isinstance(flag_names, str):
-        flag_names = [flag_names]
-    removed = []
-    for f in flag_names:
-        flag_file_suffix = "_{}".format(flag_name(f))
-        path_flag_file = pipeline_filepath(pm, suffix=flag_file_suffix)
-        try:
-            os.remove(path_flag_file)
-        except:
-            pass
-        else:
-            print("Removed existing flag: '{}'".format(path_flag_file))
-            removed.append(f)
-    return removed
-
-
-
-def pipeline_filepath(pm, filename=None, suffix=None):
-    """
-    Derive path to file for managed pipeline.
-
-    :param pm: Manager of a particular pipeline instance.
-    :type pm: pypiper.PipelineManager | pypiper.Pipeline
-    :param filename: Name of file for which to create full path based
-        on pipeline's output folder.
-    :type filename: str
-    :param suffix: Suffix for the file; this can be added to the filename
-        if provided or added to the pipeline name if there's no filename.
-    :type suffix: str
-    :raises TypeError: If neither filename nor suffix is provided, raise a
-        TypeError, as in that case there's no substance from which to create
-        a filepath.
-    :return: Path to file within managed pipeline's output folder, with
-        filename as given or determined by the pipeline name, and suffix
-        appended if given.
-    :rtype: str
-    """
-
-    if filename is None and suffix is None:
-        raise TypeError("Provide filename and/or suffix to create "
-                        "path to a pipeline file.")
-
-    filename = (filename or pm.name) + (suffix or "")
-
-    # Note that Pipeline and PipelineManager define the same outfolder.
-    # In fact, a Pipeline just references its manager's outfolder.
-    # So we can handle argument of either type to pm parameter.
-    return filename if os.path.isabs(filename) \
-            else os.path.join(pm.outfolder, filename)
 
 
 

@@ -3,6 +3,8 @@
 import os
 import sys
 
+from .flags import FLAGS
+
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -16,20 +18,20 @@ __all__ = ["add_pypiper_args", "build_command"]
 
 
 STAGE_NAME_SPACE_REPLACEMENT = "-"
+CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
 
 
 
 def add_pypiper_args(parser, groups=("pypiper", ), args=None,
                      required=None, all_args=False):
     """
-    Adds default automatic args to an ArgumentParser. Use this to add standardized
-    pypiper arguments to your python pipeline.
+    Use this to add standardized pypiper arguments to your python pipeline.
 
     There are two ways to use `add_pypiper_args`: by specifying argument groups,
     or by specifying individual arguments. Specifying argument groups will add
-    multiple arguments to your parser; these convenient argumenet groupings make it
-    easy to add arguments to certain types of pipeline. For example, to make a
-    looper-compatible pipeline, use `groups = ["pypiper", "looper"]`.
+    multiple arguments to your parser; these convenient argument groupings
+    make it easy to add arguments to certain types of pipeline. For example,
+    to make a looper-compatible pipeline, use `groups = ["pypiper", "looper"]`.
 
     :param parser: an ArgumentParser object from your pipeline
     :type parser: argparse.ArgumentParser
@@ -123,6 +125,40 @@ def check_shell(cmd):
     :return bool: Whether the command appears to involve shell process(es).
     """
     return "|" in cmd or ">" in cmd or r"*" in cmd
+
+
+
+def clear_flags(pm, flag_names=None):
+    """
+
+    :param pm: Pipeline or PipelineManager for which to remove flags
+    :type pm: pypiper.PipelineManager | pypiper.Pipeline
+    :param flag_names: Names of flags to remove, optional; if unspecified,
+        all known flag names will be used.
+    :type flag_names: Iterable[str]
+    :return: Collection of names of flags removed
+    """
+
+    # Accept Pipeline as type of pm without needing to import Pipeline.
+    try:
+        pm = pm.manager
+    except AttributeError:
+        pass
+    flag_names = flag_names or FLAGS
+    if isinstance(flag_names, str):
+        flag_names = [flag_names]
+    removed = []
+    for f in flag_names:
+        flag_file_suffix = "_{}".format(flag_name(f))
+        path_flag_file = pipeline_filepath(pm, suffix=flag_file_suffix)
+        try:
+            os.remove(path_flag_file)
+        except:
+            pass
+        else:
+            print("Removed existing flag: '{}'".format(path_flag_file))
+            removed.append(f)
+    return removed
 
 
 
@@ -278,6 +314,41 @@ def parse_stage_name(stage):
 
 
 
+def pipeline_filepath(pm, filename=None, suffix=None):
+    """
+    Derive path to file for managed pipeline.
+
+    :param pm: Manager of a particular pipeline instance.
+    :type pm: pypiper.PipelineManager | pypiper.Pipeline
+    :param filename: Name of file for which to create full path based
+        on pipeline's output folder.
+    :type filename: str
+    :param suffix: Suffix for the file; this can be added to the filename
+        if provided or added to the pipeline name if there's no filename.
+    :type suffix: str
+    :raises TypeError: If neither filename nor suffix is provided, raise a
+        TypeError, as in that case there's no substance from which to create
+        a filepath.
+    :return: Path to file within managed pipeline's output folder, with
+        filename as given or determined by the pipeline name, and suffix
+        appended if given.
+    :rtype: str
+    """
+
+    if filename is None and suffix is None:
+        raise TypeError("Provide filename and/or suffix to create "
+                        "path to a pipeline file.")
+
+    filename = (filename or pm.name) + (suffix or "")
+
+    # Note that Pipeline and PipelineManager define the same outfolder.
+    # In fact, a Pipeline just references its manager's outfolder.
+    # So we can handle argument of either type to pm parameter.
+    return filename if os.path.isabs(filename) \
+            else os.path.join(pm.outfolder, filename)
+
+
+
 def translate_stage_name(stage):
     """
     Account for potential variability in stage/phase name definition.
@@ -413,14 +484,14 @@ def _add_args(parser, args, required):
             ("-F", {"dest": "force_follow", "action": "store_true",
                     "help": "Run all 'follow' commands, even if the "
                             "primary command is not run"}),
-        "start":
+        "start-point":
             {"help": "Name of pipeline stage at which to begin"},
         "stop-before":
             {"help": "Name of pipeline stage at which to stop "
-                     "(exclusive, not run)"},
+                     "(exclusive, i.e. not run)"},
         "stop-after":
             {"help": "Name of pipeline stage at which to stop "
-                     "(inclusive, run)"},
+                     "(inclusive, i.e. run)"},
         "config":
             ("-C", {"dest": "config_file", "metavar": "CONFIG_FILE",
                     "default": default_config,
