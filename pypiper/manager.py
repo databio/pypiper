@@ -973,12 +973,15 @@ class PipelineManager(object):
         :type checkpoint: str, optional
         """
         message += " (" + time.strftime("%m-%d %H:%M:%S") + ")"
-        message += " elapsed:" + str(datetime.timedelta(seconds=self.time_elapsed(self.last_timestamp)))
+        elapsed = self.time_elapsed(self.last_timestamp)
+        message += " elapsed:" + str(datetime.timedelta(seconds=elapsed))
         message += " _TIME_"
         if re.match("^###", message):
             message = "\n" + message + "\n"
         print(message)
         self.last_timestamp = time.time()
+        if checkpoint:
+            self.checkpoint(checkpoint)
 
 
     def time_elapsed(self, time_since):
