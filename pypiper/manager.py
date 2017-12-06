@@ -98,12 +98,23 @@ class PipelineManager(object):
             'cores': cores,
             'mem': mem}
 
-        # Update them with any passed via 'args'
-        if args is not None:
-            # vars(...) transforms ArgumentParser's Namespace into a dict
-            params.update(vars(args))
+        # Parse and store stage specifications that can determine pipeline
+        # start and/or stop point.
+        args_dict = vars(args) if args else dict()
+        for stage_spec in ["start", "stop_before", "stop_after"]:
+            checkpoint = args_dict.pop(stage_spec, None)
+            setattr(self, stage_spec, checkpoint)
+        # Update this manager's parameters with non-checkpoint-related
+        # command-line parameterization.
+        params.update(args_dict)
 
-        # Define pipeline-level variables to keep track of global state and some pipeline stats
+        # If no starting point was specified, assume that the pipeline's
+        # execution is to begin right away and set the internal flag so that
+        # run() is let loose to execute instructions given.
+        if not self.start:
+            self._has_started = True
+
+        # Pipeline-level variables to track global state and pipeline stats
         # Pipeline settings
         self.name = name
         self.overwrite_locks = params['recover']
@@ -540,6 +551,10 @@ class PipelineManager(object):
         :rtype: int
         """
 
+        if not self._has_started:
+            print("Start point ({}) not yet reached, skipping command '{}'".
+                  format(self.start, cmd))
+
         # The default lock name is based on the target name.
         # Therefore, a targetless command that you want
         # to lock must specify a lock_name manually.
@@ -957,11 +972,19 @@ class PipelineManager(object):
     # Logging functions
     ###################################
 
-    def timestamp(self, message="", checkpoint=None):
+    def timestamp(self, message="", checkpoint=None, finished=False):
         """
-        Prints your given message, along with the current time, and time elapsed since the 
-        previous timestamp() call.  If you specify a HEADING by beginning the message with "###",
-        it surrounds the message with newlines for easier readability in the log file.
+        Print message, time, and time elapsed, perhaps creating checkpoint.
+
+        This prints your given message, along with the current time, and time
+        elapsed since the previous timestamp() call.  If you specify a
+        HEADING by beginning the message with "###", it surrounds the message
+        with newlines for easier readability in the log file. If a checkpoint
+        is designated, an empty file is created corresponding to the name
+        given. Depending on how this manager's been configured, the value of
+        the checkpoint, and whether this timestamp indicates initiation or
+        completion of a group of pipeline steps, this call may stop the
+        pipeline's execution.
 
         :param message: Message to timestamp.
         :type message: str
@@ -971,6 +994,9 @@ class PipelineManager(object):
             a checkpoint file will be created, facilitating arbitrary starting
             and stopping point for the pipeline as desired.
         :type checkpoint: str, optional
+        :param finished: Whether this call represents the completion of a
+            conceptual unit of a pipeline's processing
+        :type finished: bool, default False
         """
         message += " (" + time.strftime("%m-%d %H:%M:%S") + ")"
         elapsed = self.time_elapsed(self.last_timestamp)
@@ -980,8 +1006,15 @@ class PipelineManager(object):
             message = "\n" + message + "\n"
         print(message)
         self.last_timestamp = time.time()
+
         if checkpoint:
             self.checkpoint(checkpoint)
+            if finished and checkpoint == self.stop_after:
+                self.halt()
+            elif not finished and checkpoint == self.stop_before:
+                self.halt()
+            elif checkpoint == self.start:
+                self._has_started = True
 
 
     def time_elapsed(self, time_since):
