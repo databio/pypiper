@@ -3,6 +3,9 @@
 import os
 import sys
 
+from .const import \
+    CHECKPOINT_EXTENSION, PIPELINE_CHECKPOINT_DELIMITER, \
+    STAGE_NAME_SPACE_REPLACEMENT
 from .flags import FLAGS
 
 
@@ -116,6 +119,41 @@ def build_sample_paths(sample):
 
 
 
+def checkpoint_filename(checkpoint, pipeline_name=None):
+    """
+    Translate a checkpoint to a filename.
+
+    This not only adds the checkpoint file extension but also standardizes the
+    way in which checkpoint names are mapped to filenames.
+
+    :param checkpoint: name of a pipeline phase/stage
+    :type checkpoint: str | Stage
+    :param pipeline_name: name of pipeline to prepend to the checkpoint
+        filename; this differentiates checkpoint files, e.g. within the
+        same sample output folder but associated with different pipelines,
+        in case of the (somewhat probable) scenario of a stage name
+        collision between pipelines the processed the same sample and
+        wrote to the same output folder
+    :type pipeline_name: str
+    :return: standardized checkpoint name for file, plus extension;
+        null if the input is a Stage that's designated as a non-checkpoint
+    :rtype: str | NoneType
+    """
+    # Allow Stage as type for checkpoint parameter's argument without
+    # needing to import here the Stage type from stage.py module.
+    try:
+        base = checkpoint.checkpoint_name
+    except AttributeError:
+        base = checkpoint
+    else:
+        base = translate_stage_name(checkpoint)
+    if pipeline_name:
+        base = "{}{}{}".format(
+                pipeline_name, PIPELINE_CHECKPOINT_DELIMITER, base)
+    return base + CHECKPOINT_EXTENSION
+
+
+
 def checkpoint_filepath(checkpoint, pm):
     """
     Create filepath for indicated checkpoint.
@@ -146,8 +184,11 @@ def checkpoint_filepath(checkpoint, pm):
         if ext == CHECKPOINT_EXTENSION:
             return pipeline_filepath(pm, filename=checkpoint)
 
-    if isinstance(pm, Pipeline):
+    # Allow Pipeline as pm type without importing Pipeline.
+    try:
         pm = pm.manager
+    except AttributeError:
+        pass
 
     # We want the checkpoint filename itself to become a suffix, with a
     # delimiter intervening between the pipeline name and the checkpoint
@@ -335,6 +376,30 @@ def parse_cores(cores, pm, default):
 
 
 
+def parse_stage_name(stage):
+    """
+    Determine the name of a stage.
+
+    The stage may be provided already as a name, as a Stage object, or as a
+    callable with __name__ (e.g., function).
+
+    :param stage: Object representing a stage, from which to obtain name.
+    :type stage: str | pypiper.Stage | function
+    :return: Name of putative pipeline Stage.
+    :rtype: str
+    """
+    if isinstance(stage, str):
+        return stage
+    try:
+        return stage.name
+    except AttributeError:
+        try:
+            return stage.__name__
+        except AttributeError:
+            raise TypeError("Unsupported stage type: {}".format(type(stage)))
+
+
+
 def pipeline_filepath(pm, filename=None, suffix=None):
     """
     Derive path to file for managed pipeline.
@@ -367,6 +432,26 @@ def pipeline_filepath(pm, filename=None, suffix=None):
     # So we can handle argument of either type to pm parameter.
     return filename if os.path.isabs(filename) \
             else os.path.join(pm.outfolder, filename)
+
+
+
+def translate_stage_name(stage):
+    """
+    Account for potential variability in stage/phase name definition.
+
+    Since a pipeline author is free to name his/her processing phases/stages
+    as desired, but these choices influence file names, enforce some
+    standardization. Specifically, prohibit potentially problematic spaces.
+
+    :param stage: Pipeline stage, its name, or a representative function.
+    :type stage: str | pypiper.Stage | function
+    :return: Standardized pipeline phase/stage name.
+    :rtype: str
+    """
+    # First ensure that we have text.
+    name = parse_stage_name(stage)
+    # Cast to string to ensure that indexed stages (ints are handled).
+    return str(name).lower().replace(" ", STAGE_NAME_SPACE_REPLACEMENT)
 
 
 

@@ -23,8 +23,8 @@ import time
 from .AttributeDict import AttributeDict
 from .flags import *
 from .utils import \
-    check_shell, clear_flags, flag_name, make_lock_name, pipeline_filepath, \
-    CHECKPOINT_SPECIFICATIONS
+    check_shell, checkpoint_filepath, clear_flags, flag_name, make_lock_name, \
+    pipeline_filepath, CHECKPOINT_SPECIFICATIONS
 from ._version import __version__
 import __main__
 
@@ -204,6 +204,11 @@ class PipelineManager(object):
         signal.signal(signal.SIGINT, self._signal_int_handler)
         signal.signal(signal.SIGTERM, self._signal_term_handler)
 
+        # Checkpoint-related parameters
+        self.overwrite_checkpoints = overwrite_checkpoints
+        self.halt_on_next = False
+        self.curr_checkpoint = None
+
         # Pypiper can keep track of intermediate files to clean up at the end
         self.cleanup_list = []
         self.cleanup_list_conditional = []
@@ -261,10 +266,6 @@ class PipelineManager(object):
         else:
             print("No config file")
             self.config = None
-
-        self.overwrite_checkpoints = overwrite_checkpoints
-        self.halt_on_next = False
-        self.curr_checkpoint = None
 
 
     @property

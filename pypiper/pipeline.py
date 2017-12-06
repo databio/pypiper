@@ -11,8 +11,9 @@ else:
     from collections.abc import Iterable, Mapping
 
 from .manager import PipelineManager
-from .stage import parse_stage_name, translate_stage_name, Stage
-from .utils import checkpoint_filepath, flag_name
+from .stage import Stage
+from .utils import \
+    checkpoint_filepath, flag_name, parse_stage_name, translate_stage_name
 
 
 __author__ = "Vince Reuter"

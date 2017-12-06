@@ -2,7 +2,9 @@
 
 from functools import partial
 import os
+
 import pytest
+
 from pypiper import Pipeline, PipelineManager, Stage
 
 

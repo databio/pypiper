@@ -1,0 +1,6 @@
+""" Pypiper constants. """
+
+
+CHECKPOINT_EXTENSION = ".checkpoint"
+PIPELINE_CHECKPOINT_DELIMITER = "_"
+STAGE_NAME_SPACE_REPLACEMENT = "-"

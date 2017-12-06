@@ -9,8 +9,9 @@ from pypiper.manager import COMPLETE_FLAG, PAUSE_FLAG, RUN_FLAG
 from pypiper.pipeline import \
         checkpoint_filepath, IllegalPipelineDefinitionError, \
         IllegalPipelineExecutionError, UnknownPipelineStageError
-from pypiper.stage import checkpoint_filename, translate_stage_name, Stage
-from pypiper.utils import flag_name, pipeline_filepath
+from pypiper.stage import Stage
+from pypiper.utils import \
+    flag_name, pipeline_filepath, checkpoint_filename, translate_stage_name
 from .helpers import named_param
 from tests.conftest import \
     write_file1, write_file2, write_file3, \
@@ -113,7 +114,7 @@ class RunPipelineCornerCaseTests:
     @named_param(argnames="point", argvalues=BASIC_ACTIONS)
     @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
     @named_param(argnames="inclusive", argvalues=[False, True])
-    def test_start_equals_stop(
+    def test_start_point_equals_stop(
             self, dummy_pipe, point, spec_type, stage, inclusive):
         """ Start=stop is only permitted if stop should be run. """
 
@@ -121,52 +122,52 @@ class RunPipelineCornerCaseTests:
 
         # Inclusion determines how to make the call, and the expectation.
         if inclusive:
-            # start = inclusive stop --> single stage runs.
-            dummy_pipe.run(start=stage, stop_after=stage)
+            # start_point = inclusive stop --> single stage runs.
+            dummy_pipe.run(start_point=stage, stop_after=stage)
             _assert_checkpoints(dummy_pipe, [stage])
         else:
-            # start = exclusive stop --> exception
+            # start_point = exclusive stop --> exception
             with pytest.raises(IllegalPipelineExecutionError):
-                dummy_pipe.run(start=stage, stop_at=stage)
+                dummy_pipe.run(start_point=stage, stop_before=stage)
 
 
     @pytest.mark.parametrize(
-            argnames=["start", "stop"],
+            argnames=["start_point", "stop"],
             argvalues=[(write_file2, write_file1),
                        (write_file3, write_file2),
                        (write_file3, write_file1)])
     @pytest.mark.parametrize(argnames="spec_type", argvalues=STAGE_SPECS)
     @pytest.mark.parametrize(
-            argnames="stop_type", argvalues=["stop_at", "stop_after"])
-    def test_start_after_stop(
-            self, dummy_pipe, start, stop, stop_type, spec_type):
+            argnames="stop_type", argvalues=["stop_before", "stop_after"])
+    def test_start_point_after_stop(
+            self, dummy_pipe, start_point, stop, stop_type, spec_type):
         """ Regardless of specification type, start > stop is prohibited. """
-        start = _parse_stage(start, spec_type)
+        start_point = _parse_stage(start_point, spec_type)
         stop = _parse_stage(stop, spec_type)
         with pytest.raises(IllegalPipelineExecutionError):
-            dummy_pipe.run(**{"start": start, stop_type: stop})
+            dummy_pipe.run(**{"start_point": start_point, stop_type: stop})
 
 
     @named_param(
             argnames="undefined_stage",
             argvalues=["unsupported-pipeline-stage", "unknown_phase"])
     @named_param(argnames="stage_point",
-                 argvalues=["start", "stop_at", "stop_after"])
+                 argvalues=["start_point", "stop_before", "stop_after"])
     def test_unknown_stage(self, dummy_pipe, undefined_stage, stage_point):
         """ Start specification must be of known stage name. """
         with pytest.raises(UnknownPipelineStageError):
             dummy_pipe.run(**{stage_point: undefined_stage})
 
 
-    @named_param(argnames="stop_at", argvalues=BASIC_ACTIONS)
+    @named_param(argnames="stop_before", argvalues=BASIC_ACTIONS)
     @named_param(argnames="stop_after", argvalues=BASIC_ACTIONS)
     @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
-    def test_stop_at_and_stop_after(
-            self, dummy_pipe, stop_at, stop_after, spec_type):
+    def test_stop_before_and_stop_after(
+            self, dummy_pipe, stop_before, stop_after, spec_type):
         """ Inclusive and exclusive stop cannot both be provided. """
         inclusive_stop = _parse_stage(stop_after, spec_type)
-        exclusive_stop = _parse_stage(stop_at, spec_type)
-        kwargs = {"stop_at": exclusive_stop, "stop_after": inclusive_stop}
+        exclusive_stop = _parse_stage(stop_before, spec_type)
+        kwargs = {"stop_before": exclusive_stop, "stop_after": inclusive_stop}
         with pytest.raises(IllegalPipelineExecutionError):
             dummy_pipe.run(**kwargs)
 
@@ -195,7 +196,7 @@ class MostBasicPipelineTests:
         _assert_pipeline_initialization(dummy_pipe)
 
         # Make the call under test.
-        dummy_pipe.run(start=None, stop_at=None, stop_after=None)
+        dummy_pipe.run(start_point=None, stop_before=None, stop_after=None)
         
         if test_type == "effects":
             # We're interested in existence and content of targets.
@@ -283,7 +284,7 @@ class MostBasicPipelineTests:
         """ A pipeline may be started from an arbitrary checkpoint. """
         _assert_pipeline_initialization(dummy_pipe)
         s = _parse_stage(BASIC_ACTIONS[start_index], start_spec_type)
-        dummy_pipe.run(start=s)
+        dummy_pipe.run(start_point=s)
         if test_type == "effects":
             exp_files = FILENAMES[start_index:]
             _assert_output(dummy_pipe, exp_files)
@@ -343,7 +344,7 @@ class MostBasicPipelineTests:
 
     @named_param(argnames="stop_index", argvalues=range(1, len(BASIC_ACTIONS)))
     @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
-    @named_param(argnames="stop_type", argvalues=["stop_at", "stop_after"])
+    @named_param(argnames="stop_type", argvalues=["stop_before", "stop_after"])
     def test_stop(self, dummy_pipe, test_type, stop_index, spec_type, stop_type):
         """ A pipeline is capable of halting at/after a specified stage. """
 
