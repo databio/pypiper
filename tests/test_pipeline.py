@@ -7,11 +7,10 @@ import pytest
 from pypiper import Pipeline
 from pypiper.manager import COMPLETE_FLAG, PAUSE_FLAG, RUN_FLAG
 from pypiper.pipeline import \
-        checkpoint_filepath, pipeline_filepath, \
-        IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
-        UnknownPipelineStageError
-from pypiper.stage import checkpoint_filename, Stage
-from pypiper.utils import flag_name, translate_stage_name
+        checkpoint_filepath, IllegalPipelineDefinitionError, \
+        IllegalPipelineExecutionError, UnknownPipelineStageError
+from pypiper.stage import checkpoint_filename, translate_stage_name, Stage
+from pypiper.utils import flag_name, pipeline_filepath
 from .helpers import named_param
 from tests.conftest import \
     write_file1, write_file2, write_file3, \

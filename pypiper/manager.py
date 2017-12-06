@@ -22,7 +22,6 @@ import time
 
 from .AttributeDict import AttributeDict
 from .flags import *
-from .pipeline import checkpoint_filepath
 from .utils import \
     check_shell, clear_flags, flag_name, make_lock_name, pipeline_filepath, \
     CHECKPOINT_SPECIFICATIONS

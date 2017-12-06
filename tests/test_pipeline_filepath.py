@@ -3,7 +3,7 @@
 import os
 import mock
 import pytest
-from pypiper.pipeline import pipeline_filepath
+from pypiper.utils import pipeline_filepath
 
 
 __author__ = "Vince Reuter"

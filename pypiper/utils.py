@@ -17,7 +17,6 @@ __all__ = ["add_pypiper_args", "build_command"]
 
 
 
-STAGE_NAME_SPACE_REPLACEMENT = "-"
 CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
 
 
@@ -114,6 +113,52 @@ def build_sample_paths(sample):
             print("Skipping file-like: '[}'".format(path))
         elif not os.path.isdir(base):
             os.makedirs(base)
+
+
+
+def checkpoint_filepath(checkpoint, pm):
+    """
+    Create filepath for indicated checkpoint.
+
+    :param checkpoint: Pipeline phase/stage or one's name
+    :type checkpoint: str | Stage
+    :param pm: manager of a pipeline instance, relevant for output folder path.
+    :type pm: pypiper.PipelineManager | pypiper.Pipeline
+    :return str: standardized checkpoint name for file, plus extension
+    :raise ValueError: if the checkpoint is given as absolute path that does
+        not point within pipeline output folder
+    """
+
+    # Handle case in which checkpoint is given not just as a string, but
+    # as a checkpoint-like filename. Don't worry about absolute path status
+    # of a potential filename input, or whether it's in the pipeline's
+    # output folder. That's handled upstream. While this isn't a protected
+    # function, there's no real reason to call this from outside the package.
+    if isinstance(checkpoint, str):
+        if os.path.isabs(checkpoint):
+            if is_in_file_tree(checkpoint, pm.outfolder):
+                return checkpoint
+            else:
+                raise ValueError(
+                    "Absolute checkpoint path '{}' is not in pipeline output "
+                    "folder '{}'".format(checkpoint, pm.outfolder))
+        _, ext = os.path.splitext(checkpoint)
+        if ext == CHECKPOINT_EXTENSION:
+            return pipeline_filepath(pm, filename=checkpoint)
+
+    if isinstance(pm, Pipeline):
+        pm = pm.manager
+
+    # We want the checkpoint filename itself to become a suffix, with a
+    # delimiter intervening between the pipeline name and the checkpoint
+    # name + extension. This is to handle the case in which a single, e.g.,
+    # sample's output folder is the destination for output from multiple
+    # pipelines, and we thus want to be able to distinguish between
+    # checkpoint files from different pipelines for that sample that may
+    # well define one or more stages with the same name (e.g., trim_reads,
+    # align_reads, etc.)
+    chkpt_name = checkpoint_filename(checkpoint, pipeline_name=pm.name)
+    return pipeline_filepath(pm, filename=chkpt_name)
 
 
 
@@ -290,30 +335,6 @@ def parse_cores(cores, pm, default):
 
 
 
-def parse_stage_name(stage):
-    """
-    Determine the name of a stage.
-
-    The stage may be provided already as a name, as a Stage object, or as a
-    callable with __name__ (e.g., function).
-
-    :param stage: Object representing a stage, from which to obtain name.
-    :type stage: str | pypiper.Stage | function
-    :return: Name of putative pipeline Stage.
-    :rtype: str
-    """
-    if isinstance(stage, str):
-        return stage
-    try:
-        return stage.name
-    except AttributeError:
-        try:
-            return stage.__name__
-        except AttributeError:
-            raise TypeError("Unsupported stage type: {}".format(type(stage)))
-
-
-
 def pipeline_filepath(pm, filename=None, suffix=None):
     """
     Derive path to file for managed pipeline.
@@ -346,26 +367,6 @@ def pipeline_filepath(pm, filename=None, suffix=None):
     # So we can handle argument of either type to pm parameter.
     return filename if os.path.isabs(filename) \
             else os.path.join(pm.outfolder, filename)
-
-
-
-def translate_stage_name(stage):
-    """
-    Account for potential variability in stage/phase name definition.
-
-    Since a pipeline author is free to name his/her processing phases/stages
-    as desired, but these choices influence file names, enforce some
-    standardization. Specifically, prohibit potentially problematic spaces.
-
-    :param stage: Pipeline stage, its name, or a representative function.
-    :type stage: str | pypiper.Stage | function
-    :return: Standardized pipeline phase/stage name.
-    :rtype: str
-    """
-    # First ensure that we have text.
-    name = parse_stage_name(stage)
-    # Cast to string to ensure that indexed stages (ints are handled).
-    return str(name).lower().replace(" ", STAGE_NAME_SPACE_REPLACEMENT)
 
 
 
