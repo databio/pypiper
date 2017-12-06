@@ -2,8 +2,11 @@
 
 import glob
 import os
+import time
+
 from pypiper import PipelineManager
-from pypiper.stage import CHECKPOINT_EXTENSION, Stage
+from pypiper.const import CHECKPOINT_EXTENSION
+from pypiper.stage import Stage
 from tests.helpers import named_param
 
 
@@ -17,6 +20,11 @@ class DummyPM(PipelineManager):
     def __init__(self, name, outfolder):
         self.name = name
         self.outfolder = outfolder
+        self.start_point = None
+        self.stop_before = None
+        self.stop_after = None
+        self.halt_on_next = False
+        self.last_timestamp = time.time()
 
 
 
@@ -55,7 +63,7 @@ class CheckpointFilepathTests:
         plm2 = DummyPM(name2, outfolder)
 
         checkpoint_name = "trim_reads"
-        plm1.checkpoint(stage_spec())
+        plm1.timestamp(checkpoint=stage_spec())
 
         # Find the checkpoints; there should only be one.
         checkpoints = glob.glob(checkpoint_pattern)
@@ -66,7 +74,7 @@ class CheckpointFilepathTests:
         assert exp_chkpt_fpath == checkpoints[0]
 
         # Create a second checkpoint with the same stage, but
-        plm2.checkpoint(stage_spec())
+        plm2.timestamp(checkpoint=stage_spec())
         checkpoints = glob.glob(checkpoint_pattern)
         assert 2 == len(checkpoints)
         exp_chkpt_fpath_2 = os.path.join(outfolder, "{}_{}".format(
