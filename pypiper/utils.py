@@ -144,8 +144,6 @@ def checkpoint_filename(checkpoint, pipeline_name=None):
     try:
         base = checkpoint.checkpoint_name
     except AttributeError:
-        base = checkpoint
-    else:
         base = translate_stage_name(checkpoint)
     if pipeline_name:
         base = "{}{}{}".format(
