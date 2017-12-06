@@ -338,7 +338,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     # Define the argument groups.
     args_by_group = {
         "pypiper" : ["recover", "new-start", "dirty", "follow",
-                     "start", "stop-at", "stop-after"],
+                     "start", "stop-before", "stop-after"],
         "config" : ["config"],
         "resource" : ["mem", "cores"],
         "looper" : ["config", "output-parent", "mem", "cores"],
@@ -415,7 +415,7 @@ def _add_args(parser, args, required):
                             "primary command is not run"}),
         "start":
             {"help": "Name of pipeline stage at which to begin"},
-        "stop-at":
+        "stop-before":
             {"help": "Name of pipeline stage at which to stop "
                      "(exclusive, not run)"},
         "stop-after":

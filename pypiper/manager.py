@@ -957,7 +957,7 @@ class PipelineManager(object):
     # Logging functions
     ###################################
 
-    def timestamp(self, message=""):
+    def timestamp(self, message="", checkpoint=None):
         """
         Prints your given message, along with the current time, and time elapsed since the 
         previous timestamp() call.  If you specify a HEADING by beginning the message with "###",
@@ -965,6 +965,12 @@ class PipelineManager(object):
 
         :param message: Message to timestamp.
         :type message: str
+        :param checkpoint: Name of checkpoint; this tends to be something
+            that reflects the processing logic about to be or having just been
+            completed. Provision of an argument to this parameter means that
+            a checkpoint file will be created, facilitating arbitrary starting
+            and stopping point for the pipeline as desired.
+        :type checkpoint: str, optional
         """
         message += " (" + time.strftime("%m-%d %H:%M:%S") + ")"
         message += " elapsed:" + str(datetime.timedelta(seconds=self.time_elapsed(self.last_timestamp)))
