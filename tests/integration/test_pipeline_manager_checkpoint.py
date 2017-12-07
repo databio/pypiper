@@ -38,8 +38,25 @@ class CheckpointFilepathTests:
                  argvalues=["stage_name", "stage", "function"])
     def test_distinguishes_pipelines_within_outfolder(
             self, name1, name2, spec_type, tmpdir):
-        """ Checkpoint files within sample folder include pipeline name. """
+        """
+        Checkpoint files within sample folder include pipeline name.
 
+        More specifically, we often have the case that a single sample's
+        name is the name of a subfolder, within the broader results
+        directory for an entire project, in which to store output files
+        associated with that particular sample. The sample in that case may
+        be associated with a protocol that maps to multiple pipelines, and
+        thus the sample may be processed by multiple pipelines. If each
+        pipeline had a unique set of stage names, we'd be fine with no
+        additional measures, but to avoid a checkpoint filename collision,
+        in which we would be unable to know which pipeline had generated
+        a given checkpoint file, we add the pipeline name to the checkpoint
+        file and assume that we're not processing the sample with multiple
+        identically named pipelines.
+
+        """
+
+        # Define a dummy function to use as the callable for a Stage.
         def trim_reads():
             pass
 
