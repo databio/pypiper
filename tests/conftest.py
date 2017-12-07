@@ -1,5 +1,6 @@
 """ Fixtures and configuration visible to all tests """
 
+import copy
 from functools import partial
 import os
 
@@ -35,7 +36,12 @@ FILE_TEXT_PAIRS = list(zip(FILENAMES, CONTENTS))
 def get_pipe_manager(tmpdir):
     """ Provide safe creation of pipeline manager, with multi=True. """
     def get_mgr(**kwargs):
-        return PipelineManager(outfolder=tmpdir.strpath, multi=True, **kwargs)
+        if "outfolder" in kwargs:
+            kwd_args = kwargs
+        else:
+            kwd_args = copy.deepcopy(kwargs)
+            kwd_args["outfolder"] = tmpdir.strpath
+        return PipelineManager(multi=True, **kwd_args)
     return get_mgr
 
 
