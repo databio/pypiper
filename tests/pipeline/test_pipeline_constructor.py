@@ -158,7 +158,6 @@ def test_empty_pipeline_manager_name_and_no_explicit_pipeline_name(
 
 
 
-
 class AnonymousFunctionStageTests:
     """ Tests for anonymous function as a pipeline stage. """
 
