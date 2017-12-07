@@ -32,10 +32,18 @@ FILE_TEXT_PAIRS = list(zip(FILENAMES, CONTENTS))
 
 
 @pytest.fixture
-def pl_mgr(request, tmpdir):
+def get_pipe_manager(tmpdir):
+    """ Provide safe creation of pipeline manager, with multi=True. """
+    def get_mgr(**kwargs):
+        return PipelineManager(outfolder=tmpdir.strpath, multi=True, **kwargs)
+    return get_mgr
+
+
+
+@pytest.fixture
+def pl_mgr(request, get_pipe_manager):
     """ Provide a PipelineManager and ensure that it's stopped. """
-    pm = PipelineManager(
-            name=TEST_PIPE_NAME, outfolder=tmpdir.strpath, multi=True)
+    pm = get_pipe_manager(name=TEST_PIPE_NAME)
     def _ensure_stopped():
         pm.stop_pipeline()
     request.addfinalizer(_ensure_stopped)

@@ -32,16 +32,21 @@ class Pipeline(object):
     to create the Pipeline. If both are provided, the output folder path is
     ignored and that of the PipelineManager that's passed is used instead.
 
-    :param name: Name for the pipeline; arbitrary, just used for messaging.
-    :type name: str
-    :param manager: The pipeline manager to use for this pipeline.
-    :type manager: pypiper.PipelineManager
+    :param name: Name for the pipeline; arbitrary, just used for messaging;
+        this is required if and only if a manager is not provided.
+    :type name: str, optional
+    :param manager: The pipeline manager to use for this pipeline; this is
+        required if and only if name or output folder is not provided.
+    :type manager: pypiper.PipelineManager, optional
     :param outfolder: Path to main output folder for this pipeline
-    :type outfolder: str
+    :type outfolder: str, optional
     :param args: command-line options and arguments for PipelineManager
     :type args: argparse.Namespace, optional
-    :raise TypeError: Either PipelineManager or output folder path must be
-        provided.
+    :param pl_mgr_kwargs: Additional keyword arguments for pipeline manager.
+    :type pl_mgr_kwargs: Mapping
+    :raise TypeError: Either pipeline manager or output folder path must be
+        provided, and either pipeline manager or name must be provided.
+    :raise ValueError: Name of pipeline manager cannot be
     :raise IllegalPipelineDefinitionError: Definition of collection of stages
         must be non-empty.
     """
@@ -49,10 +54,21 @@ class Pipeline(object):
     __metaclass__ = abc.ABCMeta
     
     
-    def __init__(self, name, manager=None, outfolder=None, args=None):
+    def __init__(self, name=None, manager=None, outfolder=None, args=None,
+                 **pl_mgr_kwargs):
 
         super(Pipeline, self).__init__()
-        self.name = name
+        try:
+            self.name = name or manager.name
+        except AttributeError:
+            raise TypeError(
+                    "If a pipeline manager isn't provided to create "
+                    "{}, a name is required.".format(Pipeline.__name__))
+        else:
+            if not self.name:
+                raise ValueError(
+                    "Invalid name, possible inferred from pipeline manager: "
+                    "{} ({})".format(self.name, type(self.name)))
 
         # Determine the PipelineManager.
         if manager:
@@ -61,8 +77,17 @@ class Pipeline(object):
                 print("Ignoring explicit output folder ({}) and using that of "
                       "pipeline manager ({})".format(outfolder,
                                                      manager.outfolder))
+            if name and name != manager.name:
+                print("Warning: name for pipeline ('{}') doesn't match that "
+                      "of the given manager ('{}')".format(name, manager.name))
         elif outfolder:
-            self.manager = PipelineManager(name, outfolder, args=args)
+            # We're guaranteed by the upfront exception block around
+            # name setting that we'll either have set the name for this
+            # instance to a non-null if we reach this point, and thus we're
+            # protected from passing a null name argument to the pipeline
+            # manager's constructor.
+            self.manager = PipelineManager(
+                    self.name, outfolder, args=args, **pl_mgr_kwargs)
         else:
             raise TypeError("To create a {} instance, 'manager' or 'outfolder' "
                             "is required".format(self.__class__.__name__))

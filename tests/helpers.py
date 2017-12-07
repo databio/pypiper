@@ -2,6 +2,7 @@
 
 from functools import partial
 import pytest
+from pypiper import Pipeline
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -26,3 +27,12 @@ def named_param(argnames, argvalues):
     return partial(pytest.mark.parametrize(
                    argnames=argnames, argvalues=argvalues,
                    ids=lambda val: "{}={}".format(argnames, val)))
+
+
+
+class SafeTestPipeline(Pipeline):
+    """ Pipeline for tests that protects against bad file descriptor. """
+    def __init__(self, *args, **kwargs):
+        kwd_args = {"multi": True}    # Like interactive mode.
+        kwd_args.update(kwargs)
+        super(SafeTestPipeline, self).__init__(*args, **kwd_args)
