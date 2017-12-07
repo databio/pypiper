@@ -1,7 +1,7 @@
 """ Tests for construction of a Pipeline """
 
 import pytest
-from pypiper import Pipeline, PipelineManager
+from pypiper import Pipeline, PipelineManager, Stage
 from tests.helpers import assert_equal_dirpath, named_param, SafeTestPipeline
 
 
@@ -141,10 +141,12 @@ class ConceptuallyOverlappingArgumentsTests:
         assert pm == pl.manager
 
 
+
 def test_pipeline_requires_either_manager_or_outfolder():
     """ Pipeline must be passed pipeline manager or output folder. """
     with pytest.raises(TypeError):
         _MinimalPipeline()
+
 
 
 def test_empty_pipeline_manager_name_and_no_explicit_pipeline_name(
@@ -153,6 +155,40 @@ def test_empty_pipeline_manager_name_and_no_explicit_pipeline_name(
     pm = get_pipe_manager(name="", outfolder=tmpdir.strpath)
     with pytest.raises(ValueError):
         _MinimalPipeline(manager=pm)
+
+
+
+
+class AnonymousFunctionStageTests:
+    """ Tests for anonymous function as a pipeline stage. """
+
+
+    def test_anonymous_stage_without_name_is_prohibited(self, tmpdir):
+        """ Anonymous function as Stage must be paired with name. """
+        with pytest.raises(TypeError):
+            _AnonymousStageWithoutNamePipeline(
+                    name="test-pipe", outfolder=tmpdir.strpath)
+
+
+    def test_anonymous_stage_with_name_is_permitted(self, tmpdir):
+        """ Anonymous function as Stage must be paired with name. """
+        _AnonymousStageWithNamePipeline(
+                name="test-pipe", outfolder=tmpdir.strpath)
+
+
+
+class _AnonymousStageWithoutNamePipeline(SafeTestPipeline):
+    """ Anonymous function as stage is prohibited unless paired with name. """
+    def stages(self):
+        return [lambda: None]
+
+
+
+class _AnonymousStageWithNamePipeline(SafeTestPipeline):
+    """ Anonymous function as Stage is allowed if wrapped with a name. """
+    def stages(self):
+        return [("NullStage", lambda: None)]
+
 
 
 @pytest.fixture

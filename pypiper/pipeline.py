@@ -481,7 +481,7 @@ def _parse_stage_spec(stage_spec):
     # The logic used here, a message to a user about how to specify Stage.
     req_msg = "Stage specification must be either a {0} itself, a " \
               "(<name>, {0}) pair, or a callable with a __name__ attribute " \
-              "(e.g., a function)".format(Stage.__name__)
+              "(e.g., a non-anonymous function)".format(Stage.__name__)
 
     # Simplest case is stage itself.
     if isinstance(stage_spec, Stage):
@@ -500,6 +500,11 @@ def _parse_stage_spec(stage_spec):
             name = stage_spec.__name__
         except AttributeError:
             raise TypeError(req_msg)
+        else:
+            # Control flow here indicates an anonymous function that was not
+            # paired with a name. Prohibit that.
+            if name == (lambda: None).__name__:
+                raise TypeError(req_msg)
         stage = stage_spec
 
     # Ensure that the stage is callable.
