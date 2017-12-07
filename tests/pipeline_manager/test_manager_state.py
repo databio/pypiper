@@ -1,8 +1,5 @@
 """ Tests related to pipeline manager state. """
 
-from pypiper import PipelineManager
-
-
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 

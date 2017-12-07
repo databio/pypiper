@@ -23,13 +23,27 @@ def test_timestamp_requires_no_arguments(get_pipe_manager):
 
 
 
-def test_timestamp_message(get_pipe_manager):
+def test_timestamp_message(get_pipe_manager, capsys):
     """ Tests for the message component of a timestamp() call. """
-    pm = get_pipe_manager(name="TestPM")
+    name = "TestPM"
+    pm = get_pipe_manager(name=name)
     logfile = pm.pipeline_log_file
-    with open(logfile, 'r') as f:
-        orig_lines = f.readlines()
-    pm.timestamp()
+    assert not os.path.exists(logfile)
+    message_content = "Just testing"
+    message = "### {}".format(message_content)
+    pm.timestamp(message)
+
+    # Capture output but also write it so it's there.
+    # Since we're in interactive mode for the testing session, we don't have
+    # the luxury of a lofgile for the pipeline manager.
+    out, err = capsys.readouterr()
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+
+    # The stdout capture with capsys comes through as a single unicode block.
+    assert message_content in str(out), \
+            "Missing timestamp message ('{}') in message(s)".\
+            format(message_content)
 
 
 
@@ -39,9 +53,10 @@ class TimestampHaltingTests:
     def test_halts_if_halt_on_next(self, get_pipe_manager):
         pm = get_pipe_manager(name="TestPM")
         assert pm.is_running
-        pm.timestamp("testing")
         pm.halt_on_next = True
-
+        pm.timestamp("testing")
+        assert not pm.is_running
+        assert pm.halted
 
 
 
