@@ -8,7 +8,7 @@ import sys
 import pytest
 
 from pypiper import PipelineManager
-from pypiper.utils import CHECKPOINT_SPECIFICATIONS
+from pypiper.utils import checkpoint_filepath, CHECKPOINT_SPECIFICATIONS
 
 
 __author__ = "Vince Reuter"
@@ -50,13 +50,39 @@ def test_timestamp_message(get_pipe_manager, capsys):
 class TimestampHaltingTests:
     """ Tests for a manager's ability to halt a pipeline. """
 
+
     def test_halts_if_halt_on_next(self, get_pipe_manager):
+        """ If in particular state, managed pipeline halts on timestamp(). """
         pm = get_pipe_manager(name="TestPM")
         assert pm.is_running
         pm.halt_on_next = True
         pm.timestamp("testing")
         assert not pm.is_running
         assert pm.halted
+
+
+    def test_correctly_sets_halt_on_next(self, get_pipe_manager):
+        """ Of critical importance to timestamp's checkpointing functionality
+        is its ability to alter the manager's state such that it triggers a
+        halt on the subsequent timestamp() call. This allows timestamp() to
+        be used in a prospective fashion while still preserving the ability to
+        specify an inclusive rather than exclusive stopping point/stage.
+        That is, it allows a pipeline to adopt the convention of calling
+        timestamp() before beginning a conceptual block of processing logic,
+        yet still (behave as though) stopping just after completion of
+        execution of a defined stopping point. Essentially, the timestamp()
+        calls can be prospective yet mixed with a retrospective halt point. """
+        pm = get_pipe_manager(name="TestPM")
+        pm.stop_after = "step2"
+        assert pm.is_running
+        assert not pm.halt_on_next
+        pm.timestamp(checkpoint="step1")
+        assert pm.is_running
+        assert not pm.halt_on_next
+        pm.timestamp(checkpoint="step2")
+        assert pm.is_running
+        assert pm.halt_on_next
+
 
 
 
