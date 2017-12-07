@@ -1,11 +1,24 @@
 """ Helpers for tests """
 
 from functools import partial
+import os
 import pytest
 from pypiper import Pipeline
 
+
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
+
+
+
+def assert_equal_dirpath(p1, p2):
+    """
+    Assert that a pair of folder paths has two equal members.
+
+    :param str p1: One path to compare.
+    :param str p2: Other path to compare.
+    """
+    assert p1.rstrip(os.sep) == p2.rstrip(os.sep)
 
 
 
