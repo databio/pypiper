@@ -309,11 +309,16 @@ class PipelineManager(object):
         return self.completed or self.halted or self.failed
 
 
+    @property
+    def is_running(self):
+        return self.status == RUN_FLAG
+
+
     def _ignore_interrupts(self):
         """
         Ignore interrupt and termination signals. Used as a pre-execution
-        function (preexec_fn) for subprocess.Popen calls that Pyper will retain
-        control over (meaning I will clean these processes up manually).
+        function (preexec_fn) for subprocess.Popen calls that pypiper will
+        control over (i.e., manually clean up).
         """
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
