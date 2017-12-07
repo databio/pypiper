@@ -12,7 +12,7 @@ from pypiper.pipeline import \
 from pypiper.stage import Stage
 from pypiper.utils import \
     flag_name, pipeline_filepath, checkpoint_filename, translate_stage_name
-from .helpers import named_param
+from tests.helpers import named_param
 from tests.conftest import \
     write_file1, write_file2, write_file3, \
     CONTENTS, FILENAMES, FILE1_NAME, FILE_TEXT_PAIRS, \
