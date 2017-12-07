@@ -491,7 +491,10 @@ def _parse_stage_spec(stage_spec):
     try:
         # Unpack pair of name and stage, requiring name first.
         name, stage = stage_spec
-    except ValueError:
+    except (TypeError, ValueError):
+        # Normally, this sort of unpacking issue create a ValueError. Here,
+        # though, we also need to catch TypeError since that's what arises
+        # if an attempt is made to unpack a single function.
         # Attempt to parse stage_spec as a single named callable.
         try:
             name = stage_spec.__name__

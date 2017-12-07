@@ -134,4 +134,10 @@ class _EmptyPipeline(SafeTestPipeline):
     """ Minimal pipeline declaration. """
 
     def stages(self):
-        pass
+        """ Sham stages definition. """
+        return [_do_nothing]
+
+
+
+def _do_nothing():
+    return
