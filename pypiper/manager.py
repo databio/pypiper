@@ -301,7 +301,7 @@ class PipelineManager(object):
     @property
     def has_exit_status(self):
         """
-        Has the pipeline been safely stopped?
+        Has the managed pipeline been safely stopped?
 
         :return bool: Whether the managed pipeline's status indicates that it
             has been safely stopped.
@@ -311,6 +311,11 @@ class PipelineManager(object):
 
     @property
     def is_running(self):
+        """
+        Is the managed pipeline running?
+
+        :return bool: Whether the managed pipeline is running.
+        """
         return self.status == RUN_FLAG
 
 
@@ -1453,6 +1458,8 @@ class PipelineManager(object):
         print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
         # print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
         print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
+        if self.halted:
+            return
         self.timestamp("* Pipeline completed at: ".rjust(20))
 
 
@@ -1484,7 +1491,7 @@ class PipelineManager(object):
         # figured out how to sequester the kill signals so they didn't get
         # passed directly to the tee subprocess, so I could handle that on
         # my own; hence, now I believe I no longer need to do this. I'm
-        # leaving this code here as a relic in case someething comes up.
+        # leaving this code here as a relic in case something comes up.
         #with open(self.pipeline_log_file, "a") as myfile:
         #   myfile.write(message + "\n")
 
