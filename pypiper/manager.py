@@ -1007,6 +1007,7 @@ class PipelineManager(object):
             if finished:
                 # Write the file.
                 self._checkpoint(checkpoint)
+                self.prev_checkpoint = checkpoint
                 self.curr_checkpoint = None
             else:
                 self.prev_checkpoint = self.curr_checkpoint
