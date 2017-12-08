@@ -3,14 +3,16 @@
 
 import glob
 import os
-import shutil #for rmtree
+import shutil
 import subprocess
 import time
 import unittest
+
 import pypiper
 
 
 __author__ = "Nathan Sheffield"
+__email__ = "nsheff@virginia.edu"
 
 
 
