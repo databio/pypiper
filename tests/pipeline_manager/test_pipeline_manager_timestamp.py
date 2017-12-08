@@ -241,7 +241,6 @@ class TimestampStatusTypeTests:
             assert pm.curr_checkpoint is None
 
 
-    @pytest.mark.skip("not implemented")
     def test_retrospective_the_prospective_checkpointed_timestamps(
             self, test_type, stage_pair, pm):
         """ Test retrospective timestamp followed by prospective one. """
