@@ -14,7 +14,7 @@ def pytest_generate_tests(metafunc):
     """ Dynamic test case generation for this module's test cases. """
     if "spec_type" in metafunc.fixturenames:
         metafunc.parametrize(
-                argnames="spec_type", argvalues=["cmdl", "kwargs"])
+                argnames="spec_type", argvalues=["cmdl", "ctor"])
 
 
 
@@ -54,22 +54,63 @@ class ManagerConstructorCheckpointSpecificationTests:
         assert stop_point == getattr(pm, stop_type)
 
 
-    @pytest.mark.skip("Not implemented")
-    def test_start_and_stop(self, get_pipe_manager, spec_type):
+    @named_param("start_point", ["merge_input", "filter_reads"])
+    @named_param("stop_point", ["align_reads", "calc_stats"])
+    @named_param("stop_type", ["stop_before", "stop_after"])
+    def test_start_and_stop(self, get_pipe_manager, spec_type,
+                            stop_type, start_point, stop_point):
         """ Specifying both start and stop works just fine. """
-        pass
+        spec_data = {"start_point": start_point, stop_type: stop_point}
+        if spec_type == "cmdl":
+            kwargs = {"args": argparse.Namespace(**spec_data)}
+        else:
+            kwargs = spec_data
+        pm = get_pipe_manager(name="start-and-stop-test", **kwargs)
+        assert start_point == pm.start_point
+        assert stop_point == getattr(pm, stop_type)
 
 
-    @pytest.mark.skip("Not implemented")
-    def test_both_stop_modes_is_prohibited(self, get_pipe_manager, spec_type):
+    @named_param("stop_before", ["align_reads", "call_peaks"])
+    @named_param("stop_after", ["fastqc", "align_reads"])
+    @named_param("stop_before_type", ["cmdl", "ctor"])
+    @named_param("stop_after_type", ["cmdl", "ctor"])
+    def test_both_stop_modes_is_prohibited(
+            self, get_pipe_manager, stop_before_type,
+            stop_after_type, stop_before, stop_after):
         """ Provision of both prospective and retrospective stop is bad. """
-        pass
+        raw_kwargs = {"stop_before": stop_before, "stop_after": stop_after}
+        cmdl_kwargs = {}
+        if stop_before_type == "cmdl":
+            cmdl_kwargs["stop_before"] = raw_kwargs.pop("stop_before")
+        if stop_after_type == "cmdl":
+            cmdl_kwargs["stop_after"] = raw_kwargs.pop("stop_after")
+        args = argparse.Namespace(**cmdl_kwargs)
+        with pytest.raises(TypeError):
+            get_pipe_manager(name="test-double-stop", args=args, **raw_kwargs)
 
 
-    @pytest.mark.skip("Not implemented")
-    def test_complementary_specification_modes(self, get_pipe_manager):
+    @pytest.mark.parametrize(
+        argnames=["start_point", "stop_point"],
+        argvalues=[("fastqc", "align_reads"), ("align_reads", "call_peaks")])
+    @pytest.mark.parametrize(
+        argnames=["start_spec_type", "stop_spec_type"],
+        argvalues=[("cmdl", "ctor"), ("ctor", "cmdl")])
+    @named_param("stop_type", ["stop_before", "stop_after"])
+    def test_complementary_specification_modes(
+            self, get_pipe_manager, start_spec_type, stop_spec_type,
+            stop_type, start_point, stop_point):
         """ Command-line and keyword specifications can harmonize. """
-        pass
+        raw_kwargs = {"start_point": start_point, stop_type: stop_point}
+        cmdl_kwargs = {}
+        if start_spec_type == "cmdl":
+            cmdl_kwargs["start_point"] = raw_kwargs.pop("start_point")
+        if stop_spec_type == "cmdl":
+            cmdl_kwargs[stop_type] = raw_kwargs.pop(stop_type)
+        args = argparse.Namespace(**cmdl_kwargs)
+        pm = get_pipe_manager(name="complementary-test",
+                              args=args, **raw_kwargs)
+        assert start_point == pm.start_point
+        assert stop_point == getattr(pm, stop_type)
 
 
     @pytest.mark.skip("Not implemented")

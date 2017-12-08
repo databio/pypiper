@@ -73,7 +73,8 @@ class PipelineManager(object):
         for which a checkpoint file already exists, but that depends on the
         upstream stage and thus should be rerun if it's "parent" is rerun.
     :raise TypeError: if start or stop point(s) are provided both directly and
-        via args namespace.
+        via args namespace, or if both stopping types (exclusive/prospective
+        and inclusive/retrospective) are provided.
     """
     def __init__(
         self, name, outfolder, version=None, args=None, multi=False,
@@ -114,6 +115,10 @@ class PipelineManager(object):
         for optname in CHECKPOINT_SPECIFICATIONS:
             checkpoint = args_dict.pop(optname, None)
             setattr(self, optname, checkpoint)
+        if self.stop_before and self.stop_after:
+            raise TypeError("Cannot specify both pre-stop and post-stop; "
+                            "got '{}' and '{}'".format(
+                    self.stop_before, self.stop_after))
 
         # Update this manager's parameters with non-checkpoint-related
         # command-line parameterization.
