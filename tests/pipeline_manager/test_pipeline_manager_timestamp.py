@@ -72,18 +72,25 @@ class TimestampHaltingTests:
 
     def test_halts_if_hitting_exclusive_halt_point(self, get_pipe_manager):
         """ Halt point may be specified prospectively. """
-        pm = get_pipe_manager(name="TestPM")
+
+        # Create manager, set halt point, and check that it's running.
         halt_name = "phase3"
+        pm = get_pipe_manager(name="TestPM")
         pm.stop_before = halt_name
         assert pm.is_running
-        pm.timestamp("phase1")
+
+        # Make non-halting checkpointed timestamp calls.
+        pm.timestamp(checkpoint="phase1")
         assert pm.is_running
         assert not pm.halted
-        pm.timestamp("phase2")
+        pm.timestamp(checkpoint="phase2")
         assert pm.is_running
         assert not pm.halted
-        pm.timestamp(halt_name)
-        # DEBUG
+
+        # Make the halt-inducing checkpointed timestamp call.
+        pm.timestamp(checkpoint=halt_name)
+
+        # Verify that we've halted.
         try:
             assert pm.halted
         except AssertionError:
