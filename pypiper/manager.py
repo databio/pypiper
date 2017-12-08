@@ -72,14 +72,14 @@ class PipelineManager(object):
         protect from a case in which a restart begins upstream of a stage
         for which a checkpoint file already exists, but that depends on the
         upstream stage and thus should be rerun if it's "parent" is rerun.
-    :raise TypeError: if stop and/or start points are provided and are
-        not text
+    :raise TypeError: if start or stop point(s) are provided both directly and
+        via args namespace.
     """
     def __init__(
         self, name, outfolder, version=None, args=None, multi=False,
         manual_clean=False, recover=False, fresh=False, force_follow=False,
         cores=1, mem="1000", config_file=None, output_parent=None,
-        overwrite_checkpoints=False):
+        overwrite_checkpoints=False, **kwargs):
 
         # Params defines the set of options that could be updated via
         # command line args to a pipeline run, that can be forwarded
@@ -98,12 +98,23 @@ class PipelineManager(object):
             'cores': cores,
             'mem': mem}
 
+        # Transform the command-line namespace into a Mapping.
+        args_dict = vars(args) if args else dict()
+
         # Parse and store stage specifications that can determine pipeline
         # start and/or stop point.
-        args_dict = vars(args) if args else dict()
+        # First, add such specifications to the command-line namespace,
+        # favoring the command-line spec if both are present.
+        for cp_spec in set(CHECKPOINT_SPECIFICATIONS) & set(kwargs.keys()):
+            args_dict.setdefault(cp_spec, kwargs[cp_spec])
+        # Then, ensure that we set each such specification on this manager
+        # so that we're guaranteed safe attribute access. If it's present,
+        # remove the specification from the namespace that will be used to
+        # update this manager's parameters Mapping.
         for optname in CHECKPOINT_SPECIFICATIONS:
             checkpoint = args_dict.pop(optname, None)
             setattr(self, optname, checkpoint)
+
         # Update this manager's parameters with non-checkpoint-related
         # command-line parameterization.
         params.update(args_dict)
@@ -562,7 +573,8 @@ class PipelineManager(object):
         # Short-circuit if the checkpoint file exists and the manager's not
         # been configured to overwrite such files.
         if self.curr_checkpoint is not None:
-            check_fpath = pipeline_filepath(self.curr_checkpoint)
+            check_fpath = pipeline_filepath(
+                    self, filename=self.curr_checkpoint)
             if os.path.isfile(check_fpath) and not self.overwrite_checkpoints:
                 print("Checkpoint file exists for '{}' ('{}'), and the {} has "
                       "been configured to not overwrite checkpoints; "
@@ -571,6 +583,9 @@ class PipelineManager(object):
                     self.__class__.__name__, cmd))
                 return 0
 
+        # TODO: consider making the logic such that locking isn't implied, or
+        # TODO (cont.): that we can make it otherwise such that it's not
+        # TODO (cont.): strictly necessary to provide target or lock_name.
         # The default lock name is based on the target name.
         # Therefore, a targetless command that you want
         # to lock must specify a lock_name manually.

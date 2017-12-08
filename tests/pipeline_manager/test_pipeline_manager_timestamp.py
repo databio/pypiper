@@ -1,14 +1,9 @@
 """ Tests for the timestamp functionality of a PipelineManager. """
 
-import argparse
-import mock
 import os
 import sys
 
-import pytest
-
-from pypiper import PipelineManager
-from pypiper.utils import checkpoint_filepath, CHECKPOINT_SPECIFICATIONS
+from pypiper.utils import pipeline_filepath
 
 
 __author__ = "Vince Reuter"
@@ -60,15 +55,6 @@ class TimestampHaltingTests:
     # the cost exceeds the benefit of the logical independence that it confers.
 
 
-    def test_halts_if_halt_on_next(self, get_pipe_manager):
-        """ If in particular state, managed pipeline halts on timestamp(). """
-        pm = get_pipe_manager(name="TestPM")
-        assert pm.is_running
-        pm.halt_on_next = True
-        pm.timestamp("testing")
-        assert not pm.is_running
-        assert pm.halted
-
 
     def test_halts_if_hitting_exclusive_halt_point(self, get_pipe_manager):
         """ Halt point may be specified prospectively. """
@@ -99,6 +85,16 @@ class TimestampHaltingTests:
         assert not pm.is_running
 
 
+    def test_halts_if_halt_on_next(self, get_pipe_manager):
+        """ If in particular state, managed pipeline halts on timestamp(). """
+        pm = get_pipe_manager(name="TestPM")
+        assert pm.is_running
+        pm.halt_on_next = True
+        pm.timestamp("testing")
+        assert not pm.is_running
+        assert pm.halted
+
+
     def test_correctly_sets_halt_on_next(self, get_pipe_manager):
         """ Of critical importance to timestamp's checkpointing functionality
         is its ability to alter the manager's state such that it triggers a
@@ -110,13 +106,21 @@ class TimestampHaltingTests:
         yet still (behave as though) stopping just after completion of
         execution of a defined stopping point. Essentially, the timestamp()
         calls can be prospective yet mixed with a retrospective halt point. """
+
+        # Establish manager and perform initial control assertions.
         pm = get_pipe_manager(name="TestPM")
         pm.stop_after = "step2"
         assert pm.is_running
         assert not pm.halt_on_next
+
+        # Make non-halt-status-altering checkpointed timestamp call and
+        # verify that we're still running and that we're not scheduled to halt.
         pm.timestamp(checkpoint="step1")
         assert pm.is_running
         assert not pm.halt_on_next
+
+        # Make halt-status-altering checkpointed timestamp call and verify
+        # that we're still running and that we've now been scheduled to halt.
         pm.timestamp(checkpoint="step2")
         assert pm.is_running
         assert pm.halt_on_next
