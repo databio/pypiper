@@ -1,11 +1,10 @@
 """ Tests for the timestamp functionality of a PipelineManager. """
 
-import glob
 import os
 import sys
 import pytest
 from pypiper.utils import checkpoint_filepath
-from tests.helpers import named_param
+from tests.helpers import fetch_checkpoint_files, named_param
 
 
 __author__ = "Vince Reuter"
@@ -166,15 +165,21 @@ class TimestampStatusTypeTests:
             self, get_pipe_manager, retrospective, which_checkpoint_state):
         """ Which checkpoint state is updated by a checkpointed timestamp
         call depends upon the perspective of the call. """
+
+        # Create the manager and make the timestamp call.
         pm = get_pipe_manager(name="InitialTimestampState")
         stage_name = "quality_control"
         pm.timestamp(checkpoint=stage_name, finished=retrospective)
+
+        # Form expectations.
         if retrospective:
             prev_exp = stage_name
             curr_exp = None
         else:
             prev_exp = None
             curr_exp = stage_name
+
+        # Make the assertion on the specified checkpoint state.
         if which_checkpoint_state == "curr_checkpoint":
             assert curr_exp == getattr(pm, "curr_checkpoint")
         else:
@@ -183,12 +188,14 @@ class TimestampStatusTypeTests:
 
     def test_two_prospective_checkpointed_timestamps(
             self, test_type, stage_pair, pm):
+        """ Prospective timestamp generates file for previous checkpoint. """
+
         stage1, stage2 = stage_pair
         pm.timestamp(checkpoint=stage1, finished=False)
         pm.timestamp(checkpoint=stage2, finished=False)
+
         if test_type == FILES_TEST:
-            checkpoint_pattern = checkpoint_filepath("*", pm)
-            checkpoint_files = glob.glob(checkpoint_pattern)
+            checkpoint_files = fetch_checkpoint_files(pm)
             expected = [checkpoint_filepath(stage1, pm)]
             assert set(expected) == set(checkpoint_files)
         else:
@@ -196,32 +203,42 @@ class TimestampStatusTypeTests:
             assert stage2 == pm.curr_checkpoint
 
 
-    @pytest.mark.skip("not implemented")
     def test_two_retrospective_checkpointed_timestamps(
             self, test_type, stage_pair, pm):
+        """ Retrospective timestamp generates file for current checkpoint. """
+
         stage1, stage2 = stage_pair
         pm.timestamp(checkpoint=stage1, finished=True)
         pm.timestamp(checkpoint=stage2, finished=True)
+
         if test_type == FILES_TEST:
-            assert os.path.isfile(checkpoint_filepath(stage1, pm))
-            assert os.path.isfile(checkpoint_filepath(stage2, pm))
+            checkpoint_files = fetch_checkpoint_files(pm)
+            expected = [checkpoint_filepath(s, pm) for s in [stage1, stage2]]
+            assert set(expected) == set(checkpoint_files)
         else:
-            assert stage1 == pm.prev_checkpoint
-            assert stage2 == pm.curr_checkpoint
+            assert stage2 == pm.prev_checkpoint
+            assert pm.curr_checkpoint is None
 
 
-    @pytest.mark.skip("not implemented")
     def test_prospective_then_retrospective_checkpointed_timestamps(
             self, test_type, stage_pair, pm):
+        """ If a prospective checkpointed timestamp is followed by a
+        retrospective one, there's only a file for the retrospective one. """
+
         stage1, stage2 = stage_pair
         pm.timestamp(checkpoint=stage1, finished=False)
+        assert stage1 == pm.curr_checkpoint
         pm.timestamp(checkpoint=stage2, finished=True)
+
         if test_type == FILES_TEST:
-            assert os.path.isfile(checkpoint_filepath(stage1, pm))
-            assert os.path.isfile(checkpoint_filepath(stage2, pm))
+            checkpoint_files = fetch_checkpoint_files(pm)
+            expected = [checkpoint_filepath(stage2, pm)]
+            assert set(expected) == set(checkpoint_files)
         else:
-            assert stage1 == pm.prev_checkpoint
-            assert stage2 == pm.curr_checkpoint
+            # Current checkpoint will be reset by second (retrospective)
+            # timestamp call.
+            assert stage2 == pm.prev_checkpoint
+            assert pm.curr_checkpoint is None
 
 
     @pytest.mark.skip("not implemented")

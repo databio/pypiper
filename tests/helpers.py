@@ -1,9 +1,11 @@
 """ Helpers for tests """
 
 from functools import partial
+import glob
 import os
 import pytest
 from pypiper import Pipeline
+from pypiper.utils import checkpoint_filepath
 
 
 __author__ = "Vince Reuter"
@@ -19,6 +21,20 @@ def assert_equal_dirpath(p1, p2):
     :param str p2: Other path to compare.
     """
     assert p1.rstrip(os.sep) == p2.rstrip(os.sep)
+
+
+
+def fetch_checkpoint_files(pm):
+    """
+    Fetch all of a manager's checkpoint file paths.
+
+    :param pyiper.PipelineManager pm: manager for which checkpoint files'
+        paths are of interest.
+    :return Iterable[str]: collection of all of given manager's checkpoint
+        files' paths.
+    """
+    pattern = checkpoint_filepath("*", pm)
+    return glob.glob(pattern)
 
 
 
