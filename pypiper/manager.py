@@ -471,7 +471,7 @@ class PipelineManager(object):
         """
 
         # Remove previous status flag file.
-        flag_file_path = self._flag_file_path()
+        flag_file_path = self.flag_file_path()
         try:
             os.remove(flag_file_path)
         except:
@@ -485,12 +485,12 @@ class PipelineManager(object):
         # Set new status.
         prev_status = self.status
         self.status = status
-        self._create_file(self._flag_file_path())
+        self._create_file(self.flag_file_path())
         print("\nChanged status from {} to {}.".format(
                 prev_status, self.status))
 
 
-    def _flag_file_path(self, status=None):
+    def flag_file_path(self, status=None):
         """
         Create path to flag file based on indicated or current status.
 
