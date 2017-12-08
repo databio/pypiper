@@ -9,6 +9,7 @@ import time
 import unittest
 
 import pypiper
+from pypiper.utils import pipeline_filepath
 
 
 __author__ = "Nathan Sheffield"
@@ -40,22 +41,6 @@ class PipelineManagerTests(unittest.TestCase):
                 "sample_pipeline2", outfolder=self.OUTFOLDER, multi=True)
 
 
-    def _make_pm_path(self, filename):
-        """
-        Create path to indicated file.
-        
-        Simplify the creation of filepath to many different file names, using 
-        the output location of the first of this test class's pipeline 
-        manager instances.
-        
-        :param str filename: name for file for which to create path
-        :return str: full path to indicated file, contextualized by this 
-            class's first pipeline manager (i.e., path to given filename 
-            within pipeline manager's output folder)
-        """
-        return os.path.join(self.pp.outfolder, filename)
-
-
     def tearDown(self):
         """ Scrub the decks after each test case completes. """
         print("Tearing down...")
@@ -73,7 +58,7 @@ class PipelineManagerTests(unittest.TestCase):
 
     def _isFile(self, filename):
         """ Determine if the first manager has this file.  """
-        filepath = self._make_pm_path(filename)
+        filepath = pipeline_filepath(self.pp, filename=filename)
         return os.path.isfile(filepath)
 
 
@@ -128,7 +113,7 @@ class PipelineManagerTests(unittest.TestCase):
         print("Testing waiting for locks...")
         self.pp2.wait=False
         self.pp.wait=False
-        sleep_lock = self._make_pm_path("lock.sleep")
+        sleep_lock = pipeline_filepath(self.pp, filename="lock.sleep")
         subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
         self.pp._create_file(sleep_lock)
         print("Putting lock file: " + sleep_lock)
@@ -145,7 +130,7 @@ class PipelineManagerTests(unittest.TestCase):
         self.pp.wait = True
 
         print("Make sure the pipeline respects files already existing...")
-        target = self._make_pm_path("tgt")
+        target = pipeline_filepath(self.pp, filename="tgt")
         if os.path.isfile(target):  # for repeat runs.
             os.remove(target)
         
@@ -175,25 +160,25 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertEqual(key2, 'def')
 
         print("Test intermediate file cleanup...")
-        tgt1 = self._make_pm_path("tgt1.temp")
-        tgt2 = self._make_pm_path("tgt2.temp")
-        tgt3 = self._make_pm_path("tgt3.temp")
-        tgt4 = self._make_pm_path("tgt4.txt")
-        tgt5 = self._make_pm_path("tgt5.txt")
-        tgt6 = self._make_pm_path("tgt6.txt")
-        tgt8 = self._make_pm_path("tgt8.cond")
-        tgt9 = self._make_pm_path("tgt9.cond")
-        tgt10 = self._make_pm_path("tgt10.txt")
+        tgt1 = pipeline_filepath(self.pp, filename="tgt1.temp")
+        tgt2 = pipeline_filepath(self.pp, filename="tgt2.temp")
+        tgt3 = pipeline_filepath(self.pp, filename="tgt3.temp")
+        tgt4 = pipeline_filepath(self.pp, filename="tgt4.txt")
+        tgt5 = pipeline_filepath(self.pp, filename="tgt5.txt")
+        tgt6 = pipeline_filepath(self.pp, filename="tgt6.txt")
+        tgt8 = pipeline_filepath(self.pp, filename="tgt8.cond")
+        tgt9 = pipeline_filepath(self.pp, filename="tgt9.cond")
+        tgt10 = pipeline_filepath(self.pp, filename="tgt10.txt")
 
         self.pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5, lock_name="test")
         self.pp.run("touch " + tgt8 + " " + tgt9, lock_name="test")
 
         # In global manual_clean mode, even non-manual clean files should not be deleted:
         self.pp.manual_clean = True
-        self.pp.clean_add(self._make_pm_path("*.temp"))
+        self.pp.clean_add(pipeline_filepath(self.pp, filename="*.temp"))
         self.pp.clean_add(tgt4)
         self.pp.clean_add(tgt5, conditional=True)
-        self.pp.clean_add(self._make_pm_path("*.cond"), conditional=True)
+        self.pp.clean_add(pipeline_filepath(self.pp, filename="*.cond"), conditional=True)
         self.pp._cleanup()
 
         self.assertTrue(os.path.isfile(tgt1))
@@ -205,10 +190,10 @@ class PipelineManagerTests(unittest.TestCase):
 
         # But in regular mode, they should be deleted:
         self.pp.manual_clean=False
-        self.pp.clean_add(self._make_pm_path("*.temp"))
+        self.pp.clean_add(pipeline_filepath(self.pp, filename="*.temp"))
         self.pp.clean_add(tgt4)
         self.pp.clean_add(tgt5, conditional=True)
-        self.pp.clean_add(self._make_pm_path("*.cond"), conditional=True)
+        self.pp.clean_add(pipeline_filepath(self.pp, filename="*.cond"), conditional=True)
         self.pp._cleanup()
 
         self.assertFalse(os.path.isfile(tgt1))
@@ -216,7 +201,7 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertFalse(os.path.isfile(tgt3))
         self.assertFalse(os.path.isfile(tgt4))
 
-        tgt7 = self._make_pm_path("tgt7.txt")
+        tgt7 = pipeline_filepath(self.pp, filename="tgt7.txt")
         self.pp.run("touch " + tgt7, tgt7)
         self.pp.clean_add(tgt7, manual=True)
 
@@ -271,7 +256,7 @@ class PipelineManagerTests(unittest.TestCase):
             self.pp._signal_int_handler(None, None)
 
 
-        sleep_lock = self._make_pm_path("lock.sleep")
+        sleep_lock = pipeline_filepath(self.pp, filename="lock.sleep")
         #subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
         self.pp._create_file(sleep_lock)
         cmd = "echo hello"
