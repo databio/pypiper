@@ -2,7 +2,7 @@
 
 import os
 import pytest
-from pypiper.utils import pipeline_filepath
+from pypiper.utils import checkpoint_filepath, pipeline_filepath
 from tests.helpers import named_param
 
 
@@ -18,39 +18,8 @@ def test_starts_running(get_pipe_manager):
     assert pm.is_running
 
 
-
-@named_param("num_skips", argvalues=[1, 2, 3])
-def test_skips_execution_if_in_unstarted_state(get_pipe_manager, num_skips):
-    """ Pipeline manager skips command execution if not in active state. """
-
-    pm = get_pipe_manager(name="skip-execs")
-    pm._active = False
-
-    testfile = pipeline_filepath(pm, filename="output.txt")
-    assert not os.path.isfile(testfile)
-
-    cmd = "touch {}".format(testfile)
-    num_calls = 0
-
-    # Remain inactive for a parameterized number of call-skipping iterations,
-    # then adopt active mode.
-    while True:
-        pm.run(cmd, target=testfile)
-        num_calls += 1
-        if num_calls == num_skips:
-            pm._active = True
-        elif num_calls > num_skips:
-            break
-        # If we're still looping, we've not yet made a call in active mode.
-        assert not os.path.isfile(testfile)
-
-    # We break the loop once we've made a call in active state.
-    assert os.path.isfile(testfile)
-
-
 # Parameters governing execution:
 # 1 -- checkpoint existence
-# 2 -- start state (._active)
 # 3 -- halt state (.halted)
 
 
@@ -58,11 +27,12 @@ class ExecutionSkippingTests:
     """ Tests for cases in which command execution should be skipped. """
 
 
-    def test_skips_to_start(self, get_pipe_manager):
+    @named_param("start_point", ["align_reads", "make_call"])
+    def test_skips_to_start(self, get_pipe_manager, start_point):
         """ The pipeline manager can skip to a starting point. """
 
         # Initialize the manager.
-        pm = get_pipe_manager(name="StartTestPM", start_point="align_reads")
+        pm = get_pipe_manager(name="StartTestPM", start_point=start_point)
 
         # Make a call that should be skipped on the basis of not yet
         # reaching the start point.
@@ -88,24 +58,80 @@ class ExecutionSkippingTests:
 
         # Make a all that should be the first executed, on the basis of
         # being associated with the designated.
-        pm.timestamp(checkpoint="align_reads")
-        path_align_reads_file = pipeline_filepath(pm, filename="alignment.bam")
-        cmd = "touch {}".format(path_align_reads_file)
-        pm.run(cmd, target=path_align_reads_file)
-        assert os.path.isfile(path_align_reads_file)
+        pm.timestamp(checkpoint=start_point)
+        path_first_file = pipeline_filepath(pm, filename="outfile.bam")
+        cmd = "touch {}".format(path_first_file)
+        pm.run(cmd, target=path_first_file)
+        assert os.path.isfile(path_first_file)
 
 
-    @pytest.mark.skip("Not implemented")
-    def test_respects_checkpoints(self, get_pipe_manager):
+    @named_param("num_skips", argvalues=[1, 2, 3])
+    def test_skips_execution_if_in_unstarted_state(
+            self, get_pipe_manager, num_skips):
+        """ Pipeline manager skips command execution if not in active state. """
+
+        pm = get_pipe_manager(name="skip-execs")
+        pm._active = False
+
+        testfile = pipeline_filepath(pm, filename="output.txt")
+        assert not os.path.isfile(testfile)
+
+        cmd = "touch {}".format(testfile)
+        num_calls = 0
+
+        # Remain inactive for a parameterized number of call-skipping iterations,
+        # then adopt active mode.
+        while True:
+            pm.run(cmd, target=testfile)
+            num_calls += 1
+            if num_calls == num_skips:
+                pm._active = True
+            elif num_calls > num_skips:
+                break
+            # If we're still looping, we've not yet made a call in active mode.
+            assert not os.path.isfile(testfile)
+
+        # We break the loop once we've made a call in active state.
+        assert os.path.isfile(testfile)
+
+
+    @named_param("num_skips", argvalues=[1, 2, 3])
+    def test_respects_checkpoints(self, get_pipe_manager, num_skips):
         """ Manager can skip pipeline to where it's not yet checkpointed. """
-        pass
+        pm = get_pipe_manager(name="respect-checkpoints")
+        # Control for possibility that skips are due to being in inactive mode.
+        assert pm._active
+        stages = ["merge", "qc", "filter", "align", "call"]
+        for s in stages[:num_skips]:
+            pm.timestamp(checkpoint=s)
+        for i, s in enumerate(stages):
+            outfile = pipeline_filepath(pm, s + ".txt")
+            cmd = "touch {}".format(outfile)
+            pm.timestamp(checkpoint=s)
+            pm.run(cmd, target=outfile)
+            if i < num_skips:
+                try:
+                    assert not os.path.isfile(outfile)
+                except AssertionError:
+                    print("Have run {} stage(s) of {} skip(s)".
+                          format(i + 1, num_skips))
+                    print("Current manager checkpoint: {}".
+                          format(pm.curr_checkpoint))
+                    raise
+            else:
+                try:
+                    assert os.path.isfile(outfile)
+                except AssertionError:
+                    print("Have run {} stage(s) of {} skip(s)".
+                          format(i + 1, num_skips))
+                    print("Current manager checkpoint: {}".
+                          format(pm.curr_checkpoint))
+                    print("Active? {}".format(pm._active))
+                    raise
+
 
 
     @pytest.mark.skip("Not implemented")
     def test_respects_halt(self, get_pipe_manager):
-        pass
-
-
-    @pytest.mark.skip("Not implemented")
-    def test_activation(self):
+        """ The pipeline manager skips execution if it's in halted state. """
         pass

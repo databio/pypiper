@@ -11,6 +11,10 @@ __email__ = "vreuter@virginia.edu"
 
 
 
+# TODO: test both angles of the timestamp (prospective and retrospective).
+
+
+
 def test_timestamp_requires_no_arguments(get_pipe_manager):
     """ A call to timestamp() requires no arguments. """
     pm = get_pipe_manager(name="TestPM")

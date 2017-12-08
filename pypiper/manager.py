@@ -223,6 +223,7 @@ class PipelineManager(object):
         # Checkpoint-related parameters
         self.overwrite_checkpoints = overwrite_checkpoints
         self.halt_on_next = False
+        self.prev_checkpoint = None
         self.curr_checkpoint = None
 
         # Pypiper can keep track of intermediate files to clean up at the end
@@ -578,8 +579,7 @@ class PipelineManager(object):
         # Short-circuit if the checkpoint file exists and the manager's not
         # been configured to overwrite such files.
         if self.curr_checkpoint is not None:
-            check_fpath = pipeline_filepath(
-                    self, filename=self.curr_checkpoint)
+            check_fpath = checkpoint_filepath(self.curr_checkpoint, self)
             if os.path.isfile(check_fpath) and not self.overwrite_checkpoints:
                 print("Checkpoint file exists for '{}' ('{}'), and the {} has "
                       "been configured to not overwrite checkpoints; "
@@ -1004,8 +1004,14 @@ class PipelineManager(object):
 
         # Determine action to take with respect to halting if needed.
         if checkpoint:
-            # Write the file.
-            self._checkpoint(checkpoint)    # Write the file.
+            if finished:
+                # Write the file.
+                self._checkpoint(checkpoint)
+                self.curr_checkpoint = None
+            else:
+                self.prev_checkpoint = self.curr_checkpoint
+                self.curr_checkpoint = checkpoint
+                self._checkpoint(self.prev_checkpoint)
             # Handle the two halting conditions.
             if (finished and checkpoint == self.stop_after) or \
                     (not finished and checkpoint == self.stop_before):
@@ -1016,10 +1022,8 @@ class PipelineManager(object):
             # If this is a prospective checkpoint, set the current checkpoint
             # accordingly and whether we should halt the pipeline on the
             # next timestamp call.
-            if not finished:
-                self.curr_checkpoint = checkpoint
-                if checkpoint == self.stop_after:
-                    self.halt_on_next = True
+            if not finished and checkpoint == self.stop_after:
+                self.halt_on_next = True
 
         message += " (" + time.strftime("%m-%d %H:%M:%S") + ")"
         elapsed = self.time_elapsed(self.last_timestamp)
@@ -1336,6 +1340,12 @@ class PipelineManager(object):
             and that path indicates a location that's not immediately within
             the main output folder, raise a ValueError.
         """
+
+        # For null stage, short-circuit and indicate no file write.
+        # This handles case in which we're timestamping prospectively and
+        # previously weren't in a stage.
+        if stage is None:
+            return False
 
         try:
             is_checkpoint = stage.checkpoint
