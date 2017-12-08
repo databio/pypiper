@@ -98,18 +98,28 @@ class ExecutionSkippingTests:
     @named_param("num_skips", argvalues=[1, 2, 3])
     def test_respects_checkpoints(self, get_pipe_manager, num_skips):
         """ Manager can skip pipeline to where it's not yet checkpointed. """
+
         pm = get_pipe_manager(name="respect-checkpoints")
+
         # Control for possibility that skips are due to being in inactive mode.
         assert pm._active
+
         stages = ["merge", "qc", "filter", "align", "call"]
+
+        # Create checkpoints.
         for s in stages[:num_skips]:
             pm.timestamp(checkpoint=s)
+
+        # Go through the stages and see that we're skipping checkpoints
+        # that exist, then proceeding to execute each subsequent stage.
         for i, s in enumerate(stages):
             outfile = pipeline_filepath(pm, s + ".txt")
             cmd = "touch {}".format(outfile)
             pm.timestamp(checkpoint=s)
             pm.run(cmd, target=outfile)
+
             if i < num_skips:
+                # We should not have created the output file.
                 try:
                     assert not os.path.isfile(outfile)
                 except AssertionError:
@@ -119,6 +129,7 @@ class ExecutionSkippingTests:
                           format(pm.curr_checkpoint))
                     raise
             else:
+                # We should have created the output file.
                 try:
                     assert os.path.isfile(outfile)
                 except AssertionError:
