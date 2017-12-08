@@ -244,22 +244,29 @@ class TimestampStatusTypeTests:
     @pytest.mark.skip("not implemented")
     def test_retrospective_the_prospective_checkpointed_timestamps(
             self, test_type, stage_pair, pm):
+        """ Test retrospective timestamp followed by prospective one. """
+
         stage1, stage2 = stage_pair
         pm.timestamp(checkpoint=stage1, finished=True)
+        assert stage1 == pm.prev_checkpoint
+        assert pm.curr_checkpoint is None
         pm.timestamp(checkpoint=stage2, finished=False)
+
         if test_type == FILES_TEST:
-            assert os.path.isfile(checkpoint_filepath(stage1, pm))
-            assert os.path.isfile(checkpoint_filepath(stage2, pm))
+            expected = [checkpoint_filepath(stage1, pm)]
+            assert set(expected) == set(fetch_checkpoint_files(pm))
         else:
-            assert stage1 == pm.prev_checkpoint
+            assert pm.prev_checkpoint is None
             assert stage2 == pm.curr_checkpoint
 
 
     @pytest.fixture
     def stage_pair(self):
+        """ Provide test case with a pair of stage names to use. """
         return "merge_input", "quality_control"
 
 
     @pytest.fixture
     def pm(self, get_pipe_manager):
+        """ Provide test case with a basic, test-safe pipeline manager. """
         return get_pipe_manager(name="checkpointed-timestamp-pair")
