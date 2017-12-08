@@ -9,7 +9,8 @@ __email__ = "vreuter@virginia.edu"
 
 
 
-# TODO: test both angles of the timestamp (prospective and retrospective).
+# TODO: test both angles of the timestamp (prospective and retrospective),
+# TODO (cont.): with respect to both files and manager state.
 
 
 
