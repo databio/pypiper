@@ -32,6 +32,8 @@ def test_skips_execution_if_in_unstarted_state(get_pipe_manager, num_skips):
     cmd = "touch {}".format(testfile)
     num_calls = 0
 
+    # Remain inactive for a parameterized number of call-skipping iterations,
+    # then adopt active mode.
     while True:
         pm.run(cmd, target=testfile)
         num_calls += 1
@@ -39,8 +41,10 @@ def test_skips_execution_if_in_unstarted_state(get_pipe_manager, num_skips):
             pm._active = True
         elif num_calls > num_skips:
             break
+        # If we're still looping, we've not yet made a call in active mode.
         assert not os.path.isfile(testfile)
 
+    # We break the loop once we've made a call in active state.
     assert os.path.isfile(testfile)
 
 
