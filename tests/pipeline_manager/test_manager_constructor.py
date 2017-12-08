@@ -19,6 +19,16 @@ def pytest_generate_tests(metafunc):
 
 
 
+@named_param(
+    "checkpoint_type", argvalues=["curr_checkpoint", "prev_checkpoint"])
+def test_manager_starts_in_null_checkpoint_state(
+        get_pipe_manager, checkpoint_type):
+    """ A pipeline manager begins with null checkpoint states. """
+    pm = get_pipe_manager(name="ctor-checkpoint-state")
+    assert getattr(pm, checkpoint_type) is None
+
+
+
 class ManagerConstructorCheckpointSpecificationTests:
     """ Tests for manager's constructor's ability to parse and set
     checkpoint specifications, which can determine aspects of control flow. """
