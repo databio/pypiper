@@ -128,9 +128,9 @@ class PipelineManager(object):
         # execution is to begin right away and set the internal flag so that
         # run() is let loose to execute instructions given.
         if not self.start_point:
-            self._has_started = True
+            self._active = True
         else:
-            self._has_started = False
+            self._active = False
 
         # Pipeline-level variables to track global state and pipeline stats
         # Pipeline settings
@@ -570,7 +570,7 @@ class PipelineManager(object):
         """
 
         # If the pipeline's not been started, skip ahead.
-        if not self._has_started:
+        if not self._active:
             print("Start point ({}) not yet reached, skipping command '{}'".
                   format(self.start_point, cmd))
             return 0
@@ -1012,7 +1012,7 @@ class PipelineManager(object):
                 self.halt()
             # Determine if we've started executing.
             elif checkpoint == self.start_point:
-                self._has_started = True
+                self._active = True
             # If this is a prospective checkpoint, set the current checkpoint
             # accordingly and whether we should halt the pipeline on the
             # next timestamp call.

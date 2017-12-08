@@ -3,6 +3,7 @@
 import os
 import pytest
 from pypiper.utils import pipeline_filepath
+from tests.helpers import named_param
 
 
 __author__ = "Vince Reuter"
@@ -13,12 +14,39 @@ __email__ = "vreuter@virginia.edu"
 def test_starts_running(get_pipe_manager):
     """ A PipelineManager begins running during its construction. """
     pm = get_pipe_manager(name="TestPM")
+    assert pm._active
     assert pm.is_running
+
+
+
+@named_param("num_skips", argvalues=[1, 2, 3])
+def test_skips_execution_if_in_unstarted_state(get_pipe_manager, num_skips):
+    """ Pipeline manager skips command execution if not in active state. """
+
+    pm = get_pipe_manager(name="skip-execs")
+    pm._active = False
+
+    testfile = pipeline_filepath(pm, filename="output.txt")
+    assert not os.path.isfile(testfile)
+
+    cmd = "touch {}".format(testfile)
+    num_calls = 0
+
+    while True:
+        pm.run(cmd, target=testfile)
+        num_calls += 1
+        if num_calls == num_skips:
+            pm._active = True
+        elif num_calls > num_skips:
+            break
+        assert not os.path.isfile(testfile)
+
+    assert os.path.isfile(testfile)
 
 
 # Parameters governing execution:
 # 1 -- checkpoint existence
-# 2 -- start state (._has_started)
+# 2 -- start state (._active)
 # 3 -- halt state (.halted)
 
 
