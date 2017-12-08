@@ -2,6 +2,7 @@
 
 import argparse
 import pytest
+from pypiper.manager import CHECKPOINT_SPECIFICATIONS
 from tests.helpers import named_param
 
 
@@ -113,7 +114,37 @@ class ManagerConstructorCheckpointSpecificationTests:
         assert stop_point == getattr(pm, stop_type)
 
 
-    @pytest.mark.skip("Not implemented")
-    def test_command_line_beats_constructor_keyword(self, get_pipe_manager):
+    @named_param(
+        "check_specs",
+        [["start_point"], ["stop_before"], ["stop_after"],
+         ["start_point", "stop_before"], ["start_point", "stop_after"]])
+    def test_command_line_beats_constructor_keyword(
+            self, get_pipe_manager, check_specs):
         """ Command-line specification is favored over constructor keyword. """
-        pass
+
+        # Declare values to use for respective specification modes.
+        cmdl_values = {"start_point": "merge_input",
+                       "stop_before": "call_peaks",
+                       "stop_after": "align_reads"}
+        ctor_values = {"start_point": "fastqc",
+                       "stop_before": "align_reads",
+                       "stop_after": "filter_reads"}
+
+        # Create specifications based on current test case parameterization.
+        cmdl_kwargs ={cp_spec: cmdl_values[cp_spec]
+                      for cp_spec in check_specs}
+        ctor_kwargs = {cp_spec: ctor_values[cp_spec]
+                       for cp_spec in check_specs}
+        args = argparse.Namespace(**cmdl_kwargs)
+
+        # Build the pipeline manager.
+        pm = get_pipe_manager(name="cmdl-preference", args=args, **ctor_kwargs)
+
+        # Verify the preference for command-line value over variable keyword
+        # argument value.
+        for cp_spec in check_specs:
+            assert cmdl_kwargs[cp_spec] == getattr(pm, cp_spec)
+
+        # Verify that the non-specified values were set to null.
+        for cp_spec in set(CHECKPOINT_SPECIFICATIONS) - set(check_specs):
+            assert getattr(pm, cp_spec) is None
