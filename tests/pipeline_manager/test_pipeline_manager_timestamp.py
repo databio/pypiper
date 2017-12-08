@@ -1,16 +1,28 @@
 """ Tests for the timestamp functionality of a PipelineManager. """
 
+import glob
 import os
 import sys
+import pytest
+from pypiper.utils import checkpoint_filepath
+from tests.helpers import named_param
 
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
+STATE_TEST = "state"
+FILES_TEST = "files"
 
-# TODO: test both angles of the timestamp (prospective and retrospective),
-# TODO (cont.): with respect to both files and manager state.
+
+
+def pytest_generate_tests(metafunc):
+    """ Dynamic test case generation for this module. """
+    if "retrospective" in metafunc.fixturenames:
+        metafunc.parametrize("retrospective", [False, True])
+    if "test_type" in metafunc.fixturenames:
+        metafunc.parametrize("test_type", [FILES_TEST, STATE_TEST])
 
 
 
@@ -33,7 +45,7 @@ def test_timestamp_message(get_pipe_manager, capsys):
 
     # Capture output but also write it so it's there.
     # Since we're in interactive mode for the testing session, we don't have
-    # the luxury of a lofgile for the pipeline manager.
+    # the luxury of a logfile for the pipeline manager.
     out, err = capsys.readouterr()
     sys.stdout.write(out)
     sys.stderr.write(err)
@@ -130,12 +142,107 @@ class TimestampHaltingTests:
 
 
 
-class TimestampCheckpointTests:
-    """ Tests for the checkpoint component of a timestamp() call. """
-    pass
-
-
-
 class TimestampStatusTypeTests:
     """ Tests for the type of status that a timestamp() call represents. """
-    pass
+
+
+    def test_initial_timestamp_checkpoint_file(
+            self, get_pipe_manager, retrospective):
+        """ Initial checkpointed timestamp writes checkpoint file if and only
+        if it's a retrospective timestamp. """
+        pm = get_pipe_manager(name="init-timestamp-file")
+        stage_name = "align_reads"
+        pm.timestamp(checkpoint=stage_name, finished=retrospective)
+        check_fpath = checkpoint_filepath(stage_name, pm)
+        if retrospective:
+            assert os.path.isfile(check_fpath)
+        else:
+            assert not os.path.isfile(check_fpath)
+
+
+    @named_param("which_checkpoint_state",
+                 ["curr_checkpoint", "prev_checkpoint"])
+    def test_initial_timestamp_states(
+            self, get_pipe_manager, retrospective, which_checkpoint_state):
+        """ Which checkpoint state is updated by a checkpointed timestamp
+        call depends upon the perspective of the call. """
+        pm = get_pipe_manager(name="InitialTimestampState")
+        stage_name = "quality_control"
+        pm.timestamp(checkpoint=stage_name, finished=retrospective)
+        if retrospective:
+            prev_exp = stage_name
+            curr_exp = None
+        else:
+            prev_exp = None
+            curr_exp = stage_name
+        if which_checkpoint_state == "curr_checkpoint":
+            assert curr_exp == getattr(pm, "curr_checkpoint")
+        else:
+            assert prev_exp == getattr(pm, "prev_checkpoint")
+
+
+    def test_two_prospective_checkpointed_timestamps(
+            self, test_type, stage_pair, pm):
+        stage1, stage2 = stage_pair
+        pm.timestamp(checkpoint=stage1, finished=False)
+        pm.timestamp(checkpoint=stage2, finished=False)
+        if test_type == FILES_TEST:
+            checkpoint_pattern = checkpoint_filepath("*", pm)
+            checkpoint_files = glob.glob(checkpoint_pattern)
+            expected = [checkpoint_filepath(stage1, pm)]
+            assert set(expected) == set(checkpoint_files)
+        else:
+            assert stage1 == pm.prev_checkpoint
+            assert stage2 == pm.curr_checkpoint
+
+
+    @pytest.mark.skip("not implemented")
+    def test_two_retrospective_checkpointed_timestamps(
+            self, test_type, stage_pair, pm):
+        stage1, stage2 = stage_pair
+        pm.timestamp(checkpoint=stage1, finished=True)
+        pm.timestamp(checkpoint=stage2, finished=True)
+        if test_type == FILES_TEST:
+            assert os.path.isfile(checkpoint_filepath(stage1, pm))
+            assert os.path.isfile(checkpoint_filepath(stage2, pm))
+        else:
+            assert stage1 == pm.prev_checkpoint
+            assert stage2 == pm.curr_checkpoint
+
+
+    @pytest.mark.skip("not implemented")
+    def test_prospective_then_retrospective_checkpointed_timestamps(
+            self, test_type, stage_pair, pm):
+        stage1, stage2 = stage_pair
+        pm.timestamp(checkpoint=stage1, finished=False)
+        pm.timestamp(checkpoint=stage2, finished=True)
+        if test_type == FILES_TEST:
+            assert os.path.isfile(checkpoint_filepath(stage1, pm))
+            assert os.path.isfile(checkpoint_filepath(stage2, pm))
+        else:
+            assert stage1 == pm.prev_checkpoint
+            assert stage2 == pm.curr_checkpoint
+
+
+    @pytest.mark.skip("not implemented")
+    def test_retrospective_the_prospective_checkpointed_timestamps(
+            self, test_type, stage_pair, pm):
+        stage1, stage2 = stage_pair
+        pm.timestamp(checkpoint=stage1, finished=True)
+        pm.timestamp(checkpoint=stage2, finished=False)
+        if test_type == FILES_TEST:
+            assert os.path.isfile(checkpoint_filepath(stage1, pm))
+            assert os.path.isfile(checkpoint_filepath(stage2, pm))
+        else:
+            assert stage1 == pm.prev_checkpoint
+            assert stage2 == pm.curr_checkpoint
+
+
+    @pytest.fixture
+    def stage_pair(self):
+        return "merge_input", "quality_control"
+
+
+    @pytest.fixture
+    def pm(self, get_pipe_manager):
+        return get_pipe_manager(name="checkpointed-timestamp-pair")
