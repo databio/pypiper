@@ -25,6 +25,8 @@ class DummyPM(PipelineManager):
         self.stop_after = None
         self.halt_on_next = False
         self.last_timestamp = time.time()
+        self.prev_checkpoint = None
+        self.curr_checkpoint = None
 
 
 
@@ -73,27 +75,36 @@ class CheckpointFilepathTests:
         outfolder = tmpdir.strpath
 
         # At start, we should have no checkpoints.
-        checkpoint_pattern = os.path.join(outfolder, "*" + CHECKPOINT_EXTENSION)
-        assert [] == glob.glob(checkpoint_pattern)
+        all_checkpoints_pattern = os.path.join(outfolder, "*" + CHECKPOINT_EXTENSION)
+        assert [] == glob.glob(all_checkpoints_pattern)
 
         plm1 = DummyPM(name1, outfolder)
         plm2 = DummyPM(name2, outfolder)
 
         checkpoint_name = "trim_reads"
-        plm1.timestamp(checkpoint=stage_spec())
+        plm1.timestamp(checkpoint=stage_spec(), finished=True)
 
         # Find the checkpoints; there should only be one.
+        checkpoint_pattern = os.path.join(
+            outfolder, "{}_*{}".format(name1, CHECKPOINT_EXTENSION))
         checkpoints = glob.glob(checkpoint_pattern)
         assert 1 == len(checkpoints)
+        assert 1 == len(glob.glob(all_checkpoints_pattern))
         # Check that we have the expected checkpoint.
         exp_chkpt_fpath = os.path.join(outfolder, "{}_{}".format(
                 name1, checkpoint_name + CHECKPOINT_EXTENSION))
         assert exp_chkpt_fpath == checkpoints[0]
 
-        # Create a second checkpoint with the same stage, but
-        plm2.timestamp(checkpoint=stage_spec())
+        # Create a second checkpoint with the same stage, but with a manager
+        # of a different name.
+        plm2.timestamp(checkpoint=stage_spec(), finished=True)
+        checkpoint_pattern = os.path.join(
+            outfolder, "{}_*{}".format(name2, CHECKPOINT_EXTENSION))
         checkpoints = glob.glob(checkpoint_pattern)
-        assert 2 == len(checkpoints)
+        assert 1 == len(checkpoints)
+        all_checkpoints = glob.glob(all_checkpoints_pattern)
+        assert 2 == len(all_checkpoints)
         exp_chkpt_fpath_2 = os.path.join(outfolder, "{}_{}".format(
-                name2, checkpoint_name + CHECKPOINT_EXTENSION))
-        assert {exp_chkpt_fpath, exp_chkpt_fpath_2} == set(checkpoints)
+            name2, checkpoint_name + CHECKPOINT_EXTENSION))
+
+        assert {exp_chkpt_fpath, exp_chkpt_fpath_2} == set(all_checkpoints)

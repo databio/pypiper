@@ -3,8 +3,6 @@
 import os
 import sys
 
-from pypiper.utils import pipeline_filepath
-
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
