@@ -1469,6 +1469,7 @@ class PipelineManager(object):
     def halt(self):
         """ Stop the pipeline before completion point. """
         self.stop_pipeline(PAUSE_FLAG)
+        self._active = False
 
 
     def stop_pipeline(self, status=COMPLETE_FLAG):

@@ -141,8 +141,20 @@ class ExecutionSkippingTests:
                     raise
 
 
-
-    @pytest.mark.skip("Not implemented")
-    def test_respects_halt(self, get_pipe_manager):
+    @named_param("halt_index", [1, 2, 3])
+    def test_respects_halt(self, get_pipe_manager, halt_index):
         """ The pipeline manager skips execution if it's in halted state. """
-        pass
+        pm = get_pipe_manager(name="respects-halt")
+        targets = ["file{}.txt".format(i) for i in range(1, 5)]
+        for i, t in enumerate(targets):
+            if i == halt_index:
+                pm.halt()
+            target = pipeline_filepath(pm, filename=t)
+            cmd = "touch {}".format(target)
+            pm.run(cmd, target=target)
+        for i, t in enumerate(targets):
+            target = pipeline_filepath(pm, filename=t)
+            if i < halt_index:
+                assert os.path.isfile(target)
+            else:
+                assert not os.path.isfile(target)
