@@ -87,43 +87,71 @@ def peak_caller(tmpdir):
 
 
 
-def test_pipeline_checkpoint_respect_sensitivity(read_aligner, peak_caller):
+@named_param("test_type", ["checkpoint", "effect"])
+def test_pipeline_checkpoint_respect_sensitivity_checkpoint_perspective(
+        read_aligner, peak_caller, test_type):
     """ Pipeline can skip past its stage(s) for which checkpoint exists. """
 
+    # Negative control to start test, that we have no checkpoint files.
     assert [] == fetch_checkpoint_files(read_aligner.manager)
 
+    # Generate some checkpoints.
     read_aligner.run()
+
+    # Verify that we created each of the checkpoints.
     expected = [checkpoint_filepath(f.__name__, read_aligner.manager)
                 for f in read_aligner.functions]
     observed = fetch_checkpoint_files(read_aligner.manager)
     assert set(expected) == set(observed)
 
+    # Collect checkpoint file timestamps for comparison after second run.
     timestamps = {f: os.path.getmtime(f) for f in observed}
+
+    # Remove the checkpoint for the final stage.
     last_aligner_stage = read_aligner.functions[-1]
     last_aligner_checkfile = checkpoint_filepath(
             last_aligner_stage, read_aligner.manager)
     os.remove(last_aligner_checkfile)
+
+    # Verify removal of final stage checkpoint file.
     assert all([os.path.isfile(f) for f in expected[:-1]])
     assert not os.path.exists(last_aligner_checkfile)
     assert set(expected) != set(fetch_checkpoint_files(read_aligner.manager))
 
+    # Delay briefly so that we can more reliably compare checkpoint file
+    # timestamps after a second pipeline run.
     time.sleep(0.1)
 
+    # Repeat the pipeline's execution, but now with checkpoint file(s) for a
+    # subset of its stages in place.
     read_aligner.run()
+
+    # Verify that we've restored the full collection of the pipeline's
+    # checkpoint files to existence.
     observed = fetch_checkpoint_files(read_aligner.manager)
     exp = set(expected)
     obs = set(observed)
     assert set(expected) == set(observed), \
             "Expected only:\n{}\nExpected and observed:\n{}\nObserved only:\n{}".format(
                     exp - obs, exp & obs, obs - exp)
+
+    # Verify the we didn't recreate the checkpoint file for each skipped stage.
     for f in expected[:-1]:
         expected_timestamp = timestamps[f]
         observed_timestamp = os.path.getmtime(f)
         assert expected_timestamp == observed_timestamp
+
+    # Verify the we did in fact recreate the checkpoint file for the stage
+    # that was rerun.
     assert os.path.getmtime(last_aligner_checkfile) > \
            timestamps[last_aligner_checkfile], \
             "Recreated checkpoint file ('{}') should be newer than original".\
-            format(last_aligner_checkfile)
+           format(last_aligner_checkfile)
+
+
+
+def test_pipeline_checkpoint_sensitivity_effect_perspective():
+    pass
 
 
 
