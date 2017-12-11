@@ -5,7 +5,7 @@ import time
 import pytest
 from pypiper import Stage
 from pypiper.utils import checkpoint_filepath
-from tests.helpers import fetch_checkpoint_files, named_param, SafeTestPipeline
+from tests.helpers import fetch_checkpoint_files, SafeTestPipeline
 
 
 __author__ = "Vince Reuter"
@@ -16,11 +16,12 @@ READ_ALIGNER_FILENAME = "aligner.lst"
 PEAK_CALLER_FILENAME = "caller.lst"
 
 
+
 def pytest_generate_tests(metafunc):
     """ Dynamic test case parameterization for this module. """
-    if "pipeline" in metafunc.fixturenames:
+    if "pl_name" in metafunc.fixturenames:
         metafunc.parametrize(
-            "pipeline", [read_aligner.__name__, call_peaks.__name__])
+            "pl_name", [read_aligner.__name__, call_peaks.__name__])
 
 
 
@@ -40,6 +41,7 @@ def call_peaks():
 
 
 class FunctionNameWriterPipeline(SafeTestPipeline):
+    """ Basic pipeline that writes to file the names of its functions. """
     
     
     def __init__(self, name, outfolder, filename, functions):
@@ -54,11 +56,12 @@ class FunctionNameWriterPipeline(SafeTestPipeline):
             is to operate (i.e., the functions for which name should be
             written to output file).
         """
+        # Set instance-specific variables.
         self.name_output_file = filename
         self.functions = functions
+        # Get the stages() benefit of superclass extension.
         super(FunctionNameWriterPipeline, self).__init__(
                 name=name, outfolder=outfolder)
-
 
     def write_name(self, func):
         """
@@ -70,31 +73,51 @@ class FunctionNameWriterPipeline(SafeTestPipeline):
         with open(outpath, 'a') as f:
             f.write(func.__name__ + os.linesep)
 
+    def run(self):
+        """ Start with clean output file, then use superclass method. """
+        # Ensure that we start with a clean file since the nature of the
+        # operations performed (sequential file writes) creates desire to
+        # open output file in append mode rather than write mode.
+        output_file = os.path.join(self.outfolder, self.name_output_file)
+        if os.path.exists(output_file):
+            os.unlink(output_file)
+        super(FunctionNameWriterPipeline, self).run()
+
 
     def stages(self):
+        """ Sequence of operations to perform. """
         return [Stage(self.write_name, (f, ), name=f.__name__)
                 for f in self.functions]
 
 
+# Functions and fixtures
+
 def _get_read_aligner(outfolder):
+    """ Create a dummy 'read aligner' pipeline. """
     return FunctionNameWriterPipeline(
             "read-aligner", outfolder,
             READ_ALIGNER_FILENAME, [merge_input, qc, align_reads])
 
+
+def _get_peak_caller(outfolder):
+    """ Create a dummy 'peak caller' pipeline. """
+    return FunctionNameWriterPipeline(
+        "peak-caller", outfolder,
+        PEAK_CALLER_FILENAME, [align_reads, call_peaks])
+
+def _get_pipeline(name, outfolder):
+    if name == read_aligner.__name__:
+        return _get_read_aligner(outfolder)
+    elif name == call_peaks.__name__:
+        return _get_peak_caller(outfolder)
+    else:
+        raise ValueError("Unknown pipeline request: '{}'".format(name))
 
 
 @pytest.fixture
 def read_aligner(tmpdir):
     """ Provide test case with a read aligner pipeline instance. """
     return _get_read_aligner(outfolder=tmpdir.strpath)
-
-
-
-def _get_peak_caller(outfolder):
-    return FunctionNameWriterPipeline(
-        "peak-caller", outfolder,
-        PEAK_CALLER_FILENAME, [align_reads, call_peaks])
-
 
 
 @pytest.fixture
@@ -105,16 +128,11 @@ def peak_caller(tmpdir):
 
 
 def test_pipeline_checkpoint_respect_sensitivity_checkpoint_perspective(
-        pipeline, tmpdir):
+        pl_name, tmpdir):
     """ Pipeline can skip past its stage(s) for which checkpoint exists. """
 
     # Create the pipeline.
-    if pipeline == read_aligner.__name__:
-        pipeline = _get_read_aligner(tmpdir.strpath)
-    elif pipeline == call_peaks.__name__:
-        pipeline = _get_peak_caller(tmpdir.strpath)
-    else:
-        raise ValueError("Unknown pipeline request: '{}'".format(pipeline))
+    pipeline = _get_pipeline(pl_name, tmpdir.strpath)
 
     # Negative control to start test, that we have no checkpoint files.
     assert [] == fetch_checkpoint_files(pipeline.manager)
@@ -135,7 +153,7 @@ def test_pipeline_checkpoint_respect_sensitivity_checkpoint_perspective(
     last_aligner_stage = pipeline.functions[-1]
     last_aligner_checkfile = checkpoint_filepath(
             last_aligner_stage, pipeline.manager)
-    os.remove(last_aligner_checkfile)
+    os.unlink(last_aligner_checkfile)
 
     # Verify removal of final stage checkpoint file.
     assert all([os.path.isfile(f) for f in expected[:-1]])
@@ -144,7 +162,7 @@ def test_pipeline_checkpoint_respect_sensitivity_checkpoint_perspective(
 
     # Delay briefly so that we can more reliably compare checkpoint file
     # timestamps after a second pipeline run.
-    time.sleep(0.1)
+    time.sleep(0.05)
 
     # Repeat the pipeline's execution, but now with checkpoint file(s) for a
     # subset of its stages in place.
@@ -174,10 +192,36 @@ def test_pipeline_checkpoint_respect_sensitivity_checkpoint_perspective(
 
 
 
+def test_pipeline_checkpoint_sensitivity_effect_perspective(pl_name, tmpdir):
+    """ The pipeline skips execution of stages with extant checkpoint. """
 
-@pytest.mark.skip("not implemented")
-def test_pipeline_checkpoint_sensitivity_effect_perspective():
-    pass
+    # Create the pipeline, then check creation of output file.
+    pipeline = _get_pipeline(pl_name, tmpdir.strpath)
+    output_file = os.path.join(pipeline.outfolder, pipeline.name_output_file)
+    assert not os.path.exists(output_file)
+    pipeline.run()
+    assert os.path.isfile(output_file)
+
+    # Validate pipeline effects (output file content).
+    with open(output_file, 'r') as f:
+        lines = f.readlines()
+    assert [s.name + os.linesep for s in pipeline.stages()] == lines
+
+    # Verify presence of checkpoint files to support our expectation about
+    # which stages should be skipped and which should be run during the second
+    # time through the pipeline's execution.
+    exp_cp_fpaths = set(checkpoint_filepath(s.name, pipeline.manager)
+                        for s in pipeline.stages())
+    assert exp_cp_fpaths == set(fetch_checkpoint_files(pipeline.manager))
+    final_stage = pipeline.stages()[-1]
+    final_stage_fpath = checkpoint_filepath(final_stage.name, pipeline.manager)
+    os.unlink(final_stage_fpath)
+
+    # Verify the effect of the second execution of the pipeline.
+    pipeline.run()
+    with open(output_file, 'r') as f:
+        lines = f.readlines()
+    assert [final_stage.name + os.linesep] == lines
 
 
 
