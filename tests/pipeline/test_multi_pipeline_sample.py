@@ -1,11 +1,9 @@
 """ Tests for case in which multiple pipelines process a single sample. """
 
-import os
-import time
 import pytest
 from pypiper.utils import checkpoint_filepath
 from tests.helpers import fetch_checkpoint_files
-from .conftest import get_pipeline
+from .conftest import get_peak_caller, get_read_aligner
 
 
 __author__ = "Vince Reuter"
@@ -13,9 +11,32 @@ __email__ = "vreuter@virginia.edu"
 
 
 
-@pytest.mark.skip("not implemented")
-def test_different_pipeline_checkpoints_are_unique_for_the_sample(tmpdir):
-    pass
+def test_checkpoints_are_pipeline_unique(tmpdir):
+    """ Names of checkpoint files depend on both stage and pipeline. """
+
+    align_reads = get_read_aligner(tmpdir.strpath)
+    call_peaks = get_peak_caller(tmpdir.strpath)
+
+    alignment_stage_names = set(map(lambda s: s.name, align_reads.stages()))
+    peak_call_stage_names = set(map(lambda s: s.name, call_peaks.stages()))
+
+    assert {"align_reads"} == alignment_stage_names & peak_call_stage_names
+    assert align_reads.outfolder == call_peaks.outfolder
+
+    assert [] == list(fetch_checkpoint_files(align_reads.manager))
+    assert [] == list(fetch_checkpoint_files(call_peaks.manager))
+
+    align_reads.run()
+
+    align_reads_expected = {checkpoint_filepath(s.name, align_reads)
+                            for s in align_reads.stages()}
+    call_peaks_expected = {checkpoint_filepath(s.name, call_peaks)
+                           for s in align_reads.stages()}
+    assert set() == (align_reads_expected & call_peaks_expected)
+    expected_checkpoints = align_reads_expected | call_peaks_expected
+    observed_checkpoints = set(fetch_checkpoint_files(align_reads)) | \
+                           set(fetch_checkpoint_files(call_peaks))
+    assert expected_checkpoints == observed_checkpoints
 
 
 

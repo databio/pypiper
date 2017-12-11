@@ -115,9 +115,15 @@ def test_pipeline_checkpoint_sensitivity_effect_perspective(pl_name, tmpdir):
 
 @pytest.mark.skip("not implemented")
 def test_pipeline_can_overwrite_checkpoints():
+    """ A pipeline can be configured to overwrite existing checkpoints and
+     execute the corresponding stages."""
+    # TODO: test both checkpoint file perspective and effect perpspective.
     pass
 
 
 
+@pytest.mark.skip("not implemented")
 def test_checkpoint_indicates_stage_completion(tmpdir):
+    """ When writing an automatically checkpointed pipeline,
+    checkpoints imply stage completion. """
     pass
