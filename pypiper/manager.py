@@ -573,8 +573,10 @@ class PipelineManager(object):
 
         # If the pipeline's not been started, skip ahead.
         if not self._active:
-            print("Start point ({}) not yet reached, skipping command '{}'".
-                  format(self.start_point, cmd))
+            cmds = [cmd] if isinstance(cmd, str) else cmd
+            cmds_text = [c if isinstance(c, str) else " ".join(c) for c in cmds]
+            print("Pipeline is inactive; skipping {} command(s):\n{}".
+                  format(len(cmds), "\n".join(cmds_text)))
             return 0
 
         # Short-circuit if the checkpoint file exists and the manager's not
@@ -1030,13 +1032,13 @@ class PipelineManager(object):
             if not finished and checkpoint == self.stop_after:
                 self.halt_on_next = True
 
-        message += " (" + time.strftime("%m-%d %H:%M:%S") + ")"
         elapsed = self.time_elapsed(self.last_timestamp)
-        message += " elapsed:" + str(datetime.timedelta(seconds=elapsed))
-        message += " _TIME_"
+        t = time.strftime("%m-%d %H:%M:%S")
+        msg = "{m} ({t}) elapsed: {delta_t} _TIME_".\
+                format(m=message, t=t, delta_t=elapsed)
         if re.match("^###", message):
-            message = "\n" + message + "\n"
-        print(message)
+            msg = "\n{}\n".format(msg)
+        print(msg)
         self.last_timestamp = time.time()
 
 
