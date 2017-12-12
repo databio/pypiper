@@ -1038,8 +1038,10 @@ class PipelineManager(object):
             msg = "{m} ({t}) elapsed: {delta_t} _TIME_".\
                     format(m=message, t=t, delta_t=elapsed)
         else:
-            msg = "{m} ({t}) ({check}) elapsed: {delta_t} _TIME_".format(
-                    m=message, t=t, check=checkpoint, delta_t=elapsed)
+            msg = "{m} ({t}) ({status} {stage}) elapsed: {delta_t} _TIME_".\
+                format(m=message, t=t,
+                       status="finished" if finished else "starting",
+                       stage=checkpoint, delta_t=elapsed)
         if re.match("^###", message):
             msg = "\n{}\n".format(msg)
         print(msg)
