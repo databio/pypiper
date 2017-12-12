@@ -148,7 +148,7 @@ class ExecutionSkippingTests:
         targets = ["file{}.txt".format(i) for i in range(1, 5)]
         for i, t in enumerate(targets):
             if i == halt_index:
-                pm.halt()
+                pm.halt(raise_error=False)
             target = pipeline_filepath(pm, filename=t)
             cmd = "touch {}".format(target)
             pm.run(cmd, target=target)
