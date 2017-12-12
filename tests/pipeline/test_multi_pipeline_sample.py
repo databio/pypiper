@@ -99,39 +99,3 @@ def test_pipeline_checkpoint_respect_sensitivity_and_specificity(tmpdir):
     with open(call_peaks_outpath, 'r') as f:
         obs_lines = f.readlines()
     assert exp_lines == obs_lines
-
-
-
-@named_param("overwrite", [False, True])
-def test_pipeline_reruns_downstream_stages_according_to_parameterization(
-        overwrite, pl_name, tmpdir):
-    """ Pipeline overwrites downstream stages unless configured otherwise. """
-
-    pl = get_pipeline(pl_name, tmpdir.strpath)
-
-    # Create checkpoint file for each stage.
-    stage_names = [s.name for s in pl.stages()]
-    assert 1 < len(stage_names), \
-            "Need pipeline with at least two stages to run this test."
-    for s_name in stage_names:
-        open(checkpoint_filepath(s_name, pl.manager), 'w').close()
-
-    # Remove the checkpoint file for the penultimate stage.
-    penultimate_stage = stage_names[-2]
-    os.unlink(checkpoint_filepath(penultimate_stage, pl.manager))
-
-    # Configure the pipeline based on parameterization and run it starting
-    # from the penultimate stage.
-    pl.manager.overwrite_checkpoints = overwrite
-    pl.run(start_point=penultimate_stage)
-
-    # If we're overwriting downstream checkpoints, the last two stages are
-    # run while otherwise only the penultimate stage is run.
-    exp_stages = [stage_names[-2]]
-    if overwrite:
-        exp_stages.append(stage_names[-1])
-    exp_lines = [func + os.linesep for func in stage_names[-2:]]
-    outpath = os.path.join(pl.outfolder, pl.name_output_file)
-    with open(outpath, 'r') as f:
-        obs_lines = f.readlines()
-    assert exp_lines == obs_lines
