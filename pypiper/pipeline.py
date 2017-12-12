@@ -10,6 +10,9 @@ if sys.version_info < (3, 3):
 else:
     from collections.abc import Iterable, Mapping
 
+from .exceptions import \
+    IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
+    UnknownPipelineStageError
 from .manager import PipelineManager
 from .stage import Stage
 from .utils import \
@@ -218,6 +221,11 @@ class Pipeline(object):
         return os.path.exists(check_path)
 
 
+    def halt(self, **kwargs):
+        """ Halt the pipeline """
+        self.manager.halt(**kwargs)
+
+
     def list_flags(self, only_name=False):
         """
         Determine the flag files associated with this pipeline.
@@ -341,7 +349,7 @@ class Pipeline(object):
         if stop_index == len(self._stages):
             self.wrapup()
         else:
-            self.manager.halt(raise_error=False)
+            self.halt(raise_error=False)
 
 
     def wrapup(self):
@@ -392,50 +400,6 @@ class Pipeline(object):
         except ValueError:
             raise UnknownPipelineStageError(stop_name, self)
         return stop_index + 1 if inclusive else stop_index
-
-
-
-class IllegalPipelineDefinitionError(Exception):
-    pass
-
-
-
-class IllegalPipelineExecutionError(Exception):
-    """ Represent cases of illogical start/stop run() declarations. """
-    pass
-
-
-
-class MissingCheckpointError(Exception):
-    """ Represent case of expected but absent checkpoint file """
-
-    def __init__(self, checkpoint, filepath):
-        msg = "{}: '{}'".format(checkpoint, filepath)
-        super(MissingCheckpointError, self).__init__(msg)
-
-
-class UnknownPipelineStageError(Exception):
-    """
-    Triggered by use of unknown/undefined name for a pipeline stage.
-    
-    :param stage_name: Name of the stage triggering the exception.
-    :type stage_name: str
-    :param pipeline: Pipeline for which the stage is unknown/undefined.
-    :type pipeline: Pipeline
-    """
-    
-    def __init__(self, stage_name, pipeline=None):
-        message = stage_name
-        if pipeline is not None:
-            try:
-                stages = pipeline.stages()
-            except AttributeError:
-                # Just don't contextualize the error with known stages.
-                pass
-            else:
-                message = "{}; defined stages: {}".\
-                        format(message, ", ".join(map(str, stages)))
-        super(UnknownPipelineStageError, self).__init__(message)
 
 
 
