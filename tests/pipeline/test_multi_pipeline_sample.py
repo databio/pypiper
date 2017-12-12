@@ -1,5 +1,6 @@
 """ Tests for case in which multiple pipelines process a single sample. """
 
+import os
 import pytest
 from pypiper.utils import checkpoint_filepath
 from tests.helpers import fetch_checkpoint_files
@@ -13,6 +14,9 @@ __email__ = "vreuter@virginia.edu"
 
 def test_checkpoints_are_pipeline_unique(tmpdir):
     """ Names of checkpoint files depend on both stage and pipeline. """
+
+    # Note: conceptually, this tests an underlying mechanistic aspect of the
+    # checkpointing system.
 
     # Create two different pipelines.
     align_reads = get_read_aligner(tmpdir.strpath)
@@ -66,6 +70,39 @@ def test_checkpoints_are_pipeline_unique(tmpdir):
 
 
 
+def test_pipeline_checkpoint_respect_sensitivity_and_specificity(tmpdir):
+    """ Pipeline respects only its own checkpoint(s) for stage skipping. """
+
+    # Note: conceptually, this is more of an effect- or outcome-based test
+    # of the checkpointing system with respect to stage skipping.
+
+    align_reads = get_read_aligner(tmpdir.strpath)
+    call_peaks = get_peak_caller(tmpdir.strpath)
+
+    align_reads_stage_names = [s.name for s in align_reads.stages()]
+    call_peaks_stage_names = [s.name for s in call_peaks.stages()]
+    assert {"align_reads"} ==  \
+           set(align_reads_stage_names) & set(call_peaks_stage_names)
+
+    # Set up the checkpoints for the read alignment pipeline by allowing it
+    # to execute once.
+    align_reads.run()
+    assert os.path.isfile(checkpoint_filepath(
+            "align_reads", align_reads.manager))
+    peaks_align_check_fpath = \
+            checkpoint_filepath("align_reads", call_peaks.manager)
+    assert not os.path.isfile(peaks_align_check_fpath)
+
+    call_peaks.run()
+    exp_lines = [func + os.linesep for func in call_peaks_stage_names]
+    call_peaks_outpath = os.path.join(
+            call_peaks.outfolder, call_peaks.name_output_file)
+    with open(call_peaks_outpath, 'r') as f:
+        obs_lines = f.readlines()
+    assert exp_lines == obs_lines
+
+
+
 @pytest.mark.skip("not implemented")
-def test_pipeline_checkpoint_respect_specificity():
+def test_pipeline_reruns_downstream_stages_according_to_parameterization():
     pass
