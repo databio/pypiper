@@ -77,7 +77,7 @@ class FunctionNameWriterPipeline(SafeTestPipeline):
             f.write(func.__name__ + os.linesep)
 
 
-    def run(self):
+    def run(self, **kwargs):
         """ Start with clean output file, then use superclass method. """
         # Ensure that we start with a clean file since the nature of the
         # operations performed (sequential file writes) creates desire to
@@ -85,7 +85,7 @@ class FunctionNameWriterPipeline(SafeTestPipeline):
         output_file = os.path.join(self.outfolder, self.name_output_file)
         if os.path.exists(output_file):
             os.unlink(output_file)
-        super(FunctionNameWriterPipeline, self).run()
+        super(FunctionNameWriterPipeline, self).run(**kwargs)
 
 
     def stages(self):
