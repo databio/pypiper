@@ -341,7 +341,7 @@ class Pipeline(object):
         if stop_index == len(self._stages):
             self.wrapup()
         else:
-            self.manager.halt()
+            self.manager.halt(raise_error=False)
 
 
     def wrapup(self):

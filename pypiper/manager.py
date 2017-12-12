@@ -21,6 +21,7 @@ import sys
 import time
 
 from .AttributeDict import AttributeDict
+from .exceptions import PipelineHalt
 from .flags import *
 from .utils import \
     check_shell, checkpoint_filepath, clear_flags, flag_name, make_lock_name, \
@@ -1000,7 +1001,7 @@ class PipelineManager(object):
         # Halt if the manager's state has been set such that this call
         # should halt the pipeline.
         if self.halt_on_next:
-            self.halt()
+            self.halt(checkpoint, finished)
 
         # Determine action to take with respect to halting if needed.
         if checkpoint:
@@ -1016,7 +1017,7 @@ class PipelineManager(object):
             # Handle the two halting conditions.
             if (finished and checkpoint == self.stop_after) or \
                     (not finished and checkpoint == self.stop_before):
-                self.halt()
+                self.halt(checkpoint, finished)
             # Determine if we've started executing.
             elif checkpoint == self.start_point:
                 self._active = True
@@ -1467,10 +1468,20 @@ class PipelineManager(object):
         raise e
 
 
-    def halt(self):
-        """ Stop the pipeline before completion point. """
+    def halt(self, checkpoint=None, finished=False, raise_error=True):
+        """
+        Stop the pipeline before completion point.
+
+        :param str checkpoint: Name of stage just reached or just completed.
+        :param bool finished: Whether the indicated stage was just finished
+            (True), or just reached (False)
+        :param bool raise_error: Whether to raise ane exception to truly
+            halt execution.
+        """
         self.stop_pipeline(PAUSE_FLAG)
         self._active = False
+        if raise_error:
+            raise PipelineHalt(checkpoint, finished)
 
 
     def stop_pipeline(self, status=COMPLETE_FLAG):

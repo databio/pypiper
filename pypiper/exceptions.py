@@ -25,18 +25,24 @@ class PipelineHalt(Exception):
     PipelineManager's halt method raise this exception.
 
     """
-    def __init__(self, checkpoint=None):
+    def __init__(self, checkpoint=None, finished=None):
         if checkpoint is None:
             super(PipelineHalt, self).__init__()
         else:
             if isinstance(checkpoint, str):
-                msg = checkpoint
+                last_stage_done = checkpoint
             else:
-                msg = getattr(checkpoint, "name", None) or \
-                      getattr(checkpoint, "__name__", None)
-            if not msg:
+                last_stage_done = getattr(checkpoint, "name", None) or \
+                                  getattr(checkpoint, "__name__", None)
+            if not last_stage_done:
                 super(PipelineHalt, self).__init__()
             else:
+                if finished is None:
+                    msg = last_stage_done
+                elif finished:
+                    msg = "Finished '{}'".format(last_stage_done)
+                else:
+                    msg = "Stopped at '{}'".format(last_stage_done)
                 super(PipelineHalt, self).__init__(msg)
 
 
