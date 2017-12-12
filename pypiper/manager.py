@@ -1034,8 +1034,12 @@ class PipelineManager(object):
 
         elapsed = self.time_elapsed(self.last_timestamp)
         t = time.strftime("%m-%d %H:%M:%S")
-        msg = "{m} ({t}) elapsed: {delta_t} _TIME_".\
-                format(m=message, t=t, delta_t=elapsed)
+        if checkpoint is None:
+            msg = "{m} ({t}) elapsed: {delta_t} _TIME_".\
+                    format(m=message, t=t, delta_t=elapsed)
+        else:
+            msg = "{m} ({t}) ({check}) elapsed: {delta_t} _TIME_".format(
+                    m=message, t=t, check=checkpoint, delta_t=elapsed)
         if re.match("^###", message):
             msg = "\n{}\n".format(msg)
         print(msg)
