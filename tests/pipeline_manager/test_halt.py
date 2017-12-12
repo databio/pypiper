@@ -3,7 +3,7 @@
 import os
 import pytest
 from pypiper.exceptions import PipelineHalt
-from pypiper.flags import PAUSE_FLAG
+from pypiper.flags import COMPLETE_FLAG, PAUSE_FLAG
 from tests.helpers import named_param
 
 
@@ -48,3 +48,34 @@ def test_halt_exceptionality(get_pipe_manager, raise_error):
     else:
         pm.halt(raise_error=False)
 
+
+
+@named_param("raise_error", [False, True])
+@named_param("test_type", argvalues=["halt_flag", "complete_flag"])
+def test_halt_status_supersedes_completed(
+        get_pipe_manager, raise_error, test_type):
+    """ Halting pipeline replaces completed flag with halt flag. """
+
+    # Create manager and completion flag.
+    pm = get_pipe_manager(name="halt-status-flag")
+    pm.set_status_flag(COMPLETE_FLAG)
+    path_complete_flag = pm.flag_file_path(COMPLETE_FLAG)
+    assert os.path.isfile(path_complete_flag)
+
+    # Perform the halt.
+    try:
+        pm.halt(raise_error=raise_error)
+    except PipelineHalt:
+        # We don't care about exceptionality here, just that the flag files
+        # are adjusted regardless of the halt type.
+        pass
+
+    # Check either the presence of the halt flag or the absence of the
+    # completion flag, depending on test parameterization.
+    if test_type == "halt_flag":
+        path_halt_flag = pm.flag_file_path(PAUSE_FLAG)
+        assert os.path.isfile(path_halt_flag)
+    elif test_type == "complete_flag":
+        assert not os.path.isfile(path_complete_flag)
+    else:
+        raise ValueError("Unknown test type: '{}'".format(test_type))
