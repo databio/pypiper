@@ -30,7 +30,7 @@ class DummyPM(PipelineManager):
 
 
 
-class CheckpointFilepathTests:
+class PipelineMangerTimestampCheckpointFilePathTests:
     """ Tests for determination of checkpoint filepath. """
 
 
