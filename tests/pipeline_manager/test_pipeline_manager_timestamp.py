@@ -3,6 +3,8 @@
 import os
 import sys
 import pytest
+
+from pypiper.exceptions import PipelineHalt
 from pypiper.utils import checkpoint_filepath
 from tests.helpers import fetch_checkpoint_files, named_param
 
@@ -22,6 +24,8 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("retrospective", [False, True])
     if "test_type" in metafunc.fixturenames:
         metafunc.parametrize("test_type", [FILES_TEST, STATE_TEST])
+    if "raise_error" in metafunc.fixturenames:
+        metafunc.parametrize("raise_error", [False, True])
 
 
 
@@ -69,8 +73,8 @@ class TimestampHaltingTests:
     # the cost exceeds the benefit of the logical independence that it confers.
 
 
-
-    def test_halts_if_hitting_exclusive_halt_point(self, get_pipe_manager):
+    def test_halts_if_hitting_exclusive_halt_point(
+            self, get_pipe_manager, raise_error):
         """ Halt point may be specified prospectively. """
 
         # Create manager, set halt point, and check that it's running.
@@ -88,25 +92,32 @@ class TimestampHaltingTests:
         assert not pm.halted
 
         # Make the halt-inducing checkpointed timestamp call.
-        pm.timestamp(checkpoint=halt_name)
+        if raise_error:
+            with pytest.raises(PipelineHalt):
+                pm.timestamp(checkpoint=halt_name, raise_error=True)
+        else:
+            pm.timestamp(checkpoint=halt_name, raise_error=False)
+            # Verify that we've halted.
+            try:
+                assert pm.halted
+            except AssertionError:
+                print("STATUS: {}".format(pm.status))
+                raise
+            assert not pm.is_running
 
-        # Verify that we've halted.
-        try:
-            assert pm.halted
-        except AssertionError:
-            print("STATUS: {}".format(pm.status))
-            raise
-        assert not pm.is_running
 
-
-    def test_halts_if_halt_on_next(self, get_pipe_manager):
+    def test_halts_if_halt_on_next(self, get_pipe_manager, raise_error):
         """ If in particular state, managed pipeline halts on timestamp(). """
         pm = get_pipe_manager(name="TestPM")
         assert pm.is_running
         pm.halt_on_next = True
-        pm.timestamp("testing")
-        assert not pm.is_running
-        assert pm.halted
+        if raise_error:
+            with pytest.raises(PipelineHalt):
+                pm.timestamp("testing")
+        else:
+            pm.timestamp("testing", raise_error=False)
+            assert not pm.is_running
+            assert pm.halted
 
 
     def test_correctly_sets_halt_on_next(self, get_pipe_manager):

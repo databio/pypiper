@@ -971,7 +971,8 @@ class PipelineManager(object):
     # Logging functions
     ###################################
 
-    def timestamp(self, message="", checkpoint=None, finished=False):
+    def timestamp(self, message="", checkpoint=None,
+                  finished=False, raise_error=True):
         """
         Print message, time, and time elapsed, perhaps creating checkpoint.
 
@@ -996,12 +997,14 @@ class PipelineManager(object):
         :param finished: Whether this call represents the completion of a
             conceptual unit of a pipeline's processing
         :type finished: bool, default False
+        :param raise_error : Whether to raise exception if
+            checkpoint or current state indicates that a halt should occur.
         """
 
         # Halt if the manager's state has been set such that this call
         # should halt the pipeline.
         if self.halt_on_next:
-            self.halt(checkpoint, finished)
+            self.halt(checkpoint, finished, raise_error=raise_error)
 
         # Determine action to take with respect to halting if needed.
         if checkpoint:
@@ -1017,7 +1020,7 @@ class PipelineManager(object):
             # Handle the two halting conditions.
             if (finished and checkpoint == self.stop_after) or \
                     (not finished and checkpoint == self.stop_before):
-                self.halt(checkpoint, finished)
+                self.halt(checkpoint, finished, raise_error=raise_error)
             # Determine if we've started executing.
             elif checkpoint == self.start_point:
                 self._active = True
@@ -1475,7 +1478,7 @@ class PipelineManager(object):
         :param str checkpoint: Name of stage just reached or just completed.
         :param bool finished: Whether the indicated stage was just finished
             (True), or just reached (False)
-        :param bool raise_error: Whether to raise ane exception to truly
+        :param bool raise_error: Whether to raise an exception to truly
             halt execution.
         """
         self.stop_pipeline(PAUSE_FLAG)
