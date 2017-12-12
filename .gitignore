@@ -1,10 +1,14 @@
-# First, ignore everything
+# First, ignore everything.
 *
 # Now, whitelist anything that's a directory
 !*/
 
 
-#keep everything in data
+# Ignore Python build-related directories.
+.eggs/
+build/
+
+# Keep everything in data.
 !metadata/*
 results_pipeline/
 results_analysis
@@ -26,8 +30,12 @@ pipeline_output/
 !*.rst
 !*.xlsx
 
-#make sure to track .gitignore
+# Make sure to track .gitignore.
 !.gitignore
 
 # Sphinx documentation - build folder
 doc/build/
+
+# Track requirements files
+!requirements/*.txt
+

@@ -1,6 +1,20 @@
 Changelog
 ******************************
 
+- **v0.7.0** (*2017-12-12*):
+
+    - Standardize ``NGSTk`` function naming.
+
+    - Introduce ``Stage`` as a model for a logically related set of pipeline processing steps.
+
+    - Introduce ``Pipeline`` framework for automated processing phase execution and checkpointing.
+
+    - Add ability to start and/or stop a pipeline at arbitrary checkpoints.
+
+    - Introduce new state for a paused/halted pipeline.
+
+    - Improve spawned process shutdown to avoid zombie processes.
+
 - **v0.6** (*2017-08-24*):
 
     - Adds 'dynamic recovery' capability. For jobs that are terminated by an interrupt, such as a SIGINT or SIGTERM (as opposed to a failed command), pypiper will now set a dynamic recovery flags. These jobs, when restarted, will automatically pick up where they left off, without requiring any user intervention. Previously, the user would have to specify recover mode (``-R``). Now, recover mode forces a recover regardless of failure type, but interrupted pipelines will auto-recover.
