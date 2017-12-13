@@ -17,6 +17,7 @@ pipeline_output/
 
 # And all the file types you're interested in.
 !*.sh
+!*.svg
 !*.R
 !*.pl
 !*.py
