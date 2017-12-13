@@ -1525,7 +1525,7 @@ class NGSTk(_AttributeDict):
             cmd += " -c {0}".format(control_bams if type(control_bams) is str else " ".join(control_bams))
 
         if paired:
-            cmd += "-f BAMPE "
+            cmd += " -f BAMPE "
 
         # Additional settings based on whether the marks is associated with
         # broad peaks
