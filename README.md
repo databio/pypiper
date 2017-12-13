@@ -1,6 +1,7 @@
 # Pypiper
 
-![Pypiper logo](logo_pypiper.svg)
+<img src="man/figures/logo_pypiper.svg" alt="Pypiper logo" width="200"/>
+
 [![Documentation Status](https://readthedocs.org/projects/pypiper/badge/?version=latest)](http://pypiper.readthedocs.org/en/latest/?badge=latest)
 
 A lightweight python toolkit for gluing together restartable, robust command line pipelines. Pypiper works with [Looper](http://github.com/epigen/looper) to form a complete bioinformatics pipeline framework.
