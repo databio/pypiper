@@ -1,6 +1,6 @@
-# Pypiper
+<img src="logo_pypiper.svg" alt="Pypiper logo" height="70" align="left"/>
 
-<img src="logo_pypiper.svg" alt="Pypiper logo" width="100"/>
+# Pypiper
 
 [![Documentation Status](https://readthedocs.org/projects/pypiper/badge/?version=latest)](http://pypiper.readthedocs.org/en/latest/?badge=latest)
 
