@@ -1604,7 +1604,7 @@ class NGSTk(_AttributeDict):
 
     def filter_peaks_mappability(self, peaks, alignability, filtered_peaks):
         cmd = self.tools.bedtools + " intersect -wa -u -f 1"
-        cmd += " -a {0} -b {1} > {2} ".format(peaks, alignability, filteredPeaks)
+        cmd += " -a {0} -b {1} > {2} ".format(peaks, alignability, filtered_peaks)
         return cmd
 
     def homer_find_motifs(self, peak_file, genome, output_dir, size=150, length="8,10,12,14,16", n_motifs=12):
