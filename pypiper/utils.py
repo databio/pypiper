@@ -16,7 +16,7 @@ __email__ = "vreuter@virginia.edu"
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
 # packages, and import from utils within pypiper for other functions.
-__all__ = ["add_pypiper_args", "build_command"]
+__all__ = ["add_pypiper_args", "build_command", "get_parameter"]
 
 
 
