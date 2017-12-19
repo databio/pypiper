@@ -295,7 +295,7 @@ def get_parameter(param, param_pools, on_missing=None, error=True):
             return pool[param]
         # DEBUG
         else:
-            print("Unmapped: '{}'".format())
+            print("Unmapped: '{}'".format(param))
 
     # Raise error if unfound and no strategy or value is provided or handling
     # unmapped parameter requests.
