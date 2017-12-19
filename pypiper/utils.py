@@ -288,7 +288,7 @@ def get_parameter(param, param_pools, on_missing=None, error=True):
     # Search for the requested parameter.
     for pool in param_pools:
         if param in pool:
-            return param_pools[param]
+            return pool[param]
 
     # Raise error if unfound and no strategy or value is provided or handling
     # unmapped parameter requests.
