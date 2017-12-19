@@ -285,10 +285,17 @@ def get_parameter(param, param_pools, on_missing=None, error=True):
         to True.
     """
 
+
     # Search for the requested parameter.
-    for pool in param_pools:
+    for i, pool in enumerate(param_pools):
+        # DEBUG
+        print("POOL {}: {}".format(i, pool))
         if param in pool:
+            print("Matched: {}={}".format(param, pool[param]))
             return pool[param]
+        # DEBUG
+        else:
+            print("Unmapped: '{}'".format())
 
     # Raise error if unfound and no strategy or value is provided or handling
     # unmapped parameter requests.
