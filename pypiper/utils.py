@@ -301,9 +301,9 @@ def get_parameter(param, param_pools, on_missing=None, error=True):
     except TypeError:
         if hasattr(on_missing, "__call__"):
             raise TypeError(
-                "Callable as argument for action in case of missing parameter "
-                "should be a function that returns a value when passed the "
-                "requested parameter as an argument.")
+                "Any callable passed as the action to take when a requested "
+                "parameter is missing should accept that parameter and return "
+                "a value.")
         return on_missing
 
 
