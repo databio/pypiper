@@ -7,6 +7,7 @@
 # Ignore Python build-related directories.
 .eggs/
 build/
+dist/
 
 # Keep everything in data.
 !metadata/*
@@ -17,6 +18,7 @@ pipeline_output/
 
 # And all the file types you're interested in.
 !*.sh
+!*.svg
 !*.R
 !*.pl
 !*.py
@@ -29,6 +31,7 @@ pipeline_output/
 !*README.md*
 !*.rst
 !*.xlsx
+!*.in
 
 # Make sure to track .gitignore.
 !.gitignore
