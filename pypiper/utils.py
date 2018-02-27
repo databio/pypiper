@@ -16,7 +16,7 @@ __email__ = "vreuter@virginia.edu"
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
 # packages, and import from utils within pypiper for other functions.
-__all__ = ["add_pypiper_args", "build_command"]
+__all__ = ["add_pypiper_args", "build_command", "get_parameter"]
 
 
 
@@ -256,6 +256,55 @@ def flag_name(status):
     :rtype: str
     """
     return status + ".flag"
+
+
+
+def get_parameter(param, param_pools, on_missing=None, error=True):
+    """
+    Get the value for a particular parameter.
+
+    Other than the parameter name itself, the other critical
+
+    :param str param: Name of parameter for which to determine/fetch value.
+    :param Sequence[Mapping[str, object]] param_pools: Ordered (priority)
+        collection of mapping from parameter name to value; this should be
+        ordered according to descending priority.
+    :param object | function(str) -> object on_missing: default value or
+        action to take if the requested parameter is missing from all of the
+        pools. If a callable, it should return a value when passed the
+        requested parameter as the one and only argument.
+    :param bool error: Whether to raise an error if the requested parameter
+        is not mapped to a value AND there's no value or strategy provided
+        with 'on_missing' with which to handle the case of a request for an
+        unmapped parameter.
+    :return object: Value to which the requested parameter first mapped in
+        the (descending) priority collection of parameter 'pools,' or
+        a value explicitly defined or derived with 'on_missing.'
+    :raise KeyError: If the requested parameter is unmapped in all of the
+        provided pools, and the argument to the 'error' parameter evaluates
+        to True.
+    """
+
+    # Search for the requested parameter.
+    for pool in param_pools:
+        if param in pool:
+            return pool[param]
+
+    # Raise error if unfound and no strategy or value is provided or handling
+    # unmapped parameter requests.
+    if error and on_missing is None:
+        raise KeyError("Unmapped parameter: '{}'".format(param))
+
+    # Use the value or strategy for handling unmapped parameter case.
+    try:
+        return on_missing(param)
+    except TypeError:
+        if hasattr(on_missing, "__call__"):
+            raise TypeError(
+                "Callable as argument for action in case of missing parameter "
+                "should be a function that returns a value when passed the "
+                "requested parameter as an argument.")
+        return on_missing
 
 
 

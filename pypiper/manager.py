@@ -749,7 +749,7 @@ class PipelineManager(object):
             
         try:
             return subprocess.check_output(cmd, shell=shell)
-        except (OSError, subprocess.CalledProcessError) as e:
+        except Exception as e:
             self._triage_error(e, nofail, errmsg)
 
 
@@ -863,7 +863,7 @@ class PipelineManager(object):
             if p.returncode != 0:
                 raise OSError("Subprocess returned nonzero result.")
 
-        except (OSError, subprocess.CalledProcessError) as e:
+        except Exception as e:
             self._triage_error(e, nofail, errmsg)
 
         return [returncode, local_maxmem]
