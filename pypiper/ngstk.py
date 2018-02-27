@@ -1525,7 +1525,7 @@ class NGSTk(_AttributeDict):
             cmd += " -c {0}".format(control_bams if type(control_bams) is str else " ".join(control_bams))
 
         if paired:
-            cmd += "-f BAMPE "
+            cmd += " -f BAMPE "
 
         # Additional settings based on whether the marks is associated with
         # broad peaks
@@ -1604,7 +1604,7 @@ class NGSTk(_AttributeDict):
 
     def filter_peaks_mappability(self, peaks, alignability, filtered_peaks):
         cmd = self.tools.bedtools + " intersect -wa -u -f 1"
-        cmd += " -a {0} -b {1} > {2} ".format(peaks, alignability, filteredPeaks)
+        cmd += " -a {0} -b {1} > {2} ".format(peaks, alignability, filtered_peaks)
         return cmd
 
     def homer_find_motifs(self, peak_file, genome, output_dir, size=150, length="8,10,12,14,16", n_motifs=12):
