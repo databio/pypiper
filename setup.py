@@ -43,15 +43,21 @@ addl_reqs["all"] = list({pkg for bundle in addl_reqs.values() for pkg in bundle}
 # Dev installation is full user + test.
 addl_reqs["dev"] = list(set(test_reqs + addl_reqs["all"]))
 
+# Handle the pypi README formatting.
+try:
+    import pypandoc
+    long_description = pypandoc.convert_file('README.md', 'rst')
+except(IOError, ImportError):
+    long_description = open('README.md').read()
 
 setup(
     name='pypiper',
     packages=['pypiper'],
     version=version,
-    description='A lightweight python toolkit for gluing together restartable, robust command line pipelines',
+    description=long_description,
     author='Nathan Sheffield, Johanna Klughammer, Andre Rendeiro',
     author_email='nathan@code.databio.org, jklughammer@cemm.oeaw.ac.at, arendeiro@cemm.oeaw.ac.at',
-    url='https://github.com/epigen/pypiper/',
+    url='https://github.com/databio/pypiper/',
     test_suite="tests",         # python setup.py test
     tests_require=test_reqs,    # Test-specific package dependencies
     # Extra package if doing `python setup.py test`
