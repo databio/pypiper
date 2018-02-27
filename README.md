@@ -17,11 +17,11 @@ The best place to learn more is at the [documentation hosted at Read the Docs](h
 # Install
 
 ```
-pip install --user https://github.com/epigen/pypiper/zipball/master
+pip install --user pypiper
 ```
 
 Update with:
 
 ```
-pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master
+pip install --user --upgrade pypiper
 ```
