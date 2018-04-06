@@ -1697,7 +1697,7 @@ class PipelineManager(object):
         if not self.clean_initialized:
             # Make cleanup files relative to the cleanup script in case the result folder moves.
             with open(self.cleanup_file, "a") as myfile:
-                clean_init = 'DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"'
+                clean_init = 'DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"'
                 myfile.write(clean_init + "\n")
                 myfile.write("cd ${DIR}\n")
                 self.clean_initialized = True
