@@ -47,7 +47,7 @@ addl_reqs["dev"] = list(set(test_reqs + addl_reqs["all"]))
 try:
     import pypandoc
     long_description = pypandoc.convert_file('README.md', 'rst')
-except(IOError, ImportError):
+except(IOError, ImportError, OSError):
     long_description = open('README.md').read()
 
 setup(
