@@ -1830,6 +1830,8 @@ class PipelineManager(object):
         # Thanks Martin Geisler:
         status = None
         result = {'peak': 0, 'rss': 0, 'hwm': 0}
+
+        
         try:
             # This will only work on systems with a /proc file system
             # (like Linux).
@@ -1841,6 +1843,9 @@ class PipelineManager(object):
                 key = parts[0][2:-1].lower()
                 if key in result:
                     result[key] = int(parts[1])
+        except:
+            return 0
+
         finally:
             if status is not None:
                 status.close()
