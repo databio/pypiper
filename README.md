@@ -17,11 +17,11 @@ The best place to learn more is at the [documentation hosted at Read the Docs](h
 # Install
 
 ```
-pip install --user pypiper
+pip install --user piper
 ```
 
 Update with:
 
 ```
-pip install --user --upgrade pypiper
+pip install --user --upgrade piper
 ```
