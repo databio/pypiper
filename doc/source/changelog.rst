@@ -1,5 +1,14 @@
 Changelog
 ******************************
+- **v0.7.2** (*2018-06-05*):
+
+    - Cleanup files are now relative, so a moved folder could still be cleaned.
+
+    - Fixed a bug that prevented install if pypandoc was not installed
+
+    - Fixed a bug that caused an error in containers where /proc wasn't accessible
+
+
 - **v0.7.1** (*2018-02-27*):
 
     - Package cleanup for Pypi.
