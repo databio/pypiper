@@ -191,6 +191,8 @@ class PipelineManager(object):
                 pipeline_filepath(self, filename="stats.tsv")
         self.pipeline_figures_file = \
                 pipeline_filepath(self, filename="figures.tsv")
+        self.pipeline_objects_file = \
+                pipeline_filepath(self, filename="objects.tsv")
 
         # Record commands used and provide manual cleanup script.
         self.pipeline_commands_file = \
@@ -1141,6 +1143,66 @@ class PipelineManager(object):
         print(message_markdown)
 
         self._safe_write_to_file(self.pipeline_figures_file, message_raw)
+
+    def report_object(self, key, filename, anchor_text=None, anchor_image=None,
+       annotation=None):
+        """
+        Writes a string to self.pipeline_objects_file. Replacement of report_figure
+
+        :param key: name (key) of the object
+        :type key: str
+        :param filename: relative path to the file (relative to parent output
+            dir)
+        :type filename: str
+        :param anchor_text: text used as the link anchor test or caption to
+            refer to the object. If not provided, defaults to the key.
+        :type anchor_text: str
+        :param anchor_image: a path to an HTML-displayable image thumbnail (so,
+            .png or .jpg, for example). If a path, the path should be relative
+            to the parent output dir.
+        :type anchor_image: str
+        :param annotation: By default, the figures will be annotated with the
+            pipeline name, so you can tell which pipeline records which figures.
+            If you want, you can change this.
+        :type annotation: str
+        """
+
+        # Default annotation is current pipeline name.
+        annotation = str(annotation or self.name)
+
+        # In case the value is passed with trailing whitespace.
+        filename = str(filename).strip()
+        if anchor_text:
+            anchor_text = str(anchor_text).strip()
+        else:
+            anchor_text = str(key).strip()
+
+        # better to use a relative path in this file
+        # convert any absolute paths into relative paths
+        relative_filename = os.path.relpath(filename, self.outfolder) \
+                if os.path.isabs(filename) else filename
+
+        if anchor_image:
+            relative_anchor_image = os.path.relpath(anchor_image, self.outfolder) \
+                if os.path.isabs(anchor_image) else anchor_image
+        else:
+            anchor_image = ""
+
+
+        message_raw = "{key}\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
+            key=key, filename=relative_filename, anchor_text=anchor_text, 
+            anchor_image=relative_anchor_image, annotation=annotation)
+
+        message_markdown = "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}\t_FIG_".format(
+            key=key, filename=relative_filename, anchor_text=anchor_text, 
+            anchor_image=relative_anchor_image,annotation=annotation)
+
+        print(message_markdown)
+
+        self._safe_write_to_file(self.pipeline_objects_file, message_raw)
+
+
+
 
 
     def _safe_write_to_file(self, file, message):
