@@ -1193,7 +1193,7 @@ class PipelineManager(object):
             key=key, filename=relative_filename, anchor_text=anchor_text, 
             anchor_image=relative_anchor_image, annotation=annotation)
 
-        message_markdown = "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}\t_FIG_".format(
+        message_markdown = "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}\t_OBJ_".format(
             key=key, filename=relative_filename, anchor_text=anchor_text, 
             anchor_image=relative_anchor_image,annotation=annotation)
 
