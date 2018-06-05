@@ -146,6 +146,7 @@ class PipelineManager(object):
         # this could become customizable if necessary
         self.mem = params['mem'] + "m"
         self.container = None
+        self.clean_initialized = False
 
         # Do some cores math for split processes
         # If a pipeline wants to run a process using half the cores, or 1/4 of the cores,
@@ -1693,18 +1694,28 @@ class PipelineManager(object):
             # Override the user-provided option and force manual cleanup.
             manual = True
 
+        if not self.clean_initialized:
+            # Make cleanup files relative to the cleanup script in case the result folder moves.
+            with open(self.cleanup_file, "a") as myfile:
+                clean_init = 'DIR="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"'
+                myfile.write(clean_init + "\n")
+                myfile.write("cd ${DIR}\n")
+                self.clean_initialized = True
+
         if manual:
             try:
-                files = glob.glob(regex)
-                for file in files:
+                filenames = glob.glob(regex)
+                for filename in filenames:
                     with open(self.cleanup_file, "a") as myfile:
-                        if os.path.isfile(file):
-                            myfile.write("rm " + file + "\n")
-                        elif os.path.isdir(file):
-                            # first, add all files in the directory
-                            myfile.write("rm " + file + "/*\n")
+                        relative_filename = os.path.relpath(filename, self.outfolder) \
+                            if os.path.isabs(filename) else filename
+                        if os.path.isfile(relative_filename):
+                            myfile.write("rm " + relative_filename + "\n")
+                        elif os.path.isdir(relative_filename):
+                            # first, add all filenames in the directory
+                            myfile.write("rm " + relative_filename + "/*\n")
                             # and the directory itself
-                            myfile.write("rmdir " + file + "\n")
+                            myfile.write("rmdir " + relative_filename + "\n")
             except:
                 pass
         elif conditional:
@@ -1830,6 +1841,8 @@ class PipelineManager(object):
         # Thanks Martin Geisler:
         status = None
         result = {'peak': 0, 'rss': 0, 'hwm': 0}
+
+        
         try:
             # This will only work on systems with a /proc file system
             # (like Linux).
@@ -1841,6 +1854,9 @@ class PipelineManager(object):
                 key = parts[0][2:-1].lower()
                 if key in result:
                     result[key] = int(parts[1])
+        except:
+            return 0
+
         finally:
             if status is not None:
                 status.close()

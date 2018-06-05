@@ -16,7 +16,7 @@ __email__ = "vreuter@virginia.edu"
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
 # packages, and import from utils within pypiper for other functions.
-__all__ = ["add_pypiper_args", "build_command", "get_parameter"]
+__all__ = ["add_pypiper_args", "build_command", "get_first_value"]
 
 
 
@@ -259,11 +259,10 @@ def flag_name(status):
 
 
 
-def get_parameter(param, param_pools, on_missing=None, error=True):
+def get_first_value(param, param_pools, on_missing=None, error=True):
     """
-    Get the value for a particular parameter.
-
-    Other than the parameter name itself, the other critical
+    Get the value for a particular parameter from the first pool in the provided
+    priority list of parameter pools.
 
     :param str param: Name of parameter for which to determine/fetch value.
     :param Sequence[Mapping[str, object]] param_pools: Ordered (priority)
