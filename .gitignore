@@ -74,5 +74,5 @@ open_pipelines/
 # Build-related stuff
 build/
 dist/
-looper.egg-info/
+pypiper.egg-info/
 
