@@ -646,6 +646,10 @@ class PipelineManager(object):
             if target is not None and os.path.exists(target) \
                     and not os.path.isfile(lock_file):
                 print("\nTarget exists: `" + target + "`")
+                if self.new_start:
+                    print("New start mode: run anyway")
+                    # Set the target to none so the command will run anyway.
+                    target = None
                 # Normally we don't run the follow, but if you want to force...
                 if self.force_follow:
                     call_follow()
@@ -661,6 +665,8 @@ class PipelineManager(object):
                     recover_mode = True
                     # the recovery flag is now spent, so remove so we don't accidentally re-recover a failed job
                     os.remove(recover_file)
+                elif self.new_start:
+                    print("New start mode, overwriting this target...")
                 else:  # don't overwrite locks
                     self._wait_for_lock(lock_file)
                     # when it's done loop through again to try one more time (to see if the target exists now)
