@@ -21,7 +21,7 @@ import sys
 import time
 
 from .AttributeDict import AttributeDict
-from .exceptions import PipelineHalt
+from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
     check_shell, checkpoint_filepath, clear_flags, flag_name, make_lock_name, \
@@ -828,8 +828,8 @@ class PipelineManager(object):
             # if the markdown log file is displayed as HTML.
             print("<pre>")
             p = subprocess.Popen(cmd, shell=shell)
-
-            # Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
+            # Keep track of the running process ID in case we need to kill it
+            # when the pipeline is interrupted.
             self.procs[p.pid] = {
                 "proc_name":proc_name,
                 "start_time":time.time(),
@@ -837,6 +837,7 @@ class PipelineManager(object):
                 "container":container,
                 "p": p}
 
+       
             sleeptime = .25
 
             if not self.wait:
@@ -869,11 +870,16 @@ class PipelineManager(object):
             # Remove this as a running subprocess
             del self.procs[p.pid]
 
-            if p.returncode != 0:
-                raise OSError("Subprocess returned nonzero result.")
 
-        except Exception as e:
-            self._triage_error(e, nofail, errmsg)
+            if p.returncode != 0:
+                msg = "Subprocess returned nonzero result. Check above output for details"
+                self._triage_error(SubprocessError(msg), nofail)
+
+        except OSError as e:
+            errmsg = "Check to make sure you have {} installed.".format(cmd[0])
+            print(errmsg)
+            print("</pre>")
+            self._triage_error(OSError(errmsg), nofail)
 
         return [returncode, local_maxmem]
 
@@ -1932,7 +1938,7 @@ class PipelineManager(object):
         return result[category]
 
 
-    def _triage_error(self, e, nofail, errmsg):
+    def _triage_error(self, e, nofail, errmsg=None):
         """ Print a message and decide what to do about an error.  """
         if errmsg is not None:
             print(errmsg)
