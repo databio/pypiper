@@ -652,15 +652,13 @@ def _add_args(parser, args, required):
                     "help": "Number of cores for parallelized processes"}),
         "mem":
             ("-M", {"default": "4000", "metavar": "MEMORY_LIMIT",
-                    "help": "Amount of memory (Mb) use to allow for "
-                            "processes for which that can be specified"}),
+                    "help": "Memory limit (in Mb) for processes accepting such"}),
         "input":
             ("-I", {"nargs": "+", "metavar": "INPUT_FILES",
-                    "help": "One or more primary input files (required)"}),
+                    "help": "One or more primary input files"}),
         "input2":
             ("-I2", {"nargs": "*", "metavar": "INPUT_FILES2",
-                     "help": "Secondary input file(s), e.g. read2 for a "
-                             "paired-end protocol"}),
+                     "help": "Secondary input files, such as read2"}),
         "genome":
             ("-G", {"dest": "genome_assembly",
                     "help": "Identifier for genome assembly"}),
@@ -668,6 +666,9 @@ def _add_args(parser, args, required):
             ("-Q", {"default": "single",
                     "help": "Single- or paired-end sequencing protocol"})
     }
+
+    if len(required) > 0:
+        requiredNamed = parser.add_argument_group('required named arguments')
 
     # Configure the parser for each argument.
     for arg in args:
@@ -686,9 +687,14 @@ def _add_args(parser, args, required):
                         "Option name must map to dict or two-tuple (short "
                         "name and dict) of argument command-line argument "
                         "specification data.")
+
         argdata["required"] = arg in required
+
         long_opt = "--{}".format(arg)
         opts = (short_opt, long_opt) if short_opt else (long_opt, )
-        parser.add_argument(*opts, **argdata)
+        if arg in required:
+            requiredNamed.add_argument(*opts, **argdata)
+        else:
+            parser.add_argument(*opts, **argdata)
 
     return parser
