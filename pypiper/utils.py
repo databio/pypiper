@@ -545,7 +545,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
 
     # Define the argument groups.
     args_by_group = {
-        "pypiper" : ["recover", "new-start", "dirty", "follow"],
+        "pypiper" : ["recover", "new-start", "dirty", "force-follow"],
         "config" : ["config"],
         "checkpoint" : ["stop-before", "stop-after"],
         "resource" : ["mem", "cores"],
@@ -617,16 +617,16 @@ def _add_args(parser, args, required):
     argument_data = {
         "recover":
             ("-R", {"action": "store_true",
-                    "help": "Recover mode: overwrite locks"}),
+                    "help": "Overwrite locks to recover from previous failed run"}),
         "new-start":
-            ("-N", {"dest": "fresh", "action": "store_true",
-                    "help": "New-start mode: overwrite all results"}),
+            ("-N", {"action": "store_true",
+                    "help": "Overwrite all results to start a fresh run"}),
         "dirty":
-            ("-D", {"dest": "manual_clean", "action": "store_true",
-                    "help": "Dirty mode: Make all file cleanups manual"}),
-        "follow":
-            ("-F", {"dest": "force_follow", "action": "store_true",
-                    "help": "Force-follow mode: Always run 'follow' commands"}),
+            ("-D", {"action": "store_true",
+                    "help": "Don't auto-delete intermediate files"}),
+        "force-follow":
+            ("-F", {"action": "store_true",
+                    "help": "Always run 'follow' commands"}),
         "start-point":
             {"help": "Name of pipeline stage at which to begin"},
         "stop-before":

@@ -51,13 +51,13 @@ class PipelineManager(object):
     :param bool multi: Enables running multiple pipelines in one script
         or for interactive use. It simply disables the tee of the output,
         so you won't get output logged to a file.
-    :param bool manual_clean: Overrides the pipeline's clean_add()
+    :param bool dirty: Overrides the pipeline's clean_add()
         manual parameters, to *never* clean up intermediate files automatically.
         Useful for debugging; all cleanup files are added to manual cleanup script.
     :param bool recover: Specify recover mode, to overwrite lock files.
         If pypiper encounters a locked target, it will ignore the lock and
         recompute this step. Useful to restart a failed pipeline.
-    :param bool fresh: NOT IMPLEMENTED
+    :param bool new_start: NOT IMPLEMENTED
     :param bool force_follow: Force run all follow functions
         even if  the preceding command is not run. By default,
         following functions  are only run if the preceding command is run.
@@ -79,7 +79,7 @@ class PipelineManager(object):
     """
     def __init__(
         self, name, outfolder, version=None, args=None, multi=False,
-        manual_clean=False, recover=False, fresh=False, force_follow=False,
+        dirty=False, recover=False, new_start=False, force_follow=False,
         cores=1, mem="1000", config_file=None, output_parent=None,
         overwrite_checkpoints=False, **kwargs):
 
@@ -91,9 +91,9 @@ class PipelineManager(object):
 
         # Establish default params
         params = {
-            'manual_clean': manual_clean,
+            'dirty': dirty,
             'recover': recover,
-            'fresh': fresh,
+            'new_start': new_start,
             'force_follow': force_follow,
             'config_file': config_file,
             'output_parent': output_parent,
@@ -137,9 +137,9 @@ class PipelineManager(object):
         # Pipeline settings
         self.name = name
         self.overwrite_locks = params['recover']
-        self.fresh_start = params['fresh']
+        self.new_start = params['new_start']
         self.force_follow = params['force_follow']
-        self.manual_clean = params['manual_clean']
+        self.dirty = params['dirty']
         self.cores = params['cores']
         self.output_parent = params['output_parent']
         # For now, we assume the memory is in megabytes.
@@ -1752,7 +1752,7 @@ class PipelineManager(object):
         :param manual: True means the files will just be added to a manual cleanup script.
         :type manual: bool
         """
-        if self.manual_clean:
+        if self.dirty:
             # Override the user-provided option and force manual cleanup.
             manual = True
 
