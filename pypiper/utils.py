@@ -541,11 +541,11 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     # Define the argument groups.
     args_by_group = {
         "pypiper" : ["recover", "new-start", "dirty", "follow",
-                     "start", "stop-before", "stop-after"],
+                     "stop-before", "stop-after"],
         "config" : ["config"],
         "resource" : ["mem", "cores"],
         "looper" : ["config", "output-parent", "mem", "cores"],
-        "common" : ["input", "sample_name"],
+        "common" : ["input", "sample-name"],
         "ngs" : ["input", "sample-name", "input2", "genome", "single-or-paired"]
     }
 
