@@ -650,6 +650,7 @@ class PipelineManager(object):
                     print("New start mode: run anyway")
                     # Set the target to none so the command will run anyway.
                     target = None
+                    continue
                 # Normally we don't run the follow, but if you want to force...
                 if self.force_follow:
                     call_follow()
@@ -876,7 +877,11 @@ class PipelineManager(object):
                 self._triage_error(SubprocessError(msg), nofail)
 
         except OSError as e:
-            errmsg = "Check to make sure you have {} installed.".format(cmd[0])
+            print(e)
+            if (e.args[0] == 2):
+                errmsg = "Check to make sure you have '{}' installed.".format(cmd[0])
+            else:
+                errmsg = str(e)
             print(errmsg)
             print("</pre>")
             self._triage_error(OSError(errmsg), nofail)
@@ -1538,7 +1543,7 @@ class PipelineManager(object):
             for lock_file in self.locks[:]:
                 recover_file = self._recoverfile_from_lockfile(lock_file)
                 print("Setting dynamic recover file: {}".format(recover_file))
-                self._create_file_racefree(recover_file)
+                self._create_file(recover_file)
                 self.locks.remove(lock_file)
 
         # Produce cleanup script
@@ -1671,6 +1676,7 @@ class PipelineManager(object):
         
             if proc_dict["pre_block"]:
                 print("</pre>")
+                self.procs[pid]["pre_block"] = False
                 sys.stdout.flush()
             self._kill_child_process(pid, proc_dict["proc_name"])
             del self.procs[pid]
