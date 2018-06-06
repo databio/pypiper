@@ -1706,8 +1706,8 @@ class PipelineManager(object):
             os.kill(child_pid, signal.SIGINT)
             os.kill(child_pid, signal.SIGTERM)
 
-            # If not terminated after 10 seconds, send a SIGKILL
-            sleeptime = .25
+            # If not terminated after X seconds, send a SIGKILL
+            sleeptime = .2
             time_waiting = 0
             still_running = True
             while still_running and time_waiting < 5:
@@ -1715,16 +1715,15 @@ class PipelineManager(object):
                     os.kill(child_pid, 0)  # check if process is running
                     time.sleep(sleeptime)
                     time_waiting = time_waiting + sleeptime
-                    # sleep incrementally longer each time
                 except OSError:
                     still_running = False
 
             if still_running:
-                # still running after 10 seconds!?
+                # still running after 5 seconds!?
                 print("Child not responding to SIGTERM, trying SIGKILL...")
                 os.kill(child_pid, signal.SIGKILL)
 
-            print("Child process terminated after " + str(time_waiting) + " seconds.")
+            print("Child process SIGKILLed after " + str(time_waiting) + " seconds.")
 
 
     def atexit_register(self, *args):

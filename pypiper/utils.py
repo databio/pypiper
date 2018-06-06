@@ -555,6 +555,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     }
 
     # Handle various types of group specifications.
+    groups = None
     if use_all_args:
         groups = args_by_group.keys()
     elif isinstance(argument_groups, str):
@@ -566,15 +567,16 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
 
     # Collect the groups of arguments.
     final_args = list()
-    for g in groups:
-        try:
-            this_group_args = args_by_group[g]
-        except KeyError:
-            print("Skipping undefined pypiper argument group '{}'".format(g))
-        else:
-            final_args.extend(this_group_args)
-            # final_args |= {this_group_args} if \
-            #     isinstance(this_group_args, str) else set(this_group_args)
+    if groups:
+        for g in groups:
+            try:
+                this_group_args = args_by_group[g]
+            except KeyError:
+                print("Skipping undefined pypiper argument group '{}'".format(g))
+            else:
+                final_args.extend(this_group_args)
+                # final_args |= {this_group_args} if \
+                #     isinstance(this_group_args, str) else set(this_group_args)
 
     # Handle various types of specific, individual argument specifications.
     if isinstance(arguments, str):
