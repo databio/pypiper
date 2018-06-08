@@ -65,7 +65,7 @@ setup(
     author='Nathan Sheffield, Johanna Klughammer, Andre Rendeiro',
     author_email='nathan@code.databio.org, jklughammer@cemm.oeaw.ac.at, arendeiro@cemm.oeaw.ac.at',
     url='https://github.com/databio/pypiper/',
-    license="BSD2"
+    license="BSD2",
     test_suite="tests",         # python setup.py test
     tests_require=test_reqs,    # Test-specific package dependencies
     # Extra package if doing `python setup.py test`
