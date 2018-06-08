@@ -56,9 +56,16 @@ setup(
     version=version,
     description='A lightweight python toolkit for gluing together restartable, robust command line pipelines',
     long_description=long_description,
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "License :: OSI Approved :: BSD License",
+        "Programming Language :: Python :: 2.7",
+        "Topic :: Scientific/Engineering :: Bio-Informatics"
+    ],    
     author='Nathan Sheffield, Johanna Klughammer, Andre Rendeiro',
     author_email='nathan@code.databio.org, jklughammer@cemm.oeaw.ac.at, arendeiro@cemm.oeaw.ac.at',
     url='https://github.com/databio/pypiper/',
+    license="BSD2"
     test_suite="tests",         # python setup.py test
     tests_require=test_reqs,    # Test-specific package dependencies
     # Extra package if doing `python setup.py test`
