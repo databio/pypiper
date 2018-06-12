@@ -1,25 +1,25 @@
 Installing and Hello World
 ==============================
 
-Release versions are posted on the GitHub `releases page <https://github.com/epigen/pypiper/releases>`_. You can install the latest version directly from GitHub using pip:
+Release versions are posted on the GitHub `releases page <https://github.com/epigen/pypiper/releases>`_. You can also install the latest version directly from pypi (under the name ``piper``) using pip:
 
 .. code-block:: bash
 
-	pip install --user https://github.com/epigen/pypiper/zipball/master
+	pip install --user piper
 
 
 Update with:
 
 .. code-block:: bash
 
-	pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master
+	pip install --user --upgrade piper
 
 Now, to test pypiper, follow the commands in the ``Hello, Pypiper!`` tutorial: just run these 3 lines of code and you're running your first pypiper pipeline!
 
 .. code:: bash
 
 	# Install the latest version of pypiper:
-	pip install --user https://github.com/epigen/pypiper/zipball/master
+	pip install --user piper
 
 	# download hello_pypiper.py
 	wget https://raw.githubusercontent.com/epigen/pypiper/master/example_pipelines/hello_pypiper.py
@@ -89,4 +89,6 @@ This output is printed to your screen and also recorded in a log file (called ``
  * output.txt
  * stats.tsv
 
-These files are explained in more detail in the next section, so head right on over to :doc:`outputs explained <outputs>` or to the :doc:`features list <features>`. If you're ready, you can also just dive right in with some :doc:`more in-depth tutorials <tutorials>`.
+These files are explained in more detail in the reference section :doc:`outputs explained <outputs>`. 
+
+What's next? That depends on if you're interested in just *running* pypiper pipelines, or if you want to *develop* pypiper pipelines. The next sections are a series of HOW-TO articles that address each of these scenarios.

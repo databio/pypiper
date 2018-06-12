@@ -15,7 +15,15 @@ Or, if you make the script executable (``chmod o+x pipeline.py``) and it has a s
 	./pipeline.py
 
 
-Now, you'll need to figure out the command-line arguments required by the pipeline. Usage will vary based on the script, and the pipeline author determines what command line arguments their pipeline will recognize. You should look in the documentation for your pipeline, or you can often figure out the command-line interface by passing the ``--help argument``, like so: ``python.py --help``. 
+Now, you'll need to figure out the command-line arguments required by the pipeline. Usage will vary based on the script, and the pipeline author determines what command line arguments their pipeline will recognize. You should look in the documentation for your pipeline, or you can often figure out the command-line interface by passing the ``--help argument``, like so: 
+
+.. code-block:: bash
+
+	pipeline.py --help
+
+
+Universal pypiper options
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 With that said, there are a few universal (Pypiper-added) options that are frequently (but not necessarily always) honored by pypiper pipelines. These default pypiper arguments are detailed below:
 
@@ -27,3 +35,6 @@ With that said, there are a few universal (Pypiper-added) options that are frequ
 
   - ``-D, --dirty``
   	Make all cleanups manual. By default, pypiper pipelines will delete any intermediate files. For debugging, you may want to turn this option off -- you can do that by specifying **dirty mode**.
+
+  - ``-N, --new-start``
+  	New start mode. This flag will tell pypiper to start over, and run every command, even if its target output already exists.

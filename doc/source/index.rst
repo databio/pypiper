@@ -2,20 +2,20 @@
 Welcome
 ^^^^^^^^
 
-Making robust pipelines just got easier. Pypiper helps you take your current pipeline (e.g. shell script) and make it better with minimal effort on your part. Pypiper is a lightweight python toolkit that helps you write slick pipelines in python. You'll be running in minutes. Interested? Proceed to the :doc:`Introduction <intro>` or jump straight to the :doc:`Tutorials <tutorials>`. You can find the `source code on github <http://github.com/epigen/pypiper>`_. 
+Pypiper is a lightweight python toolkit that helps you write slick pipelines in python. It takes your current pipeline (e.g. shell script) and improves it with minimal effort. You'll be running in minutes.
 
 
 Contents
 ^^^^^^^^
 
 .. toctree::
+   :titlesonly:
    :caption: Getting Started
    :maxdepth: 1
 
    intro.rst
-   hello-world.rst
-   outputs.rst
    features.rst
+   hello-world.rst
 
 .. toctree::
    :caption: How to use a pipeline
@@ -45,10 +45,11 @@ Contents
    ngstk.rst
 
 .. toctree::
-   :caption: Further Reading
+   :caption: Reference
    :maxdepth: 2
 
    api.rst
+   outputs.rst
    faq.rst
    changelog.rst
    support.rst

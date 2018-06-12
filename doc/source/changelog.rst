@@ -1,5 +1,7 @@
 Changelog
 ******************************
+- **v0.8.0** (*2018-06-11*):
+
 - **v0.7.2** (*2018-06-05*):
 
     - Cleanup files are now relative, so a moved folder could still be cleaned.
