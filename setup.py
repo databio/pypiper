@@ -30,6 +30,8 @@ with open(os.path.join("pypiper", "_version.py"), 'r') as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
 
 
+basic_reqs = read_reqs_file("pypiper")
+
 # Requirements for tests
 test_reqs = read_reqs_file("test")
 
@@ -53,6 +55,7 @@ except(IOError, ImportError, OSError):
 setup(
     name='pypiper',
     packages=['pypiper'],
+    install_requires=basic_reqs,
     version=version,
     description='A lightweight python toolkit for gluing together restartable, robust command line pipelines',
     long_description=long_description,

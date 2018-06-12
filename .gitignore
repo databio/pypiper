@@ -8,6 +8,7 @@ tests/test/*
 
 # ignore eggs
 .eggs/
+*.egg
 
 # ignore built docs
 doc/build/*
