@@ -1,8 +1,25 @@
 Changelog
 ******************************
-- **v0.8.0** (*2018-06-11*):
+
+- **v0.8.0** (*Unreleased*):
+
+    - Implemented 'new start' mode.
+
+    - Improved error messages and exception handling for missing child software.
+
+    - Clarified the built-in required vs. optional args by allowing pipeline authors to specify which of the pypiper args are required. The command-line help UI now displays these correctly as 'required arguments' instead of incorrectly as 'optional arguments'.
+
+    - Corrected the sort order of added arguments, so they are listed in the help menu more naturally.
+
+    - Fixed a bug that caused an erroneous error message indicating missing pypiper args.
+
+    - Clarified the license is BSD2
+
+    - Fixed a bug that neglected to list pyyaml as a dependency
 
 - **v0.7.2** (*2018-06-05*):
+
+    - Implemented the 'report object' function.
 
     - Cleanup files are now relative, so a moved folder could still be cleaned.
 
