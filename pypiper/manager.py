@@ -1019,7 +1019,7 @@ class PipelineManager(object):
         :param finished: Whether this call represents the completion of a
             conceptual unit of a pipeline's processing
         :type finished: bool, default False
-        :param raise_error : Whether to raise exception if
+        :param raise_error: Whether to raise exception if
             checkpoint or current state indicates that a halt should occur.
         """
 
