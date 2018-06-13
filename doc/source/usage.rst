@@ -15,7 +15,7 @@ Or, if you make the script executable (``chmod o+x pipeline.py``) and it has a s
 	./pipeline.py
 
 
-Now, you'll need to figure out the command-line arguments required by the pipeline. Usage will vary based on the script, and the pipeline author determines what command line arguments their pipeline will recognize. You should look in the documentation for your pipeline, or you can often figure out the command-line interface by passing the ``--help argument``, like so: 
+Now, you'll need to figure out the command-line arguments required by the pipeline. Usage will vary based on the script, and the pipeline author determines what command line arguments their pipeline will recognize. You should look in the documentation for your pipeline, or you can often figure out the command-line interface by passing the ``--help`` argument, like so: 
 
 .. code-block:: bash
 

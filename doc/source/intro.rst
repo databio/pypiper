@@ -11,7 +11,7 @@ simple shell script.
 
 Pypiper is an example of a simple  `bioinformatics pipeline framework
 <http://databio.org/pipeline_frameworks/>`_. It differs from existing frameworks in its focus on **simplicity** and **sequential pipelines**. 
-To employ pypiper, you will just take your bash script and pass those commands through ``PipelineManager.run()``. This will give you automatic restartability, process monitoring for memory use and compute time, pipeline status monitoring, copious log output, robust error handling, easy debugging tools, guaranteed file output integrity, and a bunch of useful pipeline development helper functions.
+To employ pypiper, you will just take your bash script and pass those commands through the ``run`` method on a ``PipelineManager`` object. This will give you automatic restartability, process monitoring for memory use and compute time, pipeline status monitoring, copious log output, robust error handling, easy debugging tools, guaranteed file output integrity, and a bunch of useful pipeline development helper functions.
 
 A simple example pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
