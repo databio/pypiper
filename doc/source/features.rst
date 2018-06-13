@@ -14,7 +14,7 @@ Features at-a-glance
 
 
 - |simplicity|
-	Pipelines are simple both to use an to develop. A pypiper pipeline is nothing more than a python script. You run it on the command line like you would any other python script. The basic documentation is just a few pages. It should only take you 15 minutes to write your first pipeline. 
+	Pipelines are simple both to use and to develop. A pypiper pipeline is nothing more than a python script. You run it on the command line like you would any other python script. The basic documentation is just a few pages. It should only take you 15 minutes to write your first pipeline. 
 - |restartability|
 	Commands check for their targets and only run if the target needs to be created. This provides computational advantages, and also means the pipeline will pick up where it left off in case it needs to be restarted or extended.
 - |protection|
@@ -30,4 +30,4 @@ Features at-a-glance
 - |error| 
 	Pypiper closes pipelines gracefully on interrupt or termination signals, converting the status to `failed`. By default, a process that returns a nonzero value halts the pipeline, unlike in bash, where by default the pipeline would continue using an incomplete or failed result. This behavior can be overridden as desired with a single parameter.
 - |recovery|
-	If a job is interrupted (with SIGINT or SIGTERM), either from a user or by a cluster resource manager, pypiper will set a `dynamic recovery flag`. The next time the run is started, it will automatically pick up where it left off.
+	If a job is interrupted (with SIGINT or SIGTERM), either from a user or by a cluster resource manager, pypiper will set a `dynamic recovery flag`. The next time the run is started, it will automatically pick up where it left off. This makes pypiper pipelines `automatically pre-emption ready`, so they can be immediately deployed on servers where jobs may be pre-empted.
