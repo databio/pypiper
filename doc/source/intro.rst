@@ -27,7 +27,7 @@ Who should use Pypiper?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The target audience for pypiper is an individual student or researcher or lab
-that wants to build a basic pipeline, but to do it better job than just writing
+that wants to build a basic pipeline, but to do a better job than just writing
 a shell script. Many bioinformatics pipelines are written by students or
 technicians who don't have time to learn a full-scale pipelining framework, so
 they just end up using simple bash scripts to piece together commands because
