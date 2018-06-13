@@ -1,5 +1,6 @@
+.. |logo| image:: _static/logo_pypiper.svg
 
-Features at-a-glance
+|logo| Features at-a-glance
 =========================
 
 .. |error| image:: _static/error.svg

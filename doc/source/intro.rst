@@ -1,5 +1,6 @@
+.. |logo| image:: _static/logo_pypiper.svg
 
-Introduction
+|logo| Introduction
 =========================
 
 Pypiper is a lightweight python toolkit for gluing together restartable command

@@ -1,4 +1,6 @@
-Installing and Hello World
+.. |logo| image:: _static/logo_pypiper.svg
+
+|logo| Installing and Hello World
 ==============================
 
 Release versions are posted on the GitHub `releases page <https://github.com/epigen/pypiper/releases>`_. You can also install the latest version directly from pypi (under the name ``piper``) using pip:

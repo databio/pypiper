@@ -1,6 +1,7 @@
+.. |logo| image:: _static/logo_pypiper.svg
 
-Welcome
-^^^^^^^^
+|logo| Pypiper
+^^^^^^^^^^^^^^
 
 Pypiper is a lightweight python toolkit that helps you write slick pipelines in python. It takes your current pipeline (e.g. shell script) and improves it with minimal effort. You'll be running in minutes.
 
