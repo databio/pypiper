@@ -5,6 +5,11 @@ One of the most useful features of pypiper is the ``report_result()`` function. 
 
 When you call ``pm.report_result(key, value)``, pypiper simply writes the key-value pair to a ``tsv`` file (``stats.tsv``) in the pipeline output folder. These ``stats.tsv`` files can then later be read and aggregated systematically by other tools, such as ``looper summarize``.
 
+Reporting objects
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Starting in version 0.8, pypiper now implements a second reporting function, ``report_object()``. This is analogous to the ``report_result`` function, but instead of reporting simple key-value pairs, it lets you record any produced file as an output. Most commonly, this is used to record figures (PDFs, PNGs, etc.) produced by the pipeline. It can also be used to report other files, like HTML files.
+
+Pypiper writes results to ``objects.tsv``, which can then be aggregated for a project-level summaries of plots and other pipeline result files.
 
 
 Re-using previously reported results

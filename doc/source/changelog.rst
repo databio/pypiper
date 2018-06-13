@@ -3,7 +3,7 @@ Changelog
 
 - **v0.8.0** (*Unreleased*):
 
-    - Implemented 'new start' mode.
+    - Implemented :doc:`'new start' mode <usage>`.
 
     - Improved error messages and exception handling for missing child software.
 
