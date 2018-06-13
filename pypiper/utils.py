@@ -543,6 +543,11 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     :rtype: Set[str]
     """
 
+    if sys.version_info < (3, 3):
+        from collections import Iterable
+    else:
+        from collections.abc import Iterable
+
     # Define the argument groups.
     args_by_group = {
         "pypiper" : ["recover", "new-start", "dirty", "force-follow"],
@@ -581,7 +586,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     # Handle various types of specific, individual argument specifications.
     if isinstance(arguments, str):
         final_args.append(arguments)
-    elif isinstance(arguments, list):
+    elif isinstance(arguments, Iterable):
         final_args.extend(arguments)
     elif arguments:
         raise TypeError("arguments must be a str or a list.")
@@ -670,7 +675,7 @@ def _add_args(parser, args, required):
     }
 
     if len(required) > 0:
-        requiredNamed = parser.add_argument_group('required named arguments')
+        required_named = parser.add_argument_group('required named arguments')
 
     # Configure the parser for each argument.
     for arg in args:
@@ -695,7 +700,7 @@ def _add_args(parser, args, required):
         long_opt = "--{}".format(arg)
         opts = (short_opt, long_opt) if short_opt else (long_opt, )
         if arg in required:
-            requiredNamed.add_argument(*opts, **argdata)
+            required_named.add_argument(*opts, **argdata)
         else:
             parser.add_argument(*opts, **argdata)
 
