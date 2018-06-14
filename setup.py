@@ -53,7 +53,7 @@ except(IOError, ImportError, OSError):
     long_description = open('README.md').read()
 
 setup(
-    name='pypiper',
+    name='piper',
     packages=['pypiper'],
     install_requires=basic_reqs,
     version=version,
