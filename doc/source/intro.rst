@@ -1,5 +1,6 @@
+.. |logo| image:: _static/logo_pypiper.svg
 
-Introduction
+|logo| Introduction
 =========================
 
 Pypiper is a lightweight python toolkit for gluing together restartable command
@@ -10,16 +11,30 @@ the same time, Pypiper provides immediate advantages over a
 simple shell script.
 
 Pypiper is an example of a simple  `bioinformatics pipeline framework
-<http://databio.org/pipeline_frameworks/>`_.
+<http://databio.org/pipeline_frameworks/>`_. It differs from existing frameworks in its focus on **simplicity** and **sequential pipelines**. 
+To employ pypiper, you will just take your bash script and pass those commands through the ``run`` method on a ``PipelineManager`` object. This will give you automatic restartability, process monitoring for memory use and compute time, pipeline status monitoring, copious log output, robust error handling, easy debugging tools, guaranteed file output integrity, and a bunch of useful pipeline development helper functions.
 
-Many bioinformatics pipelines are written by students or technicians who don't have time to learn a full-scale pipelining framework, so they just end up using simple bash scripts to piece together commands. Pypiper tries to give 80% of the benefits of a professional-scale pipelining system while requiring very little additional effort.
+A simple example pipeline
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Just take your bash script and pass those commands through ``PipelineManager.run()`` and you will get automatic restartability, process monitoring for memory use and compute time, pipeline status monitoring, copious log output, robust error handling, easy debugging tools, guaranteed file output integrity, and a bunch of useful pipeline development helper functions.
+To demonstrate the simplicity, take a look at a very simple but complete pipeline:
 
-With Pypiper, simplicity is paramount. A user can start building useful pipelines using Pypiper in under 15 minutes. At the same time, using Pypiper provides immediately clear and significant advantages over a simple bash script.
+.. literalinclude:: ../../example_pipelines/hello_pypiper.py
+
+There's nothing complex here: we are choosing an output folder, and running a single command, much like you may do in a shell script. Building pypiper pipelines is as simple as stringing together shell commands. That's it. We'll actually run this example pipeline in the ``Hello World`` section.
+
 
 Who should use Pypiper?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The target audience for pypiper is an individual student or researcher or lab
+that wants to build a basic pipeline, but to do a better job than just writing
+a shell script. Many bioinformatics pipelines are written by students or
+technicians who don't have time to learn a full-scale pipelining framework, so
+they just end up using simple bash scripts to piece together commands because
+that seems the most accessible. Pypiper tries to give 80% of the benefits of a
+professional-scale pipelining system while requiring very little additional
+effort.
 
 If you have a shell script that would benefit from a layer of "handling code",
 Pypiper helps you convert that set of shell commands into a production-scale
@@ -28,8 +43,8 @@ integrity, logging) to make your pipeline robust and restartable.
 
 If you need a full-blown, datacenter-scale environment that can do everything,
 look elsewhere. Pypiper's strength is its simplicity. If all you want is a
-shell-like script, but now with the power of python, and restartability, then
-Pypiper is for you.
+shell-like script, but now with the power of python, some built-in benefits, and
+syntactic sugar, then Pypiper is for you.
 
 This emphasis on simplicity provides a few advantages:
 
@@ -49,23 +64,26 @@ features with only 20% of the work of other pipeline management systems. So,
 there are a few things Pypiper deliberately doesn't do:
 
 
-- Job dependencies. Pypiper runs sequential pipelines. If you want to implement
+- Task dependencies. Pypiper runs sequential pipelines. If you want to implement
   a pipeline with complex task dependencies, there are better options. We view
   this as an advantage because it makes the pipeline easier to write, easier to
-  understand, and easier to debug. For developmental pipelines, the complexity
-  cost is not worth the minimal benefit -- read this `post on parallelism in bioinformatics <http://databio.org/posts/paralellism_in_bioinformatics.html>`_ 
+  understand, and easier to debug -- critical things for pipelines that are
+  still under active development (which is, really, *all* pipelines). For
+  developmental pipelines, the complexity cost of encoding task dependencies is
+  not worth the minimal benefit -- read this `post on parallelism in
+  bioinformatics <http://databio.org/posts/paralellism_in_bioinformatics.html>`_
   for an explanation.
 
 - Cluster submission. Pypiper does not handle any sort of cluster job submission
-  or  resource requesting. Instead, we have divided this into a
-  separate project called `looper <http://looper.readthedocs.io/>`_. This makes
-  a modular system: you can use whatever system you want for cluster management.
-  `Pypiper <http://pypiper.readthedocs.io/>`_ builds individual, single-sample
-  pipelines that can be run one sample at a time. `Looper
+  or resource requesting. Instead, we have divided this into a separate project
+  called `looper <http://looper.readthedocs.io/>`_. This makes a modular system:
+  you can use whatever system you want for cluster management. `Pypiper
+  <http://pypiper.readthedocs.io/>`_ builds individual, single-sample pipelines
+  that can be run one sample at a time. `Looper
   <http://looper.readthedocs.io/>`_ then processes groups of samples, submitting
   appropriate pipelines to a cluster or server. The two projects are independent
-  and can be used separately, but they are most powerful when combined.
-
+  and can be used separately, but they are most powerful when combined. This
+  keeps things simple and modular.
 
 
 Yet another pipeline system?
@@ -83,8 +101,3 @@ efficient uses, and neither fit my needs: I had a set of commands already in
 mind -- I just needed a wrapper that could take that code and make it
 automatically restartable, logged, robust to crashing, easy to debug, and so
 forth.
-
-Pypiper fills a niche: the individual graduate student who is just putting
-together a simple series of commands and wants to run that on a few hundred or
-thousand samples. It's not worth learning a workflow development language and a
-complex data-center-class tool for your simple research pipeline.

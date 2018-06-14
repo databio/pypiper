@@ -522,6 +522,11 @@ class Tee(object):
         return self.stdout.fileno()
 
 
+def uniqify(seq): # Dave Kirby
+    # Order preserving
+    seen = set()
+    return [x for x in seq if x not in seen and not seen.add(x)]
+
 
 def _determine_args(argument_groups, arguments, use_all_args=False):
     """
@@ -538,43 +543,57 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     :rtype: Set[str]
     """
 
+    if sys.version_info < (3, 3):
+        from collections import Iterable
+    else:
+        from collections.abc import Iterable
+
     # Define the argument groups.
     args_by_group = {
-        "pypiper" : ["recover", "new-start", "dirty", "follow",
-                     "start", "stop-before", "stop-after"],
+        "pypiper" : ["recover", "new-start", "dirty", "force-follow"],
         "config" : ["config"],
+        "checkpoint" : ["stop-before", "stop-after"],
         "resource" : ["mem", "cores"],
         "looper" : ["config", "output-parent", "mem", "cores"],
-        "common" : ["input", "sample_name"],
-        "ngs" : ["input", "sample-name", "input2", "genome", "single-or-paired"]
+        "common" : ["input", "sample-name"],
+        "ngs" : ["sample-name", "input", "input2", "genome", "single-or-paired"]
     }
 
     # Handle various types of group specifications.
+    groups = None
     if use_all_args:
         groups = args_by_group.keys()
     elif isinstance(argument_groups, str):
-        groups = {argument_groups}
-    else:
-        groups = set(argument_groups or [])
+        groups = [argument_groups]
+    elif isinstance(argument_groups, list):
+        groups = argument_groups
+    elif argument_groups:
+        raise TypeError("arguments must be a str or a list.")
 
     # Collect the groups of arguments.
-    final_args = set()
-    for g in groups:
-        try:
-            this_group_args = args_by_group[g]
-        except KeyError:
-            print("Skipping undefined pypiper argument group '{}'".format(g))
-        else:
-            final_args |= {this_group_args} if \
-                isinstance(this_group_args, str) else set(this_group_args)
+    final_args = list()
+    if groups:
+        for g in groups:
+            try:
+                this_group_args = args_by_group[g]
+            except KeyError:
+                print("Skipping undefined pypiper argument group '{}'".format(g))
+            else:
+                final_args.extend(this_group_args)
+                # final_args |= {this_group_args} if \
+                #     isinstance(this_group_args, str) else set(this_group_args)
 
     # Handle various types of specific, individual argument specifications.
     if isinstance(arguments, str):
-        arguments = {arguments}
-    else:
-        arguments = set(arguments or [])
+        final_args.append(arguments)
+    elif isinstance(arguments, Iterable):
+        final_args.extend(arguments)
+    elif arguments:
+        raise TypeError("arguments must be a str or a list.")
 
-    return final_args | arguments
+
+
+    return uniqify(final_args)
 
 
 
@@ -605,17 +624,16 @@ def _add_args(parser, args, required):
     argument_data = {
         "recover":
             ("-R", {"action": "store_true",
-                    "help": "Recover mode, overwrite locks"}),
+                    "help": "Overwrite locks to recover from previous failed run"}),
         "new-start":
-            ("-N", {"dest": "fresh", "action": "store_true",
-                    "help": "Fresh start mode, overwrite all"}),
+            ("-N", {"action": "store_true",
+                    "help": "Overwrite all results to start a fresh run"}),
         "dirty":
-            ("-D", {"dest": "manual_clean", "action": "store_true",
-                    "help": "Make all cleanups manual"}),
-        "follow":
-            ("-F", {"dest": "force_follow", "action": "store_true",
-                    "help": "Run all 'follow' commands, even if the "
-                            "primary command is not run"}),
+            ("-D", {"action": "store_true",
+                    "help": "Don't auto-delete intermediate files"}),
+        "force-follow":
+            ("-F", {"action": "store_true",
+                    "help": "Always run 'follow' commands"}),
         "start-point":
             {"help": "Name of pipeline stage at which to begin"},
         "stop-before":
@@ -641,15 +659,13 @@ def _add_args(parser, args, required):
                     "help": "Number of cores for parallelized processes"}),
         "mem":
             ("-M", {"default": "4000", "metavar": "MEMORY_LIMIT",
-                    "help": "Amount of memory (Mb) use to allow for "
-                            "processes for which that can be specified"}),
+                    "help": "Memory limit (in Mb) for processes accepting such"}),
         "input":
             ("-I", {"nargs": "+", "metavar": "INPUT_FILES",
-                    "help": "One or more primary input files (required)"}),
+                    "help": "One or more primary input files"}),
         "input2":
             ("-I2", {"nargs": "*", "metavar": "INPUT_FILES2",
-                     "help": "Secondary input file(s), e.g. read2 for a "
-                             "paired-end protocol"}),
+                     "help": "Secondary input files, such as read2"}),
         "genome":
             ("-G", {"dest": "genome_assembly",
                     "help": "Identifier for genome assembly"}),
@@ -657,6 +673,9 @@ def _add_args(parser, args, required):
             ("-Q", {"default": "single",
                     "help": "Single- or paired-end sequencing protocol"})
     }
+
+    if len(required) > 0:
+        required_named = parser.add_argument_group('required named arguments')
 
     # Configure the parser for each argument.
     for arg in args:
@@ -675,9 +694,14 @@ def _add_args(parser, args, required):
                         "Option name must map to dict or two-tuple (short "
                         "name and dict) of argument command-line argument "
                         "specification data.")
+
         argdata["required"] = arg in required
+
         long_opt = "--{}".format(arg)
         opts = (short_opt, long_opt) if short_opt else (long_opt, )
-        parser.add_argument(*opts, **argdata)
+        if arg in required:
+            required_named.add_argument(*opts, **argdata)
+        else:
+            parser.add_argument(*opts, **argdata)
 
     return parser

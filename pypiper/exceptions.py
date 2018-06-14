@@ -6,7 +6,8 @@ __email__ = "vreuter@virginia.edu"
 
 __all__ = ["PipelineError", "PipelineHalt", "IllegalPipelineDefinitionError",
            "IllegalPipelineExecutionError", "MissingCheckpointError",
-           "UnknownPipelineStageError", "UnsupportedFiletypeException"]
+           "UnknownPipelineStageError", "UnsupportedFiletypeException",
+           "SubprocessError"]
 
 
 
@@ -15,7 +16,8 @@ class PipelineError(Exception):
     """ General pipeline error. """
     pass
 
-
+class SubprocessError(Exception):
+    pass
 
 class IllegalPipelineDefinitionError(PipelineError):
     pass
