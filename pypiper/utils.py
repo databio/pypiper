@@ -1,5 +1,6 @@
 """ Shared utilities """
 
+from collections import Iterable
 import os
 import sys
 
@@ -565,7 +566,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
         groups = args_by_group.keys()
     elif isinstance(argument_groups, str):
         groups = [argument_groups]
-    elif isinstance(argument_groups, list):
+    elif isinstance(argument_groups, Iterable):
         groups = argument_groups
     elif argument_groups:
         raise TypeError("arguments must be a str or a list.")
