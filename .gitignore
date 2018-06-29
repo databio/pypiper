@@ -76,4 +76,4 @@ open_pipelines/
 build/
 dist/
 pypiper.egg-info/
-
+piper.egg-info/
