@@ -852,6 +852,18 @@ class NGSTk(_AttributeDict):
             return int(num_lines) / divisor
 
 
+    def count_concordant(self, aligned_bam):
+        """
+        Count only reads that "aligned concordantly exactly 1 time."
+
+        :param aligned_bam: File for which to count mapped reads.
+        :type aligned_bam: str
+        """
+        cmd = self.tools.samtools + " view " + aligned_bam + " | "
+        cmd += "grep 'YT:Z:CP'" + " | uniq -u | wc -l"
+        return subprocess.check_output(cmd, shell=True)
+
+
     def count_mapped_reads(self, file_name, paired_end):
         """
         Mapped_reads are not in fastq format, so this one doesn't need to accommodate fastq,
