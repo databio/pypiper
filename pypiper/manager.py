@@ -829,7 +829,7 @@ class PipelineManager(object):
             # Capture the subprocess output in <pre> tags to make it format nicely
             # if the markdown log file is displayed as HTML.
             print("<pre>")
-            p = subprocess.Popen(cmd, shell=shell)
+            p = psutil.Popen(cmd, shell=shell)
             # Keep track of the running process ID in case we need to kill it
             # when the pipeline is interrupted.
             self.procs[p.pid] = {
