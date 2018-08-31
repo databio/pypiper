@@ -1,7 +1,11 @@
 Changelog
 ******************************
+- **v0.8.1** (*Unreleased*):
 
-- **v0.8.0** (*Unreleased*):
+    - Fixed a bug that caused a problem for some pipelines adding groups of pypiper args.
+
+
+- **v0.8.0** (*2018-06-15*):
 
     - Implemented :doc:`'new start' mode <usage>`.
 
