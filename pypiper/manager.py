@@ -13,6 +13,7 @@ import errno
 import glob
 import os
 import platform
+import psutil
 import re
 import shlex  # for splitting commands like a shell does
 import signal
@@ -838,7 +839,13 @@ class PipelineManager(object):
                 "container":container,
                 "p": p}
 
-       
+            def check_me(proc, sleeptime):
+                try:
+                    proc.wait(timeout=sleeptime)
+                except psutil.TimeoutExpired:
+                    return True
+                return False
+
             sleeptime = .25
 
             if not self.wait:
@@ -846,11 +853,12 @@ class PipelineManager(object):
                 print ("Not waiting for subprocess: " + str(p.pid))
                 return [0, -1]
 
-            while p.poll() is None:
+            #while p.poll() is None:
+            while check_me(p, sleeptime):
                 if not shell:
                     local_maxmem = max(local_maxmem, self._memory_usage(p.pid, container=container)/1e6)
                     # print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
-                time.sleep(sleeptime)
+                #time.sleep(sleeptime)
                 sleeptime = min(sleeptime + 5, 60)
 
             returncode = p.returncode
