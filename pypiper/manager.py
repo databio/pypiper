@@ -853,12 +853,14 @@ class PipelineManager(object):
                 print ("Not waiting for subprocess: " + str(p.pid))
                 return [0, -1]
 
-            #while p.poll() is None:
+            
+            # This will wait on the process and break out as soon as the process
+            # returns, but every so often will break out of the wait to check
+            # the memory use and record a memory high water mark
+
             while check_me(p, sleeptime):
                 if not shell:
                     local_maxmem = max(local_maxmem, self._memory_usage(p.pid, container=container)/1e6)
-                    # print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
-                #time.sleep(sleeptime)
                 sleeptime = min(sleeptime + 5, 60)
 
             returncode = p.returncode
