@@ -13,6 +13,7 @@ import errno
 import glob
 import os
 import platform
+import psutil
 import re
 import shlex  # for splitting commands like a shell does
 import signal
@@ -828,7 +829,7 @@ class PipelineManager(object):
             # Capture the subprocess output in <pre> tags to make it format nicely
             # if the markdown log file is displayed as HTML.
             print("<pre>")
-            p = subprocess.Popen(cmd, shell=shell)
+            p = psutil.Popen(cmd, shell=shell)
             # Keep track of the running process ID in case we need to kill it
             # when the pipeline is interrupted.
             self.procs[p.pid] = {
@@ -838,7 +839,13 @@ class PipelineManager(object):
                 "container":container,
                 "p": p}
 
-       
+            def check_me(proc, sleeptime):
+                try:
+                    proc.wait(timeout=sleeptime)
+                except psutil.TimeoutExpired:
+                    return True
+                return False
+
             sleeptime = .25
 
             if not self.wait:
@@ -846,11 +853,14 @@ class PipelineManager(object):
                 print ("Not waiting for subprocess: " + str(p.pid))
                 return [0, -1]
 
-            while p.poll() is None:
+            
+            # This will wait on the process and break out as soon as the process
+            # returns, but every so often will break out of the wait to check
+            # the memory use and record a memory high water mark
+
+            while check_me(p, sleeptime):
                 if not shell:
                     local_maxmem = max(local_maxmem, self._memory_usage(p.pid, container=container)/1e6)
-                    # print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
-                time.sleep(sleeptime)
                 sleeptime = min(sleeptime + 5, 60)
 
             returncode = p.returncode

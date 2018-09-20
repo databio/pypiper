@@ -1,7 +1,18 @@
 Changelog
 ******************************
 
-- **v0.8.0** (*Unreleased*):
+
+- **v0.8.1** (*2018-09-20*):
+
+    - Fixed a bug that caused a problem for some pipelines adding groups of pypiper args.
+    
+    - Improved the ``run`` waiting method to immediately stop upon job
+      completion, rather than minute-increment polling. This should improve
+      performance particularly in pipelines with many, medium-runtime steps, and
+      improve accuracy of timing profiles.
+
+
+- **v0.8.0** (*2018-06-15*):
 
     - Implemented :doc:`'new start' mode <usage>`.
 
