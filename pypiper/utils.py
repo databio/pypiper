@@ -212,6 +212,15 @@ def check_shell(cmd):
     return "|" in cmd or ">" in cmd or r"*" in cmd
 
 
+def check_pipes(cmd):
+    """
+    Determine whether a command appears to contain shell pipes .
+
+    :param str cmd: Command to investigate.
+    :return bool: Whether the command appears to contain shell pipes.
+    """
+    return "|" in cmd
+
 
 def clear_flags(pm, flag_names=None):
     """
