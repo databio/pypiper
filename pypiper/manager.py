@@ -25,8 +25,8 @@ from .AttributeDict import AttributeDict
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
-    check_shell, check_pipes, checkpoint_filepath, clear_flags, flag_name, make_lock_name, \
-    pipeline_filepath, CHECKPOINT_SPECIFICATIONS
+    check_shell, check_shell_pipes, checkpoint_filepath, clear_flags, flag_name, make_lock_name, \
+    pipeline_filepath, CHECKPOINT_SPECIFICATIONS, check_shell_aterisk, check_shell_redirection
 from ._version import __version__
 import __main__
 
@@ -34,9 +34,7 @@ import __main__
 __all__ = ["PipelineManager"]
 
 
-
 LOCK_PREFIX = "lock."
-
 
 
 class PipelineManager(object):
@@ -185,19 +183,19 @@ class PipelineManager(object):
         self.pipeline_log_file = pipeline_filepath(self, suffix="_log.md")
 
         self.pipeline_profile_file = \
-                pipeline_filepath(self, suffix="_profile.tsv")
+            pipeline_filepath(self, suffix="_profile.tsv")
 
         # Stats and figures are general and so lack the pipeline name.
         self.pipeline_stats_file = \
-                pipeline_filepath(self, filename="stats.tsv")
+            pipeline_filepath(self, filename="stats.tsv")
         self.pipeline_figures_file = \
-                pipeline_filepath(self, filename="figures.tsv")
+            pipeline_filepath(self, filename="figures.tsv")
         self.pipeline_objects_file = \
-                pipeline_filepath(self, filename="objects.tsv")
+            pipeline_filepath(self, filename="objects.tsv")
 
         # Record commands used and provide manual cleanup script.
         self.pipeline_commands_file = \
-                pipeline_filepath(self, suffix="_commands.sh")
+            pipeline_filepath(self, suffix="_commands.sh")
         self.cleanup_file = pipeline_filepath(self, suffix="_cleanup.sh")
 
         # Pipeline status variables
@@ -797,151 +795,103 @@ class PipelineManager(object):
         # if shell=False, then we format the command (with split()) to be a list of command and its arguments.
         # Split the command to use shell=False;
         # leave it together to use shell=True;
+        def check_me(proc, sleeptime):
+            try:
+                proc.wait(timeout=sleeptime)
+            except psutil.TimeoutExpired:
+                return True
+            return False
 
         if container:
             cmd = "docker exec " + container + " " + cmd
         self._report_command(cmd)
         # self.proc_name = cmd[0] + " " + cmd[1]
-        self.proc_name = "".join(cmd).split()[0]
-        proc_name = "".join(cmd).split()[0]
+        # self.proc_name = "".join(cmd).split()[0]
+        # proc_name = "".join(cmd).split()[0]
 
 
-        likely_shell = check_shell(cmd)
-        pipes = check_pipes(cmd)
-
-        if shell == "guess":
-            shell = likely_shell
-
-        if not shell:
-            if likely_shell:
-                print("Should this command run in a shell instead of directly in a subprocess?")
-            #cmd = cmd.split()
-            cmd = shlex.split(cmd)
-        # call(cmd, shell=shell) # old way (no memory profiling)
-
-        # Try to execute the command:
-        # Putting it in a try block enables us to catch exceptions from bad subprocess
-        # commands, as well as from valid commands that just fail
-
-        returncode = -1  # set default return values for failed command
-        local_maxmem = -1
-
-        def shell_pipeline(args):
-            '''
-            Takes a list of dict(s), each with the same
-            parameters passed to psutil.Popen().
-
-            Spawns the processes connecting the stdout of every process with the
-            stdin of the next process. Waits for all the processes to finish and records their PIDs,
-            returncodes and measures the duration of all the processes combined.
-            '''
-            processes = [psutil.Popen(**args[0])]
-            start_time = time.time()
-            for i in range(1, len(args)):
-                args[i]["stdin"] = processes[i - 1].stdout
-                processes.append(psutil.Popen(**args[i]))
-                processes[i - 1].stdout.close()
-            pids = [x.pid for x in processes]
-            retcodes = [0] * len(processes)
-            while processes:
-                proc = processes.pop(-1)
-                retcodes[len(processes)] = proc.wait()
-                duration = str(datetime.timedelta(seconds=self.time_elapsed(start_time)))
-            return retcodes, duration, pids
-
-        if shell and pipes:
-            print("<pre>")
-            split_cmds = cmd.split('|')
-            args_count = len(split_cmds)
-            process_list = [0] * args_count
-            for i in range(args_count):
-                process_list[i] = dict(args=split_cmds[i].strip(), stdout=subprocess.PIPE, shell=True)
-            retcodes, duration, pids = shell_pipeline(process_list)
-            if max(retcodes) != 0:
-                msg = "One of the shell pipe subprocesses returned nonzero result. Check above output for details"
-                self._triage_error(SubprocessError(msg))
-            # return a list of the greatest returncode (catch the error code if any)
-            # and memory usage (0 since it's not supported yet)
-            info = "\nProcesses in the shell pipe " + str(pids) + " returned: (" + str(retcodes) + ")."
-            info += " Elapsed: " + str(duration) + ".\n"
-            print("</pre>")
-            print(info)
-            return [max(retcodes), 0]
-
+        if check_shell_pipes(cmd):
+            stdout = subprocess.PIPE
         else:
-            try:
+            stdout = None
+
+        stderr=None
+
+        if not check_shell_aterisk(cmd):
+            split_cmds = cmd.split('|')
+            cmds_count = len(split_cmds)
+            param_list = [0] * cmds_count
+            for i in range(cmds_count):
+                # shell redirection handling - no shell needed
+                if check_shell_redirection(split_cmds[i]):
+                    if re.search(r'2>',split_cmds[i]):
+                        split_cmds_redir_error = split_cmds[i].split('2>')
+                        split_cmds[i] = split_cmds_redir_error[0].strip()
+                        error_file_name = split_cmds_redir_error[1].strip()
+                        error_file = open(error_file_name,"w")
+                        stderr=error_file
+                    split_cmds_redir = split_cmds[i].split('>')
+                    split_cmds[i] = split_cmds_redir[0].strip()
+                    file_name = split_cmds_redir[1].strip()
+                    file = open(file_name,"w")
+                    split_cmds[i]=split_cmds[i].replace("(","").replace(")","")
+                    param_list[i] = dict(args=shlex.split(split_cmds[i]),stdout=file, stderr=stderr, shell=False)
+                else:
+                    split_cmds[i]=split_cmds[i].replace("(","").replace(")","")
+                    param_list[i] = dict(args=shlex.split(split_cmds[i]),stdout=stdout, stderr=stderr, shell=False)
+
+
+            returncode = -1  # set default return values for failed command
+            start_times = []
+            stop_times = []
+            processes = []
+            local_maxmems = []
+            returncodes = []
+            for i in range(len(param_list)):
+                start_times.append(time.time())
+                if i==0:
+                    processes.append(psutil.Popen(**param_list[i]))
+                else:
+                    param_list[i]["stdin"] = processes[i - 1].stdout
+                    processes.append(psutil.Popen(**param_list[i]))
                 # Capture the subprocess output in <pre> tags to make it format nicely
                 # if the markdown log file is displayed as HTML.
                 print("<pre>")
 
-                p = psutil.Popen(cmd, shell=shell)
-                # Keep track of the running process ID in case we need to kill it
-                # when the pipeline is interrupted.
-                self.procs[p.pid] = {
-                    "proc_name":proc_name,
-                    "start_time":time.time(),
-                    "pre_block":True,
-                    "container":container,
-                    "p": p}
-
-                def check_me(proc, sleeptime):
-                    try:
-                        proc.wait(timeout=sleeptime)
-                    except psutil.TimeoutExpired:
-                        return True
-                    return False
-
                 sleeptime = .25
-
-                if not self.wait:
-                    print("</pre>")
-                    print ("Not waiting for subprocess: " + str(p.pid))
-                    return [0, -1]
-
 
                 # This will wait on the process and break out as soon as the process
                 # returns, but every so often will break out of the wait to check
                 # the memory use and record a memory high water mark
-
-                while check_me(p, sleeptime):
-                    if not shell:
-                        local_maxmem = max(local_maxmem, self._memory_usage(p.pid, container=container)/1e6)
+            for i in range(len(param_list)):
+                local_maxmem = -1
+                while check_me(processes[i], sleeptime):
+                    local_maxmem = max(local_maxmem, self._memory_usage(processes[i].pid, container=container)/1e6)
                     sleeptime = min(sleeptime + 5, 60)
 
-                returncode = p.returncode
-                info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
-                info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(self.procs[p.pid]["start_time"]))) + "."
-                if not shell:
-                    info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
-                    info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
+                stop_times.append(time.time())
+                returncode = processes[i].returncode
+                info = "Process " + str(processes[i].pid) + " returned: (" + str(processes[i].returncode) + ")."
+                if i>0:
+                    info += " Elapsed: " + str(datetime.timedelta(seconds=stop_times[i]-stop_times[i-1])) + "."
+                else:
+                    info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(start_times[i]))) + "."
+                # if not shell:
+                info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
+                info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
                 # Close the preformat tag for markdown output
                 print("</pre>")
                 print(info)
-                # set self.maxmem
                 self.peak_memory = max(self.peak_memory, local_maxmem)
 
-                # report process profile
-                self._report_profile(self.procs[p.pid]["proc_name"], lock_name, time.time() - self.procs[p.pid]["start_time"], local_maxmem)
-
-                # Remove this as a running subprocess
-                del self.procs[p.pid]
-
-
-                if p.returncode != 0:
+                if returncode != 0:
                     msg = "Subprocess returned nonzero result. Check above output for details"
                     self._triage_error(SubprocessError(msg), nofail)
 
-            except OSError as e:
-                print(e)
-                if (e.args[0] == 2):
-                    errmsg = "Check to make sure you have '{}' installed.".format(cmd[0])
-                else:
-                    errmsg = str(e)
-                print(errmsg)
-                print("</pre>")
-                self._triage_error(OSError(errmsg), nofail)
+                returncodes.append(returncode)
+                local_maxmems.append(local_maxmem)
 
-            return [returncode, local_maxmem]
+        return [returncodes, local_maxmems]
 
 
     ###################################

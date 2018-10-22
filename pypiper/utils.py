@@ -3,6 +3,7 @@
 from collections import Iterable
 import os
 import sys
+import re
 
 from .const import \
     CHECKPOINT_EXTENSION, PIPELINE_CHECKPOINT_DELIMITER, \
@@ -20,9 +21,7 @@ __email__ = "vreuter@virginia.edu"
 __all__ = ["add_pypiper_args", "build_command", "get_first_value"]
 
 
-
 CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
-
 
 
 def add_pypiper_args(parser, groups=("pypiper", ), args=None,
@@ -56,7 +55,6 @@ def add_pypiper_args(parser, groups=("pypiper", ), args=None,
     return parser
 
 
-
 def build_command(chunks):
     """
     Create a command from various parts.
@@ -76,7 +74,8 @@ def build_command(chunks):
     """
 
     if not chunks:
-        raise ValueError("No command parts: {} ({})".format(chunks, type(chunks)))
+        raise ValueError(
+            "No command parts: {} ({})".format(chunks, type(chunks)))
 
     if isinstance(chunks, str):
         return chunks
@@ -101,7 +100,6 @@ def build_command(chunks):
     return " ".join(parsed_pieces)
 
 
-
 def build_sample_paths(sample):
     """
     Ensure existence of folders for a Sample.
@@ -117,7 +115,6 @@ def build_sample_paths(sample):
             print("Skipping file-like: '[}'".format(path))
         elif not os.path.isdir(base):
             os.makedirs(base)
-
 
 
 def checkpoint_filename(checkpoint, pipeline_name=None):
@@ -148,9 +145,8 @@ def checkpoint_filename(checkpoint, pipeline_name=None):
         base = translate_stage_name(checkpoint)
     if pipeline_name:
         base = "{}{}{}".format(
-                pipeline_name, PIPELINE_CHECKPOINT_DELIMITER, base)
+            pipeline_name, PIPELINE_CHECKPOINT_DELIMITER, base)
     return base + CHECKPOINT_EXTENSION
-
 
 
 def checkpoint_filepath(checkpoint, pm):
@@ -201,7 +197,6 @@ def checkpoint_filepath(checkpoint, pm):
     return pipeline_filepath(pm, filename=chkpt_name)
 
 
-
 def check_shell(cmd):
     """
     Determine whether a command appears to involve shell process(es).
@@ -212,14 +207,43 @@ def check_shell(cmd):
     return "|" in cmd or ">" in cmd or r"*" in cmd
 
 
-def check_pipes(cmd):
+def check_shell_aterisk(cmd):
     """
-    Determine whether a command appears to contain shell pipes .
+    Determine whether a command appears to involve shell stars.
+
+    :param str cmd: Command to investigate.
+    :return bool: Whether the command appears to involve shell stars.
+    """
+    return r"*" in cmd
+
+
+def check_shell_pipes(cmd):
+    """
+    Determine whether a command appears to contain shell pipes.
 
     :param str cmd: Command to investigate.
     :return bool: Whether the command appears to contain shell pipes.
     """
     return "|" in cmd
+
+
+def check_shell_redirection(cmd):
+    """
+    Determine whether a command appears to contain shell redirection symbol outsite of curlt brackets
+
+    :param str cmd: Command to investigate.
+    :return bool: Whether the command appears to contain shell redirection.
+    """
+    curly_brackets = True
+    while curly_brackets:
+        SRE_match_obj = re.search(r'\{(.*?)}',cmd)
+        if SRE_match_obj is not None:
+            cmd = cmd[:SRE_match_obj.start()] + cmd[(SRE_match_obj.end()+1):]
+            if re.search(r'\{(.*?)}',cmd) is None:
+                curly_brackets = False
+        else:
+            curly_brackets = False
+    return ">" in cmd
 
 
 def clear_flags(pm, flag_names=None):
@@ -255,7 +279,6 @@ def clear_flags(pm, flag_names=None):
     return removed
 
 
-
 def flag_name(status):
     """
     Determine the name for a flag file of the status indicated.
@@ -266,7 +289,6 @@ def flag_name(status):
     :rtype: str
     """
     return status + ".flag"
-
 
 
 def get_first_value(param, param_pools, on_missing=None, error=True):
@@ -316,7 +338,6 @@ def get_first_value(param, param_pools, on_missing=None, error=True):
         return on_missing
 
 
-
 def is_in_file_tree(fpath, folder):
     """
     Determine whether a file is in a folder.
@@ -328,7 +349,6 @@ def is_in_file_tree(fpath, folder):
     file_folder, _ = os.path.split(fpath)
     other_folder = os.path.join(folder, "")
     return other_folder.startswith(file_folder)
-
 
 
 def is_fastq(file_name):
@@ -344,7 +364,6 @@ def is_fastq(file_name):
     return is_unzipped_fastq(file_name) or is_gzipped_fastq(file_name)
 
 
-
 def is_gzipped_fastq(file_name):
     """
     Determine whether indicated file appears to be a gzipped FASTQ.
@@ -356,7 +375,6 @@ def is_gzipped_fastq(file_name):
     """
     _, ext = os.path.splitext(file_name)
     return file_name.endswith(".fastq.gz") or file_name.endswith(".fq.gz")
-
 
 
 def is_unzipped_fastq(file_name):
@@ -372,7 +390,6 @@ def is_unzipped_fastq(file_name):
     return ext in [".fastq", ".fq"]
 
 
-
 def is_sam_or_bam(file_name):
     """
     Determine whether a file appears to be in a SAM format.
@@ -384,7 +401,6 @@ def is_sam_or_bam(file_name):
             """
     _, ext = os.path.splitext(file_name)
     return ext in [".bam", ".sam"]
-
 
 
 def make_lock_name(original_path, path_base_folder):
@@ -403,8 +419,6 @@ def make_lock_name(original_path, path_base_folder):
         path to lock file
     """
     return original_path.replace(path_base_folder, "").replace(os.sep, "__")
-
-
 
 
 def parse_cores(cores, pm, default):
@@ -431,7 +445,6 @@ def parse_cores(cores, pm, default):
     return int(cores)
 
 
-
 def parse_stage_name(stage):
     """
     Determine the name of a stage.
@@ -453,7 +466,6 @@ def parse_stage_name(stage):
             return stage.__name__
         except AttributeError:
             raise TypeError("Unsupported stage type: {}".format(type(stage)))
-
 
 
 def pipeline_filepath(pm, filename=None, suffix=None):
@@ -487,8 +499,7 @@ def pipeline_filepath(pm, filename=None, suffix=None):
     # In fact, a Pipeline just references its manager's outfolder.
     # So we can handle argument of either type to pm parameter.
     return filename if os.path.isabs(filename) \
-            else os.path.join(pm.outfolder, filename)
-
+        else os.path.join(pm.outfolder, filename)
 
 
 def translate_stage_name(stage):
@@ -508,7 +519,6 @@ def translate_stage_name(stage):
     name = parse_stage_name(stage)
     # Cast to string to ensure that indexed stages (ints are handled).
     return str(name).lower().replace(" ", STAGE_NAME_SPACE_REPLACEMENT)
-
 
 
 # TODO: implement as context manager.
@@ -532,7 +542,7 @@ class Tee(object):
         return self.stdout.fileno()
 
 
-def uniqify(seq): # Dave Kirby
+def uniqify(seq):  # Dave Kirby
     # Order preserving
     seen = set()
     return [x for x in seq if x not in seen and not seen.add(x)]
@@ -560,13 +570,13 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
 
     # Define the argument groups.
     args_by_group = {
-        "pypiper" : ["recover", "new-start", "dirty", "force-follow"],
-        "config" : ["config"],
-        "checkpoint" : ["stop-before", "stop-after"],
-        "resource" : ["mem", "cores"],
-        "looper" : ["config", "output-parent", "mem", "cores"],
-        "common" : ["input", "sample-name"],
-        "ngs" : ["sample-name", "input", "input2", "genome", "single-or-paired"]
+        "pypiper": ["recover", "new-start", "dirty", "force-follow"],
+        "config": ["config"],
+        "checkpoint": ["stop-before", "stop-after"],
+        "resource": ["mem", "cores"],
+        "looper": ["config", "output-parent", "mem", "cores"],
+        "common": ["input", "sample-name"],
+        "ngs": ["sample-name", "input", "input2", "genome", "single-or-paired"]
     }
 
     # Handle various types of group specifications.
@@ -601,10 +611,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     elif arguments:
         raise TypeError("arguments must be a str or a list.")
 
-
-
     return uniqify(final_args)
-
 
 
 def _add_args(parser, args, required):
@@ -701,9 +708,9 @@ def _add_args(parser, args, required):
                 short_opt, argdata = argdata
             except ValueError:
                 raise TypeError(
-                        "Option name must map to dict or two-tuple (short "
-                        "name and dict) of argument command-line argument "
-                        "specification data.")
+                    "Option name must map to dict or two-tuple (short "
+                    "name and dict) of argument command-line argument "
+                    "specification data.")
 
         argdata["required"] = arg in required
 
