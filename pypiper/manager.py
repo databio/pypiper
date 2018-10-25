@@ -219,11 +219,7 @@ class PipelineManager(object):
         # In-memory holder for report_result
         self.stats_dict = {}
 
-        # Register handler functions to deal with interrupt and termination signals;
-        # If received, we would then clean up properly (set pipeline status to FAIL, etc).
-        atexit.register(self._exit_handler)
-        signal.signal(signal.SIGINT, self._signal_int_handler)
-        signal.signal(signal.SIGTERM, self._signal_term_handler)
+
 
         # Checkpoint-related parameters
         self.overwrite_checkpoints = overwrite_checkpoints
@@ -234,6 +230,13 @@ class PipelineManager(object):
         # Pypiper can keep track of intermediate files to clean up at the end
         self.cleanup_list = []
         self.cleanup_list_conditional = []
+        
+
+        # Register handler functions to deal with interrupt and termination signals;
+        # If received, we would then clean up properly (set pipeline status to FAIL, etc).
+        signal.signal(signal.SIGINT, self._signal_int_handler)
+        signal.signal(signal.SIGTERM, self._signal_term_handler)
+
         self.start_pipeline(args, multi)
 
         # Handle config file if it exists
@@ -267,6 +270,7 @@ class PipelineManager(object):
                         pass
                 if config_to_load is not None:
                     print("Using custom config file: {}".format(config_to_load))
+                    print("test")
             else:
                 # No custom config file specified. Check for default
                 pipe_path_base, _ = os.path.splitext(os.path.basename(sys.argv[0]))
@@ -394,6 +398,10 @@ class PipelineManager(object):
             atexit.register(self._kill_child_process, tee.pid, proc_name="tee")
             os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
             os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
+
+        # For some reason, this exit handler function MUST be registered after
+        # the one that kills the tee process.
+        atexit.register(self._exit_handler)
 
         # A future possibility to avoid this tee, is to use a Tee class; this works for anything printed here
         # by pypiper, but can't tee the subprocess output. For this, it would require using threading to
@@ -1657,6 +1665,7 @@ class PipelineManager(object):
         # TODO (cont.): order of interpreter vs. subprocess shutdown signal receipt.
         # TODO (cont.): see https://bugs.python.org/issue11380
 
+
         # Make the cleanup file executable if it exists
         if os.path.isfile(self.cleanup_file):
             # Make the cleanup file self destruct.
@@ -1669,8 +1678,9 @@ class PipelineManager(object):
 
         if not self.has_exit_status:
             print("Pipeline status: {}".format(self.status))
-            self.fail_pipeline(Exception("Unknown exit failure"))
-
+            self.fail_pipeline(Exception("Pipeline failure. See details above."))
+        else:
+            print("Pipeline has already exited. Status: {}".format(self.status))
 
     def _terminate_running_subprocesses(self):
 
