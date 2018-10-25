@@ -26,7 +26,7 @@ from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
     check_shell, check_shell_pipes, checkpoint_filepath, clear_flags, flag_name, make_lock_name, \
-    pipeline_filepath, CHECKPOINT_SPECIFICATIONS, check_shell_aterisk, check_shell_redirection
+    pipeline_filepath, CHECKPOINT_SPECIFICATIONS, check_shell_asterisk, check_shell_redirection
 from ._version import __version__
 import __main__
 
@@ -805,91 +805,75 @@ class PipelineManager(object):
         if container:
             cmd = "docker exec " + container + " " + cmd
         self._report_command(cmd)
-        # self.proc_name = cmd[0] + " " + cmd[1]
-        # self.proc_name = "".join(cmd).split()[0]
-        # proc_name = "".join(cmd).split()[0]
 
-
+        param_list=[]
         if check_shell_pipes(cmd):
+            shell = False
             stdout = subprocess.PIPE
-        else:
-            stdout = None
-
-        stderr=None
-
-        if not check_shell_aterisk(cmd):
             split_cmds = cmd.split('|')
             cmds_count = len(split_cmds)
-            param_list = [0] * cmds_count
             for i in range(cmds_count):
-                # shell redirection handling - no shell needed
-                if check_shell_redirection(split_cmds[i]):
-                    if re.search(r'2>',split_cmds[i]):
-                        split_cmds_redir_error = split_cmds[i].split('2>')
-                        split_cmds[i] = split_cmds_redir_error[0].strip()
-                        error_file_name = split_cmds_redir_error[1].strip()
-                        error_file = open(error_file_name,"w")
-                        stderr=error_file
-                    split_cmds_redir = split_cmds[i].split('>')
-                    split_cmds[i] = split_cmds_redir[0].strip()
-                    file_name = split_cmds_redir[1].strip()
-                    file = open(file_name,"w")
-                    split_cmds[i]=split_cmds[i].replace("(","").replace(")","")
-                    param_list[i] = dict(args=shlex.split(split_cmds[i]),stdout=file, stderr=stderr, shell=False)
-                else:
-                    split_cmds[i]=split_cmds[i].replace("(","").replace(")","")
-                    param_list[i] = dict(args=shlex.split(split_cmds[i]),stdout=stdout, stderr=stderr, shell=False)
+                if check_shell(split_cmds[i]):
+                    param_list.append(dict(args=split_cmds[i],stdout=stdout, shell=True))
+                else:       
+                    param_list.append(dict(args=shlex.split(split_cmds[i]),stdout=stdout, shell=shell))
+        else:
+            shell = True
+            stdout = None
+            param_list.append(dict(args=cmd,stdout=stdout,shell=shell))
 
 
-            returncode = -1  # set default return values for failed command
-            start_times = []
-            stop_times = []
-            processes = []
-            local_maxmems = []
-            returncodes = []
-            for i in range(len(param_list)):
-                start_times.append(time.time())
-                if i==0:
-                    processes.append(psutil.Popen(**param_list[i]))
-                else:
-                    param_list[i]["stdin"] = processes[i - 1].stdout
-                    processes.append(psutil.Popen(**param_list[i]))
-                # Capture the subprocess output in <pre> tags to make it format nicely
-                # if the markdown log file is displayed as HTML.
-                print("<pre>")
+        returncode = -1  # set default return values for failed command
+        start_times = []
+        stop_times = []
+        processes = []
+        local_maxmems = []
+        returncodes = []
+        for i in range(len(param_list)):
+            start_times.append(time.time())
+            if i == 0:
+                processes.append(psutil.Popen(**param_list[i]))
+            else:
+                param_list[i]["stdin"] = processes[i - 1].stdout
+                processes.append(psutil.Popen(**param_list[i]))
+            # Capture the subprocess output in <pre> tags to make it format nicely
+            # if the markdown log file is displayed as HTML.
+        print("<pre>")
 
-                sleeptime = .25
+        if not self.wait:
+            print("</pre>")
+            ids = [x.pid for x in processes]
+            print ("Not waiting for subprocess(es): " + str(ids))
+            return [0, -1]
+        for i in range(len(param_list)):
+            local_maxmem = -1
+            sleeptime = .25
+            while check_me(processes[i], sleeptime):
+                local_maxmem = max(local_maxmem, (processes[i].memory_info().rss)/1e9)
+                # local_maxmem = max(local_maxmem, self._memory_usage(processes[i].pid, container=container)/1e6)
+                sleeptime = min(sleeptime + 5, 60)
 
-                # This will wait on the process and break out as soon as the process
-                # returns, but every so often will break out of the wait to check
-                # the memory use and record a memory high water mark
-            for i in range(len(param_list)):
-                local_maxmem = -1
-                while check_me(processes[i], sleeptime):
-                    local_maxmem = max(local_maxmem, self._memory_usage(processes[i].pid, container=container)/1e6)
-                    sleeptime = min(sleeptime + 5, 60)
+            stop_times.append(time.time())
+            returncode = processes[i].returncode
+            info = "Process " + str(processes[i].pid) + " returned: (" + str(processes[i].returncode) + ")."
+            if i>0:
+                info += " Elapsed: " + str(datetime.timedelta(seconds=round(stop_times[i]-stop_times[i-1],0))) + "."
+            else:
+                info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(start_times[i]))) + "."
+            self.peak_memory = max(self.peak_memory, local_maxmem)
+            info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
+            info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
+            # Close the preformat tag for markdown output
+            print("</pre>")
+            print(info)
+            
 
-                stop_times.append(time.time())
-                returncode = processes[i].returncode
-                info = "Process " + str(processes[i].pid) + " returned: (" + str(processes[i].returncode) + ")."
-                if i>0:
-                    info += " Elapsed: " + str(datetime.timedelta(seconds=stop_times[i]-stop_times[i-1])) + "."
-                else:
-                    info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(start_times[i]))) + "."
-                # if not shell:
-                info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
-                info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
-                # Close the preformat tag for markdown output
-                print("</pre>")
-                print(info)
-                self.peak_memory = max(self.peak_memory, local_maxmem)
+            if returncode != 0:
+                msg = "Subprocess returned nonzero result. Check above output for details"
+                self._triage_error(SubprocessError(msg), nofail)
 
-                if returncode != 0:
-                    msg = "Subprocess returned nonzero result. Check above output for details"
-                    self._triage_error(SubprocessError(msg), nofail)
-
-                returncodes.append(returncode)
-                local_maxmems.append(local_maxmem)
+            returncodes.append(returncode)
+            local_maxmems.append(local_maxmem)
 
         return [returncodes, local_maxmems]
 

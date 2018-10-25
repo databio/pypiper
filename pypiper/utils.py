@@ -207,7 +207,7 @@ def check_shell(cmd):
     return "|" in cmd or ">" in cmd or r"*" in cmd
 
 
-def check_shell_aterisk(cmd):
+def check_shell_asterisk(cmd):
     """
     Determine whether a command appears to involve shell stars.
 
