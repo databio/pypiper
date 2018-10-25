@@ -1674,8 +1674,6 @@ class PipelineManager(object):
         if not self.has_exit_status:
             print("Pipeline status: {}".format(self.status))
             self.fail_pipeline(Exception("Pipeline failure. See details above."))
-        else:
-            print("Pipeline has already exited. Status: {}".format(self.status))
 
     def _terminate_running_subprocesses(self):
 
