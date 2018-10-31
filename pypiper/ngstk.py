@@ -662,7 +662,7 @@ class NGSTk(_AttributeDict):
         For compressed files.
         :param file: file_name
         """
-        x = subprocess.check_output("zcat " + file_name + " | wc -l | cut -f1 -d' '", shell=True)
+        x = subprocess.check_output("gunzip -c " + file_name + " | wc -l | cut -f1 -d' '", shell=True)
         return x
 
     def get_chrs_from_bam(self, file_name):
