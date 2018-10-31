@@ -13,6 +13,7 @@ import errno
 import glob
 import os
 import platform
+import psutil
 import re
 import shlex  # for splitting commands like a shell does
 import signal
@@ -21,7 +22,7 @@ import sys
 import time
 
 from .AttributeDict import AttributeDict
-from .exceptions import PipelineHalt
+from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
     check_shell, checkpoint_filepath, clear_flags, flag_name, make_lock_name, \
@@ -51,13 +52,13 @@ class PipelineManager(object):
     :param bool multi: Enables running multiple pipelines in one script
         or for interactive use. It simply disables the tee of the output,
         so you won't get output logged to a file.
-    :param bool manual_clean: Overrides the pipeline's clean_add()
+    :param bool dirty: Overrides the pipeline's clean_add()
         manual parameters, to *never* clean up intermediate files automatically.
         Useful for debugging; all cleanup files are added to manual cleanup script.
     :param bool recover: Specify recover mode, to overwrite lock files.
         If pypiper encounters a locked target, it will ignore the lock and
         recompute this step. Useful to restart a failed pipeline.
-    :param bool fresh: NOT IMPLEMENTED
+    :param bool new_start: NOT IMPLEMENTED
     :param bool force_follow: Force run all follow functions
         even if  the preceding command is not run. By default,
         following functions  are only run if the preceding command is run.
@@ -79,7 +80,7 @@ class PipelineManager(object):
     """
     def __init__(
         self, name, outfolder, version=None, args=None, multi=False,
-        manual_clean=False, recover=False, fresh=False, force_follow=False,
+        dirty=False, recover=False, new_start=False, force_follow=False,
         cores=1, mem="1000", config_file=None, output_parent=None,
         overwrite_checkpoints=False, **kwargs):
 
@@ -91,9 +92,9 @@ class PipelineManager(object):
 
         # Establish default params
         params = {
-            'manual_clean': manual_clean,
+            'dirty': dirty,
             'recover': recover,
-            'fresh': fresh,
+            'new_start': new_start,
             'force_follow': force_follow,
             'config_file': config_file,
             'output_parent': output_parent,
@@ -137,9 +138,9 @@ class PipelineManager(object):
         # Pipeline settings
         self.name = name
         self.overwrite_locks = params['recover']
-        self.fresh_start = params['fresh']
+        self.new_start = params['new_start']
         self.force_follow = params['force_follow']
-        self.manual_clean = params['manual_clean']
+        self.dirty = params['dirty']
         self.cores = params['cores']
         self.output_parent = params['output_parent']
         # For now, we assume the memory is in megabytes.
@@ -191,6 +192,8 @@ class PipelineManager(object):
                 pipeline_filepath(self, filename="stats.tsv")
         self.pipeline_figures_file = \
                 pipeline_filepath(self, filename="figures.tsv")
+        self.pipeline_objects_file = \
+                pipeline_filepath(self, filename="objects.tsv")
 
         # Record commands used and provide manual cleanup script.
         self.pipeline_commands_file = \
@@ -644,6 +647,11 @@ class PipelineManager(object):
             if target is not None and os.path.exists(target) \
                     and not os.path.isfile(lock_file):
                 print("\nTarget exists: `" + target + "`")
+                if self.new_start:
+                    print("New start mode: run anyway")
+                    # Set the target to none so the command will run anyway.
+                    target = None
+                    continue
                 # Normally we don't run the follow, but if you want to force...
                 if self.force_follow:
                     call_follow()
@@ -659,6 +667,8 @@ class PipelineManager(object):
                     recover_mode = True
                     # the recovery flag is now spent, so remove so we don't accidentally re-recover a failed job
                     os.remove(recover_file)
+                elif self.new_start:
+                    print("New start mode, overwriting this target...")
                 else:  # don't overwrite locks
                     self._wait_for_lock(lock_file)
                     # when it's done loop through again to try one more time (to see if the target exists now)
@@ -819,15 +829,22 @@ class PipelineManager(object):
             # Capture the subprocess output in <pre> tags to make it format nicely
             # if the markdown log file is displayed as HTML.
             print("<pre>")
-            p = subprocess.Popen(cmd, shell=shell)
-
-            # Keep track of the running process ID in case we need to kill it when the pipeline is interrupted.
+            p = psutil.Popen(cmd, shell=shell)
+            # Keep track of the running process ID in case we need to kill it
+            # when the pipeline is interrupted.
             self.procs[p.pid] = {
                 "proc_name":proc_name,
                 "start_time":time.time(),
                 "pre_block":True,
                 "container":container,
                 "p": p}
+
+            def check_me(proc, sleeptime):
+                try:
+                    proc.wait(timeout=sleeptime)
+                except psutil.TimeoutExpired:
+                    return True
+                return False
 
             sleeptime = .25
 
@@ -836,11 +853,14 @@ class PipelineManager(object):
                 print ("Not waiting for subprocess: " + str(p.pid))
                 return [0, -1]
 
-            while p.poll() is None:
+            
+            # This will wait on the process and break out as soon as the process
+            # returns, but every so often will break out of the wait to check
+            # the memory use and record a memory high water mark
+
+            while check_me(p, sleeptime):
                 if not shell:
                     local_maxmem = max(local_maxmem, self._memory_usage(p.pid, container=container)/1e6)
-                    # print("int.maxmem (pid:" + str(p.pid) + ") " + str(local_maxmem))
-                time.sleep(sleeptime)
                 sleeptime = min(sleeptime + 5, 60)
 
             returncode = p.returncode
@@ -861,11 +881,20 @@ class PipelineManager(object):
             # Remove this as a running subprocess
             del self.procs[p.pid]
 
-            if p.returncode != 0:
-                raise OSError("Subprocess returned nonzero result.")
 
-        except Exception as e:
-            self._triage_error(e, nofail, errmsg)
+            if p.returncode != 0:
+                msg = "Subprocess returned nonzero result. Check above output for details"
+                self._triage_error(SubprocessError(msg), nofail)
+
+        except OSError as e:
+            print(e)
+            if (e.args[0] == 2):
+                errmsg = "Check to make sure you have '{}' installed.".format(cmd[0])
+            else:
+                errmsg = str(e)
+            print(errmsg)
+            print("</pre>")
+            self._triage_error(OSError(errmsg), nofail)
 
         return [returncode, local_maxmem]
 
@@ -1000,7 +1029,7 @@ class PipelineManager(object):
         :param finished: Whether this call represents the completion of a
             conceptual unit of a pipeline's processing
         :type finished: bool, default False
-        :param raise_error : Whether to raise exception if
+        :param raise_error: Whether to raise exception if
             checkpoint or current state indicates that a halt should occur.
         """
 
@@ -1141,6 +1170,66 @@ class PipelineManager(object):
         print(message_markdown)
 
         self._safe_write_to_file(self.pipeline_figures_file, message_raw)
+
+    def report_object(self, key, filename, anchor_text=None, anchor_image=None,
+       annotation=None):
+        """
+        Writes a string to self.pipeline_objects_file. Replacement of report_figure
+
+        :param key: name (key) of the object
+        :type key: str
+        :param filename: relative path to the file (relative to parent output
+            dir)
+        :type filename: str
+        :param anchor_text: text used as the link anchor test or caption to
+            refer to the object. If not provided, defaults to the key.
+        :type anchor_text: str
+        :param anchor_image: a path to an HTML-displayable image thumbnail (so,
+            .png or .jpg, for example). If a path, the path should be relative
+            to the parent output dir.
+        :type anchor_image: str
+        :param annotation: By default, the figures will be annotated with the
+            pipeline name, so you can tell which pipeline records which figures.
+            If you want, you can change this.
+        :type annotation: str
+        """
+
+        # Default annotation is current pipeline name.
+        annotation = str(annotation or self.name)
+
+        # In case the value is passed with trailing whitespace.
+        filename = str(filename).strip()
+        if anchor_text:
+            anchor_text = str(anchor_text).strip()
+        else:
+            anchor_text = str(key).strip()
+
+        # better to use a relative path in this file
+        # convert any absolute paths into relative paths
+        relative_filename = os.path.relpath(filename, self.outfolder) \
+                if os.path.isabs(filename) else filename
+
+        if anchor_image:
+            relative_anchor_image = os.path.relpath(anchor_image, self.outfolder) \
+                if os.path.isabs(anchor_image) else anchor_image
+        else:
+            anchor_image = ""
+
+
+        message_raw = "{key}\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
+            key=key, filename=relative_filename, anchor_text=anchor_text, 
+            anchor_image=relative_anchor_image, annotation=annotation)
+
+        message_markdown = "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}\t_OBJ_".format(
+            key=key, filename=relative_filename, anchor_text=anchor_text, 
+            anchor_image=relative_anchor_image,annotation=annotation)
+
+        print(message_markdown)
+
+        self._safe_write_to_file(self.pipeline_objects_file, message_raw)
+
+
+
 
 
     def _safe_write_to_file(self, file, message):
@@ -1464,7 +1553,7 @@ class PipelineManager(object):
             for lock_file in self.locks[:]:
                 recover_file = self._recoverfile_from_lockfile(lock_file)
                 print("Setting dynamic recover file: {}".format(recover_file))
-                self._create_file_racefree(recover_file)
+                self._create_file(recover_file)
                 self.locks.remove(lock_file)
 
         # Produce cleanup script
@@ -1597,6 +1686,7 @@ class PipelineManager(object):
         
             if proc_dict["pre_block"]:
                 print("</pre>")
+                self.procs[pid]["pre_block"] = False
                 sys.stdout.flush()
             self._kill_child_process(pid, proc_dict["proc_name"])
             del self.procs[pid]
@@ -1626,8 +1716,8 @@ class PipelineManager(object):
             os.kill(child_pid, signal.SIGINT)
             os.kill(child_pid, signal.SIGTERM)
 
-            # If not terminated after 10 seconds, send a SIGKILL
-            sleeptime = .25
+            # If not terminated after X seconds, send a SIGKILL
+            sleeptime = .2
             time_waiting = 0
             still_running = True
             while still_running and time_waiting < 5:
@@ -1635,16 +1725,15 @@ class PipelineManager(object):
                     os.kill(child_pid, 0)  # check if process is running
                     time.sleep(sleeptime)
                     time_waiting = time_waiting + sleeptime
-                    # sleep incrementally longer each time
                 except OSError:
                     still_running = False
 
             if still_running:
-                # still running after 10 seconds!?
+                # still running after 5 seconds!?
                 print("Child not responding to SIGTERM, trying SIGKILL...")
                 os.kill(child_pid, signal.SIGKILL)
 
-            print("Child process terminated after " + str(time_waiting) + " seconds.")
+            print("Child process SIGKILLed after " + str(time_waiting) + " seconds.")
 
 
     def atexit_register(self, *args):
@@ -1690,7 +1779,7 @@ class PipelineManager(object):
         :param manual: True means the files will just be added to a manual cleanup script.
         :type manual: bool
         """
-        if self.manual_clean:
+        if self.dirty:
             # Override the user-provided option and force manual cleanup.
             manual = True
 
@@ -1864,7 +1953,7 @@ class PipelineManager(object):
         return result[category]
 
 
-    def _triage_error(self, e, nofail, errmsg):
+    def _triage_error(self, e, nofail, errmsg=None):
         """ Print a message and decide what to do about an error.  """
         if errmsg is not None:
             print(errmsg)

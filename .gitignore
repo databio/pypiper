@@ -8,6 +8,7 @@ tests/test/*
 
 # ignore eggs
 .eggs/
+*.egg
 
 # ignore built docs
 doc/build/*
@@ -75,4 +76,4 @@ open_pipelines/
 build/
 dist/
 pypiper.egg-info/
-
+piper.egg-info/

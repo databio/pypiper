@@ -173,8 +173,8 @@ class PipelineManagerTests(unittest.TestCase):
         self.pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5, lock_name="test")
         self.pp.run("touch " + tgt8 + " " + tgt9, lock_name="test")
 
-        # In global manual_clean mode, even non-manual clean files should not be deleted:
-        self.pp.manual_clean = True
+        # In global dirty mode, even non-manual clean files should not be deleted:
+        self.pp.dirty = True
         self.pp.clean_add(pipeline_filepath(self.pp, filename="*.temp"))
         self.pp.clean_add(tgt4)
         self.pp.clean_add(tgt5, conditional=True)
@@ -189,7 +189,7 @@ class PipelineManagerTests(unittest.TestCase):
         self.pp.report_figure("Test figure", os.path.join("fig", "fig.jpg"))
 
         # But in regular mode, they should be deleted:
-        self.pp.manual_clean=False
+        self.pp.dirty=False
         self.pp.clean_add(pipeline_filepath(self.pp, filename="*.temp"))
         self.pp.clean_add(tgt4)
         self.pp.clean_add(tgt5, conditional=True)

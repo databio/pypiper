@@ -745,11 +745,12 @@ class NGSTk(_AttributeDict):
         :param flag: sam flag value to be read
         :type flag: str
         :param paired_end: This parameter is ignored; samtools automatically correctly responds depending
-        on the data in the bamfile. We leave the option here just for consistency, since all the other
-        counting functions require the parameter. This makes it easier to swap counting functions during
-        pipeline development.
+            on the data in the bamfile. We leave the option here just for consistency, since all the other
+            counting functions require the parameter. This makes it easier to swap counting functions during
+            pipeline development.
         :type paired_end: bool
         """
+
         param = " -c -f" + str(flag)
         if file_name.endswith("sam"):
             param += " -S"
@@ -766,9 +767,9 @@ class NGSTk(_AttributeDict):
         :param file_name: name of reads file
         :type file_name: str
         :param paired_end: This parameter is ignored; samtools automatically correctly responds depending
-        on the data in the bamfile. We leave the option here just for consistency, since all the other
-        counting functions require the parameter. This makes it easier to swap counting functions during
-        pipeline development.
+            on the data in the bamfile. We leave the option here just for consistency, since all the other
+            counting functions require the parameter. This makes it easier to swap counting functions during
+            pipeline development.
         """
         return int(self.count_flag_reads(file_name, 256, paired_end))
 
@@ -851,6 +852,18 @@ class NGSTk(_AttributeDict):
             return int(num_lines) / divisor
 
 
+    def count_concordant(self, aligned_bam):
+        """
+        Count only reads that "aligned concordantly exactly 1 time."
+
+        :param aligned_bam: File for which to count mapped reads.
+        :type aligned_bam: str
+        """
+        cmd = self.tools.samtools + " view " + aligned_bam + " | "
+        cmd += "grep 'YT:Z:CP'" + " | uniq -u | wc -l"
+        return subprocess.check_output(cmd, shell=True)
+
+
     def count_mapped_reads(self, file_name, paired_end):
         """
         Mapped_reads are not in fastq format, so this one doesn't need to accommodate fastq,
@@ -860,12 +873,11 @@ class NGSTk(_AttributeDict):
         :param file_name: File for which to count mapped reads.
         :type file_name: str
         :param paired_end: This parameter is ignored; samtools automatically correctly responds depending
-        on the data in the bamfile. We leave the option here just for consistency, since all the other
-        counting functions require the parameter. This makes it easier to swap counting functions during
-        pipeline development.
+            on the data in the bamfile. We leave the option here just for consistency, since all the other
+            counting functions require the parameter. This makes it easier to swap counting functions during
+            pipeline development.
         :type paired_end: bool
-        :return: Either return code from samtools view command, or -1 to
-            indicate an error state.
+        :return: Either return code from samtools view command, or -1 to indicate an error state.
         :rtype: int
         """
         if file_name.endswith("bam"):

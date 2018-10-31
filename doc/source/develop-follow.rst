@@ -1,6 +1,6 @@
 
 
-The follow argument
+The ``follow`` argument
 ================================================================================
 
 .. _the_follow_argument:
