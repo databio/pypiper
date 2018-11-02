@@ -810,6 +810,15 @@ class PipelineManager(object):
                 return True
             return False
 
+        def get_mem_child_sum(proc):
+            # get children processes
+            children=proc.children(recursive=True)
+            # get RSS memory of each child proc and sum all
+            mem_sum=sum([x.memory_info().rss for x 
+                in children])
+            # return in gigs
+            return mem_sum/1e9
+
         if container:
             cmd = "docker exec " + container + " " + cmd
         self._report_command(cmd)
@@ -855,11 +864,13 @@ class PipelineManager(object):
             return [0, -1]
         for i in range(len(param_list)):
             local_maxmem = -1
-            sleeptime = .25
+            sleeptime = .0001
             while check_me(processes[i], sleeptime):
-                local_maxmem = max(local_maxmem, (processes[i].memory_info().rss)/1e9)
-                # local_maxmem = max(local_maxmem, self._memory_usage(processes[i].pid, container=container)/1e6)
-                sleeptime = min(sleeptime + 5, 60)
+                local_maxmem = max(local_maxmem, (get_mem_child_sum(processes[i])))
+                # the sleeptime is extremely short at the beginning and gets longer exponentially 
+                # (+ constant to prevent copious checks at the very beginning)
+                # = more precise mem tracing for short processes
+                sleeptime = min((sleeptime + 0.25) * 3 , 60)
 
             stop_times.append(time.time())
             returncode = processes[i].returncode
