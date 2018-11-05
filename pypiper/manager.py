@@ -267,8 +267,7 @@ class PipelineManager(object):
                         #print("Can't find custom config file: " + abs_config)
                         pass
                 if config_to_load is not None:
-                    print("Using custom config file: {}".format(config_to_load))
-                    print("test")
+                    print("\nUsing custom config file: {}".format(config_to_load))
             else:
                 # No custom config file specified. Check for default
                 pipe_path_base, _ = os.path.splitext(os.path.basename(sys.argv[0]))
@@ -280,7 +279,7 @@ class PipelineManager(object):
 
         # Finally load the config we found.
         if config_to_load is not None:
-            print("Loading config file: {}".format(config_to_load))
+            print("\nLoading config file: {}\n".format(config_to_load))
             with open(config_to_load, 'r') as conf:
                 # Set the args to the new config file, so it can be used
                 # later to pass to, for example, toolkits
@@ -437,8 +436,8 @@ class PipelineManager(object):
         
         # Print out a header section in the pipeline log:
         # Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
-        print("----------------------------------------")
-        print("##### [Pipeline run code and environment:]")
+        # print("----------------------------------------")
+        print("### [Pipeline run code and environment:]\n")
         print("* " + "Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv)) + "`")
         print("* " + "Compute host".rjust(20) + ":  " + platform.node())
         print("* " + "Working dir".rjust(20) + ":  " + os.getcwd())
@@ -446,7 +445,7 @@ class PipelineManager(object):
 
         self.timestamp("* " + "Pipeline started at".rjust(20) + ":  ")
 
-        print("\n##### [Version log:]")
+        print("\n### [Version log:]\n")
         print("* " + "Python version".rjust(20) + ":  " + platform.python_version())
         try:
             print("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
@@ -473,7 +472,7 @@ class PipelineManager(object):
             pass
 
         # Print all arguments (if any)
-        print("\n##### [Arguments passed to pipeline:]")
+        print("\n### [Arguments passed to pipeline:]\n")
         for arg, val in (vars(args) if args else dict()).items():
             argtext = "`{}`".format(arg)
             valtext = "`{}`".format(val)
@@ -698,9 +697,9 @@ class PipelineManager(object):
             # If you make it past these tests, we should proceed to run the process.
 
             if target is not None:
-                print("\nTarget to produce: `" + target + "`")
+                print("\nTarget to produce: `" + target + "`\n")
             else:
-                print("\nTargetless command, running...")
+                print("\nTargetless command, running...\n")
 
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
@@ -888,9 +887,9 @@ class PipelineManager(object):
             else:
                 info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
             if self.peak_memory < 0:
-                info += " Pipeline: None)"
+                info += " Pipeline: None)\n"
             else:    
-                info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
+                info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)\n"
             # Close the preformat tag for markdown output
             print("</pre>")
             print(info)
@@ -934,7 +933,7 @@ class PipelineManager(object):
         info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
         if not shell:
             info += " Peak memory: (Process: " + str(round(local_maxmem,3)) + "GB;"
-            info += " Pipeline: " + str(round(self.peak_memory,3)) + "GB)"
+            info += " Pipeline: " + str(round(self.peak_memory,3)) + "GB)\n"
 
         print(info + "\n")
         if p.returncode != 0:
@@ -1139,7 +1138,7 @@ class PipelineManager(object):
         message_raw = "{key}\t{value}\t{annotation}".format(
             key=key, value=value, annotation=annotation)
 
-        message_markdown = "> `{key}`\t{value}\t{annotation}\t_RES_".format(
+        message_markdown = "\n> `{key}`\t{value}\t{annotation}\t_RES_".format(
             key=key, value=value, annotation=annotation)
 
         print(message_markdown)
@@ -1282,7 +1281,7 @@ class PipelineManager(object):
 
         :type cmd: str
         """
-        print("> `" + cmd + "`\n")
+        print("\n> `" + cmd + "`\n")
         with open(self.pipeline_commands_file, "a") as myfile:
             myfile.write(cmd + "\n\n")
 
