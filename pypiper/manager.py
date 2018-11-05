@@ -880,8 +880,17 @@ class PipelineManager(object):
             else:
                 info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(start_times[i]))) + "."
             self.peak_memory = max(self.peak_memory, local_maxmem)
-            info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
-            info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
+            # Check if the local_maxmem and/or peak_memory are still -1 (in case the process ended before it was checked: < 0.0001s)
+            # this way of handling it does not cause any problems with comparisons/round.
+            # Also, -1 is used for comparison of the returned local_maxmems later on in run()
+            if local_maxmem < 0:
+                info += " Peak memory: (Process: None;"
+            else:
+                info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
+            if self.peak_memory < 0:
+                info += " Pipeline: None)"
+            else:    
+                info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)"
             # Close the preformat tag for markdown output
             print("</pre>")
             print(info)
