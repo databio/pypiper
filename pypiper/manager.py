@@ -944,7 +944,7 @@ class PipelineManager(object):
 
     def _wait_for_lock(self, lock_file):
         """
-        Just sleep until the lock_file does not exist.
+        Just sleep until the lock_file does not exist or a lock_file-related dynamic recovery flag is spotted
 
         :param lock_file: Lock file to wait upon.
         :type lock_file: str
@@ -952,6 +952,7 @@ class PipelineManager(object):
         sleeptime = .5
         first_message_flag = False
         dot_count = 0
+        recover_file = self._recoverfile_from_lockfile(lock_file)
         while os.path.isfile(lock_file):
             if first_message_flag is False:
                 self.timestamp("Waiting for file lock: " + lock_file)
@@ -962,6 +963,11 @@ class PipelineManager(object):
                 dot_count = dot_count + 1
                 if dot_count % 60 == 0:
                     print("")  # linefeed
+            # prevents the issue of pypier waiting for the lock file to be gone infinitely
+            # in case the recovery flag is sticked by other pipeline when it's interrupted
+            if os.path.isfile(recover_file):
+                sys.stdout.write(" Dynamic recovery flag found")
+                break
             time.sleep(sleeptime)
             sleeptime = min(sleeptime + 2.5, 60)
 
