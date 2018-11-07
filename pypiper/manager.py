@@ -1891,7 +1891,8 @@ class PipelineManager(object):
                                 elif os.path.isdir(file): clean_script.write("rmdir " + clean_item + "\n")
                     except Exception:
                         no_cleanup_script.append(cleandir)
-                print('Could not produce cleanup script for item(s):', *no_cleanup_script, sep='\n* ')
+                if no_cleanup_script: 
+                    print('Could not produce cleanup script for item(s):\n* ' + '\n* '.join(no_cleanup_script))
 
 
     def _memory_usage(self, pid='self', category="hwm", container=None):
