@@ -820,27 +820,17 @@ class PipelineManager(object):
 
         def display_memory(memval):
             return None if memval < 0 else "{}GB".format(round(memval, 3))
-            
+
+        def make_dict(command):
+            a, s = (command, True) if check_shell(command) else (shlex.split(command), False)
+            return dict(args=a, stdout=subprocess.PIPE, shell=s)
+
+
         if container:
             cmd = "docker exec " + container + " " + cmd
         self._report_command(cmd)
 
-        param_list=[]
-        if check_shell_pipes(cmd):
-            shell = False
-            stdout = subprocess.PIPE
-            split_cmds = cmd.split('|')
-            cmds_count = len(split_cmds)
-            for i in range(cmds_count):
-                if check_shell(split_cmds[i]):
-                    param_list.append(dict(args=split_cmds[i],stdout=stdout, shell=True))
-                else:       
-                    param_list.append(dict(args=shlex.split(split_cmds[i]),stdout=stdout, shell=shell))
-        else:
-            shell = True
-            stdout = None
-            param_list.append(dict(args=cmd,stdout=stdout,shell=shell))
-
+        param_list = [make_dict(c) for c in cmd.split("|")] if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
 
         returncode = -1  # set default return values for failed command
         start_times = []
@@ -887,6 +877,7 @@ class PipelineManager(object):
             # Close the preformat tag for markdown output
             print("</pre>")
             print(info)
+            if i != len(param_list)-1: print("<pre>") 
             
 
             if returncode != 0:
