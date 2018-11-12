@@ -830,7 +830,7 @@ class PipelineManager(object):
             cmd = "docker exec " + container + " " + cmd
         self._report_command(cmd)
 
-        param_list = [make_dict(c) for c in cmd.split("|")] if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
+        param_list = [make_dict(c) for c in split_by_pipes(cmd)] if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
 
         returncode = -1  # set default return values for failed command
         start_times = []

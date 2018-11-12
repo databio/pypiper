@@ -216,6 +216,15 @@ def check_shell_asterisk(cmd):
     """
     return r"*" in cmd
 
+def split_by_pipes(cmd):
+    """
+    Split the command by shell pipes, but preserve the contents of the parantheses.
+
+    :param str cmd: Command to investigate.
+    :return list: List of sub commands to be linked
+    """
+    r = re.compile(r'(?:[^|(]|\([^)]*\))+')
+    return r.findall(cmd)
 
 def check_shell_pipes(cmd):
     """
@@ -229,7 +238,7 @@ def check_shell_pipes(cmd):
 
 def check_shell_redirection(cmd):
     """
-    Determine whether a command appears to contain shell redirection symbol outsite of curlt brackets
+    Determine whether a command appears to contain shell redirection symbol outside of curly brackets
 
     :param str cmd: Command to investigate.
     :return bool: Whether the command appears to contain shell redirection.
