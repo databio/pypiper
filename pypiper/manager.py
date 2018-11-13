@@ -830,7 +830,7 @@ class PipelineManager(object):
             cmd = "docker exec " + container + " " + cmd
         self._report_command(cmd)
 
-        param_list = [make_dict(c) for c in cmd.split("|")] if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
+        param_list = [make_dict(c) for c in split_by_pipes(cmd)] if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
 
         returncode = -1  # set default return values for failed command
         start_times = []
@@ -1891,7 +1891,8 @@ class PipelineManager(object):
                                 elif os.path.isdir(file): clean_script.write("rmdir " + clean_item + "\n")
                     except Exception:
                         no_cleanup_script.append(cleandir)
-                print('Could not produce cleanup script for item(s):', *no_cleanup_script, sep='\n* ')
+                if no_cleanup_script: 
+                    print('Could not produce cleanup script for item(s):\n* ' + '\n* '.join(no_cleanup_script))
 
 
     def _memory_usage(self, pid='self', category="hwm", container=None):
