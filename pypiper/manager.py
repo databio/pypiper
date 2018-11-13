@@ -26,7 +26,7 @@ from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
     check_shell, check_shell_pipes, checkpoint_filepath, clear_flags, flag_name, make_lock_name, \
-    pipeline_filepath, CHECKPOINT_SPECIFICATIONS, check_shell_asterisk, check_shell_redirection
+    pipeline_filepath, CHECKPOINT_SPECIFICATIONS, check_shell_asterisk, check_shell_redirection, split_by_pipes
 from ._version import __version__
 import __main__
 
