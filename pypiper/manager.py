@@ -56,7 +56,7 @@ class PipelineManager(object):
     :param bool recover: Specify recover mode, to overwrite lock files.
         If pypiper encounters a locked target, it will ignore the lock and
         recompute this step. Useful to restart a failed pipeline.
-    :param bool new_start: NOT IMPLEMENTED
+    :param bool new_start: start over and run every command even if output exists
     :param bool force_follow: Force run all follow functions
         even if  the preceding command is not run. By default,
         following functions  are only run if the preceding command is run.
