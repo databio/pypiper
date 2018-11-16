@@ -704,13 +704,13 @@ class PipelineManager(object):
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
                     list_ret, list_maxmem = \
-                        self.callprint(cmd_i, shell, nofail, container)
+                        self.callprint(cmd_i, nofail, container)
                     local_maxmem = max(local_maxmem, list_maxmem)
                     process_return_code = max(process_return_code, list_ret)
 
             else:  # Single command (most common)
                 process_return_code, local_maxmem = \
-                    self.callprint(cmd, shell, nofail, container)  # Run command
+                    self.callprint(cmd, nofail, container)  # Run command
 
             # For temporary files, you can specify a clean option to automatically
             # add them to the clean list, saving you a manual call to clean_add
@@ -769,7 +769,7 @@ class PipelineManager(object):
             self._triage_error(e, nofail, errmsg)
 
 
-    def callprint(self, cmd, shell="guess", nofail=False, container=None, lock_name=None, errmsg=None):
+    def callprint(self, cmd, nofail=False, container=None):
         """
         Prints the command, and then executes it, then prints the memory use and
         return code of the command.
@@ -783,20 +783,12 @@ class PipelineManager(object):
 
         :param cmd: Bash command(s) to be run.
         :type cmd: str or list
-        :param shell: If command is required to be run in its own shell. Optional. Default: "guess", which
-            will make a best guess on whether it should run in a shell or not, based on presence of shell
-            utils, like asterisks, pipes, or output redirects. Force one way or another by specifying True or False
-        :type shell: bool
         :param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
             Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
             they will not cause the pipeline to bail out.
         :type nofail: bool
         :param container: Named Docker container in which to execute.
         :param container: str
-        :param lock_name: Name of the relevant lock file.
-        :type lock_name: str
-        :param errmsg: Message to print if there's an error.
-        :type errmsg: str
         """
         # The Popen shell argument works like this:
         # if shell=False, then we format the command (with split()) to be a list of command and its arguments.
@@ -830,7 +822,8 @@ class PipelineManager(object):
             cmd = "docker exec " + container + " " + cmd
         self._report_command(cmd)
 
-        param_list = [make_dict(c) for c in split_by_pipes(cmd)] if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
+        param_list = [make_dict(c) for c in split_by_pipes(cmd)] \
+            if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
 
         start_times = []
         stop_times = []
@@ -960,42 +953,6 @@ class PipelineManager(object):
         if first_message_flag:
             self.timestamp("File unlocked.")
             self.set_status_flag(RUN_FLAG)
-
-
-    def _wait_for_file(self, file_name, lock_name=None):
-        """
-        Just sleep until the file_name DOES exist.
-
-        :param file_name: File to wait for.
-        :type file_name: str
-        :param lock_name: Name of lock file to wait for.
-        :type lock_name: str
-        """
-
-        # Waiting loop/state variables
-        sleeptime = .5
-        first_message_flag = False
-        dot_count = 0
-
-        while not os.path.isfile(file_name):
-            if first_message_flag is False:
-                self.timestamp("Waiting for file: " + file_name)
-                first_message_flag = True
-            else:
-                sys.stdout.write(".")
-                dot_count = dot_count + 1
-                if dot_count % 60 == 0:
-                    print("")  # linefeed
-            time.sleep(sleeptime)
-            sleeptime = min(sleeptime + 2.5, 60)
-
-        if first_message_flag:
-            self.timestamp("File exists.")
-
-        # Finalize lock file path and begin waiting.
-        lock_name = lock_name or make_lock_name(file_name, self.outfolder)
-        lock_file = self._make_lock_path(lock_name)
-        self._wait_for_lock(lock_file)
 
 
     ###################################
