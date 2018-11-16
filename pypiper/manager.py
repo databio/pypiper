@@ -832,7 +832,6 @@ class PipelineManager(object):
 
         param_list = [make_dict(c) for c in split_by_pipes(cmd)] if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
 
-        returncode = -1  # set default return values for failed command
         start_times = []
         stop_times = []
         processes = []
@@ -868,17 +867,20 @@ class PipelineManager(object):
             returncode = processes[i].returncode
             info = "Process " + str(processes[i].pid) + " returned: (" + str(processes[i].returncode) + ")."
             if i>0:
-                info += " Elapsed: " + str(datetime.timedelta(seconds=round(stop_times[i]-stop_times[i-1],0))) + "."
+                info += " Elapsed: " + str(datetime.timedelta(
+                    seconds=round(stop_times[i] - stop_times[i - 1], 0))) + "."
             else:
-                info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(start_times[i]))) + "."
+                info += " Elapsed: " + str(datetime.timedelta(
+                    seconds=self.time_elapsed(start_times[i]))) + "."
             self.peak_memory = max(self.peak_memory, local_maxmem)
 
-            info += " Peak memory: (Process: {proc}; Pipeline: {pipe})".format(proc=display_memory(local_maxmem), pipe=display_memory(self.peak_memory))
+            info += " Peak memory: (Process: {proc}; Pipeline: {pipe})".format(
+                proc=display_memory(local_maxmem), pipe=display_memory(self.peak_memory))
             # Close the preformat tag for markdown output
             print("</pre>")
             print(info)
-            if i != len(param_list)-1: print("<pre>") 
-            
+            if i != len(param_list) - 1:
+                print("<pre>")
 
             if returncode != 0:
                 msg = "Subprocess returned nonzero result. Check above output for details"
