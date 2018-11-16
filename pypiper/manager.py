@@ -664,16 +664,18 @@ class PipelineManager(object):
 
             # Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
             if os.path.isfile(lock_file):
+                print("Found lock file: {}".format(lock_file))
                 if self.overwrite_locks:
-                    print("Found lock file; overwriting this target...")
+                    print("Overwriting target...")
                 elif os.path.isfile(recover_file):
-                    print("Found lock file. Found dynamic recovery file. Overwriting this target...")
+                    print("Found dynamic recovery file ({}); "
+                          "overwriting target...".format(recover_file))
                     # remove the lock file which will then be promptly re-created for the current run.
                     recover_mode = True
                     # the recovery flag is now spent, so remove so we don't accidentally re-recover a failed job
                     os.remove(recover_file)
                 elif self.new_start:
-                    print("New start mode, overwriting this target...")
+                    print("New start mode; overwriting target...")
                 else:  # don't overwrite locks
                     self._wait_for_lock(lock_file)
                     # when it's done loop through again to try one more time (to see if the target exists now)
