@@ -1,7 +1,7 @@
 Changelog
 ******************************
 
-- **v0.9.** (*2018-11-19*):
+- **v0.9.0** (*2018-11-19*):
 
     - Use ``psutil`` to track aggregate memory usage for processes that spawn children
 
