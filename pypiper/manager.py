@@ -1171,7 +1171,7 @@ class PipelineManager(object):
             relative_anchor_image = os.path.relpath(anchor_image, self.outfolder) \
                 if os.path.isabs(anchor_image) else anchor_image
         else:
-            relative_anchor_image = ""
+            relative_anchor_image = "None"
 
 
         message_raw = "{key}\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
