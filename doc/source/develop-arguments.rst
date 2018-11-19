@@ -51,7 +51,7 @@ Individual arguments that are understood and used by pypiper:
 - ``-C, --config``: Pypiper pipeline config yaml file.
 
 Individual arguments just provided for convenience and standardization:
-
+- ``-S, --sample-name``: name of the sample
 - ``-I, --input``: primary input file (e.g. read1)
 - ``-I2, --input2``: secondary input file (e.g. read2)
 - ``-O, --output-parent``: parent folder for pipeline results (the pipeline will use this as the parent directory for a folder named ``sample-name``)

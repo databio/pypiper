@@ -54,7 +54,8 @@ Contents
    faq.rst
    changelog.rst
    support.rst
-   GitHub <http://github.com/epigen/pypiper>
+   contributing.rst
+   GitHub <http://github.com/databio/pypiper>
 
 
 

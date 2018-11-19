@@ -1,6 +1,19 @@
 Changelog
 ******************************
 
+- **v0.9.0** (*2018-11-19*):
+
+    - Use ``psutil`` to track aggregate memory usage for processes that spawn
+    children. This results in accurate memory records for these processes.
+
+    - Individual commands in a string of commands connected by shell pipes are
+    now treated as individual commands, and and monitored individually for
+    time and memory, and if a single component, fails, the entire string will
+    fail. Previously, only the final return command was recorded, as in ``bash``.
+
+    - Various other small improvements (like waiting checking for dynamic recover
+    flags)
+
 
 - **v0.8.1** (*2018-09-20*):
 

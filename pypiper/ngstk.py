@@ -557,9 +557,16 @@ class NGSTk(_AttributeDict):
                     self.make_sure_path_exists(fastqc_folder)
                 cmd = self.fastqc(trimmed_fastq, fastqc_folder)
                 self.pm.run(cmd, lock_name="trimmed_fastqc", nofail=True)
+                fname, ext = os.path.splitext(os.path.basename(trimmed_fastq))
+                fastqc_html = os.path.join(fastqc_folder, fname + "_fastqc.html")
+                self.pm.report_object("FastQC report r1", fastqc_html)
+
                 if paired_end and trimmed_fastq_R2:
                     cmd = self.fastqc(trimmed_fastq_R2, fastqc_folder)
                     self.pm.run(cmd, lock_name="trimmed_fastqc_R2", nofail=True)
+                    fname, ext = os.path.splitext(os.path.basename(trimmed_fastq_R2))
+                    fastqc_html = os.path.join(fastqc_folder, fname + "_fastqc.html")
+                    self.pm.report_object("FastQC report r2", fastqc_html)
 
         return temp_func
 
@@ -662,7 +669,7 @@ class NGSTk(_AttributeDict):
         For compressed files.
         :param file: file_name
         """
-        x = subprocess.check_output("zcat " + file_name + " | wc -l | cut -f1 -d' '", shell=True)
+        x = subprocess.check_output("gunzip -c " + file_name + " | wc -l | cut -f1 -d' '", shell=True)
         return x
 
     def get_chrs_from_bam(self, file_name):
@@ -915,7 +922,7 @@ class NGSTk(_AttributeDict):
 
     def fastqc(self, file, output_dir):
         """
-        Create command to run fastqc on a BAM file (or FASTQ file, right?)
+        Create command to run fastqc on a FASTQ file
 
         :param str file: Path to file with sequencing reads
         :param str output_dir: Path to folder in which to place output

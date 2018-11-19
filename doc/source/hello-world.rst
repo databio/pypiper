@@ -3,7 +3,7 @@
 |logo| Installing and Hello World
 ==============================
 
-Release versions are hosted on  `pypi (under the name piper) <https://pypi.org/project/piper/>`_, and posted on the GitHub `releases page <https://github.com/epigen/pypiper/releases>`_. Install directly using pip:
+Release versions are hosted on  `pypi (under the name piper) <https://pypi.org/project/piper/>`_, and posted on the GitHub `releases page <https://github.com/databio/pypiper/releases>`_. Install directly using pip:
 
 .. code-block:: bash
 
@@ -24,7 +24,7 @@ Now, to test pypiper, follow the commands in the ``Hello, Pypiper!`` tutorial: j
 	pip install --user piper
 
 	# download hello_pypiper.py
-	wget https://raw.githubusercontent.com/epigen/pypiper/master/example_pipelines/hello_pypiper.py
+	wget https://raw.githubusercontent.com/databio/pypiper/master/example_pipelines/hello_pypiper.py
 	
 	# Run it:
 	python hello_pypiper.py

@@ -10,6 +10,7 @@ import unittest
 
 import pypiper
 from pypiper.utils import pipeline_filepath
+from pypiper.exceptions import SubprocessError
 
 
 __author__ = "Nathan Sheffield"
@@ -246,7 +247,7 @@ class PipelineManagerTests(unittest.TestCase):
         self.pp.callprint(cmd, nofail=True)
 
         # Should raise an error
-        with self.assertRaises(OSError):
+        with self.assertRaises(SubprocessError):
             self.pp.run(cmd, target=None, lock_name="badcommand")
 
         print("Test dynamic recovery...")
