@@ -1,6 +1,21 @@
 Changelog
 ******************************
 
+- **v0.9.** (*2018-11-19*):
+
+    - Use ``psutil`` to track aggregate memory usage for processes that spawn children
+
+    - Implement pipes in python so that individual commands in a series of shell 
+      pipes that fail will now also halt the pipeline, instead of proceeding
+      with potentially bad files.
+
+    - Various other small improvements (like waiting checking for dynamic recover
+      flags)
+    
+    - Improved the ``run`` waiting method to immediately stop upon job
+      completion, rather than minute-increment polling. This should improve
+      performance particularly in pipelines with many, medium-runtime steps, and
+      improve accuracy of timing profiles.
 
 - **v0.8.1** (*2018-09-20*):
 
