@@ -612,7 +612,7 @@ class PipelineManager(object):
 
         # If the target is a list, for now let's just strip it to the first target.
         # Really, it should just check for all of them.
-        if type(target) == list:
+        if isinstance(target, list):
             target = target[0]
             #primary_target = target[0]
         # Create lock file:
@@ -632,7 +632,7 @@ class PipelineManager(object):
         # TODO: maybe output a message if when repeatedly going through the loop
 
         # Decide how to do follow-up.
-        if follow is None:
+        if not follow:
             call_follow = lambda: None
         elif not hasattr(follow, "__call__"):
             # Warn about non-callable argument to follow-up function.
