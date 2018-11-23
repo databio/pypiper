@@ -21,6 +21,11 @@ import subprocess
 import sys
 import time
 
+if sys.version_info < (3, 3):
+    from collections import Sequence
+else:
+    from collections.abc import Sequence
+
 from .AttributeDict import AttributeDict
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
@@ -612,7 +617,7 @@ class PipelineManager(object):
 
         # If the target is a list, for now let's just strip it to the first target.
         # Really, it should just check for all of them.
-        if isinstance(target, list):
+        if isinstance(target, Sequence):
             target = target[0]
             #primary_target = target[0]
         # Create lock file:
