@@ -558,8 +558,8 @@ class PipelineManager(object):
 
         :param cmd: Shell command(s) to be run.
         :type cmd: str or list
-        :param target: Output file to be produced. Optional.
-        :type target: str or None
+        :param target: Output file(s) to produce, optional
+        :type target: None or str or Sequence of str
         :param lock_name: Name of lock file. Optional.
         :type lock_name: str or None
         :param shell: If command requires should be run in its own shell.
