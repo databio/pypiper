@@ -21,17 +21,13 @@ import subprocess
 import sys
 import time
 
-if sys.version_info < (3, 3):
-    from collections import Sequence
-else:
-    from collections.abc import Sequence
-
 from .AttributeDict import AttributeDict
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
     check_shell, check_shell_pipes, checkpoint_filepath, clear_flags, flag_name, \
-    make_lock_name, pipeline_filepath, CHECKPOINT_SPECIFICATIONS, split_by_pipes
+    is_multi_target, make_lock_name, pipeline_filepath, \
+    CHECKPOINT_SPECIFICATIONS, split_by_pipes
 from ._version import __version__
 import __main__
 
@@ -617,7 +613,7 @@ class PipelineManager(object):
 
         # If the target is a list, for now let's just strip it to the first target.
         # Really, it should just check for all of them.
-        if isinstance(target, Sequence):
+        if is_multi_target(target):
             target = target[0]
             #primary_target = target[0]
         # Create lock file:
