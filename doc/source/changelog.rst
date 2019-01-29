@@ -1,5 +1,10 @@
 Changelog
 ******************************
+- **v0.9.1** (*2019-01-29*):
+
+    - Fixed a bug in NGSTk that caused errors for read counting functions on 
+    MACOS. MACOS ``wc`` returns leading whitespace, which caused these functions
+    to fail.
 
 - **v0.9.0** (*2018-11-19*):
 
