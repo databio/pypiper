@@ -655,22 +655,22 @@ class NGSTk(_AttributeDict):
 
     def count_lines(self, file_name):
         """
-        Uses the command-line utility wc to count the number of lines in a file.
+        Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
 
         :param file_name: name of file whose lines are to be counted
         :type file_name: str
         """
-        x = subprocess.check_output("wc -l " + file_name + " | cut -f1 -d' '", shell=True)
-        return x
+        x = subprocess.check_output("wc -l " + file_name + " | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
+        return x.strip()
 
     def count_lines_zip(self, file_name):
         """
-        Uses the command-line utility wc to count the number of lines in a file.
+        Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
         For compressed files.
         :param file: file_name
         """
-        x = subprocess.check_output("gunzip -c " + file_name + " | wc -l | cut -f1 -d' '", shell=True)
-        return x
+        x = subprocess.check_output("gunzip -c " + file_name + " | wc -l | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
+        return x.strip()
 
     def get_chrs_from_bam(self, file_name):
         """
@@ -701,10 +701,10 @@ class NGSTk(_AttributeDict):
         if file_name.endswith("bam"):
             param = ""
         if paired_end:
-            r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
-            r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
+            r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
         else:
-            r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
+            r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
             r2 = 0
         return int(r1) + int(r2)
 
@@ -733,11 +733,11 @@ class NGSTk(_AttributeDict):
         else:
             raise ValueError("Not a SAM or BAM: '{}'".format(file_name))
 
-        if paired_end:
-            r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
-            r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
+        if paired_end: 
+            r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
         else:
-            r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
+            r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
             r2 = 0
 
         return int(r1) + int(r2)
@@ -867,7 +867,8 @@ class NGSTk(_AttributeDict):
         :type aligned_bam: str
         """
         cmd = self.tools.samtools + " view " + aligned_bam + " | "
-        cmd += "grep 'YT:Z:CP'" + " | uniq -u | wc -l"
+        cmd += "grep 'YT:Z:CP'" + " | uniq -u | wc -l | sed -E 's/^[[:space:]]+//'"
+        
         return subprocess.check_output(cmd, shell=True)
 
 
