@@ -26,7 +26,8 @@ from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
     check_shell, check_shell_pipes, checkpoint_filepath, clear_flags, flag_name, \
-    make_lock_name, pipeline_filepath, CHECKPOINT_SPECIFICATIONS, split_by_pipes
+    is_multi_target, make_lock_name, pipeline_filepath, \
+    CHECKPOINT_SPECIFICATIONS, split_by_pipes
 from ._version import __version__
 import __main__
 
@@ -553,8 +554,8 @@ class PipelineManager(object):
 
         :param cmd: Shell command(s) to be run.
         :type cmd: str or list
-        :param target: Output file to be produced. Optional.
-        :type target: str or None
+        :param target: Output file(s) to produce, optional
+        :type target: None or str or Sequence of str
         :param lock_name: Name of lock file. Optional.
         :type lock_name: str or None
         :param shell: If command requires should be run in its own shell.
@@ -612,7 +613,7 @@ class PipelineManager(object):
 
         # If the target is a list, for now let's just strip it to the first target.
         # Really, it should just check for all of them.
-        if isinstance(target, list):
+        if is_multi_target(target):
             target = target[0]
             #primary_target = target[0]
         # Create lock file:
@@ -1171,7 +1172,7 @@ class PipelineManager(object):
             relative_anchor_image = os.path.relpath(anchor_image, self.outfolder) \
                 if os.path.isabs(anchor_image) else anchor_image
         else:
-            relative_anchor_image = ""
+            relative_anchor_image = "None"
 
 
         message_raw = "{key}\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
