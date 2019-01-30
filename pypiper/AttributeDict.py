@@ -46,7 +46,8 @@ class AttributeDict(object):
         if name in self.__dict__.keys():
             return self.name
         else:
-            if self.return_defaults:
+            if self.return_defaults and not \
+                    (name.startswith("__") and name.endswith("__")):
                 # If this object has default mode on, then we should
                 # simply return the name of the requested attribute as
                 # a default, if no attribute with that name exists.

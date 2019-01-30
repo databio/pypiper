@@ -1,5 +1,9 @@
 Changelog
 ******************************
+- **v0.9.2** (*2019-01-30*):
+
+    - Never echo protected-looking attribute request.
+
 - **v0.9.1** (*2019-01-29*):
 
     - Fixed a bug in NGSTk that caused errors for read counting functions on 
