@@ -1,5 +1,17 @@
 Changelog
 ******************************
+- **v0.9.4** (*2019-01-31*):
+
+    - Point release to PyPI for README rendering.
+
+- **v0.9.3** (*2019-01-31*):
+
+    - Simple point release update to fix PyPI landing page.
+
+- **v0.9.2** (*2019-01-30*):
+
+    - Never echo protected-looking attribute request.
+
 - **v0.9.1** (*2019-01-29*):
 
     - Fixed a bug in NGSTk that caused errors for read counting functions on 

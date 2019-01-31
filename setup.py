@@ -59,6 +59,7 @@ setup(
     version=version,
     description='A lightweight python toolkit for gluing together restartable, robust command line pipelines',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
