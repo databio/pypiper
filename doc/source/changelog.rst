@@ -1,5 +1,9 @@
 Changelog
 ******************************
+- **v0.9.3** (*2019-01-31*):
+
+    - Simple point release update to fix PyPI landing page.
+
 - **v0.9.2** (*2019-01-30*):
 
     - Never echo protected-looking attribute request.
