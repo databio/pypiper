@@ -1,3 +1,2 @@
-twine>=1.12
 readme_renderer[md]
-
+twine>=1.12
