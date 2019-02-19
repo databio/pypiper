@@ -21,7 +21,7 @@ import subprocess
 import sys
 import time
 
-from .AttributeDict import AttributeDict
+from attmap import AttMapEcho
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
@@ -286,7 +286,7 @@ class PipelineManager(object):
                 # later to pass to, for example, toolkits
                 import yaml
                 config = yaml.load(conf)
-                self.config = AttributeDict(config, default=True)
+                self.config = AttMapEcho(config)
         else:
             print("No config file")
             self.config = None
