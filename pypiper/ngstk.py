@@ -4,17 +4,17 @@ import os
 import re
 import subprocess
 import errno
-from .AttributeDict import AttributeDict as _AttributeDict
+from attmap import AttMapEcho
 from .exceptions import UnsupportedFiletypeException
 from .utils import is_fastq, is_gzipped_fastq, is_sam_or_bam
 
 
 
-class NGSTk(_AttributeDict):
+class NGSTk(AttMapEcho):
     """
     Class to hold functions to build command strings used during pipeline runs.
     Object can be instantiated with a string of a path to a yaml `pipeline config file`.
-    Since NGSTk inherits from `AttributeDict`, the passed config file and its elements
+    Since NGSTk inherits from `AttMapEcho`, the passed config file and its elements
     will be accessible through the NGSTk object as attributes under `config` (e.g.
     `NGSTk.tools.java`). In case no `config_file` argument is passed, all commands will
     be returned assuming the tool is in the user's $PATH.
@@ -46,29 +46,29 @@ class NGSTk(_AttributeDict):
         # self.add_entries(**config)
 
         if config_file is None:
-            super(NGSTk, self).__init__({}, default=True)
+            super(NGSTk, self).__init__()
         else:
             import yaml
             with open(config_file, 'r') as config_file:
                 config = yaml.load(config_file)
-            super(NGSTk, self).__init__(config, default=True)
+            super(NGSTk, self).__init__(config)
 
         # Keep a link to the pipeline manager, if one is provided.
-        # if None is provided, instantiate "tools" and "parameters" with empty AttributeDicts
+        # if None is provided, instantiate "tools" and "parameters" with empty AttMaps
         # this allows the usage of the same code for a command with and without using a pipeline manager
         if pm is not None:
             self.pm = pm
             if hasattr(pm.config, "tools"):
                 self.tools = self.pm.config.tools
             else:
-                self.tools = _AttributeDict(dict(), default=True)   
+                self.tools = AttMapEcho()
             if hasattr(pm.config, "parameters"):
                 self.parameters = self.pm.config.parameters
             else:
-                self.parameters = _AttributeDict(dict(), default=True)  
+                self.parameters = AttMapEcho()
         else:
-            self.tools = _AttributeDict(dict(), default=True)
-            self.parameters = _AttributeDict(dict(), default=True)
+            self.tools = AttMapEcho()
+            self.parameters = AttMapEcho()
 
         # If pigz is available, use that. Otherwise, default to gzip.
         if hasattr(self.pm, "cores") and self.pm.cores > 1 and self.check_command("pigz"):
