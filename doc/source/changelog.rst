@@ -1,5 +1,9 @@
 Changelog
 ******************************
+- **v0.10.0** (*Unreleased*):
+
+    - Fixed a bug that raised exception with empty commands
+
 - **v0.9.4** (*2019-01-31*):
 
     - Point release to PyPI for README rendering.

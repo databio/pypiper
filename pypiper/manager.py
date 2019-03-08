@@ -1228,9 +1228,9 @@ class PipelineManager(object):
 
         :type cmd: str
         """
-        print("\n> `" + cmd + "`\n")
+        print("\n> `" + str(cmd) + "`\n")
         with open(self.pipeline_commands_file, "a") as myfile:
-            myfile.write(cmd + "\n\n")
+            myfile.write(str(cmd) + "\n\n")
 
 
     ###################################
