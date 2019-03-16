@@ -19,12 +19,10 @@ class NGSTk(_AttributeDict):
     `NGSTk.tools.java`). In case no `config_file` argument is passed, all commands will
     be returned assuming the tool is in the user's $PATH.
 
-    :param config_file: Path to pipeline yaml config file (optional).
-    :type config_file: str
-    :param pm: A PipelineManager with which to associate this toolkit instance;
+    :param str config_file: Path to pipeline yaml config file (optional).
+    :param pypiper.PipelineManager pm: A PipelineManager with which to associate this toolkit instance;
         that is, essentially a source from which to grab paths to tools,
         resources, etc.
-    :type pm: pypiper.PipelineManager
 
     :Example:
 
