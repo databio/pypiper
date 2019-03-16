@@ -45,9 +45,8 @@ class Stage(object):
         """
         Determine the checkpoint name for this Stage.
 
-        :return: Checkpoint name for this stage; null if this Stage is
-            designated as a non-checkpoint.
-        :rtype: str | NoneType
+        :return str | NoneType: Checkpoint name for this stage; null if this
+            Stage is designated as a non-checkpoint.
         """
         return translate_stage_name(self.name) if self.checkpoint else None
 

@@ -101,8 +101,7 @@ class NGSTk(AttMapEcho):
         """
         Forge path to directory, creating intermediates as needed.
 
-        :param path: Path to create.
-        :type path: str
+        :param str path: Path to create.
         """
         try:
             os.makedirs(path)
@@ -137,8 +136,7 @@ class NGSTk(AttMapEcho):
         """
         Get size of all files in string (space-separated) in megabytes (Mb).
 
-        :param filenames: a space-separated string of filenames
-        :type filenames: str
+        :param str filenames: a space-separated string of filenames
         """
         # use (1024 ** 3) for gigabytes
         # equivalent to: stat -Lc '%s' filename
@@ -271,16 +269,14 @@ class NGSTk(AttMapEcho):
         either .bam, .fastq, or .fastq.gz files into a local file; merging those
         if multiple files given.
 
-        :param input_args: This is a list of arguments, each one is a class of
-            inputs (which can in turn be a string or a list). Typically, input_args
-            is a list with 2 elements: first a list of read1 files; second
-            an (optional!) list of read2 files.
-        :type input_args: list
-        :param raw_folder: Name/path of folder for the merge/link.
-        :type raw_folder: str
-        :param local_base: Usually the sample name. This (plus file extension) will
-            be the name of the local file linked (or merged) by this function.
-        :type local_base: str
+        :param list input_args: This is a list of arguments, each one is a
+            class of inputs (which can in turn be a string or a list).
+            Typically, input_args is a list with 2 elements: first a list of
+            read1 files; second an (optional!) list of read2 files.
+        :param str raw_folder: Name/path of folder for the merge/link.
+        :param str local_base: Usually the sample name. This (plus file
+            extension) will be the name of the local file linked (or merged)
+            by this function.
         """
         self.make_sure_path_exists(raw_folder)
 
@@ -389,10 +385,8 @@ class NGSTk(AttMapEcho):
 
         It will place the output fastq file in given `fastq_folder`.
 
-        :param input_file: filename of the input you want to convert to fastq
-        :type input_file: string
-
-        :returns: A command (to be run with PipelineManager) that will ensure
+        :param str input_file: filename of input you want to convert to fastq
+        :return str: A command (to be run with PipelineManager) that will ensure
             your fastq file exists.
         """
 
@@ -519,17 +513,14 @@ class NGSTk(AttMapEcho):
         This is useful to construct an argument for the 'follow' parameter of
         a PipelineManager's 'run' method.
 
-        :param trimmed_fastq: Path to trimmed reads file.
-        :type trimmed_fastq: str
-        :param paired_end: Whether the processing is being done with
+        :param str trimmed_fastq: Path to trimmed reads file.
+        :param bool paired_end: Whether the processing is being done with
             paired-end sequencing data.
-        :type paired_end: bool
-        :param trimmed_fastq_R2: Path to read 2 file for the paired-end case.
-        :type trimmed_fastq_R2: str
-        :param fastqc_folder: Path to folder within which to place fastqc
+        :param str trimmed_fastq_R2: Path to read 2 file for the paired-end case.
+        :param str fastqc_folder: Path to folder within which to place fastqc
             output files; if unspecified, fastqc will not be run.
-        :return: Function to evaluate read trimming and possibly run fastqc.
-        :rtype: callable
+        :return callable: Function to evaluate read trimming and possibly run
+            fastqc.
         """
 
         def temp_func():
@@ -573,10 +564,8 @@ class NGSTk(AttMapEcho):
         """
         Wrapper for Picard's ValidateSamFile.
 
-        :param input_bam: Path to file to validate.
-        :type input_bam: str
-        :return: Command to run for the validation.
-        :rtype: str
+        :param str input_bam: Path to file to validate.
+        :return str: Command to run for the validation.
         """
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
         cmd += " -jar " + self.tools.picard + " ValidateSamFile"
@@ -591,14 +580,10 @@ class NGSTk(AttMapEcho):
         The tmp_dir parameter is important because on poorly configured
         systems, the default can sometimes fill up.
 
-        :param input_bams: Paths to files to combine
-        :type input_bams: Iterable[str]
-        :param merged_bam: Path to which to write combined result.
-        :type merged_bam: str
-        :param in_sorted: Whether the inputs are sorted
-        :type in_sorted: bool | str
-        :param tmp_dir: Path to temporary directory.
-        :type tmp_dir: str
+        :param Iterable[str] input_bams: Paths to files to combine
+        :param str merged_bam: Path to which to write combined result.
+        :param bool | str in_sorted: Whether the inputs are sorted
+        :param str tmp_dir: Path to temporary directory.
         """
         if not len(input_bams) > 1:
             print("No merge required")
@@ -655,8 +640,7 @@ class NGSTk(AttMapEcho):
         """
         Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
 
-        :param file_name: name of file whose lines are to be counted
-        :type file_name: str
+        :param str file_name: name of file whose lines are to be counted
         """
         x = subprocess.check_output("wc -l " + file_name + " | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
         return x.strip()
@@ -713,12 +697,9 @@ class NGSTk(AttMapEcho):
         number of mapped reads, counting each read only once, even if it appears
         mapped at multiple locations.
 
-        :param file_name: name of reads file
-        :type file_name: str
-        :param paired_end: True/False paired end data
-        :type paired_end: bool
-        :return: Number of uniquely mapped reads.
-        :rtype: int
+        :param str file_name: name of reads file
+        :param bool paired_end: True/False paired end data
+        :return int: Number of uniquely mapped reads.
         """
 
         _, ext = os.path.splitext(file_name)
@@ -745,15 +726,12 @@ class NGSTk(AttMapEcho):
         """
         Counts the number of reads with the specified flag.
 
-        :param file_name: name of reads file
-        :type file_name: str
-        :param flag: sam flag value to be read
-        :type flag: str
-        :param paired_end: This parameter is ignored; samtools automatically correctly responds depending
+        :param str file_name: name of reads file
+        :param str flag: sam flag value to be read
+        :param bool paired_end: This parameter is ignored; samtools automatically correctly responds depending
             on the data in the bamfile. We leave the option here just for consistency, since all the other
             counting functions require the parameter. This makes it easier to swap counting functions during
             pipeline development.
-        :type paired_end: bool
         """
 
         param = " -c -f" + str(flag)
@@ -769,8 +747,7 @@ class NGSTk(AttMapEcho):
         will count those more than once. This function is for software that randomly assigns,
         but flags reads as multimappers.
 
-        :param file_name: name of reads file
-        :type file_name: str
+        :param str file_name: name of reads file
         :param paired_end: This parameter is ignored; samtools automatically correctly responds depending
             on the data in the bamfile. We leave the option here just for consistency, since all the other
             counting functions require the parameter. This makes it easier to swap counting functions during
@@ -783,10 +760,8 @@ class NGSTk(AttMapEcho):
         """
         Counts the number of reads that mapped to a unique position.
 
-        :param file_name: name of reads file
-        :type file_name: str
-        :param paired_end: This parameter is ignored.
-        :type paired_end: bool
+        :param str file_name: name of reads file
+        :param bool paired_end: This parameter is ignored.
         """
         param = " -c -F256"
         if file_name.endswith("sam"):
@@ -811,13 +786,10 @@ class NGSTk(AttMapEcho):
 
         This is used internally to implement the various count_reads functions.
 
-        :param file_name: file_name
-        :type file_name: str
-        :param param: String of parameters to pass to samtools view
-        :type param: str
-        :param postpend: String to append to the samtools command;
+        :param str file_name: file_name
+        :param str param: String of parameters to pass to samtools view
+        :param str postpend: String to append to the samtools command;
             useful to add cut, sort, wc operations to the samtools view output.
-        :type postpend: str
         """
         cmd = "{} view {} {} {}".format(
                 self.tools.samtools, param, file_name, postpend)
@@ -834,10 +806,8 @@ class NGSTk(AttMapEcho):
         This will thus give an incorrect result if your paired-end fastq files
         are in only a single file (you must divide by 2 again).
 
-        :param file_name: Name/path of file whose reads are to be counted.
-        :type file_name: str
-        :param paired_end: Whether the file contains paired-end reads.
-        :type paired_end: bool
+        :param str file_name: Name/path of file whose reads are to be counted.
+        :param bool paired_end: Whether the file contains paired-end reads.
         """
 
         _, ext = os.path.splitext(file_name)
@@ -861,8 +831,7 @@ class NGSTk(AttMapEcho):
         """
         Count only reads that "aligned concordantly exactly 1 time."
 
-        :param aligned_bam: File for which to count mapped reads.
-        :type aligned_bam: str
+        :param str aligned_bam: File for which to count mapped reads.
         """
         cmd = self.tools.samtools + " view " + aligned_bam + " | "
         cmd += "grep 'YT:Z:CP'" + " | uniq -u | wc -l | sed -E 's/^[[:space:]]+//'"
@@ -876,15 +845,12 @@ class NGSTk(AttMapEcho):
         and therefore, doesn't require a paired-end parameter because it only uses samtools view.
         Therefore, it's ok that it has a default parameter, since this is discarded.
 
-        :param file_name: File for which to count mapped reads.
-        :type file_name: str
-        :param paired_end: This parameter is ignored; samtools automatically correctly responds depending
+        :param str file_name: File for which to count mapped reads.
+        :param bool paired_end: This parameter is ignored; samtools automatically correctly responds depending
             on the data in the bamfile. We leave the option here just for consistency, since all the other
             counting functions require the parameter. This makes it easier to swap counting functions during
             pipeline development.
-        :type paired_end: bool
-        :return: Either return code from samtools view command, or -1 to indicate an error state.
-        :rtype: int
+        :return int: Either return code from samtools view command, or -1 to indicate an error state.
         """
         if file_name.endswith("bam"):
             return self.samtools_view(file_name, param="-c -F4")
@@ -896,7 +862,8 @@ class NGSTk(AttMapEcho):
     def sam_conversions(self, sam_file, depth=True):
         """
         Convert sam files to bam files, then sort and index them for later use.
-        :param depth: also calculate coverage over each position
+
+        :param bool depth: also calculate coverage over each position
         """
         cmd = self.tools.samtools + " view -bS " + sam_file + " > " + sam_file.replace(".sam", ".bam") + "\n"
         cmd += self.tools.samtools + " sort " + sam_file.replace(".sam", ".bam") + " -o " + sam_file.replace(".sam", "_sorted.bam") + "\n"
@@ -909,7 +876,8 @@ class NGSTk(AttMapEcho):
     def bam_conversions(self, bam_file, depth=True):
         """
         Sort and index bam files for later use.
-        :param depth: also calculate coverage over each position
+
+        :param bool depth: also calculate coverage over each position
         """
         cmd = self.tools.samtools + " view -h " + bam_file + " > " + bam_file.replace(".bam", ".sam") + "\n"
         cmd += self.tools.samtools + " sort " + bam_file + " -o " + bam_file.replace(".bam", "_sorted.bam") + "\n"
@@ -949,17 +917,13 @@ class NGSTk(AttMapEcho):
         it's executed; the second moves the output files to the output
         folder for the sample indicated.
 
-        :param input_bam: Path to file for which to run fastqc.
-        :type input_bam: str
-        :param output_dir: Path to folder in which fastqc output will be
+        :param str input_bam: Path to file for which to run fastqc.
+        :param str output_dir: Path to folder in which fastqc output will be
             written, and within which the sample's output folder lives.
-        :type output_dir: str
-        :param sample_name: Sample name, which determines subfolder within
+        :param str sample_name: Sample name, which determines subfolder within
             output_dir for the fastqc files.
-        :type sample_name: str
-        :return: Pair of commands, to run fastqc and then move the files to
+        :return list[str]: Pair of commands, to run fastqc and then move the files to
             their intended destination based on sample name.
-        :rtype: list[str]
         """
         cmds = list()
         initial = os.path.splitext(os.path.basename(input_bam))[0]
@@ -1203,16 +1167,11 @@ class NGSTk(AttMapEcho):
         """
         Run the SPP read peak analysis tool.
 
-        :param input_bam: Path to reads file
-        :type input_bam: str
-        :param output: Path to output file
-        :type output: str
-        :param plot: Path to plot file
-        :type plot: str
-        :param cpus: Number of processors to use
-        :type cpus: int
-        :return: Command with which to run SPP
-        :rtype: str
+        :param str input_bam: Path to reads file
+        :param str output: Path to output file
+        :param str plot: Path to plot file
+        :param int cpus: Number of processors to use
+        :return str: Command with which to run SPP
         """
         base = "{} {} -rf -savp".format(self.tools.Rscript, self.tools.spp)
         cmd = base + " -savp={} -s=0:5:500 -c={} -out={} -p={}".format(
@@ -1462,14 +1421,10 @@ class NGSTk(AttMapEcho):
         regions define the operation that will be performed. Thread count
         for samtools can be specified as well.
 
-        :param input_bam: sequencing reads file
-        :type input_bam: str
-        :param input_bed: file with called peak regions
-        :type input_bed: str
-        :param threads: number of threads samtools may use
-        :type threads: int
-        :return: fraction of reads in peaks defined in the given peaks file
-        :rtype: float
+        :param str input_bam: sequencing reads file
+        :param str input_bed: file with called peak regions
+        :param int threads: number of threads samtools may use
+        :return float: fraction of reads in peaks defined in given peaks file
         """
         cmd = self.simple_frip(input_bam, input_bed, threads)
         return subprocess.check_output(cmd.split(" "), shell=True)
@@ -1497,35 +1452,26 @@ class NGSTk(AttMapEcho):
         """
         Use MACS2 to call peaks.
 
-        :param treatment_bams: Paths to files with data to regard as treatment.
-        :type treatment_bams: str | Iterable[str]
-        :param output_dir: Path to output folder.
-        :type output_dir: str
-        :param sample_name: Name for the sample involved.
-        :type sample_name: str
-        :param genome: Name of the genome assembly to use.
-        :type genome: str
-        :param control_bams: Paths to files with data to regard as control
-        :type control_bams: str | Iterable[str]
-        :param broad: Whether to do broad peak calling.
-        :type broad: bool
-        :param paired: Whether reads are paired-end
-        :type paired: bool
-        :param pvalue: Statistical significance measure to pass as --pvalue to
-            peak calling with MACS
-        :type pvalue: NoneType | float
-        :param qvalue: Statistical significance measure to pass as --qvalue to
-            peak calling with MACS
-        :type qvalue: NoneType | float
-        :param include_significance: Whether to pass a statistical significance
-            argument to peak calling with MACS; if omitted, this will be
-            True if the peak calling is broad or if either p-value or
-            q-value is specified; default significance specification is a
-            p-value of 0.001 if a significance is to be specified but no
-            value is provided for p-value or q-value.
-        :type include_significance: NoneType | bool
-        :return: Command to run.
-        :rtype: str
+        :param str | Iterable[str] treatment_bams: Paths to files with data to
+            regard as treatment.
+        :param str output_dir: Path to output folder.
+        :param str sample_name: Name for the sample involved.
+        :param str genome: Name of the genome assembly to use.
+        :param str | Iterable[str] control_bams: Paths to files with data to
+            regard as control
+        :param bool broad: Whether to do broad peak calling.
+        :param bool paired: Whether reads are paired-end
+        :param float | NoneType pvalue: Statistical significance measure to
+            pass as --pvalue to peak calling with MACS
+        :param float | NoneType qvalue: Statistical significance measure to
+            pass as --qvalue to peak calling with MACS
+        :param bool | NoneType include_significance: Whether to pass a
+            statistical significance argument to peak calling with MACS; if
+            omitted, this will be True if the peak calling is broad or if
+            either p-value or q-value is specified; default significance
+            specification is a p-value of 0.001 if a significance is to be
+            specified but no value is provided for p-value or q-value.
+        :return str: Command to run.
         """
         sizes = {"hg38": 2.7e9, "hg19": 2.7e9, "mm10": 1.87e9, "dr7": 1.412e9, "mm9": 1.87e9}
 
@@ -1584,24 +1530,15 @@ class NGSTk(AttMapEcho):
         """
         Build command for R script to call peaks with SPP.
 
-        :param treatment_bam: Path to file with data for treatment sample.
-        :type treatment_bam: str
-        :param control_bam: Path to file with data for control sample.
-        :type control_bam: str
-        :param treatment_name: Name for the treatment sample.
-        :type treatment_name: str
-        :param control_name: Name for the control sample.
-        :type control_name: str
-        :param output_dir: Path to folder for output.
-        :type output_dir: str
-        :param broad: Whether to specify broad peak calling mode.
-        :type broad: str | bool
-        :param cpus: Number of cores the script may use.
-        :type cpus: int
-        :param qvalue: FDR, as decimal value
-        :type qvalue: float
-        :return: Command to run.
-        :rtype: str
+        :param str treatment_bam: Path to file with data for treatment sample.
+        :param str control_bam: Path to file with data for control sample.
+        :param str treatment_name: Name for the treatment sample.
+        :param str control_name: Name for the control sample.
+        :param str output_dir: Path to folder for output.
+        :param str | bool broad: Whether to specify broad peak calling mode.
+        :param int cpus: Number of cores the script may use.
+        :param float qvalue: FDR, as decimal value
+        :return str: Command to run.
         """
         broad = "TRUE" if broad else "FALSE"
         cmd = self.tools.Rscript + " `which spp_peak_calling.R` {0} {1} {2} {3} {4} {5} {6}".format(
@@ -1646,12 +1583,9 @@ class NGSTk(AttMapEcho):
     def get_read_type(self, bam_file, n=10):
         """
         Gets the read type (single, paired) and length of bam file.
-        :param bam_file: Bam file to determine read attributes.
-        :type bam_file: str
-        :param n: Number of lines to read from bam file.
-        :type n: int
-        :returns: tuple of (read_type=string, read_length=int).
-        :rtype: tuple
+        :param str bam_file: Bam file to determine read attributes.
+        :param int n: Number of lines to read from bam file.
+        :return str, int: tuple of read type and read length
         """
         from collections import Counter
         try:
@@ -1682,8 +1616,7 @@ class NGSTk(AttMapEcho):
     def parse_bowtie_stats(self, stats_file):
         """
         Parses Bowtie2 stats file, returns series with values.
-        :param stats_file: Bowtie2 output file with alignment statistics.
-        :type stats_file: str
+        :param str  stats_file: Bowtie2 output file with alignment statistics.
         """
         import pandas as pd
         stats = pd.Series(index=["readCount", "unpaired", "unaligned", "unique", "multiple", "alignmentRate"])
@@ -1718,8 +1651,8 @@ class NGSTk(AttMapEcho):
     def parse_duplicate_stats(self, stats_file):
         """
         Parses sambamba markdup output, returns series with values.
-        :param stats_file: sambamba output file with duplicate statistics.
-        :type stats_file: str
+
+        :param str stats_file: sambamba output file with duplicate statistics.
         """
         import pandas as pd
         series = pd.Series()
@@ -1744,9 +1677,8 @@ class NGSTk(AttMapEcho):
         """
         Parse phantompeakqualtools (spp) QC table and return quality metrics.
 
-        :param qc_file: Path to phantompeakqualtools output file, which
+        :param str qc_file: Path to phantompeakqualtools output file, which
             contains sample quality measurements.
-        :type qc_file: str
         """
         import pandas as pd
         series = pd.Series()
@@ -1764,8 +1696,8 @@ class NGSTk(AttMapEcho):
     def get_peak_number(self, sample):
         """
         Counts number of peaks from a sample's peak file.
-        :param sample: A Sample object with the "peaks" attribute.
-        :type sample: pipelines.Sample
+
+        :param pipelines.Sample sample: Sample object with "peaks" attribute.
         """
         proc = subprocess.Popen(["wc", "-l", sample.peaks], stdout=subprocess.PIPE)
         out, err = proc.communicate()
@@ -1776,8 +1708,8 @@ class NGSTk(AttMapEcho):
     def get_frip(self, sample):
         """
         Calculates the fraction of reads in peaks for a given sample.
-        :param sample: A Sample object with the "peaks" attribute.
-        :type sample: pipelines.Sample
+
+        :param pipelines.Sample sample: Sample object with "peaks" attribute.
         """
         import pandas as pd
         with open(sample.frip, "r") as handle:
