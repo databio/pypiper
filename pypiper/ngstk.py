@@ -4,17 +4,17 @@ import os
 import re
 import subprocess
 import errno
-from .AttributeDict import AttributeDict as _AttributeDict
+from attmap import AttMapEcho
 from .exceptions import UnsupportedFiletypeException
 from .utils import is_fastq, is_gzipped_fastq, is_sam_or_bam
 
 
 
-class NGSTk(_AttributeDict):
+class NGSTk(AttMapEcho):
     """
     Class to hold functions to build command strings used during pipeline runs.
     Object can be instantiated with a string of a path to a yaml `pipeline config file`.
-    Since NGSTk inherits from `AttributeDict`, the passed config file and its elements
+    Since NGSTk inherits from `AttMapEcho`, the passed config file and its elements
     will be accessible through the NGSTk object as attributes under `config` (e.g.
     `NGSTk.tools.java`). In case no `config_file` argument is passed, all commands will
     be returned assuming the tool is in the user's $PATH.
@@ -44,29 +44,29 @@ class NGSTk(_AttributeDict):
         # self.add_entries(**config)
 
         if config_file is None:
-            super(NGSTk, self).__init__({}, default=True)
+            super(NGSTk, self).__init__()
         else:
             import yaml
             with open(config_file, 'r') as config_file:
                 config = yaml.load(config_file)
-            super(NGSTk, self).__init__(config, default=True)
+            super(NGSTk, self).__init__(config)
 
         # Keep a link to the pipeline manager, if one is provided.
-        # if None is provided, instantiate "tools" and "parameters" with empty AttributeDicts
+        # if None is provided, instantiate "tools" and "parameters" with empty AttMaps
         # this allows the usage of the same code for a command with and without using a pipeline manager
         if pm is not None:
             self.pm = pm
             if hasattr(pm.config, "tools"):
                 self.tools = self.pm.config.tools
             else:
-                self.tools = _AttributeDict(dict(), default=True)   
+                self.tools = AttMapEcho()
             if hasattr(pm.config, "parameters"):
                 self.parameters = self.pm.config.parameters
             else:
-                self.parameters = _AttributeDict(dict(), default=True)  
+                self.parameters = AttMapEcho()
         else:
-            self.tools = _AttributeDict(dict(), default=True)
-            self.parameters = _AttributeDict(dict(), default=True)
+            self.tools = AttMapEcho()
+            self.parameters = AttMapEcho()
 
         # If pigz is available, use that. Otherwise, default to gzip.
         if hasattr(self.pm, "cores") and self.pm.cores > 1 and self.check_command("pigz"):
@@ -555,9 +555,16 @@ class NGSTk(_AttributeDict):
                     self.make_sure_path_exists(fastqc_folder)
                 cmd = self.fastqc(trimmed_fastq, fastqc_folder)
                 self.pm.run(cmd, lock_name="trimmed_fastqc", nofail=True)
+                fname, ext = os.path.splitext(os.path.basename(trimmed_fastq))
+                fastqc_html = os.path.join(fastqc_folder, fname + "_fastqc.html")
+                self.pm.report_object("FastQC report r1", fastqc_html)
+
                 if paired_end and trimmed_fastq_R2:
                     cmd = self.fastqc(trimmed_fastq_R2, fastqc_folder)
                     self.pm.run(cmd, lock_name="trimmed_fastqc_R2", nofail=True)
+                    fname, ext = os.path.splitext(os.path.basename(trimmed_fastq_R2))
+                    fastqc_html = os.path.join(fastqc_folder, fname + "_fastqc.html")
+                    self.pm.report_object("FastQC report r2", fastqc_html)
 
         return temp_func
 
@@ -646,22 +653,22 @@ class NGSTk(_AttributeDict):
 
     def count_lines(self, file_name):
         """
-        Uses the command-line utility wc to count the number of lines in a file.
+        Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
 
         :param file_name: name of file whose lines are to be counted
         :type file_name: str
         """
-        x = subprocess.check_output("wc -l " + file_name + " | cut -f1 -d' '", shell=True)
-        return x
+        x = subprocess.check_output("wc -l " + file_name + " | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
+        return x.strip()
 
     def count_lines_zip(self, file_name):
         """
-        Uses the command-line utility wc to count the number of lines in a file.
+        Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
         For compressed files.
         :param file: file_name
         """
-        x = subprocess.check_output("gunzip -c " + file_name + " | wc -l | cut -f1 -d' '", shell=True)
-        return x
+        x = subprocess.check_output("gunzip -c " + file_name + " | wc -l | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
+        return x.strip()
 
     def get_chrs_from_bam(self, file_name):
         """
@@ -692,10 +699,10 @@ class NGSTk(_AttributeDict):
         if file_name.endswith("bam"):
             param = ""
         if paired_end:
-            r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
-            r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
+            r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
         else:
-            r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
+            r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
             r2 = 0
         return int(r1) + int(r2)
 
@@ -724,11 +731,11 @@ class NGSTk(_AttributeDict):
         else:
             raise ValueError("Not a SAM or BAM: '{}'".format(file_name))
 
-        if paired_end:
-            r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
-            r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
+        if paired_end: 
+            r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
         else:
-            r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l ")
+            r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
             r2 = 0
 
         return int(r1) + int(r2)
@@ -858,7 +865,8 @@ class NGSTk(_AttributeDict):
         :type aligned_bam: str
         """
         cmd = self.tools.samtools + " view " + aligned_bam + " | "
-        cmd += "grep 'YT:Z:CP'" + " | uniq -u | wc -l"
+        cmd += "grep 'YT:Z:CP'" + " | uniq -u | wc -l | sed -E 's/^[[:space:]]+//'"
+        
         return subprocess.check_output(cmd, shell=True)
 
 
@@ -913,7 +921,7 @@ class NGSTk(_AttributeDict):
 
     def fastqc(self, file, output_dir):
         """
-        Create command to run fastqc on a BAM file (or FASTQ file, right?)
+        Create command to run fastqc on a FASTQ file
 
         :param str file: Path to file with sequencing reads
         :param str output_dir: Path to folder in which to place output

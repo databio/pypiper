@@ -11,7 +11,9 @@ install:
   - pip install .
   - pip install -r requirements/reqs-ngstk.txt
   - pip install -r requirements/reqs-test.txt
-script: pytest
+script: pytest -v --cov=pypiper
+after_success:
+  - coveralls
 branches:
   only:
     - dev

@@ -430,6 +430,27 @@ def make_lock_name(original_path, path_base_folder):
     return original_path.replace(path_base_folder, "").replace(os.sep, "__")
 
 
+def is_multi_target(target):
+    """
+    Determine if pipeline manager's run target is multiple.
+
+    :param None or str or Sequence of str target: 0, 1, or multiple targets
+    :return bool: Whether there are multiple targets
+    :raise TypeError: if the argument is neither None nor string nor Sequence
+    """
+    if sys.version_info < (3, 3):
+        from collections import Sequence
+    else:
+        from collections.abc import Sequence
+    if target is None or isinstance(target, str):
+        return False
+    elif isinstance(target, Sequence):
+        return len(target) > 1
+    else:
+        raise TypeError("Could not interpret argument as a target: {} ({})".
+                        format(target, type(target)))
+
+
 def parse_cores(cores, pm, default):
     """
     Framework to finalize number of cores for an operation.
