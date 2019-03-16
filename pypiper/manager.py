@@ -552,33 +552,23 @@ class PipelineManager(object):
         is being created. It also records the memory of the process and
         provides some logging output.
 
-        :param cmd: Shell command(s) to be run.
-        :type cmd: str or list
-        :param target: Output file(s) to produce, optional
-        :type target: None or str or Sequence of str
-        :param lock_name: Name of lock file. Optional.
-        :type lock_name: str or None
-        :param shell: If command requires should be run in its own shell.
+        :param str | list[str] cmd: Shell command(s) to be run.
+        :param str | Sequence[str] target: Output file(s) to produce, optional
+        :param str lock_name: Name of lock file. Optional.
+        :param bool shell: If command requires should be run in its own shell.
             Optional. Default: "guess" --will try to determine whether the
             command requires a shell.
-        :type shell: bool
-        :param nofail: Whether the pipeline proceed past a nonzero return from
+        :param bool nofail: Whether the pipeline proceed past a nonzero return from
             a process, default False; nofail can be used to implement
             non-essential parts of the pipeline; if a 'nofail' command fails,
             the pipeline is free to continue execution.
-        :type nofail: bool
-        :param errmsg: Message to print if there's an error.
-        :type errmsg: str
-        :param clean: True means the target file will be automatically added
+        :param str errmsg: Message to print if there's an error.
+        :param bool clean: True means the target file will be automatically added
             to a auto cleanup list. Optional.
-        :type clean: bool
-        :param follow: Function to call after executing (each) command.
-        :type follow: callable
-        :param container: Name for Docker container in which to run commands.
-        :type container: str
-        :return: Return code of process. If a list of commands is passed,
+        :param callable follow: Function to call after executing (each) command.
+        :param str container: Name for Docker container in which to run commands.
+        :return int: Return code of process. If a list of commands is passed,
             this is the maximum of all return codes for all commands.
-        :rtype: int
         """
 
         # If the pipeline's not been started, skip ahead.
@@ -736,20 +726,15 @@ class PipelineManager(object):
         in python corresponding to the return value of the command you call.
         This is equivalent to running subprocess.check_output() 
         instead of subprocess.call().
-        :param cmd: Bash command(s) to be run.
-        :type cmd: str or list
-        :param shell: If command requires should be run in its own shell. Optional.
-        Default: "guess" -- `run()` will
-        try to guess if the command should be run in a shell (based on the 
-        presence of a pipe (|) or redirect (>), To force a process to run as
-        a direct subprocess, set `shell` to False; to force a shell, set True.
-        :type shell: bool
-        :param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
-        Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
-        they will not cause the pipeline to bail out.
-        :type nofail: bool
-        :param errmsg: Message to print if there's an error.
-        :type errmsg: str
+        :param str | Iterable[str] cmd: Bash command(s) to be run.
+        :param bool | str shell: If command requires should be run in its own shell. Optional.
+            Default: "guess" -- `run()` will try to guess if the command should be run in a
+            shell (based on the presence of a pipe (|) or redirect (>), To force a process to
+            run as a direct subprocess, set `shell` to False; to force a shell, set True.
+        :param bool nofail: Should the pipeline bail on a nonzero return from a process? Default: False
+            Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
+            they will not cause the pipeline to bail out.
+        :param str errmsg: Message to print if there's an error.
         """
 
         self._report_command(cmd)
@@ -784,12 +769,10 @@ class PipelineManager(object):
 
         cmd can also be a series (a dict object) of multiple commands, which will be run in succession.
 
-        :param cmd: Bash command(s) to be run.
-        :type cmd: str or list
-        :param nofail: Should the pipeline bail on a nonzero return from a process? Default: False
+        :param str | Iterable[str] cmd: Bash command(s) to be run.
+        :param bool nofail: Should the pipeline bail on a nonzero return from a process? Default: False
             Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
             they will not cause the pipeline to bail out.
-        :type nofail: bool
         :param container: Named Docker container in which to execute.
         :param container: str
         """
@@ -897,8 +880,7 @@ class PipelineManager(object):
         Debug function used in unit tests.
 
         :param p: A subprocess.Popen process.
-        :param shell: If command requires should be run in its own shell. Optional. Default: False.
-        :type shell: bool
+        :param bool shell: If command requires should be run in its own shell. Optional. Default: False.
         """
         local_maxmem = -1
         sleeptime = .5
@@ -928,8 +910,7 @@ class PipelineManager(object):
         """
         Just sleep until the lock_file does not exist or a lock_file-related dynamic recovery flag is spotted
 
-        :param lock_file: Lock file to wait upon.
-        :type lock_file: str
+        :param str lock_file: Lock file to wait upon.
         """
         sleeptime = .5
         first_message_flag = False
@@ -977,17 +958,14 @@ class PipelineManager(object):
         completion of a group of pipeline steps, this call may stop the
         pipeline's execution.
 
-        :param message: Message to timestamp.
-        :type message: str
-        :param checkpoint: Name of checkpoint; this tends to be something
+        :param str message: Message to timestamp.
+        :param str checkpoint: Name of checkpoint; this tends to be something
             that reflects the processing logic about to be or having just been
             completed. Provision of an argument to this parameter means that
             a checkpoint file will be created, facilitating arbitrary starting
             and stopping point for the pipeline as desired.
-        :type checkpoint: str, optional
-        :param finished: Whether this call represents the completion of a
+        :param bool finished: Whether this call represents the completion of a
             conceptual unit of a pipeline's processing
-        :type finished: bool, default False
         :param raise_error: Whether to raise exception if
             checkpoint or current state indicates that a halt should occur.
         """
@@ -1041,8 +1019,7 @@ class PipelineManager(object):
         """
         Returns the number of seconds that have elapsed since the time_since parameter.
 
-        :param time_since: Time as a float given by time.time().
-        :type time_since: float
+        :param float time_since: Time as a float given by time.time().
         """
         return round(time.time() - time_since, 0)
 
@@ -1050,8 +1027,6 @@ class PipelineManager(object):
     def _report_profile(self, command, lock_name, elapsed_time, memory):
         """
         Writes a string to self.pipeline_profile_file.
-
-        :type key: str
         """
         message_raw = str(command) + "\t " + \
             str(lock_name) + "\t" + \
@@ -1066,13 +1041,11 @@ class PipelineManager(object):
         """
         Writes a string to self.pipeline_stats_file.
         
-        :param key: name (key) of the stat
-        :type key: str
-        :param annotation: By default, the stats will be annotated with the pipeline
+        :param str key: name (key) of the stat
+        :param str annotation: By default, the stats will be annotated with the pipeline
             name, so you can tell which pipeline records which stats. If you want, you can
             change this; use annotation='shared' if you need the stat to be used by
             another pipeline (using get_stat()).
-        :type annotation: str
         """
         # Default annotation is current pipeline name.
         annotation = str(annotation or self.name)
@@ -1099,14 +1072,11 @@ class PipelineManager(object):
         """
         Writes a string to self.pipeline_figures_file.
 
-        :param key: name (key) of the figure
-        :type key: str
-        :param filename: relative path to the file (relative to parent output dir)
-        :type filename: str
-        :param annotation: By default, the figures will be annotated with the pipeline
+        :param str key: name (key) of the figure
+        :param str filename: relative path to the file (relative to parent output dir)
+        :param str annotation: By default, the figures will be annotated with the pipeline
             name, so you can tell which pipeline records which figures. If you want, you can
             change this.
-        :type annotation: str
         """
 
         # Default annotation is current pipeline name.
@@ -1135,22 +1105,16 @@ class PipelineManager(object):
         """
         Writes a string to self.pipeline_objects_file. Replacement of report_figure
 
-        :param key: name (key) of the object
-        :type key: str
-        :param filename: relative path to the file (relative to parent output
-            dir)
-        :type filename: str
-        :param anchor_text: text used as the link anchor test or caption to
+        :param str key: name (key) of the object
+        :param str filename: relative path to the file (relative to parent output dir)
+        :param str anchor_text: text used as the link anchor test or caption to
             refer to the object. If not provided, defaults to the key.
-        :type anchor_text: str
-        :param anchor_image: a path to an HTML-displayable image thumbnail (so,
+        :param str anchor_image: a path to an HTML-displayable image thumbnail (so,
             .png or .jpg, for example). If a path, the path should be relative
             to the parent output dir.
-        :type anchor_image: str
-        :param annotation: By default, the figures will be annotated with the
+        :param str annotation: By default, the figures will be annotated with the
             pipeline name, so you can tell which pipeline records which figures.
             If you want, you can change this.
-        :type annotation: str
         """
 
         # Default annotation is current pipeline name.
@@ -1226,7 +1190,7 @@ class PipelineManager(object):
         """
         Writes a command to self.pipeline_commands_file.
 
-        :type cmd: str
+        :param str cmd: command to report
         """
         print("\n> `" + str(cmd) + "`\n")
         with open(self.pipeline_commands_file, "a") as myfile:
@@ -1243,8 +1207,7 @@ class PipelineManager(object):
         This is vulnerable to race conditions; use this for cases where it 
         doesn't matter if this process is the one that created the file.
 
-        :param file: File to create.
-        :type file: str
+        :param str file: File to create.
         """
         with open(file, 'w') as fout:
             fout.write('')
@@ -1258,8 +1221,7 @@ class PipelineManager(object):
         the file; if the file already exists, it will cause an OSError, 
         solving race conditions.
 
-        :param file: File to create.
-        :type file: str
+        :param str file: File to create.
         """
         write_lock_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
         os.open(file, write_lock_flags)
@@ -1310,8 +1272,7 @@ class PipelineManager(object):
         """
         Creates all directories in a path if it does not exist.
 
-        :param path: Path to create.
-        :type path: str
+        :param str path: Path to create.
         :raises Exception: if the path creation attempt hits an error with 
             a code indicating a cause other than pre-existence.
         """
@@ -1393,11 +1354,9 @@ class PipelineManager(object):
         The initiation of a pipeline can preordain one of those as a "stopping
         point" that when reached, should stop the pipeline's execution.
 
-        :param stage: Pipeline processing stage/phase just completed.
-        :type stage: pypiper.Stage | str
-        :return: Whether a checkpoint was created (i.e., whether it didn't
+        :param pypiper.Stage | str stage: Pipeline processing stage/phase just completed.
+        :return bool: Whether a checkpoint was created (i.e., whether it didn't
             already exist)
-        :rtype: bool
         :raise ValueError: If the stage is specified as an absolute filepath,
             and that path indicates a location that's not immediately within
             the main output folder, raise a ValueError.
@@ -1448,11 +1407,9 @@ class PipelineManager(object):
         """
         Alternative way for a pipeline to designate a checkpoint.
 
-        :param check_file: Name or path of file to use as checkpoint.
-        :type check_file: str
-        :return: Whether a file was written (equivalent to whether the
+        :param str check_file: Name or path of file to use as checkpoint.
+        :return bool: Whether a file was written (equivalent to whether the
             checkpoint file already existed).
-        :rtype: bool
         :raise ValueError: Raise a ValueError if the argument provided as the
             checkpoint file is an absolute path and that doesn't correspond
             to a location within the main output folder.
@@ -1492,10 +1449,8 @@ class PipelineManager(object):
         If the pipeline does not complete, this function will stop the pipeline gracefully.
         It sets the status flag to failed and skips the normal success completion procedure.
 
-        :param e: Exception to raise.
-        :type e: Exception
-        :param dynamic_recover: Whether to recover e.g. for job termination.
-        :type dynamic_recover: bool
+        :param Exception e: Exception to raise.
+        :param bool dynamic_recover: Whether to recover e.g. for job termination.
         """
         # Take care of any active running subprocess
         sys.stdout.flush()
@@ -1659,8 +1614,7 @@ class PipelineManager(object):
         terminates, so Pypiper must clean these up manually.
         Given a process ID, this function just kills it.
 
-        :param child_pid: Child process id.
-        :type child_pid: int
+        :param int child_pid: Child process id.
         """
         if child_pid is None:
             pass
@@ -1728,15 +1682,12 @@ class PipelineManager(object):
         deleted after the pipeline completes, you flag these files for deletion with this command.
         Files added with clean_add will only be deleted upon success of the pipeline.
 
-        :param regex:  A unix-style regular expression that matches files to delete
+        :param str regex:  A unix-style regular expression that matches files to delete
             (can also be a file name).
-        :type regex: str
-        :param conditional: True means the files will only be deleted if no other
+        :param bool conditional: True means the files will only be deleted if no other
             pipelines are currently running; otherwise they are added to a manual cleanup script
             called {pipeline_name}_cleanup.sh
-        :type conditional: bool
-        :param manual: True means the files will just be added to a manual cleanup script.
-        :type manual: bool
+        :param bool manual: True means the files will just be added to a manual cleanup script.
         """
         if self.dirty:
             # Override the user-provided option and force manual cleanup.
@@ -1861,10 +1812,8 @@ class PipelineManager(object):
         """
         Memory usage of the process in kilobytes.
 
-        :param pid: Process ID of process to check
-        :type pid: str
-        :param category: Memory type to check. 'hwm' for high water mark.
-        :type category: str
+        :param str pid: Process ID of process to check
+        :param str category: Memory type to check. 'hwm' for high water mark.
         """
         if container:
             # TODO: Put some debug output here with switch to Logger

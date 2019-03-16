@@ -35,19 +35,14 @@ def add_pypiper_args(parser, groups=("pypiper", ), args=None,
     make it easy to add arguments to certain types of pipeline. For example,
     to make a looper-compatible pipeline, use `groups = ["pypiper", "looper"]`.
 
-    :param parser: an ArgumentParser object from your pipeline
-    :type parser: argparse.ArgumentParser
-    :param groups: Adds arguments belong to specified group of args.
-         Options are: pypiper, config, looper, resources, common, ngs, all.
-    :type groups: Iterable[str] | str
-    :param args: You may specify a list of specific arguments one by one.
-    :type args: Iterable[str] | str
-    :param required: Arguments to be flagged as 'required' by argparse.
-    :type required: Iterable[str]
-    :param all_args: Whether to include all of pypiper's arguments defined here.
-    :type all_args: bool
-    :return: A new ArgumentParser object, with selected pypiper arguments added
-    :rtype: argparse.ArgumentParser
+    :param argparse.ArgumentParser parser: ArgumentParser object from a pipeline
+    :param str | Iterable[str] groups: Adds arguments belong to specified group
+        of args. Options: pypiper, config, looper, resources, common, ngs, all.
+    :param str | Iterable[str] args: You may specify a list of specific arguments one by one.
+    :param Iterable[str] required: Arguments to be flagged as 'required' by argparse.
+    :param bool all_args: Whether to include all of pypiper's arguments defined here.
+    :return argparse.ArgumentParser: A new ArgumentParser object, with selected
+        pypiper arguments added
     """
     args_to_add = _determine_args(
         argument_groups=groups, arguments=args, use_all_args=all_args)
@@ -124,18 +119,16 @@ def checkpoint_filename(checkpoint, pipeline_name=None):
     This not only adds the checkpoint file extension but also standardizes the
     way in which checkpoint names are mapped to filenames.
 
-    :param checkpoint: name of a pipeline phase/stage
-    :type checkpoint: str | Stage
-    :param pipeline_name: name of pipeline to prepend to the checkpoint
+    :param str | pypiper.Stage checkpoint: name of a pipeline phase/stage
+    :param str pipeline_name: name of pipeline to prepend to the checkpoint
         filename; this differentiates checkpoint files, e.g. within the
         same sample output folder but associated with different pipelines,
         in case of the (somewhat probable) scenario of a stage name
         collision between pipelines the processed the same sample and
         wrote to the same output folder
-    :type pipeline_name: str
-    :return: standardized checkpoint name for file, plus extension;
-        null if the input is a Stage that's designated as a non-checkpoint
-    :rtype: str | NoneType
+    :return str | NoneType: standardized checkpoint name for file, plus
+        extension; null if the input is a Stage that's designated as a
+        non-checkpoint
     """
     # Allow Stage as type for checkpoint parameter's argument without
     # needing to import here the Stage type from stage.py module.
@@ -153,10 +146,9 @@ def checkpoint_filepath(checkpoint, pm):
     """
     Create filepath for indicated checkpoint.
 
-    :param checkpoint: Pipeline phase/stage or one's name
-    :type checkpoint: str | Stage
-    :param pm: manager of a pipeline instance, relevant for output folder path.
-    :type pm: pypiper.PipelineManager | pypiper.Pipeline
+    :param str | pypiper.Stage checkpoint: Pipeline phase/stage or one's name
+    :param pypiper.PipelineManager | pypiper.Pipeline pm: manager of a pipeline
+        instance, relevant for output folder path.
     :return str: standardized checkpoint name for file, plus extension
     :raise ValueError: if the checkpoint is given as absolute path that does
         not point within pipeline output folder
@@ -258,11 +250,10 @@ def check_shell_redirection(cmd):
 def clear_flags(pm, flag_names=None):
     """
 
-    :param pm: Pipeline or PipelineManager for which to remove flags
-    :type pm: pypiper.PipelineManager | pypiper.Pipeline
-    :param flag_names: Names of flags to remove, optional; if unspecified,
-        all known flag names will be used.
-    :type flag_names: Iterable[str]
+    :param pypiper.PipelineManager | pypiper.Pipeline pm: Pipeline or
+        PipelineManager for which to remove flags
+    :param Iterable[str] flag_names: Names of flags to remove, optional; if
+        unspecified, all known flag names will be used.
     :return: Collection of names of flags removed
     """
 
@@ -292,10 +283,8 @@ def flag_name(status):
     """
     Determine the name for a flag file of the status indicated.
 
-    :param status: Name of status for which to create flag file name.
-    :type status: str
-    :return: Name of flag file corresponding to given status.
-    :rtype: str
+    :param str status: Name of status for which to create flag file name.
+    :return str: Name of flag file corresponding to given status.
     """
     return status + ".flag"
 
@@ -364,11 +353,9 @@ def is_fastq(file_name):
     """
     Determine whether indicated file appears to be in FASTQ format.
 
-    :param file_name: Name/path of file to check as FASTQ.
-    :type file_name: str
-    :return: Whether indicated file appears to be in FASTQ format, zipped
+    :param str file_name: Name/path of file to check as FASTQ.
+    :return bool: Whether indicated file appears to be in FASTQ format, zipped
         or unzipped.
-    :rtype bool
     """
     return is_unzipped_fastq(file_name) or is_gzipped_fastq(file_name)
 
@@ -377,10 +364,8 @@ def is_gzipped_fastq(file_name):
     """
     Determine whether indicated file appears to be a gzipped FASTQ.
 
-    :param file_name: Name/path of file to check as gzipped FASTQ.
-    :type file_name: str
-    :return: Whether indicated file appears to be in gzipped FASTQ format.
-    :rtype bool
+    :param str file_name: Name/path of file to check as gzipped FASTQ.
+    :return bool: Whether indicated file appears to be in gzipped FASTQ format.
     """
     _, ext = os.path.splitext(file_name)
     return file_name.endswith(".fastq.gz") or file_name.endswith(".fq.gz")
@@ -390,10 +375,8 @@ def is_unzipped_fastq(file_name):
     """
     Determine whether indicated file appears to be an unzipped FASTQ.
 
-    :param file_name: Name/path of file to check as unzipped FASTQ.
-    :type file_name: str
-    :return: Whether indicated file appears to be in unzipped FASTQ format.
-    :rtype bool
+    :param str file_name: Name/path of file to check as unzipped FASTQ.
+    :return bool: Whether indicated file appears to be in unzipped FASTQ format.
     """
     _, ext = os.path.splitext(file_name)
     return ext in [".fastq", ".fq"]
@@ -403,10 +386,8 @@ def is_sam_or_bam(file_name):
     """
     Determine whether a file appears to be in a SAM format.
 
-    :param file_name: Name/path of file to check as SAM-formatted.
-    :type file_name: str
-    :return: Whether file appears to be SAM-formatted
-    :rtype: bool
+    :param str file_name: Name/path of file to check as SAM-formatted.
+    :return bool: Whether file appears to be SAM-formatted
             """
     _, ext = os.path.splitext(file_name)
     return ext in [".bam", ".sam"]
@@ -482,10 +463,9 @@ def parse_stage_name(stage):
     The stage may be provided already as a name, as a Stage object, or as a
     callable with __name__ (e.g., function).
 
-    :param stage: Object representing a stage, from which to obtain name.
-    :type stage: str | pypiper.Stage | function
-    :return: Name of putative pipeline Stage.
-    :rtype: str
+    :param str | pypiper.Stage | function stage: Object representing a stage,
+        from which to obtain name.
+    :return str: Name of putative pipeline Stage.
     """
     if isinstance(stage, str):
         return stage
@@ -502,21 +482,18 @@ def pipeline_filepath(pm, filename=None, suffix=None):
     """
     Derive path to file for managed pipeline.
 
-    :param pm: Manager of a particular pipeline instance.
-    :type pm: pypiper.PipelineManager | pypiper.Pipeline
-    :param filename: Name of file for which to create full path based
+    :param pypiper.PipelineManager | pypiper.Pipeline pm: Manager of a
+        particular pipeline instance.
+    :param str filename: Name of file for which to create full path based
         on pipeline's output folder.
-    :type filename: str
-    :param suffix: Suffix for the file; this can be added to the filename
+    :param str suffix: Suffix for the file; this can be added to the filename
         if provided or added to the pipeline name if there's no filename.
-    :type suffix: str
     :raises TypeError: If neither filename nor suffix is provided, raise a
         TypeError, as in that case there's no substance from which to create
         a filepath.
-    :return: Path to file within managed pipeline's output folder, with
+    :return str: Path to file within managed pipeline's output folder, with
         filename as given or determined by the pipeline name, and suffix
         appended if given.
-    :rtype: str
     """
 
     if filename is None and suffix is None:
@@ -540,10 +517,9 @@ def translate_stage_name(stage):
     as desired, but these choices influence file names, enforce some
     standardization. Specifically, prohibit potentially problematic spaces.
 
-    :param stage: Pipeline stage, its name, or a representative function.
-    :type stage: str | pypiper.Stage | function
-    :return: Standardized pipeline phase/stage name.
-    :rtype: str
+    :param str | pypiper.Stage | function stage: Pipeline stage, its name, or a
+        representative function.
+    :return str: Standardized pipeline phase/stage name.
     """
     # First ensure that we have text.
     name = parse_stage_name(stage)
@@ -582,15 +558,12 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     """
     Determine the arguments to add to a parser (for a pipeline).
 
-    :param argument_groups: Collection of names of groups of arguments to
-        add to an argument parser.
-    :type argument_groups: Iterable[str] | str
-    :param arguments: Collection of specific arguments to add to the parser.
-    :type arguments: Iterable[str] | str
-    :param use_all_args: Whether to use all arguments defined here.
-    :type use_all_args: bool
-    :return: Collection of (unique) argument names to add to a parser.
-    :rtype: Set[str]
+    :param Iterable[str] | str argument_groups: Collection of names of groups
+        of arguments to add to an argument parser.
+    :param Iterable[str] | str arguments: Collection of specific arguments to
+        add to the parser.
+    :param bool use_all_args: Whether to use all arguments defined here.
+    :return set[str]: Collection of (unique) argument names to add to a parser.
     """
 
     if sys.version_info < (3, 3):
@@ -648,14 +621,10 @@ def _add_args(parser, args, required):
     """
     Add new arguments to an ArgumentParser.
 
-    :param parser: ArgumentParser to update with new arguments
-    :type parser: argparse.ArgumentParser
-    :param args: Collection of names of arguments to add.
-    :type args: Iterable[str]
-    :param required: Collection of arguments to designate as required
-    :type required: Iterable[str]
-    :return: Updated ArgumentParser
-    :rtype: argparse.ArgumentParser
+    :param argparse.ArgumentParser parser: instance to update with new arguments
+    :param Iterable[str] args: Collection of names of arguments to add.
+    :param Iterable[str] required: Collection of arguments to designate as required
+    :return argparse.ArgumentParser: Updated ArgumentParser
     """
 
     import copy

@@ -43,10 +43,8 @@ class UnknownPipelineStageError(Exception):
     """
     Triggered by use of unknown/undefined name for a pipeline stage.
 
-    :param stage_name: Name of the stage triggering the exception.
-    :type stage_name: str
-    :param pipeline: Pipeline for which the stage is unknown/undefined.
-    :type pipeline: Pipeline
+    :param str stage_name: Name of the stage triggering the exception.
+    :param pypiper.Pipeline pipeline: Pipeline for which the stage is unknown/undefined.
     """
 
 
