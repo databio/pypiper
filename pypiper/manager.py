@@ -37,6 +37,20 @@ __all__ = ["PipelineManager"]
 
 LOCK_PREFIX = "lock."
 
+class Unbuffered(object):
+    def __init__(self, stream):
+        self.stream = stream
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+    def writelines(self, datas):
+        self.stream.writelines(datas)
+        self.stream.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self.stream, attr)
 
 class PipelineManager(object):
     """
@@ -374,7 +388,8 @@ class PipelineManager(object):
                   "This works, but pypiper cannot tee the output, so results "
                   "are only logged to screen.")
         else:
-            sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
+            sys.stdout = Unbuffered(sys.stdout)
+            # sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
 
             # The tee subprocess must be instructed to ignore TERM and INT signals;
             # Instead, I will clean up this process in the signal handler functions.
