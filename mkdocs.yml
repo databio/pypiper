@@ -1,0 +1,37 @@
+site_name: Pypiper
+site_logo: img/pypiper_logo_dark.svg
+site_url: http://code.databio.org/pypiper/
+repo_url: http://github.com/databio/pypiper
+pypi_name: piper
+
+nav:
+  - Getting Started: 
+    - Introduction: README.md
+    - Features at-a-glance: features.md
+    - Hello World: hello-world.md
+  - Developer guides:    
+    - Building a basic pipeline: basic-pipeline.md
+    - Using the run method: advanced-run-method.md
+    - Automatic command-line arguments: cli.md
+    - Configuring pipelines: configuration.md
+    - Reporting statistics: report.md
+    - Best practices: best-practices.md
+  - Toolkits:
+    - What are toolkits?: toolkits.md
+    - NGSTk: autodoc_build/pypiper.md    
+  - Reference:
+    - Catalog of pipeline outputs: outputs.md
+    - API: autodoc_build/pypiper.md
+    - FAQ: faq.md
+    - Support: support.md
+    - Contributing: contributing.md
+    - Changelog: changelog.md
+
+theme: databio
+
+plugins:
+  - databio:
+      autodoc_build: "docs/autodoc_build"
+      autodoc_package: "pypiper"
+      no_top_level: true
+  - search

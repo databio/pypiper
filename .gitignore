@@ -12,6 +12,7 @@ tests/test/*
 
 # ignore built docs
 doc/build/*
+docs_jupyter/build/*
 
 # generic ignore list:
 *.lst
@@ -77,3 +78,6 @@ build/
 dist/
 pypiper.egg-info/
 piper.egg-info/
+
+
+*ipynb_checkpoints
