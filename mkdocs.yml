@@ -7,18 +7,19 @@ pypi_name: piper
 nav:
   - Getting Started: 
     - Introduction: README.md
+    - Philosophy: philosophy.md
     - Features at-a-glance: features.md
-    - Hello World: hello-world.md
+    - Hello world: hello-world.md
   - Developer guides:    
     - Building a basic pipeline: basic-pipeline.md
     - Using the run method: advanced-run-method.md
     - Automatic command-line arguments: cli.md
     - Configuring pipelines: configuration.md
     - Reporting statistics: report.md
+    - Cleaning up intermediate files: clean.md
     - Best practices: best-practices.md
   - Toolkits:
-    - What are toolkits?: toolkits.md
-    - NGSTk: autodoc_build/pypiper.md    
+    - "NGSTk: the NGS toolkit": ngstk.md    
   - Reference:
     - Catalog of pipeline outputs: outputs.md
     - API: autodoc_build/pypiper.md

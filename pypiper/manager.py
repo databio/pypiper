@@ -578,8 +578,8 @@ class PipelineManager(object):
             non-essential parts of the pipeline; if a 'nofail' command fails,
             the pipeline is free to continue execution.
         :param str errmsg: Message to print if there's an error.
-        :param bool clean: True means the target file will be automatically added
-            to a auto cleanup list. Optional.
+        :param bool clean: True means the target file will be automatically added 
+            to an auto cleanup list. Optional.
         :param callable follow: Function to call after executing (each) command.
         :param str container: Name for Docker container in which to run commands.
         :return int: Return code of process. If a list of commands is passed,
