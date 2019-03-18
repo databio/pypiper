@@ -4,11 +4,17 @@
 
 ## Introduction
 
-Pypiper is a **development-oriented** pipeline development framework. With Pypiper, **simplicity is paramount**. It should take fewer than 15 minutes to build your first pipeline and only an hour or two to learn the advanced features. Pypiper pipelines **are simple to update and maintain**, making it **geared toward pipelines under active developement**.
+Pypiper is a **development-oriented** pipeline framework: Pypiper pipelines are:
 
-Pypiper is an example of a simple [bioinformatics pipeline framework](
-http://databio.org/pipeline_frameworks/). 
-To employ pypiper, you will just take your bash script and pass those commands through the ``run`` method on a ``PipelineManager`` object. This will give you automatic restartability, process monitoring for memory use and compute time, pipeline status monitoring, copious log output, robust error handling, easy debugging tools, guaranteed file output integrity, and a bunch of useful pipeline development helper functions.
+1. written in pure python;
+2. simple to update and maintain;
+3. simple to understand for an outsider.
+
+
+These traits make pypiper ideally suited for **pipelines under active development**.
+
+With Pypiper, **simplicity is paramount**. Prerequisites are few: base python and 2 common packages (`pyyaml` and `psutil`). It should take fewer than 15 minutes to build your first pipeline and only an hour or two to learn the advanced features.
+Pypiper provides automatic restartability, process monitoring for time and memory use, status monitoring, copious log output, robust error handling, easy debugging tools, guaranteed file output integrity, and a bunch of useful pipeline development helper functions.
 
 ## Installing
 
@@ -20,7 +26,7 @@ pip install --user --upgrade piper
 
 ## Quick start
 
-Build your pipeline in **pure python**:
+To employ pypiper, you build something like a shell script, but pass the commands through the `run` method on a `PipelineManager` object. Build your pipeline in **pure python**:
 
 ```{python}
 #!/usr/bin/env python
