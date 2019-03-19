@@ -14,6 +14,9 @@ tests/test/*
 doc/build/*
 docs_jupyter/build/*
 
+# ignore test results
+example_pipelines/hello_pypiper_results/*
+
 # generic ignore list:
 *.lst
 
