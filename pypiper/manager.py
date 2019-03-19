@@ -306,7 +306,8 @@ class PipelineManager(object):
                 # Set the args to the new config file, so it can be used
                 # later to pass to, for example, toolkits
                 import yaml
-                config = yaml.load(conf)
+                # An also use yaml.FullLoader for trusted input...
+                config = yaml.load(conf, Loader=yaml.SafeLoader)
                 self.config = AttMapEcho(config)
         else:
             print("No config file")
