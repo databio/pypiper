@@ -584,7 +584,7 @@ class PipelineManager(object):
         :param str | Sequence[str] target: Output file(s) to produce, optional
         :param str lock_name: Name of lock file. Optional.
         :param bool shell: If command requires should be run in its own shell.
-            Optional. Default: "guess" --will try to determine whether the
+            Optional. Default: None --will try to determine whether the
             command requires a shell.
         :param bool nofail: Whether the pipeline proceed past a nonzero return from
             a process, default False; nofail can be used to implement
@@ -748,7 +748,7 @@ class PipelineManager(object):
 
         return process_return_code
 
-    def checkprint(self, cmd, shell="guess", nofail=False, errmsg=None):
+    def checkprint(self, cmd, shell=None, nofail=False, errmsg=None):
         """
         Just like callprint, but checks output -- so you can get a variable
         in python corresponding to the return value of the command you call.
@@ -767,17 +767,15 @@ class PipelineManager(object):
 
         self._report_command(cmd)
 
-        likely_shell = check_shell(cmd)
+        likely_shell = check_shell(cmd, shell)
 
-        if shell == "guess":
+        if shell is None:
             shell = likely_shell
 
         if not shell:
             if likely_shell:
                 print("Should this command run in a shell instead of directly in a subprocess?")
-            #cmd = cmd.split()
             cmd = shlex.split(cmd)
-        # else: # if shell: # do nothing (cmd is not split)
             
         try:
             return subprocess.check_output(cmd, shell=shell)
@@ -801,6 +799,8 @@ class PipelineManager(object):
         :param bool nofail: Should the pipeline bail on a nonzero return from a process? Default: False
             Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
             they will not cause the pipeline to bail out.
+        :param bool shell: if the command should be run it its own shell, default: None (will try
+            to determine based on the command)
         :param container: Named Docker container in which to execute.
         :param container: str
         """
