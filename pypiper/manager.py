@@ -21,6 +21,11 @@ import subprocess
 import sys
 import time
 
+if sys.version_info < (3, 3):
+    from collections import Iterable
+else:
+    from collections.abc import Iterable
+
 from attmap import AttMapEcho
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
@@ -719,9 +724,10 @@ class PipelineManager(object):
 
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
-                    list_ret, list_maxmem = \
+                    list_ret, maxmem = \
                         self.callprint(cmd_i, nofail, container)
-                    local_maxmem = max(local_maxmem, list_maxmem)
+                    maxmem = max(maxmem) if isinstance(maxmem, Iterable) else maxmem
+                    local_maxmem = max(local_maxmem,  maxmem)
                     process_return_code = max(process_return_code, list_ret)
 
             else:  # Single command (most common)
