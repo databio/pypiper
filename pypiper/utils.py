@@ -675,7 +675,9 @@ def _add_args(parser, args, required):
                     "help": "Number of cores for parallelized processes"}),
         "mem":
             ("-M", {"default": "4000", "metavar": "MEMORY_LIMIT",
-                    "help": "Memory limit (in Mb) for processes accepting such"}),
+                    "help": "Memory limit for processes accepting such. "
+                    "Default units are megabytes unless specified "
+                    "using the suffix [K|M|G|T]."}),
         "input":
             ("-I", {"nargs": "+", "metavar": "INPUT_FILES",
                     "help": "One or more primary input files"}),
