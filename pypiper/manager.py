@@ -725,7 +725,7 @@ class PipelineManager(object):
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
                     list_ret, maxmem = \
-                        self.callprint(cmd_i, nofail, container)
+                        self.callprint(cmd_i, lock_file, nofail, container)
                     maxmem = max(maxmem) if isinstance(maxmem, Iterable) else maxmem
                     local_maxmem = max(local_maxmem,  maxmem)
                     process_return_code = max(process_return_code, list_ret)
@@ -786,7 +786,7 @@ class PipelineManager(object):
             self._triage_error(e, nofail, errmsg)
 
 
-    def callprint(self, cmd, nofail=False, container=None):
+    def callprint(self, cmd, lock_file=None, nofail=False, container=None):
         """
         Prints the command, and then executes it, then prints the memory use and
         return code of the command.
@@ -799,6 +799,7 @@ class PipelineManager(object):
         cmd can also be a series (a dict object) of multiple commands, which will be run in succession.
 
         :param str | Iterable[str] cmd: Bash command(s) to be run.
+        :param str lock_file: a lock file name
         :param bool nofail: Should the pipeline bail on a nonzero return from a process? Default: False
             Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
             they will not cause the pipeline to bail out.
@@ -840,6 +841,8 @@ class PipelineManager(object):
         param_list = [make_dict(c) for c in split_by_pipes(cmd)] \
             if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
 
+        proc_name = _get_proc_name(cmd)
+
         start_times = []
         stop_times = []
         processes = []
@@ -852,6 +855,13 @@ class PipelineManager(object):
             else:
                 param_list[i]["stdin"] = processes[i - 1].stdout
                 processes.append(psutil.Popen(**param_list[i]))
+                self.procs[processes[-1].pid] = {
+                    "proc_name": proc_name,
+                    "start_time": time.time(),
+                    "pre_block": True,
+                    "container": container,
+                    "p": processes[-1]
+                }
             # Capture the subprocess output in <pre> tags to make it format nicely
             # if the markdown log file is displayed as HTML.
         print("<pre>")
@@ -881,6 +891,13 @@ class PipelineManager(object):
                 info += " Elapsed: " + str(datetime.timedelta(
                     seconds=self.time_elapsed(start_times[i]))) + "."
             self.peak_memory = max(self.peak_memory, local_maxmem)
+
+            # report process profile
+            current_pid = processes[i].pid
+            self._report_profile(self.procs[current_pid]["proc_name"], lock_file, time.time() - self.procs[current_pid]["start_time"], local_maxmem)
+
+            # Remove this as a running subprocess
+            del self.procs[current_pid]
 
             info += " Peak memory: (Process: {proc}; Pipeline: {pipe})".format(
                 proc=display_memory(local_maxmem), pipe=display_memory(self.peak_memory))

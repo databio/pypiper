@@ -289,6 +289,16 @@ def flag_name(status):
     return status + ".flag"
 
 
+def _get_proc_name(cmd):
+    """
+    Get the representative process name from complex command
+
+    :param list cmd: a string to be processed
+    :return str: the command
+    """
+    return "".join(cmd).split()[0].replace('(', '').replace(')', '')
+
+
 def get_first_value(param, param_pools, on_missing=None, error=True):
     """
     Get the value for a particular parameter from the first pool in the provided
