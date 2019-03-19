@@ -732,7 +732,7 @@ class PipelineManager(object):
 
             else:  # Single command (most common)
                 process_return_code, local_maxmem = \
-                    self.callprint(cmd, nofail, container)  # Run command
+                    self.callprint(cmd, lock_name, nofail, container)  # Run command
 
             # For temporary files, you can specify a clean option to automatically
             # add them to the clean list, saving you a manual call to clean_add
@@ -855,13 +855,13 @@ class PipelineManager(object):
             else:
                 param_list[i]["stdin"] = processes[i - 1].stdout
                 processes.append(psutil.Popen(**param_list[i]))
-                self.procs[processes[-1].pid] = {
-                    "proc_name": proc_name,
-                    "start_time": time.time(),
-                    "pre_block": True,
-                    "container": container,
-                    "p": processes[-1]
-                }
+            self.procs[processes[-1].pid] = {
+                "proc_name": proc_name,
+                "start_time": time.time(),
+                "pre_block": True,
+                "container": container,
+                "p": processes[-1]
+            }
             # Capture the subprocess output in <pre> tags to make it format nicely
             # if the markdown log file is displayed as HTML.
         print("<pre>")
