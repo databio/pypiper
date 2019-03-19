@@ -76,7 +76,8 @@ class PipelineManager(object):
         even if  the preceding command is not run. By default,
         following functions  are only run if the preceding command is run.
     :param int cores: number of processors to use, default 1
-    :param str mem: amount of memory to use, in Mb
+    :param str mem: amount of memory to use. Default units are megabytes unless 
+        specified using the suffix [K|M|G|T]."
     :param str config_file: path to pipeline configuration file, optional
     :param str output_parent: path to folder in which output folder will live
     :param bool overwrite_checkpoints: Whether to override the stage-skipping
@@ -94,7 +95,7 @@ class PipelineManager(object):
     def __init__(
         self, name, outfolder, version=None, args=None, multi=False,
         dirty=False, recover=False, new_start=False, force_follow=False,
-        cores=1, mem="1000", config_file=None, output_parent=None,
+        cores=1, mem="1000M", config_file=None, output_parent=None,
         overwrite_checkpoints=False, **kwargs):
 
         # Params defines the set of options that could be updated via
@@ -156,9 +157,24 @@ class PipelineManager(object):
         self.dirty = params['dirty']
         self.cores = params['cores']
         self.output_parent = params['output_parent']
-        # For now, we assume the memory is in megabytes.
-        # this could become customizable if necessary
-        self.mem = params['mem'] + "m"
+
+        # We use this memory to pass a memory limit to processes like java that
+        # can take a memory limit, so they don't get killed by a SLURM (or other
+        # cluster manager) overage. However, with java, the -Xmx argument can only
+        # limit the *heap* space, not total memory use; so occasionally SLURM will
+        # still kill these processes because total memory goes over the limit.
+        # As a kind of hack, we'll set the java processes heap limit to 95% of the
+        # total memory limit provided.
+        # This will give a little breathing room for non-heap java memory use.
+
+        if not params['mem'].endswith(('K','M','G','T')):
+            self.mem = params['mem'] + "M"
+        else:
+            # Assume the memory is in megabytes.
+            self.mem = params['mem']
+
+        self.javamem = str(int(int(self.mem[:-1]) * 0.95)) + self.mem[-1:]
+
         self.container = None
         self.clean_initialized = False
 
@@ -177,15 +193,6 @@ class PipelineManager(object):
         self.cores1of8 = int(self.cores) / 8
         self.cores7of8 = int(self.cores) - int(self.cores1of8)
 
-        # We use this memory to pass a memory limit to processes like java that
-        # can take a memory limit, so they don't get killed by a SLURM (or other
-        # cluster manager) overage. However, with java, the -Xmx argument can only
-        # limit the *heap* space, not total memory use; so occasionally SLURM will
-        # still kill these processes because total memory goes over the limit.
-        # As a kind of hack, we'll set the java processes heap limit to 95% of the
-        # total memory limit provided.
-        # This will give a little breathing room for non-heap java memory use.
-        self.javamem = str(int(int(params['mem']) * 0.95)) + "m"
 
         self.pl_version = version
         # Set relative output_parent directory to absolute
@@ -299,7 +306,8 @@ class PipelineManager(object):
                 # Set the args to the new config file, so it can be used
                 # later to pass to, for example, toolkits
                 import yaml
-                config = yaml.load(conf)
+                # An also use yaml.FullLoader for trusted input...
+                config = yaml.load(conf, Loader=yaml.SafeLoader)
                 self.config = AttMapEcho(config)
         else:
             print("No config file")
