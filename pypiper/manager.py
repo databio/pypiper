@@ -32,7 +32,7 @@ from .flags import *
 from .utils import \
     check_shell, check_shell_pipes, checkpoint_filepath, clear_flags, flag_name, \
     is_multi_target, make_lock_name, pipeline_filepath, \
-    CHECKPOINT_SPECIFICATIONS, split_by_pipes, _get_proc_name
+    CHECKPOINT_SPECIFICATIONS, split_by_pipes, get_proc_name
 from ._version import __version__
 import __main__
 
@@ -837,7 +837,7 @@ class PipelineManager(object):
         param_list = [make_dict(c) for c in split_by_pipes(cmd)] \
             if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
 
-        proc_name = _get_proc_name(cmd)
+        proc_name = get_proc_name(cmd)
 
         start_times = []
         stop_times = []

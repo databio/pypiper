@@ -293,7 +293,7 @@ def flag_name(status):
     return status + ".flag"
 
 
-def _get_proc_name(cmd):
+def get_proc_name(cmd):
     """
     Get the representative process name from complex command
 
