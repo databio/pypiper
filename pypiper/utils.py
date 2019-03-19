@@ -189,13 +189,17 @@ def checkpoint_filepath(checkpoint, pm):
     return pipeline_filepath(pm, filename=chkpt_name)
 
 
-def check_shell(cmd):
+def check_shell(cmd, shell=None):
     """
     Determine whether a command appears to involve shell process(es).
+    The shell argument can be used to override the result of the check.
 
     :param str cmd: Command to investigate.
+    :param bool shell: override the result of the check with this value.
     :return bool: Whether the command appears to involve shell process(es).
     """
+    if isinstance(shell, bool):
+        return shell
     return "|" in cmd or ">" in cmd or r"*" in cmd
 
 

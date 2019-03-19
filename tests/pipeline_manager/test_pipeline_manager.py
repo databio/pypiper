@@ -244,7 +244,7 @@ class PipelineManagerTests(unittest.TestCase):
 
         # Should not raise an error
         self.pp.run(cmd, target=None, lock_name="badcommand", nofail=True)
-        self.pp.callprint(cmd, nofail=True)
+        self.pp.callprint(cmd, shell=None, nofail=True)
 
         # Should raise an error
         with self.assertRaises(SubprocessError):

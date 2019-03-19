@@ -564,7 +564,7 @@ class PipelineManager(object):
     ###################################
     # Process calling functions
     ###################################
-    def run(self, cmd, target=None, lock_name=None, shell="guess",
+    def run(self, cmd, target=None, lock_name=None, shell=None,
             nofail=False, errmsg=None, clean=False, follow=None,
             container=None):
         """
@@ -725,14 +725,14 @@ class PipelineManager(object):
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
                     list_ret, maxmem = \
-                        self.callprint(cmd_i, lock_file, nofail, container)
+                        self.callprint(cmd_i, shell, lock_file, nofail, container)
                     maxmem = max(maxmem) if isinstance(maxmem, Iterable) else maxmem
                     local_maxmem = max(local_maxmem,  maxmem)
                     process_return_code = max(process_return_code, list_ret)
 
             else:  # Single command (most common)
                 process_return_code, local_maxmem = \
-                    self.callprint(cmd, lock_name, nofail, container)  # Run command
+                    self.callprint(cmd, shell, lock_file, nofail, container)  # Run command
 
             # For temporary files, you can specify a clean option to automatically
             # add them to the clean list, saving you a manual call to clean_add
@@ -747,7 +747,6 @@ class PipelineManager(object):
             break
 
         return process_return_code
-
 
     def checkprint(self, cmd, shell="guess", nofail=False, errmsg=None):
         """
@@ -785,8 +784,7 @@ class PipelineManager(object):
         except Exception as e:
             self._triage_error(e, nofail, errmsg)
 
-
-    def callprint(self, cmd, lock_file=None, nofail=False, container=None):
+    def callprint(self, cmd, shell, lock_file=None, nofail=False, container=None):
         """
         Prints the command, and then executes it, then prints the memory use and
         return code of the command.
@@ -819,10 +817,9 @@ class PipelineManager(object):
 
         def get_mem_child_sum(proc):
             # get children processes
-            children=proc.children(recursive=True)
+            children = proc.children(recursive=True)
             # get RSS memory of each child proc and sum all
-            mem_sum=sum([x.memory_info().rss for x 
-                in children])
+            mem_sum = sum([x.memory_info().rss for x in children])
             # return in gigs
             return mem_sum/1e9
 
@@ -830,9 +827,8 @@ class PipelineManager(object):
             return None if memval < 0 else "{}GB".format(round(memval, 3))
 
         def make_dict(command):
-            a, s = (command, True) if check_shell(command) else (shlex.split(command), False)
+            a, s = (command, True) if check_shell(command, shell) else (shlex.split(command), False)
             return dict(args=a, stdout=subprocess.PIPE, shell=s)
-
 
         if container:
             cmd = "docker exec " + container + " " + cmd
