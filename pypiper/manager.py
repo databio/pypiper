@@ -1245,16 +1245,22 @@ class PipelineManager(object):
                 break
 
 
-    def _report_command(self, cmd, procs):
+    def _report_command(self, cmd, procs=None):
         """
-        Writes a command to self.pipeline_commands_file.
+        Writes a command to both stdout and to the commands log file 
+        (self.pipeline_commands_file).
 
         :param str cmd: command to report
+        :param str procs: process numbers for processes in the command
         """
-        line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=str(procs))
+        if procs:
+            line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=str(procs))
+        else:
+            line = "\n> `{cmd}`\n".format(cmd=str(cmd))
         print(line)
+
         with open(self.pipeline_commands_file, "a") as myfile:
-            myfile.write(str(cmd) + "\n\n")
+            myfile.write(line + "\n\n")
 
 
     ###################################
