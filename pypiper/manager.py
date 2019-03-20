@@ -837,7 +837,6 @@ class PipelineManager(object):
 
         if container:
             cmd = "docker exec " + container + " " + cmd
-        self._report_command(cmd)
 
         param_list = [make_dict(c) for c in split_by_pipes(cmd)] \
             if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
@@ -864,7 +863,7 @@ class PipelineManager(object):
                 "p": processes[-1]
             }
 
-            print("Added process {}".format(processes[-1].pid))
+        self._report_command(cmd, [x.pid for x in processes])
             # Capture the subprocess output in <pre> tags to make it format nicely
             # if the markdown log file is displayed as HTML.
         print("<pre>")
@@ -905,10 +904,6 @@ class PipelineManager(object):
             info += " Peak memory: (Process: {proc}; Pipeline: {pipe})".format(
                 proc=display_memory(local_maxmems[i]), pipe=display_memory(self.peak_memory))
             # Close the preformat tag for markdown output
-            print("</pre>")
-            print(info)
-            if i != len(param_list) - 1:
-                print("<pre>")
 
             if returncode != 0:
                 msg = "Subprocess returned nonzero result. Check above output for details"
@@ -917,21 +912,26 @@ class PipelineManager(object):
             # returncodes.append(returncode)
             # local_maxmems.append(local_maxmem)
             returncodes[i] = returncode
+            return info
 
 
         sleeptime = .0001
+        info = ""
         while running_processes:
             for i in running_processes:
                 print("Check {}".format(i))
                 local_maxmems[i] = max(local_maxmems[i], (get_mem_child_sum(processes[i])))
                 if not check_me(processes[i], sleeptime):
-                    proc_wrapup(i)
+                    info += proc_wrapup(i)
 
             # the sleeptime is extremely short at the beginning and gets longer exponentially 
             # (+ constant to prevent copious checks at the very beginning)
             # = more precise mem tracing for short processes
             sleeptime = min((sleeptime + 0.25) * 3 , 60/len(processes))
 
+        # All jobs are done, print a final closing and job info
+        print("</pre>")
+        print(info)
 
         return [returncodes, local_maxmems]
 
@@ -1245,13 +1245,14 @@ class PipelineManager(object):
                 break
 
 
-    def _report_command(self, cmd):
+    def _report_command(self, cmd, procs):
         """
         Writes a command to self.pipeline_commands_file.
 
         :param str cmd: command to report
         """
-        print("\n> `" + str(cmd) + "`\n")
+        line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=str(procs))
+        print(line)
         with open(self.pipeline_commands_file, "a") as myfile:
             myfile.write(str(cmd) + "\n\n")
 
