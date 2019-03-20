@@ -815,24 +815,19 @@ class PipelineManager(object):
                 return True
             return False
 
-        def safe_memory_info(proc):
-            """
-            Wraps memory_info function call so we simply return 0 instead of
-            failing the pipeline when we cannot get process memory.
-            """
+        def get_mem_child_sum(proc):
             try:
-                return proc.memory_info().rss
+                # get children processes
+                children = proc.children(recursive=True)
+                # get RSS memory of each child proc and sum all
+                mem_sum = sum([x.memory_info().rss for x in children])
+                # return in gigs
+                return mem_sum/1e9
             except (psutil.NoSuchProcess, psutil.ZombieProcess) as e:
-                print("Warning: couldn't add memory use for process: {}".proc.pid())
+                print(e)
+                print("Warning: couldn't add memory use for process: {}".format(proc.pid))
                 return 0
 
-        def get_mem_child_sum(proc):
-            # get children processes
-            children = proc.children(recursive=True)
-            # get RSS memory of each child proc and sum all
-            mem_sum = sum([safe_memory_info(x) for x in children])
-            # return in gigs
-            return mem_sum/1e9
 
         def display_memory(memval):
             return None if memval < 0 else "{}GB".format(round(memval, 3))
@@ -851,17 +846,18 @@ class PipelineManager(object):
         proc_name = get_proc_name(cmd)
 
         start_times = []
-        stop_times = []
+        # stop_times = []
         processes = []
-        local_maxmems = []
-        returncodes = []
+        running_processes = []
         for i in range(len(param_list)):
             start_times.append(time.time())
+            running_processes.append(i)
             if i == 0:
                 processes.append(psutil.Popen(**param_list[i]))
             else:
                 param_list[i]["stdin"] = processes[i - 1].stdout
                 processes.append(psutil.Popen(**param_list[i]))
+
             self.procs[processes[-1].pid] = {
                 "proc_name": proc_name,
                 "start_time": time.time(),
@@ -869,45 +865,47 @@ class PipelineManager(object):
                 "container": container,
                 "p": processes[-1]
             }
+            print("Added process {}".format(processes[-1].pid))
             # Capture the subprocess output in <pre> tags to make it format nicely
             # if the markdown log file is displayed as HTML.
         print("<pre>")
+
+        stop_times = [None] * len(start_times)
+        local_maxmems = [-1] * len(start_times)
+        returncodes = [None] * len(start_times)
 
         if not self.wait:
             print("</pre>")
             ids = [x.pid for x in processes]
             print ("Not waiting for subprocess(es): " + str(ids))
             return [0, -1]
-        for i in range(len(param_list)):
-            local_maxmem = -1
-            sleeptime = .0001
-            while check_me(processes[i], sleeptime):
-                local_maxmem = max(local_maxmem, (get_mem_child_sum(processes[i])))
-                # the sleeptime is extremely short at the beginning and gets longer exponentially 
-                # (+ constant to prevent copious checks at the very beginning)
-                # = more precise mem tracing for short processes
-                sleeptime = min((sleeptime + 0.25) * 3 , 60)
 
-            stop_times.append(time.time())
+
+        def proc_wrapup(i):
+            """
+            :param i: internal ID number of the subprocess
+            """
+            stop_times[i] = time.time()
             returncode = processes[i].returncode
             info = "Process " + str(processes[i].pid) + " returned: (" + str(processes[i].returncode) + ")."
-            if i>0:
+            if False: #i>0:
                 info += " Elapsed: " + str(datetime.timedelta(
                     seconds=round(stop_times[i] - stop_times[i - 1], 0))) + "."
             else:
                 info += " Elapsed: " + str(datetime.timedelta(
                     seconds=self.time_elapsed(start_times[i]))) + "."
-            self.peak_memory = max(self.peak_memory, local_maxmem)
+            self.peak_memory = max(self.peak_memory, local_maxmems[i])
 
             # report process profile
             current_pid = processes[i].pid
-            self._report_profile(self.procs[current_pid]["proc_name"], lock_file, time.time() - self.procs[current_pid]["start_time"], local_maxmem)
+            self._report_profile(self.procs[current_pid]["proc_name"], lock_file, time.time() - self.procs[current_pid]["start_time"], local_maxmems[i])
 
             # Remove this as a running subprocess
             del self.procs[current_pid]
+            running_processes.remove(i)
 
             info += " Peak memory: (Process: {proc}; Pipeline: {pipe})".format(
-                proc=display_memory(local_maxmem), pipe=display_memory(self.peak_memory))
+                proc=display_memory(local_maxmems[i]), pipe=display_memory(self.peak_memory))
             # Close the preformat tag for markdown output
             print("</pre>")
             print(info)
@@ -918,8 +916,24 @@ class PipelineManager(object):
                 msg = "Subprocess returned nonzero result. Check above output for details"
                 self._triage_error(SubprocessError(msg), nofail)
 
-            returncodes.append(returncode)
-            local_maxmems.append(local_maxmem)
+            # returncodes.append(returncode)
+            # local_maxmems.append(local_maxmem)
+            returncodes[i] = returncode
+
+
+        sleeptime = .0001
+        while running_processes:
+            for i in running_processes:
+                print("Check {}".format(i))
+                local_maxmems[i] = max(local_maxmems[i], (get_mem_child_sum(processes[i])))
+                if not check_me(processes[i], sleeptime):
+                    proc_wrapup(i)
+
+            # the sleeptime is extremely short at the beginning and gets longer exponentially 
+            # (+ constant to prevent copious checks at the very beginning)
+            # = more precise mem tracing for short processes
+            sleeptime = min((sleeptime + 0.25) * 3 , 60/len(processes))
+
 
         return [returncodes, local_maxmems]
 
