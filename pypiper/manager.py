@@ -843,12 +843,11 @@ class PipelineManager(object):
 
         proc_name = get_proc_name(cmd)
 
-        start_times = []
         # stop_times = []
         processes = []
         running_processes = []
+        start_time = time.time()
         for i in range(len(param_list)):
-            start_times.append(time.time())
             running_processes.append(i)
             if i == 0:
                 processes.append(psutil.Popen(**param_list[i]))
@@ -858,7 +857,7 @@ class PipelineManager(object):
 
             self.procs[processes[-1].pid] = {
                 "proc_name": proc_name,
-                "start_time": time.time(),
+                "start_time": start_time,
                 "container": container,
                 "p": processes[-1]
             }
@@ -868,9 +867,8 @@ class PipelineManager(object):
             # if the markdown log file is displayed as HTML.
         print("<pre>")
 
-        stop_times = [None] * len(start_times)
-        local_maxmems = [-1] * len(start_times)
-        returncodes = [None] * len(start_times)
+        local_maxmems = [-1] * len(running_processes)
+        returncodes = [None] * len(running_processes)
 
         if not self.wait:
             print("</pre>")
@@ -882,35 +880,25 @@ class PipelineManager(object):
             """
             :param i: internal ID number of the subprocess
             """
-            stop_times[i] = time.time()
             returncode = processes[i].returncode
-            info = "Process " + str(processes[i].pid) + " returned: (" + str(processes[i].returncode) + ")."
-            if False: #i>0:
-                info += " Elapsed: " + str(datetime.timedelta(
-                    seconds=round(stop_times[i] - stop_times[i - 1], 0))) + "."
-            else:
-                info += " Elapsed: " + str(datetime.timedelta(
-                    seconds=self.time_elapsed(start_times[i]))) + "."
-            self.peak_memory = max(self.peak_memory, local_maxmems[i])
-
-            # report process profile
             current_pid = processes[i].pid
+
+            info = "Process {pid} returned {ret}; memory: {mem}. ".format(
+                pid=current_pid, 
+                ret=processes[i].returncode,
+                mem=display_memory(local_maxmems[i]))
+            
+            # report process profile
             self._report_profile(self.procs[current_pid]["proc_name"], lock_file, time.time() - self.procs[current_pid]["start_time"], local_maxmems[i])
 
             # Remove this as a running subprocess
             del self.procs[current_pid]
             running_processes.remove(i)
 
-            info += " Peak memory: (Process: {proc}; Pipeline: {pipe})".format(
-                proc=display_memory(local_maxmems[i]), pipe=display_memory(self.peak_memory))
-            # Close the preformat tag for markdown output
-
             if returncode != 0:
                 msg = "Subprocess returned nonzero result. Check above output for details"
                 self._triage_error(SubprocessError(msg), nofail)
 
-            # returncodes.append(returncode)
-            # local_maxmems.append(local_maxmem)
             returncodes[i] = returncode
             return info
 
@@ -919,8 +907,8 @@ class PipelineManager(object):
         info = ""
         while running_processes:
             for i in running_processes:
-                print("Check {}".format(i))
                 local_maxmems[i] = max(local_maxmems[i], (get_mem_child_sum(processes[i])))
+                self.peak_memory = max(self.peak_memory, local_maxmems[i])
                 if not check_me(processes[i], sleeptime):
                     info += proc_wrapup(i)
 
@@ -930,6 +918,10 @@ class PipelineManager(object):
             sleeptime = min((sleeptime + 0.25) * 3 , 60/len(processes))
 
         # All jobs are done, print a final closing and job info
+        stop_time = time.time()
+        info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(start_time))) + "."
+        info += " Peak memory: {pipe}.".format(pipe=display_memory(self.peak_memory))
+
         print("</pre>")
         print(info)
 
