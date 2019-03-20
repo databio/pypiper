@@ -678,9 +678,9 @@ class PipelineManager(object):
                     and not any([os.path.isfile(l) for l in lock_files]) \
                     and not newstart:
                 for tgt in target:
-                    if os.path.exists(tgt): print("\nTarget exists: `" + tgt + "`")
+                    if os.path.exists(tgt): print("Target exists: `" + tgt + "`")
                 if self.new_start:
-                    print("New start mode: run anyway")
+                    print("New start mode; run anyway.")
                     # Set the newstart flag so the command will run anyway.
                     # Doing this in here instead of outside the loop allows us
                     # to still report the target existence.
@@ -706,8 +706,6 @@ class PipelineManager(object):
                             recover_mode = True
                             # the recovery flag is now spent; remove so we don't accidentally re-recover a failed job
                             os.remove(recover_file)
-                        elif self.new_start:
-                            print("New start mode; overwriting target...")
                         else:  # don't overwrite locks
                             self._wait_for_lock(lock_file)
                             # when it's done loop through again to try one more
