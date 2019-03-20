@@ -294,7 +294,9 @@ class PipelineManager(object):
                         #print("Can't find custom config file: " + abs_config)
                         pass
                 if config_to_load is not None:
-                    print("\nUsing custom config file: {}".format(config_to_load))
+                    pass
+                    # TODO: Switch this message to a debug message using _LOGGER
+                    # print("\nUsing custom config file: {}".format(config_to_load))
             else:
                 # No custom config file specified. Check for default
                 pipe_path_base, _ = os.path.splitext(os.path.basename(sys.argv[0]))
