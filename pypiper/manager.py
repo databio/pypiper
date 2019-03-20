@@ -634,7 +634,6 @@ class PipelineManager(object):
             #primary_target = target[0]
         if isinstance(lock_name, str):
             lock_name = [lock_name]
-            print(lock_name)
         # Create lock file:
         # Default lock_name (if not provided) is based on the target file name,
         # but placed in the parent pipeline outfolder, and not in a subfolder, if any.
@@ -676,7 +675,7 @@ class PipelineManager(object):
             # Base case: Target exists (and we don't overwrite); break loop, don't run process.
             # os.path.exists allows the target to be either a file or directory; .isfile is file-only
             if target is not None and all([os.path.exists(t) for t in target]) \
-                    and not any([os.path.isfile(l) for l in lock_files])
+                    and not any([os.path.isfile(l) for l in lock_files]) \
                     and not newstart:
                 for tgt in target:
                     if os.path.exists(tgt): print("\nTarget exists: `" + tgt + "`")
@@ -732,16 +731,18 @@ class PipelineManager(object):
                     self._create_file_racefree(lock_file)  # Create lock
                 except OSError as e:
                     if e.errno == errno.EEXIST:  # File already exists
-                        print ("Lock file created after test! Looping again.")
+                        print ("Lock file created after test! Looping again: {}".format(
+                            lock_file))
+                        proceed = False
                         continue  # Go back to start
 
             ##### End tests block
             # If you make it past these tests, we should proceed to run the process.
 
             if target is not None:
-                print("\nTarget to produce: {}\n".format(",".join(['`'+x+'`' for x in target])))
+                print("Target to produce: {}\n".format(",".join(['`'+x+'`' for x in target])))
             else:
-                print("\nTargetless command, running...\n")
+                print("Targetless command, running...\n")
 
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
@@ -919,10 +920,6 @@ class PipelineManager(object):
             del self.procs[current_pid]
             running_processes.remove(i)
 
-            if returncode != 0:
-                msg = "Subprocess returned nonzero result. Check above output for details"
-                self._triage_error(SubprocessError(msg), nofail)
-
             returncodes[i] = returncode
             return info
 
@@ -948,6 +945,13 @@ class PipelineManager(object):
 
         print("</pre>")
         print(info)
+
+        for rc in returncodes:
+            if rc != 0:
+                msg = "Subprocess returned nonzero result. Check above output for details"
+                self._triage_error(SubprocessError(msg), nofail)
+
+
 
         return [returncodes, local_maxmems]
 
@@ -1620,7 +1624,7 @@ class PipelineManager(object):
         Function for handling both SIGTERM and SIGINT
         """
         print("</pre>")
-        message = "Got " + signal_type + ". Failing gracefully. . ."
+        message = "Got " + signal_type + ". Failing gracefully..."
         self.timestamp(message)
         self.fail_pipeline(KeyboardInterrupt(signal_type), dynamic_recover=True)
         sys.exit(1)
@@ -1711,7 +1715,7 @@ class PipelineManager(object):
             sleeptime = .2
             time_waiting = 0
             still_running = True
-            while still_running and time_waiting < 5:
+            while still_running and time_waiting < 3:
                 try:
                     os.kill(child_pid, 0)  # check if process is running
                     time.sleep(sleeptime)
