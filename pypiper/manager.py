@@ -629,15 +629,22 @@ class PipelineManager(object):
 
         # If the target is a list, for now let's just strip it to the first target.
         # Really, it should just check for all of them.
-        if is_multi_target(target):
-            target = target[0]
+        if not is_multi_target(target) and target is not None:
+            target = [target]
             #primary_target = target[0]
+        if isinstance(lock_name, str):
+            lock_name = [lock_name]
+            print(lock_name)
         # Create lock file:
         # Default lock_name (if not provided) is based on the target file name,
         # but placed in the parent pipeline outfolder, and not in a subfolder, if any.
         lock_name = lock_name or make_lock_name(target, self.outfolder)
-        lock_file = self._make_lock_path(lock_name)
-        recover_file = self._recoverfile_from_lockfile(lock_file)
+        #lock_file = self._make_lock_path(lock_name)
+        #recover_file = self._recoverfile_from_lockfile(lock_file)
+
+        lock_files = [self._make_lock_path(ln) for ln in lock_name]
+        recover_files = [self._recoverfile_from_lockfile(lf) for lf in lock_files]
+
         recover_mode = False
         process_return_code = 0
         local_maxmem = 0
@@ -662,13 +669,15 @@ class PipelineManager(object):
                 print("Follow:")
                 follow()
 
+        proceed = False
         while True:
             ##### Tests block
             # Base case: Target exists (and we don't overwrite); break loop, don't run process.
             # os.path.exists allows the target to be either a file or directory; .isfile is file-only
-            if target is not None and os.path.exists(target) \
-                    and not os.path.isfile(lock_file):
-                print("\nTarget exists: `" + target + "`")
+            if target is not None and all([os.path.exists(t) for t in target]) \
+                    and not any([os.path.isfile(l) for l in lock_files]):
+                for tgt in target:
+                    if os.path.exists(tgt): print("\nTarget exists: `" + tgt + "`")
                 if self.new_start:
                     print("New start mode: run anyway")
                     # Set the target to none so the command will run anyway.
@@ -680,23 +689,33 @@ class PipelineManager(object):
                 break  # Do not run command
 
             # Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
-            if os.path.isfile(lock_file):
-                print("Found lock file: {}".format(lock_file))
-                if self.overwrite_locks:
-                    print("Overwriting target. . .")
-                elif os.path.isfile(recover_file):
-                    print("Found dynamic recovery file ({}); "
-                          "overwriting target. . .".format(recover_file))
-                    # remove the lock file which will then be promptly re-created for the current run.
-                    recover_mode = True
-                    # the recovery flag is now spent, so remove so we don't accidentally re-recover a failed job
-                    os.remove(recover_file)
-                elif self.new_start:
-                    print("New start mode; overwriting target. . .")
-                else:  # don't overwrite locks
-                    self._wait_for_lock(lock_file)
-                    # when it's done loop through again to try one more time (to see if the target exists now)
-                    continue
+            if not proceed:
+                for lock_file in lock_files:
+                    recover_file = self._recoverfile_from_lockfile(lock_file)
+                    if os.path.isfile(lock_file):
+                        print("Found lock file: {}".format(lock_file))
+                        if self.overwrite_locks:
+                            print("Overwriting target. . .")
+                        elif os.path.isfile(recover_file):
+                            print("Found dynamic recovery file ({}); "
+                                  "overwriting target. . .".format(recover_file))
+                            # remove the lock file which will then be promptly re-created for the current run.
+                            recover_mode = True
+                            # the recovery flag is now spent; remove so we don't accidentally re-recover a failed job
+                            os.remove(recover_file)
+                        elif self.new_start:
+                            print("New start mode; overwriting target. . .")
+                        else:  # don't overwrite locks
+                            self._wait_for_lock(lock_file)
+                            # when it's done loop through again to try one more
+                            # time (to see if the target exists now)
+                            continue
+
+                        # If we make it here at least once in the for loop, then
+                        # we want to proceed, regardless of additional lock
+                        # files
+                        proceed = True
+
 
             # If you get to this point, the target doesn't exist, and the lock_file doesn't exist 
             # (or we should overwrite). create the lock (if you can)
@@ -716,7 +735,7 @@ class PipelineManager(object):
             # If you make it past these tests, we should proceed to run the process.
 
             if target is not None:
-                print("\nTarget to produce: `" + target + "`\n")
+                print("\nTarget to produce: {}\n".format(",".join(['`'+x+'`' for x in target])))
             else:
                 print("\nTargetless command, running. . .\n")
 
@@ -735,7 +754,8 @@ class PipelineManager(object):
             # For temporary files, you can specify a clean option to automatically
             # add them to the clean list, saving you a manual call to clean_add
             if target is not None and clean:
-                self.clean_add(target)
+                for tgt in target:
+                    self.clean_add(tgt)
 
             call_follow()
             os.remove(lock_file)  # Remove lock file

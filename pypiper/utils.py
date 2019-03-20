@@ -422,7 +422,10 @@ def make_lock_name(original_path, path_base_folder):
     :return str: Name or perhaps relative (to the base folder path indicated)
         path to lock file
     """
-    return original_path.replace(path_base_folder, "").replace(os.sep, "__")
+    if is_multi_target(original_path) or isinstance(original_path, list):
+        return [x.replace(path_base_folder, "").replace(os.sep, "__") for x in original_path]
+    else:
+        return original_path.replace(path_base_folder, "").replace(os.sep, "__")
 
 
 def is_multi_target(target):
