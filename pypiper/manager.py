@@ -815,11 +815,22 @@ class PipelineManager(object):
                 return True
             return False
 
+        def safe_memory_info(proc):
+            """
+            Wraps memory_info function call so we simply return 0 instead of
+            failing the pipeline when we cannot get process memory.
+            """
+            try:
+                return proc.memory_info().rss
+            except (psutil.NoSuchProcess, psutil.ZombieProcess) as e:
+                print("Warning: couldn't add memory use for process: {}".proc.pid())
+                return 0
+
         def get_mem_child_sum(proc):
             # get children processes
             children = proc.children(recursive=True)
             # get RSS memory of each child proc and sum all
-            mem_sum = sum([x.memory_info().rss for x in children])
+            mem_sum = sum([safe_memory_info(x) for x in children])
             # return in gigs
             return mem_sum/1e9
 
