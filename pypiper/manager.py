@@ -564,9 +564,7 @@ class PipelineManager(object):
     ###################################
     # Process calling functions
     ###################################
-    def run(self, cmd, target=None, lock_name=None, shell=None,
-            nofail=False, errmsg=None, clean=False, follow=None,
-            container=None):
+    def run(self, cmd, target=None, lock_name=None, shell=None, nofail=False, clean=False, follow=None, container=None):
         """
         The primary workhorse function of PipelineManager, this runs a command.
 
@@ -856,7 +854,6 @@ class PipelineManager(object):
             self.procs[processes[-1].pid] = {
                 "proc_name": proc_name,
                 "start_time": time.time(),
-                "pre_block": True,
                 "container": container,
                 "p": processes[-1]
             }
@@ -873,7 +870,7 @@ class PipelineManager(object):
                 # the sleeptime is extremely short at the beginning and gets longer exponentially 
                 # (+ constant to prevent copious checks at the very beginning)
                 # = more precise mem tracing for short processes
-                sleeptime = min((sleeptime + 0.25) * 3 , 60)
+                sleeptime = min((sleeptime + 0.25) * 3, 60)
 
             stop_times.append(time.time())
             returncode = processes[i].returncode
@@ -937,8 +934,8 @@ class PipelineManager(object):
 
         info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
         if not shell:
-            info += " Peak memory: (Process: " + str(round(local_maxmem,3)) + "GB;"
-            info += " Pipeline: " + str(round(self.peak_memory,3)) + "GB)\n"
+            info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
+            info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)\n"
 
         print(info + "\n")
         if p.returncode != 0:
@@ -1027,8 +1024,7 @@ class PipelineManager(object):
                 self.curr_checkpoint = checkpoint
                 self._checkpoint(self.prev_checkpoint)
             # Handle the two halting conditions.
-            if (finished and checkpoint == self.stop_after) or \
-                    (not finished and checkpoint == self.stop_before):
+            if (finished and checkpoint == self.stop_after) or (not finished and checkpoint == self.stop_before):
                 self.halt(checkpoint, finished, raise_error=raise_error)
             # Determine if we've started executing.
             elif checkpoint == self.start_point:
@@ -1127,8 +1123,7 @@ class PipelineManager(object):
 
         # better to use a relative path in this file
         # convert any absolute paths into relative paths
-        relative_filename = os.path.relpath(filename, self.outfolder) \
-                if os.path.isabs(filename) else filename
+        relative_filename = os.path.relpath(filename, self.outfolder) if os.path.isabs(filename) else filename
 
         message_raw = "{key}\t{filename}\t{annotation}".format(
             key=key, filename=relative_filename, annotation=annotation)
@@ -1178,7 +1173,6 @@ class PipelineManager(object):
         else:
             relative_anchor_image = "None"
 
-
         message_raw = "{key}\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
             key=key, filename=relative_filename, anchor_text=anchor_text, 
             anchor_image=relative_anchor_image, annotation=annotation)
@@ -1190,9 +1184,6 @@ class PipelineManager(object):
         print(message_markdown)
 
         self._safe_write_to_file(self.pipeline_objects_file, message_raw)
-
-
-
 
 
     def _safe_write_to_file(self, file, message):
@@ -1516,7 +1507,7 @@ class PipelineManager(object):
         # Finally, set the status to failed and close out with a timestamp
         if not self.failed:  # and not self.completed:
             self.timestamp("### Pipeline failed at: ")
-            total_time = datetime.timedelta(seconds = self.time_elapsed(self.starttime))
+            total_time = datetime.timedelta(seconds=self.time_elapsed(self.starttime))
             print("Total time: " + str(total_time))
             self.set_status_flag(FAIL_FLAG)
 
@@ -1550,10 +1541,10 @@ class PipelineManager(object):
         """
         self.set_status_flag(status)
         self._cleanup()
-        self.report_result("Time", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
+        self.report_result("Time", str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
         print("\n##### [Epilogue:]")
-        print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
+        print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         # print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
         print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
         if self.halted:
@@ -1655,7 +1646,7 @@ class PipelineManager(object):
         if child_pid is None:
             pass
         else:
-            msg = "\nPypiper terminating spawned child process " + str(child_pid) +  ". . ."
+            msg = "\nPypiper terminating spawned child process " + str(child_pid) + ". . ."
             if proc_name:
                 msg += "(" + proc_name + ")"
             print(msg)
@@ -1836,8 +1827,10 @@ class PipelineManager(object):
                         items_to_clean = glob.glob(cleandir)
                         for clean_item in items_to_clean:
                             with open(self.cleanup_file, "a") as clean_script:
-                                if os.path.isfile(file): clean_script.write("rm " + clean_item + "\n")
-                                elif os.path.isdir(file): clean_script.write("rmdir " + clean_item + "\n")
+                                if os.path.isfile(file):
+                                    clean_script.write("rm " + clean_item + "\n")
+                                elif os.path.isdir(file):
+                                    clean_script.write("rmdir " + clean_item + "\n")
                     except Exception:
                         no_cleanup_script.append(cleandir)
                 if no_cleanup_script: 
