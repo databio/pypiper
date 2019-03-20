@@ -35,4 +35,8 @@ plugins:
       autodoc_build: "docs/autodoc_build"
       autodoc_package: "pypiper"
       no_top_level: true
+      build_list:
+        pypiper: [PipelineManager]
+        ngstk: [NGSTk]
   - search
+
