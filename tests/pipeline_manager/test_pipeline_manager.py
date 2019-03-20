@@ -14,7 +14,7 @@ from pypiper.exceptions import SubprocessError
 
 
 __author__ = "Nathan Sheffield"
-__email__ = "nsheff@virginia.edu"
+__email__ = "nathan@code.databio.org"
 
 
 
