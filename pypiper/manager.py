@@ -201,7 +201,7 @@ class PipelineManager(object):
 
         self.pl_version = version
         # Set relative output_parent directory to absolute
-        # not necessary after all...
+        # not necessary after all. . .
         #if self.output_parent and not os.path.isabs(self.output_parent):
         #   self.output_parent = os.path.join(os.getcwd(), self.output_parent)
 
@@ -311,7 +311,7 @@ class PipelineManager(object):
                 # Set the args to the new config file, so it can be used
                 # later to pass to, for example, toolkits
                 import yaml
-                # An also use yaml.FullLoader for trusted input...
+                # An also use yaml.FullLoader for trusted input. . .
                 config = yaml.load(conf, Loader=yaml.SafeLoader)
                 self.config = AttMapEcho(config)
         else:
@@ -564,9 +564,7 @@ class PipelineManager(object):
     ###################################
     # Process calling functions
     ###################################
-    def run(self, cmd, target=None, lock_name=None, shell=None,
-            nofail=False, errmsg=None, clean=False, follow=None,
-            container=None):
+    def run(self, cmd, target=None, lock_name=None, shell=None, nofail=False, clean=False, follow=None, container=None):
         """
         The primary workhorse function of PipelineManager, this runs a command.
 
@@ -676,7 +674,7 @@ class PipelineManager(object):
                     # Set the target to none so the command will run anyway.
                     target = None
                     continue
-                # Normally we don't run the follow, but if you want to force...
+                # Normally we don't run the follow, but if you want to force. . .
                 if self.force_follow:
                     call_follow()
                 break  # Do not run command
@@ -685,16 +683,16 @@ class PipelineManager(object):
             if os.path.isfile(lock_file):
                 print("Found lock file: {}".format(lock_file))
                 if self.overwrite_locks:
-                    print("Overwriting target...")
+                    print("Overwriting target. . .")
                 elif os.path.isfile(recover_file):
                     print("Found dynamic recovery file ({}); "
-                          "overwriting target...".format(recover_file))
+                          "overwriting target. . .".format(recover_file))
                     # remove the lock file which will then be promptly re-created for the current run.
                     recover_mode = True
                     # the recovery flag is now spent, so remove so we don't accidentally re-recover a failed job
                     os.remove(recover_file)
                 elif self.new_start:
-                    print("New start mode; overwriting target...")
+                    print("New start mode; overwriting target. . .")
                 else:  # don't overwrite locks
                     self._wait_for_lock(lock_file)
                     # when it's done loop through again to try one more time (to see if the target exists now)
@@ -720,7 +718,7 @@ class PipelineManager(object):
             if target is not None:
                 print("\nTarget to produce: `" + target + "`\n")
             else:
-                print("\nTargetless command, running...\n")
+                print("\nTargetless command, running. . .\n")
 
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
@@ -782,15 +780,16 @@ class PipelineManager(object):
         except Exception as e:
             self._triage_error(e, nofail, errmsg)
 
-    def callprint(self, cmd, shell, lock_file=None, nofail=False, container=None):
+    def callprint(self, cmd, shell=None, lock_file=None, nofail=False, container=None):
         """
         Prints the command, and then executes it, then prints the memory use and
         return code of the command.
 
         Uses python's subprocess.Popen() to execute the given command. The shell argument is simply
         passed along to Popen(). You should use shell=False (default) where possible, because this enables memory
-        profiling. You should use shell=True if you require shell functions like redirects (>) or pipes (|), but this
-        will prevent the script from monitoring memory use.
+        profiling. You should use shell=True if you require shell functions like redirects (>) or stars (*), but this
+        will prevent the script from monitoring memory use. The pipes (|) will be used to split the command into
+        subprocesses run within python, so the memory profiling is possible.
 
         cmd can also be a series (a dict object) of multiple commands, which will be run in succession.
 
@@ -861,10 +860,10 @@ class PipelineManager(object):
             self.procs[processes[-1].pid] = {
                 "proc_name": proc_name,
                 "start_time": time.time(),
-                "pre_block": True,
                 "container": container,
                 "p": processes[-1]
             }
+
             print("Added process {}".format(processes[-1].pid))
             # Capture the subprocess output in <pre> tags to make it format nicely
             # if the markdown log file is displayed as HTML.
@@ -879,7 +878,6 @@ class PipelineManager(object):
             ids = [x.pid for x in processes]
             print ("Not waiting for subprocess(es): " + str(ids))
             return [0, -1]
-
 
         def proc_wrapup(i):
             """
@@ -964,8 +962,8 @@ class PipelineManager(object):
 
         info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
         if not shell:
-            info += " Peak memory: (Process: " + str(round(local_maxmem,3)) + "GB;"
-            info += " Pipeline: " + str(round(self.peak_memory,3)) + "GB)\n"
+            info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
+            info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)\n"
 
         print(info + "\n")
         if p.returncode != 0:
@@ -1054,8 +1052,7 @@ class PipelineManager(object):
                 self.curr_checkpoint = checkpoint
                 self._checkpoint(self.prev_checkpoint)
             # Handle the two halting conditions.
-            if (finished and checkpoint == self.stop_after) or \
-                    (not finished and checkpoint == self.stop_before):
+            if (finished and checkpoint == self.stop_after) or (not finished and checkpoint == self.stop_before):
                 self.halt(checkpoint, finished, raise_error=raise_error)
             # Determine if we've started executing.
             elif checkpoint == self.start_point:
@@ -1154,8 +1151,7 @@ class PipelineManager(object):
 
         # better to use a relative path in this file
         # convert any absolute paths into relative paths
-        relative_filename = os.path.relpath(filename, self.outfolder) \
-                if os.path.isabs(filename) else filename
+        relative_filename = os.path.relpath(filename, self.outfolder) if os.path.isabs(filename) else filename
 
         message_raw = "{key}\t{filename}\t{annotation}".format(
             key=key, filename=relative_filename, annotation=annotation)
@@ -1205,7 +1201,6 @@ class PipelineManager(object):
         else:
             relative_anchor_image = "None"
 
-
         message_raw = "{key}\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
             key=key, filename=relative_filename, anchor_text=anchor_text, 
             anchor_image=relative_anchor_image, annotation=annotation)
@@ -1217,9 +1212,6 @@ class PipelineManager(object):
         print(message_markdown)
 
         self._safe_write_to_file(self.pipeline_objects_file, message_raw)
-
-
-
 
 
     def _safe_write_to_file(self, file, message):
@@ -1543,7 +1535,7 @@ class PipelineManager(object):
         # Finally, set the status to failed and close out with a timestamp
         if not self.failed:  # and not self.completed:
             self.timestamp("### Pipeline failed at: ")
-            total_time = datetime.timedelta(seconds = self.time_elapsed(self.starttime))
+            total_time = datetime.timedelta(seconds=self.time_elapsed(self.starttime))
             print("Total time: " + str(total_time))
             self.set_status_flag(FAIL_FLAG)
 
@@ -1577,10 +1569,10 @@ class PipelineManager(object):
         """
         self.set_status_flag(status)
         self._cleanup()
-        self.report_result("Time", str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
+        self.report_result("Time", str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
         print("\n##### [Epilogue:]")
-        print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds = self.time_elapsed(self.starttime))))
+        print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         # print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
         print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
         if self.halted:
@@ -1604,7 +1596,8 @@ class PipelineManager(object):
         """
         Function for handling both SIGTERM and SIGINT
         """
-        message = "Got " + signal_type + ". Failing gracefully..."
+        print("</pre>")
+        message = "Got " + signal_type + ". Failing gracefully. . ."
         self.timestamp(message)
         self.fail_pipeline(KeyboardInterrupt(signal_type), dynamic_recover=True)
         sys.exit(1)
@@ -1664,11 +1657,6 @@ class PipelineManager(object):
             elapsed_time = time.time() - self.procs[pid]["start_time"]
             process_peak_mem = self._memory_usage(pid, container=proc_dict["container"])/1e6
             self._report_profile(self.procs[pid]["proc_name"], None, elapsed_time, process_peak_mem)
-        
-            if proc_dict["pre_block"]:
-                print("</pre>")
-                self.procs[pid]["pre_block"] = False
-                sys.stdout.flush()
             self._kill_child_process(pid, proc_dict["proc_name"])
             del self.procs[pid]
 
@@ -1686,7 +1674,7 @@ class PipelineManager(object):
         if child_pid is None:
             pass
         else:
-            msg = "\nPypiper terminating spawned child process " + str(child_pid) +  "..."
+            msg = "\nPypiper terminating spawned child process " + str(child_pid) + ". . ."
             if proc_name:
                 msg += "(" + proc_name + ")"
             print(msg)
@@ -1710,7 +1698,7 @@ class PipelineManager(object):
 
             if still_running:
                 # still running after 5 seconds!?
-                print("Child not responding to SIGTERM, trying SIGKILL...")
+                print("Child not responding to SIGTERM, trying SIGKILL. . .")
                 os.kill(child_pid, signal.SIGKILL)
 
             print("Child process SIGKILLed after " + str(time_waiting) + " seconds.")
@@ -1737,7 +1725,7 @@ class PipelineManager(object):
 
 
     def remove_container(self, container):
-        print("Removing docker container...")
+        print("Removing docker container. . .")
         cmd = "docker rm -f " + container
         self.callprint(cmd)
 
@@ -1815,7 +1803,7 @@ class PipelineManager(object):
                 self.cleanup_list = []
 
         if len(self.cleanup_list) > 0:
-            print("\nCleaning up flagged intermediate files...")
+            print("\nCleaning up flagged intermediate files. . .")
             for expr in self.cleanup_list:
                 print("\nRemoving glob: " + expr)
                 try:
@@ -1841,7 +1829,7 @@ class PipelineManager(object):
                           if COMPLETE_FLAG not in os.path.basename(fn)
                           and not "{}_{}".format(self.name, run_flag) == os.path.basename(fn)]
             if len(flag_files) == 0 and not dry_run:
-                print("\nCleaning up conditional list...")
+                print("\nCleaning up conditional list. . .")
                 for expr in self.cleanup_list_conditional:
                     print("\nRemoving glob: " + expr)
                     try:
@@ -1859,7 +1847,7 @@ class PipelineManager(object):
                         pass
             else:
                 print("\nConditional flag found: " + str([os.path.basename(i) for i in flag_files]))
-                print("\nThese conditional files were left in place:" + str(self.cleanup_list_conditional))
+                print("\nThese conditional files were left in place:\n\n- " + "\n- ".join(self.cleanup_list_conditional))
                 # Produce a cleanup script.
                 no_cleanup_script = []
                 for cleandir in self.cleanup_list_conditional:
@@ -1867,12 +1855,14 @@ class PipelineManager(object):
                         items_to_clean = glob.glob(cleandir)
                         for clean_item in items_to_clean:
                             with open(self.cleanup_file, "a") as clean_script:
-                                if os.path.isfile(file): clean_script.write("rm " + clean_item + "\n")
-                                elif os.path.isdir(file): clean_script.write("rmdir " + clean_item + "\n")
+                                if os.path.isfile(file):
+                                    clean_script.write("rm " + clean_item + "\n")
+                                elif os.path.isdir(file):
+                                    clean_script.write("rmdir " + clean_item + "\n")
                     except Exception:
                         no_cleanup_script.append(cleandir)
                 if no_cleanup_script: 
-                    print('Could not produce cleanup script for item(s):\n* ' + '\n* '.join(no_cleanup_script))
+                    print('\n\nCould not produce cleanup script for item(s):\n\n- ' + '\n- '.join(no_cleanup_script))
 
 
     def _memory_usage(self, pid='self', category="hwm", container=None):
@@ -1942,4 +1932,4 @@ class PipelineManager(object):
         else:
             print(e)
             print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
-        # TODO: return nonzero, or something...?
+        # TODO: return nonzero, or something. . .?

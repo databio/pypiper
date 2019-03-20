@@ -3,6 +3,8 @@
 - **v0.10.0** (*Unreleased*):
 
     - Fixed a bug that raised exception with empty commands
+    
+    - Fixed the pipeline profiling issues 
 
 - **v0.9.4** (*2019-01-31*):
 
