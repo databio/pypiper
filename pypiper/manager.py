@@ -1882,11 +1882,11 @@ class PipelineManager(object):
                         items_to_clean = glob.glob(cleandir)
                         for clean_item in items_to_clean:
                             with open(self.cleanup_file, "a") as clean_script:
-                                if os.path.isfile(file):
+                                if os.path.isfile(clean_item):
                                     clean_script.write("rm " + clean_item + "\n")
-                                elif os.path.isdir(file):
+                                elif os.path.isdir(clean_item):
                                     clean_script.write("rmdir " + clean_item + "\n")
-                    except Exception:
+                    except Exception as e:
                         no_cleanup_script.append(cleandir)
                 if no_cleanup_script: 
                     print('\n\nCould not produce cleanup script for item(s):\n\n- ' + '\n- '.join(no_cleanup_script))
