@@ -670,18 +670,22 @@ class PipelineManager(object):
                 follow()
 
         proceed = False
+        newstart = False
         while True:
             ##### Tests block
             # Base case: Target exists (and we don't overwrite); break loop, don't run process.
             # os.path.exists allows the target to be either a file or directory; .isfile is file-only
             if target is not None and all([os.path.exists(t) for t in target]) \
-                    and not any([os.path.isfile(l) for l in lock_files]):
+                    and not any([os.path.isfile(l) for l in lock_files])
+                    and not newstart:
                 for tgt in target:
                     if os.path.exists(tgt): print("\nTarget exists: `" + tgt + "`")
                 if self.new_start:
                     print("New start mode: run anyway")
-                    # Set the target to none so the command will run anyway.
-                    target = None
+                    # Set the newstart flag so the command will run anyway.
+                    # Doing this in here instead of outside the loop allows us
+                    # to still report the target existence.
+                    newstart = True
                     continue
                 # Normally we don't run the follow, but if you want to force. . .
                 if self.force_follow:
@@ -704,7 +708,7 @@ class PipelineManager(object):
                             # the recovery flag is now spent; remove so we don't accidentally re-recover a failed job
                             os.remove(recover_file)
                         elif self.new_start:
-                            print("New start mode; overwriting target. . .")
+                            print("New start mode; overwriting target...")
                         else:  # don't overwrite locks
                             self._wait_for_lock(lock_file)
                             # when it's done loop through again to try one more
@@ -737,7 +741,7 @@ class PipelineManager(object):
             if target is not None:
                 print("\nTarget to produce: {}\n".format(",".join(['`'+x+'`' for x in target])))
             else:
-                print("\nTargetless command, running. . .\n")
+                print("\nTargetless command, running...\n")
 
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
