@@ -423,9 +423,11 @@ class PipelineManager(object):
 
             # If the pipeline is terminated with SIGTERM/SIGINT,
             # make sure we kill this spawned tee subprocess as well.
-            atexit.register(self._kill_child_process, tee.pid, proc_name="tee")
+            # atexit.register(self._kill_child_process, tee.pid, proc_name="tee")
             os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
             os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
+
+            self.tee = tee
 
         # For some reason, this exit handler function MUST be registered after
         # the one that kills the tee process.
@@ -1564,6 +1566,7 @@ class PipelineManager(object):
             print("Total time: " + str(total_time))
             self.set_status_flag(FAIL_FLAG)
 
+
         raise e
 
 
@@ -1671,6 +1674,8 @@ class PipelineManager(object):
             print("Pipeline status: {}".format(self.status))
             self.fail_pipeline(Exception("Pipeline failure. See details above."))
 
+        self.tee.kill()            
+
     def _terminate_running_subprocesses(self):
 
         # make a copy of the list to iterate over since we'll be removing items
@@ -1710,14 +1715,22 @@ class PipelineManager(object):
             os.kill(child_pid, signal.SIGTERM)
 
             # If not terminated after X seconds, send a SIGKILL
-            sleeptime = .2
+            sleeptime = .1
             time_waiting = 0
             still_running = True
             while still_running and time_waiting < 3:
                 try:
-                    os.kill(child_pid, 0)  # check if process is running
+                    if time_waiting > 1:
+                        print("sigterm")
+                        os.kill(child_pid, signal.SIGTERM)
+                    elif time_waiting > 0.5:
+                        print("sigint")
+                        os.kill(child_pid, signal.SIGINT)
+                    else:
+                        os.kill(child_pid, 0)  # check if process is running
                     time.sleep(sleeptime)
                     time_waiting = time_waiting + sleeptime
+
                 except OSError:
                     still_running = False
 
