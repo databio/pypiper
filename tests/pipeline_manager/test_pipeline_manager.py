@@ -112,8 +112,8 @@ class PipelineManagerTests(unittest.TestCase):
         self._assertFile("sample_pipeline_running.flag")
 
         print("Testing waiting for locks...")
-        self.pp2.wait=False
-        self.pp.wait=False
+        self.pp2.wait = False
+        self.pp.wait = False
         sleep_lock = pipeline_filepath(self.pp, filename="lock.sleep")
         subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
         self.pp._create_file(sleep_lock)
@@ -267,7 +267,7 @@ class PipelineManagerTests(unittest.TestCase):
 
         print("Test new start")
         if os.path.isfile(target):  # for repeat runs.
-            os.remove(target)        
+            os.remove(target)
         self.pp.run("echo first > " + target, target, shell=True)
         # Should not run
         self.pp.run("echo second > " + target, target, shell=True)

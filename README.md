@@ -1,4 +1,4 @@
-<img src="logo_pypiper.svg" alt="Pypiper logo" height="70" align="left"/>
+![pypiper-logo](https://raw.githubusercontent.com/databio/pypiper/master/logo_pypiper.svg)
 
 # Pypiper
 
