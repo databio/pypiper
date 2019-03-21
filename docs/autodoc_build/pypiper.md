@@ -39,12 +39,11 @@ Prints the command, and then executes it, then prints the memory use and return 
 
 Uses python's subprocess.Popen() to execute the given command. The shell argument is simply
 passed along to Popen(). You should use shell=False (default) where possible, because this enables memory
-profiling. You should use shell=True if you require shell functions like redirects (>) or stars (*), but this
-will prevent the script from monitoring memory use. The pipes (|) will be used to split the command into
-subprocesses run within python, so the memory profiling is possible.
+profiling. You should use shell=True if you require shell functions like redirects (>) or pipes (|), but this
+will prevent the script from monitoring memory use.
 cmd can also be a series (a dict object) of multiple commands, which will be run in succession.
 ```python
-def callprint(self, cmd, shell=None, lock_file=None, nofail=False, container=None):
+def callprint(self, cmd, shell, lock_file=None, nofail=False, container=None):
 ```
 
 **Parameters:**
@@ -318,7 +317,7 @@ it will first create a lock file to prevent other calls to run
 is being created. It also records the memory of the process and
 provides some logging output.
 ```python
-def run(self, cmd, target=None, lock_name=None, shell=None, nofail=False, clean=False, follow=None, container=None):
+def run(self, cmd, target=None, lock_name=None, shell=None, nofail=False, errmsg=None, clean=False, follow=None, container=None):
 ```
 
 **Parameters:**

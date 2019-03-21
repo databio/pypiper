@@ -19,10 +19,11 @@ nav:
     - Cleaning up intermediate files: clean.md
     - Best practices: best-practices.md
   - Toolkits:
-    - "NGSTk: the NGS toolkit": ngstk.md    
+    - "NGSTk: the NGS toolkit": ngstk_intro.md    
   - Reference:
     - Catalog of pipeline outputs: outputs.md
-    - API: autodoc_build/pypiper.md
+    - Pypiper API: autodoc_build/pypiper.md
+    - NGSTk API: autodoc_build/ngstk.md
     - FAQ: faq.md
     - Support: support.md
     - Contributing: contributing.md
