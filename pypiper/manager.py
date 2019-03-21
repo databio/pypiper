@@ -1242,10 +1242,12 @@ class PipelineManager(object):
         (self.pipeline_commands_file).
 
         :param str cmd: command to report
-        :param str procs: process numbers for processes in the command
+        :param str | list[str] procs: process numbers for processes in the command
         """
+        if isinstance(procs, list):
+            procs = ",".join(str(procs))
         if procs:
-            line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=",".join(procs))
+            line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=procs)
         else:
             line = "\n> `{cmd}`\n".format(cmd=str(cmd))
         print(line)
