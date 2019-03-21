@@ -105,9 +105,9 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(os.path.isdir(self.pp.outfolder))
 
         print("Testing status flags...")
-        self.pp.set_status_flag("testing")
+        self.pp._set_status_flag("testing")
         self._assertFile("sample_pipeline_testing.flag")
-        self.pp.set_status_flag("running")
+        self.pp._set_status_flag("running")
         self._assertNotFile("sample_pipeline_testing.flag")
         self._assertFile("sample_pipeline_running.flag")
 

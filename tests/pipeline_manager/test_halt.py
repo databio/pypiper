@@ -56,7 +56,7 @@ def test_halt_status_supersedes_completed(
 
     # Create manager and completion flag.
     pm = get_pipe_manager(name="halt-status-flag")
-    pm.set_status_flag(COMPLETE_FLAG)
+    pm._set_status_flag(COMPLETE_FLAG)
     path_complete_flag = pm._flag_file_path(COMPLETE_FLAG)
     assert os.path.isfile(path_complete_flag)
 
