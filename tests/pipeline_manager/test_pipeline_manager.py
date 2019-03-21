@@ -112,8 +112,8 @@ class PipelineManagerTests(unittest.TestCase):
         self._assertFile("sample_pipeline_running.flag")
 
         print("Testing waiting for locks...")
-        self.pp2.wait=False
-        self.pp.wait=False
+        self.pp2.wait = False
+        self.pp.wait = False
         sleep_lock = pipeline_filepath(self.pp, filename="lock.sleep")
         subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
         self.pp._create_file(sleep_lock)
@@ -186,8 +186,6 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(tgt2))
         self.assertTrue(os.path.isfile(tgt3))
         self.assertTrue(os.path.isfile(tgt4))
-
-        self.pp.report_figure("Test figure", os.path.join("fig", "fig.jpg"))
 
         # But in regular mode, they should be deleted:
         self.pp.dirty=False
