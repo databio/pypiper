@@ -266,6 +266,20 @@ class PipelineManagerTests(unittest.TestCase):
         #subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
 
         print("Test new start")
+        if os.path.isfile(target):  # for repeat runs.
+            os.remove(target)        
+        self.pp.run("echo first > " + target, target, shell=True)
+        # Should not run
+        self.pp.run("echo second > " + target, target, shell=True)
+        with open(target) as f:
+            lines = f.readlines()
+        self._assertLines(["first"], lines)
+        self.pp.new_start = True
+        # Should run
+        self.pp.run("echo third > " + target, target, shell=True)
+        with open(target) as f:
+            lines = f.readlines()
+        self._assertLines(["third"], lines)
 
 
 def _make_pipe_filepath(pm, filename):
