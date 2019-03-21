@@ -770,7 +770,7 @@ class PipelineManager(object):
 
         return process_return_code
 
-    def checkprint(self, cmd, shell=None, nofail=False, errmsg=None):
+    def checkprint(self, cmd, shell=None, nofail=False):
         """
         Just like callprint, but checks output -- so you can get a variable
         in python corresponding to the return value of the command you call.
@@ -784,7 +784,6 @@ class PipelineManager(object):
         :param bool nofail: Should the pipeline bail on a nonzero return from a process? Default: False
             Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
             they will not cause the pipeline to bail out.
-        :param str errmsg: Message to print if there's an error.
         """
 
         self._report_command(cmd)
@@ -802,7 +801,7 @@ class PipelineManager(object):
         try:
             return subprocess.check_output(cmd, shell=shell)
         except Exception as e:
-            self._triage_error(e, nofail, errmsg)
+            self._triage_error(e, nofail)
 
     def callprint(self, cmd, shell=None, lock_file=None, nofail=False, container=None):
         """
@@ -1943,10 +1942,8 @@ class PipelineManager(object):
         # print(result[category])
         return result[category]
 
-    def _triage_error(self, e, nofail, errmsg=None):
+    def _triage_error(self, e, nofail):
         """ Print a message and decide what to do about an error.  """
-        if errmsg is not None:
-            print(errmsg)
         if not nofail:
             self.fail_pipeline(e)
         elif self.failed:
