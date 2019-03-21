@@ -1705,13 +1705,12 @@ class PipelineManager(object):
         if child_pid is None:
             pass
         else:
-            msg = "\nPypiper terminating spawned child process " + str(child_pid) + ". . ."
             if proc_name:
-                msg += "(" + proc_name + ")"
-            print(msg)
+                proc_string = " ({proc_name})".format(proc_name=proc_name)
 
             # First a gentle kill            
             sys.stdout.flush()
+            still_running = True
             try:
                 os.killpg(child_pid, signal.SIGINT)
                 os.killpg(child_pid, signal.SIGTERM)
@@ -1720,7 +1719,6 @@ class PipelineManager(object):
             # If not terminated after X seconds, send a SIGKILL
             sleeptime = .2
             time_waiting = 0
-            still_running = True
             while still_running and time_waiting < 3:
                 try:
                     if time_waiting > 1.5:
@@ -1737,10 +1735,15 @@ class PipelineManager(object):
 
             if still_running:
                 # still running after 5 seconds!?
-                print("Child not responding to SIGTERM, trying SIGKILL. . .")
+                print("Child process {child_pid}{proc_string} not responding "
+                    "to SIGTERM, trying SIGKILL. . .".format(child_pid=child_pid,
+                        proc_string=proc_string))
                 os.kill(child_pid, signal.SIGKILL)
 
-            print("Child process terminated after " + str(time_waiting) + " seconds.")
+            msg = "Child process {child_pid}{proc_string} terminated after {time}s.".format(
+                child_pid=child_pid, proc_string=proc_string, time=time_waiting)
+            print(msg)
+
 
 
     def atexit_register(self, *args):

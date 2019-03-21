@@ -297,10 +297,13 @@ def get_proc_name(cmd):
     """
     Get the representative process name from complex command
 
-    :param list cmd: a string to be processed
-    :return str: the command
+    :param str | list[str] cmd: a command to be processed
+    :return str: the basename representative command
     """
-    return " ".join(cmd).split()[0].replace('(', '').replace(')', '')
+    if isinstance(cmd, list):
+        cmd = " ".join(cmd)
+
+    return cmd.split()[0].replace('(', '').replace(')', '')
 
 
 def get_first_value(param, param_pools, on_missing=None, error=True):
