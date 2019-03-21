@@ -187,7 +187,7 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(tgt3))
         self.assertTrue(os.path.isfile(tgt4))
 
-        self.pp.report_figure("Test figure", os.path.join("fig", "fig.jpg"))
+        self.pp.report_object("Test figure", os.path.join("fig", "fig.jpg"))
 
         # But in regular mode, they should be deleted:
         self.pp.dirty=False
@@ -265,6 +265,7 @@ class PipelineManagerTests(unittest.TestCase):
 
         #subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
 
+        print("Test new start")
 
 
 def _make_pipe_filepath(pm, filename):
