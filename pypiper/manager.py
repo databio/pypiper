@@ -322,7 +322,7 @@ class PipelineManager(object):
 
 
     @property
-    def completed(self):
+    def _completed(self):
         """
         Is the managed pipeline in a completed state?
 
@@ -332,7 +332,7 @@ class PipelineManager(object):
 
 
     @property
-    def failed(self):
+    def _failed(self):
         """
         Is the managed pipeline in a failed state?
 
@@ -359,7 +359,7 @@ class PipelineManager(object):
         :return bool: Whether the managed pipeline's status indicates that it
             has been safely stopped.
         """
-        return self.completed or self.halted or self.failed
+        return self._completed or self.halted or self._failed
 
 
     @property
@@ -531,7 +531,7 @@ class PipelineManager(object):
         """
 
         # Remove previous status flag file.
-        flag_file_path = self.flag_file_path()
+        flag_file_path = self._flag_file_path()
         try:
             os.remove(flag_file_path)
         except:
@@ -545,12 +545,12 @@ class PipelineManager(object):
         # Set new status.
         prev_status = self.status
         self.status = status
-        self._create_file(self.flag_file_path())
+        self._create_file(self._flag_file_path())
         print("\nChanged status from {} to {}.".format(
                 prev_status, self.status))
 
 
-    def flag_file_path(self, status=None):
+    def _flag_file_path(self, status=None):
         """
         Create path to flag file based on indicated or current status.
 
@@ -1561,12 +1561,11 @@ class PipelineManager(object):
         self._cleanup(dry_run=True)
 
         # Finally, set the status to failed and close out with a timestamp
-        if not self.failed:  # and not self.completed:
+        if not self._failed:  # and not self._completed:
             self.timestamp("### Pipeline failed at: ")
             total_time = datetime.timedelta(seconds=self.time_elapsed(self.starttime))
             print("Total time: " + str(total_time))
             self.set_status_flag(FAIL_FLAG)
-
 
         raise e
 
@@ -1746,7 +1745,7 @@ class PipelineManager(object):
 
 
 
-    def atexit_register(self, *args):
+    def _atexit_register(self, *args):
         """ Convenience alias to register exit functions without having to import atexit in the pipeline. """
         atexit.register(*args)
 
@@ -1763,7 +1762,7 @@ class PipelineManager(object):
         container = self.checkprint(cmd).rstrip()
         self.container = container
         print("Using docker container: " + container)
-        self.atexit_register(self.remove_container, container)
+        self._atexit_register(self.remove_container, container)
 
 
     def remove_container(self, container):
@@ -1963,7 +1962,7 @@ class PipelineManager(object):
         """ Print a message and decide what to do about an error.  """
         if not nofail:
             self.fail_pipeline(e)
-        elif self.failed:
+        elif self._failed:
             print("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
             raise e
         else:
