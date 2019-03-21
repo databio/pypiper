@@ -352,7 +352,7 @@ class PipelineManager(object):
 
 
     @property
-    def has_exit_status(self):
+    def _has_exit_status(self):
         """
         Has the managed pipeline been safely stopped?
 
@@ -360,16 +360,6 @@ class PipelineManager(object):
             has been safely stopped.
         """
         return self._completed or self.halted or self._failed
-
-
-    @property
-    def is_running(self):
-        """
-        Is the managed pipeline running?
-
-        :return bool: Whether the managed pipeline is running.
-        """
-        return self.status == RUN_FLAG
 
 
     def _ignore_interrupts(self):
@@ -511,7 +501,7 @@ class PipelineManager(object):
             valtext = "`{}`".format(val)
             print("* {}:  {}".format(argtext.rjust(20), valtext))
         print("\n----------------------------------------\n")
-        self.set_status_flag(RUN_FLAG)
+        self._set_status_flag(RUN_FLAG)
 
         # Record the start in PIPE_profile and PIPE_commands output files so we
         # can trace which run they belong to
@@ -523,7 +513,7 @@ class PipelineManager(object):
             myfile.write("# Pipeline started at " + time.strftime("%m-%d %H:%M:%S", time.localtime(self.starttime)) + "\n\n")
 
 
-    def set_status_flag(self, status):
+    def _set_status_flag(self, status):
         """
         Configure state and files on disk to match current processing status.
 
@@ -627,7 +617,7 @@ class PipelineManager(object):
         # Therefore, a targetless command that you want
         # to lock must specify a lock_name manually.
         if target is None and lock_name is None:
-            self.fail_pipeline(Exception(
+            self._fail_pipeline(Exception(
                 "You must provide either a target or a lock_name."))
 
         # If the target is a list, for now let's just strip it to the first target.
@@ -1005,7 +995,7 @@ class PipelineManager(object):
         while os.path.isfile(lock_file):
             if first_message_flag is False:
                 self.timestamp("Waiting for file lock: " + lock_file)
-                self.set_status_flag(WAIT_FLAG)
+                self._set_status_flag(WAIT_FLAG)
                 first_message_flag = True
             else:
                 sys.stdout.write(".")
@@ -1022,7 +1012,7 @@ class PipelineManager(object):
 
         if first_message_flag:
             self.timestamp("File unlocked.")
-            self.set_status_flag(RUN_FLAG)
+            self._set_status_flag(RUN_FLAG)
 
 
     ###################################
@@ -1503,7 +1493,7 @@ class PipelineManager(object):
         self.stop_pipeline(status=COMPLETE_FLAG)
 
 
-    def fail_pipeline(self, e, dynamic_recover=False):
+    def _fail_pipeline(self, e, dynamic_recover=False):
         """
         If the pipeline does not complete, this function will stop the pipeline gracefully.
         It sets the status flag to failed and skips the normal success completion procedure.
@@ -1537,7 +1527,7 @@ class PipelineManager(object):
             self.timestamp("### Pipeline failed at: ")
             total_time = datetime.timedelta(seconds=self.time_elapsed(self.starttime))
             print("Total time: " + str(total_time))
-            self.set_status_flag(FAIL_FLAG)
+            self._set_status_flag(FAIL_FLAG)
 
         raise e
 
@@ -1567,7 +1557,7 @@ class PipelineManager(object):
         at the end of the script. It sets status flag to completed and records 
         some time and memory statistics to the log file.
         """
-        self.set_status_flag(status)
+        self._set_status_flag(status)
         self._cleanup()
         self.report_result("Time", str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
@@ -1599,7 +1589,7 @@ class PipelineManager(object):
         print("</pre>")
         message = "Got " + signal_type + ". Failing gracefully..."
         self.timestamp(message)
-        self.fail_pipeline(KeyboardInterrupt(signal_type), dynamic_recover=True)
+        self._fail_pipeline(KeyboardInterrupt(signal_type), dynamic_recover=True)
         sys.exit(1)
 
         # I used to write to the logfile directly, because the interrupts
@@ -1642,9 +1632,9 @@ class PipelineManager(object):
         # If the pipeline hasn't completed successfully, or already been marked
         # as failed, then mark it as failed now.
 
-        if not self.has_exit_status:
+        if not self._has_exit_status:
             print("Pipeline status: {}".format(self.status))
-            self.fail_pipeline(Exception("Pipeline failure. See details above."))
+            self._fail_pipeline(Exception("Pipeline failure. See details above."))
 
         self.tee.kill()            
 
@@ -1935,7 +1925,7 @@ class PipelineManager(object):
     def _triage_error(self, e, nofail):
         """ Print a message and decide what to do about an error.  """
         if not nofail:
-            self.fail_pipeline(e)
+            self._fail_pipeline(e)
         elif self._failed:
             print("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
             raise e

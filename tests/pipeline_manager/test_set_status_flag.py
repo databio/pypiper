@@ -16,9 +16,9 @@ __email__ = "vreuter@virginia.edu"
 def test_set_status_flag_is_idempotent(get_pipe_manager, status):
     """ Calls to manager's status flag setter are idempotent. """
     pm = get_pipe_manager(name="TestPM")
-    pm.set_status_flag(status)
+    pm._set_status_flag(status)
     assert status == pm.status
-    pm.set_status_flag(status)
+    pm._set_status_flag(status)
     assert status == pm.status
 
 
@@ -33,7 +33,7 @@ def test_changes_status_state(get_pipe_manager, init_state, new_state):
     """ Manager setting status flag changes is internal status/state. """
     pm = get_pipe_manager(name="test-pipe")
     assert pm.status == RUN_FLAG
-    pm.set_status_flag(init_state)
+    pm._set_status_flag(init_state)
     assert init_state == pm.status
-    pm.set_status_flag(new_state)
+    pm._set_status_flag(new_state)
     assert new_state == pm.status

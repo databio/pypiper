@@ -15,11 +15,9 @@ __email__ = "vreuter@virginia.edu"
 def test_halt_state(get_pipe_manager):
     """ Requesting a halt alters manager state. """
     pm = get_pipe_manager(name="test-pipe")
-    assert pm.is_running
     assert pm._active
     pm.halt(raise_error=False)
     assert pm.halted
-    assert not pm.is_running
     assert not pm._active
 
 
@@ -58,7 +56,7 @@ def test_halt_status_supersedes_completed(
 
     # Create manager and completion flag.
     pm = get_pipe_manager(name="halt-status-flag")
-    pm.set_status_flag(COMPLETE_FLAG)
+    pm._set_status_flag(COMPLETE_FLAG)
     path_complete_flag = pm._flag_file_path(COMPLETE_FLAG)
     assert os.path.isfile(path_complete_flag)
 

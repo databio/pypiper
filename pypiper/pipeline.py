@@ -52,7 +52,6 @@ class Pipeline(object):
     
     __metaclass__ = abc.ABCMeta
     
-    
     def __init__(self, name=None, manager=None, outfolder=None, args=None,
                  **pl_mgr_kwargs):
 
