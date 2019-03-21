@@ -882,6 +882,7 @@ class PipelineManager(object):
 
             self.procs[processes[-1].pid] = {
                 "proc_name": proc_name,
+                "subproc_name" : get_proc_name(param_list[i]["args"]),
                 "start_time": start_time,
                 "container": container,
                 "p": processes[-1]
@@ -1687,7 +1688,7 @@ class PipelineManager(object):
             elapsed_time = time.time() - self.procs[pid]["start_time"]
             process_peak_mem = self._memory_usage(pid, container=proc_dict["container"])/1e6
             self._report_profile(self.procs[pid]["proc_name"], None, elapsed_time, process_peak_mem)
-            self._kill_child_process(pid, proc_dict["proc_name"])
+            self._kill_child_process(pid, proc_dict["subproc_name"])
             del self.procs[pid]
 
 
@@ -1711,21 +1712,21 @@ class PipelineManager(object):
 
             # First a gentle kill            
             sys.stdout.flush()
-            os.kill(child_pid, signal.SIGINT)
-            os.kill(child_pid, signal.SIGTERM)
-
+            try:
+                os.killpg(child_pid, signal.SIGINT)
+                os.killpg(child_pid, signal.SIGTERM)
+            except OSError:
+                still_running = False
             # If not terminated after X seconds, send a SIGKILL
-            sleeptime = .1
+            sleeptime = .2
             time_waiting = 0
             still_running = True
             while still_running and time_waiting < 3:
                 try:
-                    if time_waiting > 1:
-                        print("sigterm")
-                        os.kill(child_pid, signal.SIGTERM)
-                    elif time_waiting > 0.5:
-                        print("sigint")
-                        os.kill(child_pid, signal.SIGINT)
+                    if time_waiting > 1.5:
+                        os.killpg(child_pid, signal.SIGTERM)
+                    elif time_waiting > 0.2:
+                        os.killpg(child_pid, signal.SIGINT)
                     else:
                         os.kill(child_pid, 0)  # check if process is running
                     time.sleep(sleeptime)
@@ -1739,7 +1740,7 @@ class PipelineManager(object):
                 print("Child not responding to SIGTERM, trying SIGKILL. . .")
                 os.kill(child_pid, signal.SIGKILL)
 
-            print("Child process SIGKILLed after " + str(time_waiting) + " seconds.")
+            print("Child process terminated after " + str(time_waiting) + " seconds.")
 
 
     def atexit_register(self, *args):
