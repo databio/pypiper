@@ -352,7 +352,7 @@ class PipelineManager(object):
 
 
     @property
-    def has_exit_status(self):
+    def _has_exit_status(self):
         """
         Has the managed pipeline been safely stopped?
 
@@ -360,16 +360,6 @@ class PipelineManager(object):
             has been safely stopped.
         """
         return self._completed or self.halted or self._failed
-
-
-    @property
-    def is_running(self):
-        """
-        Is the managed pipeline running?
-
-        :return bool: Whether the managed pipeline is running.
-        """
-        return self.status == RUN_FLAG
 
 
     def _ignore_interrupts(self):
@@ -1642,7 +1632,7 @@ class PipelineManager(object):
         # If the pipeline hasn't completed successfully, or already been marked
         # as failed, then mark it as failed now.
 
-        if not self.has_exit_status:
+        if not self._has_exit_status:
             print("Pipeline status: {}".format(self.status))
             self.fail_pipeline(Exception("Pipeline failure. See details above."))
 
