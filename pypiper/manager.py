@@ -590,8 +590,7 @@ class PipelineManager(object):
             a process, default False; nofail can be used to implement
             non-essential parts of the pipeline; if a 'nofail' command fails,
             the pipeline is free to continue execution.
-        :param str errmsg: Message to print if there's an error.
-        :param bool clean: True means the target file will be automatically added 
+        :param bool clean: True means the target file will be automatically added
             to an auto cleanup list. Optional.
         :param callable follow: Function to call after executing (each) command.
         :param str container: Name for Docker container in which to run commands.
@@ -1891,7 +1890,6 @@ class PipelineManager(object):
                 if no_cleanup_script: 
                     print('\n\nCould not produce cleanup script for item(s):\n\n- ' + '\n- '.join(no_cleanup_script))
 
-
     def _memory_usage(self, pid='self', category="hwm", container=None):
         """
         Memory usage of the process in kilobytes.
@@ -1924,7 +1922,6 @@ class PipelineManager(object):
         # Thanks Martin Geisler:
         status = None
         result = {'peak': 0, 'rss': 0, 'hwm': 0}
-
         
         try:
             # This will only work on systems with a /proc file system
@@ -1945,7 +1942,6 @@ class PipelineManager(object):
                 status.close()
         # print(result[category])
         return result[category]
-
 
     def _triage_error(self, e, nofail, errmsg=None):
         """ Print a message and decide what to do about an error.  """
