@@ -1153,41 +1153,11 @@ class PipelineManager(object):
         self._safe_write_to_file(self.pipeline_stats_file, message_raw)
 
 
-    def report_figure(self, key, filename, annotation=None):
-        """
-        Writes a string to self.pipeline_figures_file.
-
-        :param str key: name (key) of the figure
-        :param str filename: relative path to the file (relative to parent output dir)
-        :param str annotation: By default, the figures will be annotated with the pipeline
-            name, so you can tell which pipeline records which figures. If you want, you can
-            change this.
-        """
-
-        # Default annotation is current pipeline name.
-        annotation = str(annotation or self.name)
-
-        # In case the value is passed with trailing whitespace.
-        filename = str(filename).strip()
-
-        # better to use a relative path in this file
-        # convert any absolute paths into relative paths
-        relative_filename = os.path.relpath(filename, self.outfolder) if os.path.isabs(filename) else filename
-
-        message_raw = "{key}\t{filename}\t{annotation}".format(
-            key=key, filename=relative_filename, annotation=annotation)
-
-        message_markdown = "> `{key}`\t{filename}\t{annotation}\t_FIG_".format(
-            key=key, filename=relative_filename, annotation=annotation)
-
-        print(message_markdown)
-
-        self._safe_write_to_file(self.pipeline_figures_file, message_raw)
 
     def report_object(self, key, filename, anchor_text=None, anchor_image=None,
        annotation=None):
         """
-        Writes a string to self.pipeline_objects_file. Replacement of report_figure
+        Writes a string to self.pipeline_objects_file. Used to report figures and others.
 
         :param str key: name (key) of the object
         :param str filename: relative path to the file (relative to parent output dir)
