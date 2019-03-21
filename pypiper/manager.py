@@ -1245,7 +1245,7 @@ class PipelineManager(object):
         :param str procs: process numbers for processes in the command
         """
         if procs:
-            line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=str(procs))
+            line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=",".join(procs))
         else:
             line = "\n> `{cmd}`\n".format(cmd=str(cmd))
         print(line)
