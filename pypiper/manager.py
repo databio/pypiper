@@ -1712,26 +1712,25 @@ class PipelineManager(object):
             sys.stdout.flush()
             still_running = True
             try:
-                os.killpg(child_pid, signal.SIGINT)
-                os.killpg(child_pid, signal.SIGTERM)
+                os.killpg(child_pid, 0)  # check if process is running
             except OSError:
                 still_running = False
+                note = "already finished"
             # If not terminated after X seconds, send a SIGKILL
             sleeptime = .2
             time_waiting = 0
             while still_running and time_waiting < 3:
                 try:
-                    if time_waiting > 1.5:
+                    if time_waiting > 1:
                         os.killpg(child_pid, signal.SIGTERM)
-                    elif time_waiting > 0.2:
-                        os.killpg(child_pid, signal.SIGINT)
                     else:
-                        os.kill(child_pid, 0)  # check if process is running
+                        os.killpg(child_pid, signal.SIGINT)
                     time.sleep(sleeptime)
                     time_waiting = time_waiting + sleeptime
 
                 except OSError:
                     still_running = False
+                    time_waiting = time_waiting + sleeptime
 
             if still_running:
                 # still running after 5 seconds!?
@@ -1740,8 +1739,11 @@ class PipelineManager(object):
                         proc_string=proc_string))
                 os.kill(child_pid, signal.SIGKILL)
 
-            msg = "Child process {child_pid}{proc_string} terminated after {time}s.".format(
-                child_pid=child_pid, proc_string=proc_string, time=time_waiting)
+            if time_waiting > 0:
+                note = "terminated after {time}s".format(time=time_waiting)
+
+            msg = "Child process {child_pid}{proc_string} {note}.".format(
+                child_pid=child_pid, proc_string=proc_string, note=note)
             print(msg)
 
 
