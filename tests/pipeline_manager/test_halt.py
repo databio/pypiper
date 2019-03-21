@@ -27,7 +27,7 @@ def test_halt_state(get_pipe_manager):
 def test_halt_file(get_pipe_manager):
     """ Requesting a halt produces a particular flag file. """
     pm = get_pipe_manager(name="TestPM")
-    path_halt_file = pm.flag_file_path(PAUSE_FLAG)
+    path_halt_file = pm._flag_file_path(PAUSE_FLAG)
     assert not os.path.isfile(path_halt_file)
     pm.halt(raise_error=False)
     assert os.path.isfile(path_halt_file)
@@ -59,7 +59,7 @@ def test_halt_status_supersedes_completed(
     # Create manager and completion flag.
     pm = get_pipe_manager(name="halt-status-flag")
     pm.set_status_flag(COMPLETE_FLAG)
-    path_complete_flag = pm.flag_file_path(COMPLETE_FLAG)
+    path_complete_flag = pm._flag_file_path(COMPLETE_FLAG)
     assert os.path.isfile(path_complete_flag)
 
     # Perform the halt.
@@ -73,7 +73,7 @@ def test_halt_status_supersedes_completed(
     # Check either the presence of the halt flag or the absence of the
     # completion flag, depending on test parameterization.
     if test_type == "halt_flag":
-        path_halt_flag = pm.flag_file_path(PAUSE_FLAG)
+        path_halt_flag = pm._flag_file_path(PAUSE_FLAG)
         assert os.path.isfile(path_halt_flag)
     elif test_type == "complete_flag":
         assert not os.path.isfile(path_complete_flag)

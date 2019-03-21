@@ -14,3 +14,7 @@
 
 - **How should I run a QC step to check results of one of my commands?**
 	Usually, you only want to run a QC step if the result was created in the same pipeline run. There's no need to re-run that step if you have to restart the pipeline due to an error later on. If you use `run()` for these steps, then they'll need to run each time the pipeline runs. Instead, this is exactly why we created [the follow argument](../advanced-run-method/#the-follow-argument) This option lets you couple a QC step to a `run()` call, so it only gets excecuted when it is required.
+
+- **How do I solve installation errors involving `psutil` and/or a compiler like `gcc` or `clang`?**
+	If you have trouble with installation and it looks like one of these pieces of software is involved, please check the [`psutil` installation guide](https://github.com/giampaolo/psutil/blob/master/INSTALL.rst).
+

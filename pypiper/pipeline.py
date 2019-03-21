@@ -334,16 +334,13 @@ class Pipeline(object):
         else:
             self.halt(raise_error=False)
 
-
     def wrapup(self):
         """ Final mock stage to run after final one finishes. """
         self.manager.complete()
 
-
     def _reset(self):
         """ Scrub decks with respect to Stage status/label tracking. """
         self.skipped, self.executed = [], []
-
 
     def _start_index(self, start=None):
         """ Seek to the first stage to run. """
@@ -355,7 +352,6 @@ class Pipeline(object):
             return internal_names.index(start_stage)
         except ValueError:
             raise UnknownPipelineStageError(start, self)
-
 
     def _stop_index(self, stop_point, inclusive):
         """
