@@ -294,6 +294,11 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertFalse(os.path.isfile(tgt5))
         self.pp.run("touch " + tgt1, [tgt5, tgt6])
         self.assertTrue(os.path.isfile(tgt1))
+        # if two targets, both exist, should not run
+        self.assertFalse(os.path.isfile(tgt5))
+        self.pp.run("touch " + tgt5, [tgt1, tgt6])
+        self.assertFalse(os.path.isfile(tgt5))
+
 
 
 
