@@ -281,6 +281,21 @@ class PipelineManagerTests(unittest.TestCase):
             lines = f.readlines()
         self._assertLines(["third"], lines)
 
+        print("Test dual target")
+        self.pp.new_start = False
+        if os.path.isfile(tgt1):
+            os.remove(tgt1) 
+        self.pp.run("touch " + tgt6, tgt6)
+        self.assertTrue(os.path.isfile(tgt6))
+        # if target exists, should not run
+        self.pp.run("touch " + tgt1, tgt6)
+        self.assertFalse(os.path.isfile(tgt1))
+        # if two targets, only one exists, should run
+        self.assertFalse(os.path.isfile(tgt5))
+        self.pp.run("touch " + tgt1, [tgt5, tgt6])
+        self.assertTrue(os.path.isfile(tgt1))
+
+
 
 def _make_pipe_filepath(pm, filename):
     return os.path.join(pm.outfolder, filename)

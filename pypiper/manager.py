@@ -156,6 +156,7 @@ class PipelineManager(object):
         # Pipeline-level variables to track global state and pipeline stats
         # Pipeline settings
         self.name = name
+        self.tee = None
         self.overwrite_locks = params['recover']
         self.new_start = params['new_start']
         self.force_follow = params['force_follow']
@@ -1235,7 +1236,7 @@ class PipelineManager(object):
         :param str | list[str] procs: process numbers for processes in the command
         """
         if isinstance(procs, list):
-            procs = ",".join(str(procs))
+            procs = ",".join(map(str,procs))
         if procs:
             line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=procs)
         else:
@@ -1636,7 +1637,8 @@ class PipelineManager(object):
             print("Pipeline status: {}".format(self.status))
             self._fail_pipeline(Exception("Pipeline failure. See details above."))
 
-        self.tee.kill()            
+        if self.tee:
+            self.tee.kill()            
 
     def _terminate_running_subprocesses(self):
 
