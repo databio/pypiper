@@ -1,4 +1,4 @@
-![pypiper-logo](https://raw.githubusercontent.com/databio/pypiper/master/logo_pypiper.svg)
+![pypiper-logo](https://raw.githubusercontent.com/databio/pypiper/master/logo_pypiper.svg?sanitize=true)
 
 # Pypiper
 
