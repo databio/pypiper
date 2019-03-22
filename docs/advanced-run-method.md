@@ -34,7 +34,7 @@ You can force Pypiper by specifying `shell=True` or `shell=False` to the `run` f
 
 ## The `nofail` argument
 
-By default, a command that fails will cause the entire pipeline to halt. If you want to provide an optional command that *should not* halt the pipeline upon failure, set `nofail=True`. `nofail` can be used to implement non-essential parts of the pipeline.
+By default, a command that fails will cause the entire pipeline to halt. If you want to provide a command that *should not* halt the pipeline upon failure, set `nofail=True`. `nofail` can be used to implement non-essential parts of the pipeline.
  
 
 
