@@ -70,9 +70,9 @@ class NGSTk(AttMapEcho):
 
         # If pigz is available, use that. Otherwise, default to gzip.
         if hasattr(self.pm, "cores") and self.pm.cores > 1 and self.check_command("pigz"):
-            self.ziptool = "pigz -p {}".format(self.pm.cores)
+            self.ziptool_cmd = "pigz -f -p {}".format(self.pm.cores)
         else:
-            self.ziptool = "gzip"
+            self.ziptool_cmd = "gzip"
 
 
     def _ensure_folders(self, *paths):
@@ -96,6 +96,18 @@ class NGSTk(AttMapEcho):
             # Otherwise, just ensure that we have path to file's folder.
             self.make_dir(fpath if ext else p)
 
+
+    @property
+    def ziptool(self):
+        """
+        Returns the command to use for compressing/decompressing.
+
+        :return str: Either 'gzip' or 'pigz' if installed and multiple cores
+        """
+        return self.ziptool_cmd
+
+
+    @property
 
     def make_dir(self, path):
         """

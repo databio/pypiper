@@ -574,7 +574,9 @@ class PipelineManager(object):
         provides some logging output.
 
         :param str | list[str] cmd: Shell command(s) to be run.
-        :param str | Sequence[str] target: Output file(s) to produce, optional
+        :param str | Sequence[str] target: Output file(s) to produce, optional.
+            If all target files exist, the command will not be run. If no target
+            is given, a lock_name must be provided.
         :param str lock_name: Name of lock file. Optional.
         :param bool shell: If command requires should be run in its own shell.
             Optional. Default: None --will try to determine whether the
@@ -621,32 +623,23 @@ class PipelineManager(object):
             self._fail_pipeline(Exception(
                 "You must provide either a target or a lock_name."))
 
-        # If the target is a list, for now let's just strip it to the first target.
-        # Really, it should just check for all of them.
+        # Downstream code requires target to be a list, so convert if only
+        # a single item was given
         if not is_multi_target(target) and target is not None:
             target = [target]
-            #primary_target = target[0]
+
+        # Downstream code requires a list of locks; convert 
         if isinstance(lock_name, str):
             lock_name = [lock_name]
-        # Create lock file:
+        
         # Default lock_name (if not provided) is based on the target file name,
-        # but placed in the parent pipeline outfolder, and not in a subfolder, if any.
+        # but placed in the parent pipeline outfolder
         lock_name = lock_name or make_lock_name(target, self.outfolder)
-        #lock_file = self._make_lock_path(lock_name)
-        #recover_file = self._recoverfile_from_lockfile(lock_file)
-
         lock_files = [self._make_lock_path(ln) for ln in lock_name]
         recover_files = [self._recoverfile_from_lockfile(lf) for lf in lock_files]
 
-        recover_mode = False
         process_return_code = 0
         local_maxmem = 0
-
-        # The loop here is unlikely to be triggered, and is just a wrapper
-        # to prevent race conditions; the lock_file must be created by
-        # the current loop. If not, we wait again for it and then
-        # re-do the tests.
-        # TODO: maybe output a message if when repeatedly going through the loop
 
         # Decide how to do follow-up.
         if not follow:
@@ -662,23 +655,36 @@ class PipelineManager(object):
                 print("Follow:")
                 follow()
 
-        proceed = False
-        newstart = False
+
+        # The while=True loop here is unlikely to be triggered, and is just a
+        # wrapper to prevent race conditions; the lock_file must be created by
+        # the current loop. If not, we loop again and then re-do the tests.
+        # The recover and newstart options inform the pipeline to run a command
+        # in a scenario where it normally would not. We use these "local" flags
+        # to allow us to report on the state of the pipeline in the first round
+        # as normal, but then proceed on the next iteration through the outer
+        # loop. The proceed_through_locks is a flag that is set if any lockfile
+        # is found that needs to be recovered or overwritten. It instructs us to
+        # ignore lock files on the next iteration.
+        local_recover = False
+        local_newstart = False 
+        proceed_through_locks = False
+
         while True:
             ##### Tests block
-            # Base case: Target exists (and we don't overwrite); break loop, don't run process.
-            # os.path.exists allows the target to be either a file or directory; .isfile is file-only
+            # Base case: All targets exists and not set to overwrite targets break loop, don't run process.
+            # os.path.exists returns True for either a file or directory; .isfile is file-only
             if target is not None and all([os.path.exists(t) for t in target]) \
                     and not any([os.path.isfile(l) for l in lock_files]) \
-                    and not newstart:
+                    and not local_newstart:
                 for tgt in target:
                     if os.path.exists(tgt): print("Target exists: `" + tgt + "`")
                 if self.new_start:
                     print("New start mode; run anyway.")
-                    # Set the newstart flag so the command will run anyway.
+                    # Set the local_newstart flag so the command will run anyway.
                     # Doing this in here instead of outside the loop allows us
                     # to still report the target existence.
-                    newstart = True
+                    local_newstart = True
                     continue
                 # Normally we don't run the follow, but if you want to force. . .
                 if self.force_follow:
@@ -686,18 +692,20 @@ class PipelineManager(object):
                 break  # Do not run command
 
             # Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
-            if not proceed:
+            if not proceed_through_locks:
                 for lock_file in lock_files:
                     recover_file = self._recoverfile_from_lockfile(lock_file)
                     if os.path.isfile(lock_file):
                         print("Found lock file: {}".format(lock_file))
                         if self.overwrite_locks:
                             print("Overwriting target. . .")
+                            proceed_through_locks = True
                         elif os.path.isfile(recover_file):
                             print("Found dynamic recovery file ({}); "
                                   "overwriting target. . .".format(recover_file))
                             # remove the lock file which will then be promptly re-created for the current run.
-                            recover_mode = True
+                            local_recover = True
+                            proceed_through_locks = True
                             # the recovery flag is now spent; remove so we don't accidentally re-recover a failed job
                             os.remove(recover_file)
                         else:  # don't overwrite locks
@@ -706,27 +714,26 @@ class PipelineManager(object):
                             # time (to see if the target exists now)
                             continue
 
-                        # If we make it here at least once in the for loop, then
-                        # we want to proceed, regardless of additional lock
-                        # files
-                        proceed = True
-
 
             # If you get to this point, the target doesn't exist, and the lock_file doesn't exist 
             # (or we should overwrite). create the lock (if you can)
             # Initialize lock in master lock list
-            self.locks.append(lock_file)
-            if self.overwrite_locks or recover_mode:
-                self._create_file(lock_file)
-            else:
-                try:
-                    self._create_file_racefree(lock_file)  # Create lock
-                except OSError as e:
-                    if e.errno == errno.EEXIST:  # File already exists
-                        print ("Lock file created after test! Looping again: {}".format(
-                            lock_file))
-                        proceed = False
-                        continue  # Go back to start
+            for lock_file in lock_files:
+                self.locks.append(lock_file)
+                if self.overwrite_locks or local_recover:
+                    self._create_file(lock_file)
+                else:
+                    try:
+                        self._create_file_racefree(lock_file)  # Create lock
+                    except OSError as e:
+                        if e.errno == errno.EEXIST:  # File already exists
+                            print ("Lock file created after test! Looping again: {}".format(
+                                lock_file))
+
+                            # Since a lock file was created by a different source, 
+                            # we need to reset this flag to re-check the locks.
+                            proceed_through_locks = False
+                            continue  # Go back to start
 
             ##### End tests block
             # If you make it past these tests, we should proceed to run the process.
@@ -755,8 +762,9 @@ class PipelineManager(object):
                     self.clean_add(tgt)
 
             call_follow()
-            os.remove(lock_file)  # Remove lock file
-            self.locks.remove(lock_file)
+            for lock_file in lock_files:
+                os.remove(lock_file)  # Remove lock file
+                self.locks.remove(lock_file)
 
             # If you make it to the end of the while loop, you're done
             break
