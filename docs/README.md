@@ -18,10 +18,16 @@ Pypiper provides automatic restartability, process monitoring for time and memor
 
 ## Installing
 
-Release versions are posted on the GitHub [pypiper releases page](https://github.com/databio/pypiper/releases). You can install the latest release directly from PyPI using pip:
+Release versions are posted on the GitHub [pypiper releases page](https://github.com/databio/pypiper/releases). You can install the latest release directly from PyPI using `pip`.
 
+Global scope for single user:
 ```{console}
 pip install --user --upgrade piper
+```
+
+Within an active virtual environment:
+```{console}
+pip install --upgrade piper
 ```
 
 ## Quick start
