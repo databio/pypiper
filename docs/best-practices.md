@@ -11,7 +11,7 @@ Here are some guidelines for how you can design the most effective pipelines.
 	If you develop your pipeline in a git repository, Pypiper will automatically record the commit hash when you run a pipeline, making it easy to figure out **exactly** what code version you ran.
 
 * **Record stats as you go**. 
-	In other words, don't do all your stats (`report_result()`) and QC at the end, do it along the way. This makes it easy for you to monitor pipeline performance, and couples stats with how far the pipeline makes it, so you could make use of a partially completed (or even ultimately failed) pipelines.
+	In other words, don't do all your stats (`report_result()`) and QC at the end; do it along the way. This facilitates monitoring and maximizes availability of statistics even when a pipeline fails.
 
 * **Use looper args**. 
 	Even if you're not using looper at first, use `looper_args` and your pipeline will be looper-ready when it comes time to run 500 samples.
