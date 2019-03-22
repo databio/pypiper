@@ -636,7 +636,6 @@ class PipelineManager(object):
         # but placed in the parent pipeline outfolder
         lock_name = lock_name or make_lock_name(target, self.outfolder)
         lock_files = [self._make_lock_path(ln) for ln in lock_name]
-        recover_files = [self._recoverfile_from_lockfile(lf) for lf in lock_files]
 
         process_return_code = 0
         local_maxmem = 0
