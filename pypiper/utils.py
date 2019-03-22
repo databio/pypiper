@@ -5,6 +5,11 @@ import os
 import sys
 import re
 
+if sys.version_info < (3, 3):
+    from collections import Sequence
+else:
+    from collections.abc import Sequence
+
 from .const import \
     CHECKPOINT_EXTENSION, PIPELINE_CHECKPOINT_DELIMITER, \
     STAGE_NAME_SPACE_REPLACEMENT
@@ -425,10 +430,14 @@ def make_lock_name(original_path, path_base_folder):
     :return str: Name or perhaps relative (to the base folder path indicated)
         path to lock file
     """
-    if is_multi_target(original_path) or isinstance(original_path, list):
-        return [x.replace(path_base_folder, "").replace(os.sep, "__") for x in original_path]
-    else:
-        return original_path.replace(path_base_folder, "").replace(os.sep, "__")
+    def make_name(p):
+        return p.replace(path_base_folder, "").replace(os.sep, "__")
+    if isinstance(original_path, str):
+        return make_name(original_path)
+    elif isinstance(original_path, Sequence):
+        return [make_name(p) for p in original_path]
+    raise TypeError("Neither string nor other sequence type: {} ({})".
+                    format(original_path, type(original_path)))
 
 
 def is_multi_target(target):
@@ -439,10 +448,6 @@ def is_multi_target(target):
     :return bool: Whether there are multiple targets
     :raise TypeError: if the argument is neither None nor string nor Sequence
     """
-    if sys.version_info < (3, 3):
-        from collections import Sequence
-    else:
-        from collections.abc import Sequence
     if target is None or isinstance(target, str):
         return False
     elif isinstance(target, Sequence):
