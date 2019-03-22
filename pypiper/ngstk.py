@@ -72,7 +72,7 @@ class NGSTk(AttMapEcho):
         if hasattr(self.pm, "cores") and self.pm.cores > 1 and self.check_command("pigz"):
             self.ziptool_cmd = "pigz -f -p {}".format(self.pm.cores)
         else:
-            self.ziptool_cmd = "gzip"
+            self.ziptool_cmd = "gzip -f"
 
 
     def _ensure_folders(self, *paths):
