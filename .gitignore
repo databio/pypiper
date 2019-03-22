@@ -13,6 +13,7 @@ tests/test/*
 # ignore built docs
 doc/build/*
 docs_jupyter/build/*
+docs/autodoc_build/*
 
 # ignore test results
 example_pipelines/hello_pypiper_results/*
