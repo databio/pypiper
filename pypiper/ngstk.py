@@ -107,7 +107,6 @@ class NGSTk(AttMapEcho):
         return self.ziptool_cmd
 
 
-    @property
     def make_dir(self, path):
         """
         Forge path to directory, creating intermediates as needed.

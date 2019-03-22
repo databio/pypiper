@@ -805,8 +805,7 @@ class PipelineManager(object):
             self._triage_error(e, nofail)
 
 
-    def _attend_process(self, 
-        proc, sleeptime):
+    def _attend_process(self, proc, sleeptime):
         """
         Waits on a process for a given time to see if it finishes, returns True
         if it's still running after the given time or False as soon as it 
@@ -816,6 +815,7 @@ class PipelineManager(object):
         :param float sleeptime: Time to wait
         :return bool: True if process is still running; otherwise false
         """
+        # print("attend:{}".format(proc.pid))
         try:
             proc.wait(timeout=sleeptime)
         except psutil.TimeoutExpired:
@@ -1710,12 +1710,11 @@ class PipelineManager(object):
         time_waiting = 0
 
         while still_running and time_waiting < 3:
-
             try:
                 if time_waiting > 2:
                     pskill(child_pid, signal.SIGKILL)
                     # print("pskill("+str(child_pid)+", signal.SIGKILL)")
-                if time_waiting > 1:
+                elif time_waiting > 1:
                     pskill(child_pid, signal.SIGTERM)
                     # print("pskill("+str(child_pid)+", signal.SIGTERM)")
                 else:
@@ -1729,10 +1728,9 @@ class PipelineManager(object):
                 time_waiting = time_waiting + sleeptime
 
             # Now see if it's still running
+            time_waiting = time_waiting + sleeptime
             if not self._attend_process(psutil.Process(child_pid), sleeptime):
-                time_waiting = time_waiting + sleeptime
                 still_running = False
-                continue
 
 
         if still_running:
