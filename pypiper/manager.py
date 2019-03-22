@@ -749,6 +749,7 @@ class PipelineManager(object):
                         self.callprint(cmd_i, shell, lock_file, nofail, container)
                     maxmem = max(maxmem) if isinstance(maxmem, Iterable) else maxmem
                     local_maxmem = max(local_maxmem,  maxmem)
+                    list_ret = max(list_ret) if isinstance(list_ret, Iterable) else list_ret
                     process_return_code = max(process_return_code, list_ret)
 
             else:  # Single command (most common)
