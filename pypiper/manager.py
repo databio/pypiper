@@ -620,7 +620,7 @@ class PipelineManager(object):
         # Therefore, a targetless command that you want
         # to lock must specify a lock_name manually.
         if target is None and lock_name is None:
-            self._fail_pipeline(Exception(
+            self.fail_pipeline(Exception(
                 "You must provide either a target or a lock_name."))
 
         # Downstream code requires target to be a list, so convert if only
@@ -1515,7 +1515,7 @@ class PipelineManager(object):
         self.stop_pipeline(status=COMPLETE_FLAG)
 
 
-    def _fail_pipeline(self, e, dynamic_recover=False):
+    def fail_pipeline(self, e, dynamic_recover=False):
         """
         If the pipeline does not complete, this function will stop the pipeline gracefully.
         It sets the status flag to failed and skips the normal success completion procedure.
@@ -1611,7 +1611,7 @@ class PipelineManager(object):
         print("</pre>")
         message = "Got " + signal_type + ". Failing gracefully..."
         self.timestamp(message)
-        self._fail_pipeline(KeyboardInterrupt(signal_type), dynamic_recover=True)
+        self.fail_pipeline(KeyboardInterrupt(signal_type), dynamic_recover=True)
         sys.exit(1)
 
         # I used to write to the logfile directly, because the interrupts
@@ -1656,7 +1656,7 @@ class PipelineManager(object):
 
         if not self._has_exit_status:
             print("Pipeline status: {}".format(self.status))
-            self._fail_pipeline(Exception("Pipeline failure. See details above."))
+            self.fail_pipeline(Exception("Pipeline failure. See details above."))
 
         if self.tee:
             self.tee.kill()            
@@ -1965,7 +1965,7 @@ class PipelineManager(object):
     def _triage_error(self, e, nofail):
         """ Print a message and decide what to do about an error.  """
         if not nofail:
-            self._fail_pipeline(e)
+            self.fail_pipeline(e)
         elif self._failed:
             print("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
             raise e
