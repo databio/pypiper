@@ -1,10 +1,28 @@
 # Changelog
 
-- **v0.10.0** (*Unreleased*):
+- **v0.10.0** (*2019-03-22*):
 
     - Fixed a bug that raised exception with empty commands
     
-    - Fixed the pipeline profiling issues 
+    - Fixed the pipeline profiling issues
+
+    - Major updates to internal systems: Switch to `attmap`
+
+    - Revamped way of handling child subprocesses which should lead to more
+    efficient memory monitoring of piped subprocesses, and more consistent
+    handling of rogues subprocesses during pipeline failure.
+
+    - Added force mode go ngstk `gzip` and `pigz` use.
+
+    - Changed documentation from sphinx to mkdocs.
+
+    - Fixed a bug with python3 output buffering
+
+    - Implement multi-target commands
+
+    - Fixed a bug preventing new start mode from working in certain cases.
+
+    - Allow user to change units of memory passed in with default pypiper cli.
 
 - **v0.9.4** (*2019-01-31*):
 
@@ -21,18 +39,18 @@
 - **v0.9.1** (*2019-01-29*):
 
     - Fixed a bug in NGSTk that caused errors for read counting functions on 
-    MACOS. MACOS ``wc`` returns leading whitespace, which caused these functions
+    MACOS. MACOS `wc` returns leading whitespace, which caused these functions
     to fail.
 
 - **v0.9.0** (*2018-11-19*):
 
-    - Use ``psutil`` to track aggregate memory usage for processes that spawn
+    - Use `psutil` to track aggregate memory usage for processes that spawn
     children. This results in accurate memory records for these processes.
 
     - Individual commands in a string of commands connected by shell pipes are
     now treated as individual commands, and and monitored individually for
     time and memory, and if a single component, fails, the entire string will
-    fail. Previously, only the final return command was recorded, as in ``bash``.
+    fail. Previously, only the final return command was recorded, as in `bash`.
 
     - Various other small improvements (like waiting checking for dynamic recover
     flags)
