@@ -796,6 +796,25 @@ class PipelineManager(object):
         except Exception as e:
             self._triage_error(e, nofail)
 
+
+    def _attend_process(self, 
+        proc, sleeptime):
+        """
+        Waits on a process for a given time to see if it finishes, returns True
+        if it's still running after the given time or False as soon as it 
+        returns.
+
+        :param psutil.Popen proc: Process object opened by psutil.Popen()
+        :param float sleeptime: Time to wait
+        :return bool: True if process is still running; otherwise false
+        """
+        try:
+            proc.wait(timeout=sleeptime)
+        except psutil.TimeoutExpired:
+            return True
+        return False
+
+
     def callprint(self, cmd, shell=None, lock_file=None, nofail=False, container=None):
         """
         Prints the command, and then executes it, then prints the memory use and
@@ -823,12 +842,6 @@ class PipelineManager(object):
         # if shell=False, then we format the command (with split()) to be a list of command and its arguments.
         # Split the command to use shell=False;
         # leave it together to use shell=True;
-        def check_me(proc, sleeptime):
-            try:
-                proc.wait(timeout=sleeptime)
-            except psutil.TimeoutExpired:
-                return True
-            return False
 
         def get_mem_child_sum(proc):
             try:
@@ -866,10 +879,10 @@ class PipelineManager(object):
         for i in range(len(param_list)):
             running_processes.append(i)
             if i == 0:
-                processes.append(psutil.Popen(**param_list[i]))
+                processes.append(psutil.Popen(preexec_fn=os.setpgrp, **param_list[i]))
             else:
                 param_list[i]["stdin"] = processes[i - 1].stdout
-                processes.append(psutil.Popen(**param_list[i]))
+                processes.append(psutil.Popen(preexec_fn=os.setpgrp, **param_list[i]))
 
             self.procs[processes[-1].pid] = {
                 "proc_name": proc_name,
@@ -922,7 +935,7 @@ class PipelineManager(object):
             for i in running_processes:
                 local_maxmems[i] = max(local_maxmems[i], (get_mem_child_sum(processes[i])))
                 self.peak_memory = max(self.peak_memory, local_maxmems[i])
-                if not check_me(processes[i], sleeptime):
+                if not self._attend_process(processes[i], sleeptime):
                     info += proc_wrapup(i)
 
             # the sleeptime is extremely short at the beginning and gets longer exponentially 
@@ -1665,50 +1678,67 @@ class PipelineManager(object):
 
         :param int child_pid: Child process id.
         """
+
+        # When we kill process, it turns into a zombie, and we have to reap it.
+        # So we can't just kill it and then let it go; we call wait
+
+        def pskill(proc_pid, sig=signal.SIGINT):
+            parent_process = psutil.Process(proc_pid)
+            for child_proc in parent_process.children(recursive=True):
+                child_proc.send_signal(sig)
+            parent_process.send_signal(sig)
+
+
         if child_pid is None:
-            pass
-        else:
-            if proc_name:
-                proc_string = " ({proc_name})".format(proc_name=proc_name)
+            return
 
-            # First a gentle kill            
-            sys.stdout.flush()
-            still_running = True
-            try:
-                os.killpg(child_pid, 0)  # check if process is running
-            except OSError:
+        if proc_name:
+            proc_string = " ({proc_name})".format(proc_name=proc_name)
+
+        # First a gentle kill            
+        sys.stdout.flush()
+        still_running = True
+        print(child_pid, os.getpgid(child_pid))
+
+        sleeptime = .5
+        time_waiting = 0
+
+        while still_running and time_waiting < 15:
+            if not self._attend_process(psutil.Process(child_pid), sleeptime):
                 still_running = False
-                note = "already finished"
-            # If not terminated after X seconds, send a SIGKILL
-            sleeptime = .2
-            time_waiting = 0
-            while still_running and time_waiting < 3:
-                try:
-                    if time_waiting > 1:
-                        os.killpg(child_pid, signal.SIGTERM)
-                    else:
-                        os.killpg(child_pid, signal.SIGINT)
-                    time.sleep(sleeptime)
-                    time_waiting = time_waiting + sleeptime
+                continue
+            try:
+                time_waiting = time_waiting + sleeptime
+                if time_waiting > 5:
+                    pskill(child_pid, signal.SIGKILL)
+                    # print("pskill("+str(child_pid)+", signal.SIGKILL)")
+                if time_waiting > 1:
+                    pskill(child_pid, signal.SIGTERM)
+                    # print("pskill("+str(child_pid)+", signal.SIGTERM)")
+                else:
+                    pskill(child_pid, signal.SIGINT)
+                    # print("pskill("+str(child_pid)+", signal.SIGINT)")
 
-                except OSError:
-                    still_running = False
-                    time_waiting = time_waiting + sleeptime
+            except OSError:
+                # This would happen if the child process ended between the check
+                # and the next kill step
+                still_running = False
+                time_waiting = time_waiting + sleeptime
 
-            if still_running:
-                # still running after 5 seconds!?
-                print("Child process {child_pid}{proc_string} not responding "
-                    "to SIGTERM, trying SIGKILL. . .".format(child_pid=child_pid,
-                        proc_string=proc_string))
-                os.kill(child_pid, signal.SIGKILL)
-
+        if still_running:
+            # still running after 5 seconds!?
+            print("Child process {child_pid}{proc_string} never responded"
+                "I just can't take it anymore. I don't know what to do...".format(child_pid=child_pid,
+                    proc_string=proc_string))
+        else:
             if time_waiting > 0:
                 note = "terminated after {time}s".format(time=time_waiting)
+            else:
+                note = "was already terminated."
 
             msg = "Child process {child_pid}{proc_string} {note}.".format(
                 child_pid=child_pid, proc_string=proc_string, note=note)
             print(msg)
-
 
 
     def _atexit_register(self, *args):
