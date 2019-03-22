@@ -1697,19 +1697,14 @@ class PipelineManager(object):
 
         # First a gentle kill            
         sys.stdout.flush()
-        still_running = True
-        print(child_pid, os.getpgid(child_pid))
-
-        sleeptime = .5
+        still_running = self._attend_process(psutil.Process(child_pid), 0)
+        sleeptime = .25
         time_waiting = 0
 
-        while still_running and time_waiting < 15:
-            if not self._attend_process(psutil.Process(child_pid), sleeptime):
-                still_running = False
-                continue
+        while still_running and time_waiting < 3:
+
             try:
-                time_waiting = time_waiting + sleeptime
-                if time_waiting > 5:
+                if time_waiting > 2:
                     pskill(child_pid, signal.SIGKILL)
                     # print("pskill("+str(child_pid)+", signal.SIGKILL)")
                 if time_waiting > 1:
@@ -1725,16 +1720,23 @@ class PipelineManager(object):
                 still_running = False
                 time_waiting = time_waiting + sleeptime
 
+            # Now see if it's still running
+            if not self._attend_process(psutil.Process(child_pid), sleeptime):
+                time_waiting = time_waiting + sleeptime
+                still_running = False
+                continue
+
+
         if still_running:
-            # still running after 5 seconds!?
+            # still running!?
             print("Child process {child_pid}{proc_string} never responded"
                 "I just can't take it anymore. I don't know what to do...".format(child_pid=child_pid,
                     proc_string=proc_string))
         else:
             if time_waiting > 0:
-                note = "terminated after {time}s".format(time=time_waiting)
+                note = "terminated after {time} sec".format(time=int(time_waiting))
             else:
-                note = "was already terminated."
+                note = "was already terminated"
 
             msg = "Child process {child_pid}{proc_string} {note}.".format(
                 child_pid=child_pid, proc_string=proc_string, note=note)
