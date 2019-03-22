@@ -12,7 +12,7 @@
     efficient memory monitoring of piped subprocesses, and more consistent
     handling of rogues subprocesses during pipeline failure.
 
-    - Added force mode go ngstk `gzip` and `pigz` use.
+    - Added force mode to ngstk `gzip` and `pigz` use.
 
     - Changed documentation from sphinx to mkdocs.
 
@@ -20,7 +20,7 @@
 
     - Implement multi-target commands
 
-    - Fixed a bug preventing new start mode from working in certain cases.
+    - Fixed a bug that had prevented new start mode from working in certain cases.
 
     - Allow user to change units of memory passed in with default pypiper cli.
 
