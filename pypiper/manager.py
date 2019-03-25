@@ -754,6 +754,8 @@ class PipelineManager(object):
             else:  # Single command (most common)
                 process_return_code, local_maxmem = \
                     self.callprint(cmd, shell, lock_file, nofail, container)  # Run command
+                if isinstance(process_return_code, list):
+                    process_return_code = max(process_return_code)
 
             # For temporary files, you can specify a clean option to automatically
             # add them to the clean list, saving you a manual call to clean_add
