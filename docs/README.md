@@ -4,17 +4,17 @@
 
 ## Introduction
 
-Pypiper is a **development-oriented** pipeline framework: Pypiper pipelines are:
+Pypiper is a **development-oriented** pipeline framework. Pypiper pipelines are:
 
-1. written in pure python;
-2. simple to update and maintain;
-3. simple to understand for an outsider.
+1. written in pure python, so they require learning no new language;
+2. simple to update and maintain, so they respond well to changes;
+3. simple to understand for an outsider, so they can be approached by others.
 
 
 These traits make pypiper ideally suited for **pipelines under active development**.
 
 With Pypiper, **simplicity is paramount**. Prerequisites are few: base python and 2 common packages (`pyyaml` and `psutil`). It should take fewer than 15 minutes to build your first pipeline and only an hour or two to learn the advanced features.
-Pypiper provides automatic restartability, process monitoring for time and memory use, status monitoring, copious log output, robust error handling, easy debugging tools, guaranteed file output integrity, and a bunch of useful pipeline development helper functions.
+Pypiper provides automatic restartability, process monitoring for time and memory use, status monitoring, copious log output, robust error handling, easy debugging tools, guaranteed file output integrity, and a bunch of useful pipeline development helper functions.  Read more about the [pypiper philosophy](philosophy).
 
 ## Installing
 
@@ -62,4 +62,4 @@ python my_pipeline.py --help
 
 ## Pypiper strengths
 
-Pypiper differs from existing frameworks in its focus on **simplicity**. Pypiper requires learning no new language, as **pipelines are written in pure python**. Pypiper is geared toward **sequential pipelines** that are contained in a single file, easy to update, and easy to understand. Read more about the [pypiper philosophy](philosophy).
+Pypiper differs from existing frameworks in its focus on **simplicity**. Pypiper requires learning no new language, as **pipelines are written in pure python**. Pypiper is geared toward **developing pipelines** that are contained in a single file, easy to update, and easy to understand. Read more about

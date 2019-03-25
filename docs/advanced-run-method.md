@@ -1,4 +1,4 @@
-# Avanced run method options
+# Run method options
 
 The `PipelineManager.run()` function is the core part of `pypiper`. In its simplest case, all you need to provide is a command to run. But it can be much more powerful than that if you make use of these additional arguments:
 
