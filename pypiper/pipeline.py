@@ -35,27 +35,22 @@ class Pipeline(object):
     to create the Pipeline. If both are provided, the output folder path is
     ignored and that of the PipelineManager that's passed is used instead.
 
-    :param name: Name for the pipeline; arbitrary, just used for messaging;
+    :param str name: Name for the pipeline; arbitrary, just used for messaging;
         this is required if and only if a manager is not provided.
-    :type name: str, optional
-    :param manager: The pipeline manager to use for this pipeline; this is
-        required if and only if name or output folder is not provided.
-    :type manager: pypiper.PipelineManager, optional
-    :param outfolder: Path to main output folder for this pipeline
-    :type outfolder: str, optional
-    :param args: command-line options and arguments for PipelineManager
-    :type args: argparse.Namespace, optional
-    :param pl_mgr_kwargs: Additional keyword arguments for pipeline manager.
-    :type pl_mgr_kwargs: Mapping
+    :param pypiper.PipelineManager manager: The pipeline manager to use for
+        this pipeline; this is required if and only if name or output folder is
+        not provided.
+    :param str outfolder: Path to main output folder for this pipeline
+    :param argparse.Namespace args: command-line options and arguments for PipelineManager
+    :param Mapping pl_mgr_kwargs: Additional keyword arguments for pipeline manager.
     :raise TypeError: Either pipeline manager or output folder path must be
         provided, and either pipeline manager or name must be provided.
     :raise ValueError: Name of pipeline manager cannot be
-    :raise IllegalPipelineDefinitionError: Definition of collection of stages
-        must be non-empty.
+    :raise pypiper.IllegalPipelineDefinitionError: Definition of collection of
+        stages must be non-empty.
     """
     
     __metaclass__ = abc.ABCMeta
-    
     
     def __init__(self, name=None, manager=None, outfolder=None, args=None,
                  **pl_mgr_kwargs):
@@ -156,8 +151,7 @@ class Pipeline(object):
         """
         Determine the path to the output folder for this pipeline instance.
 
-        :return: Path to output folder for this pipeline instance.
-        :rtype: str
+        :return str: Path to output folder for this pipeline instance.
         """
         return self.manager.outfolder
 
@@ -167,8 +161,7 @@ class Pipeline(object):
         """
         Define the names of pipeline processing stages.
 
-        :return: Collection of pipeline stage names.
-        :rtype: Iterable[str]
+        :return Iterable[str]: Collection of pipeline stage names.
         """
         pass
 
@@ -180,8 +173,7 @@ class Pipeline(object):
         class author (i.e., not necessarily those that are used for the
         checkpoint files)
 
-        :return: Sequence of names of this pipeline's defined stages.
-        :rtype: list[str]
+        :return list[str]: Sequence of names of this pipeline's defined stages.
         """
         return [parse_stage_name(s) for s in self._stages]
 
@@ -190,12 +182,9 @@ class Pipeline(object):
         """
         Touch checkpoint file for given stage and provide timestamp message.
 
-        :param stage: Stage for which to mark checkpoint
-        :type stage: pypiper.Stage
-        :param msg: Message to embed in timestamp.
-        :type msg: str
-        :return: Whether a checkpoint file was written.
-        :rtype: bool
+        :param pypiper.Stage stage: Stage for which to mark checkpoint
+        :param str msg: Message to embed in timestamp.
+        :return bool: Whether a checkpoint file was written.
         """
         # Canonical usage model for Pipeline checkpointing through
         # implementations of this class is by automatically creating a
@@ -210,10 +199,8 @@ class Pipeline(object):
         """
         Determine whether the pipeline's completed the stage indicated.
 
-        :param stage: Stage to check for completion status.
-        :type stage: Stage
-        :return: Whether this pipeline's completed the indicated stage.
-        :rtype: bool
+        :param pypiper.Stage stage: Stage to check for completion status.
+        :return bool: Whether this pipeline's completed the indicated stage.
         :raises UnknownStageException: If the stage name given is undefined
             for the pipeline, a ValueError arises.
         """
@@ -230,11 +217,9 @@ class Pipeline(object):
         """
         Determine the flag files associated with this pipeline.
 
-        :param only_name: Whether to return only flag file name(s) (True),
+        :param bool only_name: Whether to return only flag file name(s) (True),
             or full flag file paths (False); default False (paths)
-        :type only_name: bool
-        :return: List of flag files associated with this pipeline.
-        :rtype: list[str]
+        :return list[str]: flag files associated with this pipeline.
         """
         paths = glob.glob(os.path.join(self.outfolder, flag_name("*")))
         if only_name:
@@ -247,14 +232,11 @@ class Pipeline(object):
         """
         Run the pipeline, optionally specifying start and/or stop points.
 
-        :param start_point: Name of stage at which to begin execution.
-        :type start_point: str
-        :param stop_before: Name of stage at which to cease execution;
+        :param str start_point: Name of stage at which to begin execution.
+        :param str stop_before: Name of stage at which to cease execution;
             exclusive, i.e. this stage is not run
-        :type stop_before: str
-        :param stop_after: Name of stage at which to cease execution;
+        :param str stop_after: Name of stage at which to cease execution;
             inclusive, i.e. this stage is the last one run
-        :type stop_after: str
         :raise IllegalPipelineExecutionError: If both inclusive (stop_after)
             and exclusive (stop_before) halting points are provided, or if that
             start stage is the same as or after the stop stage, raise an
@@ -351,16 +333,13 @@ class Pipeline(object):
         else:
             self.halt(raise_error=False)
 
-
     def wrapup(self):
         """ Final mock stage to run after final one finishes. """
         self.manager.complete()
 
-
     def _reset(self):
         """ Scrub decks with respect to Stage status/label tracking. """
         self.skipped, self.executed = [], []
-
 
     def _start_index(self, start=None):
         """ Seek to the first stage to run. """
@@ -373,23 +352,20 @@ class Pipeline(object):
         except ValueError:
             raise UnknownPipelineStageError(start, self)
 
-
     def _stop_index(self, stop_point, inclusive):
         """
         Determine index of stage of stopping point for run().
 
-        :param stop_point: Stopping point itself or name of it.
-        :type stop_point: str | pypiper.Stage | function
-        :param inclusive: Whether the stopping point is to be regarded as
+        :param str | pypiper.Stage | function stop_point: Stopping point itself
+            or name of it.
+        :param bool inclusive: Whether the stopping point is to be regarded as
             inclusive (i.e., whether it's the final stage to run, or the one
             just beyond)
-        :type inclusive: bool
-        :return: Index into sequence of Pipeline's stages that indicates
+        :return int: Index into sequence of Pipeline's stages that indicates
             where to stop; critically, the value of the inclusive parameter
             here is used to contextualize this index such that it's always
             returned as an exclusive stopping index (i.e., execute up to the
             stage indexed by the value returned from this function.)
-        :rtype: int
         """
         if not stop_point:
             # Null case, no stopping point
@@ -412,10 +388,8 @@ def _is_unordered(collection):
     __iter__ implementation that defines a consistent ordering of the
     collection's elements.
 
-    :param collection: Object to check as an unordered collection.
-    :type collection object
-    :return: Whether the given object appears to be unordered
-    :rtype: bool
+    :param object collection: Object to check as an unordered collection.
+    :return bool: Whether the given object appears to be unordered
     :raises TypeError: If the given "collection" is non-iterable, it's
         illogical to investigate whether it's ordered.
     """
@@ -430,16 +404,16 @@ def _is_unordered(collection):
 
 def _parse_stage_spec(stage_spec):
     """
-    Handle alternate Stage specifications, returning Stage or TypeError.
+    Handle alternate Stage specifications, returning name and Stage.
 
     Isolate this parsing logic from any iteration. TypeError as single
     exception type funnel also provides a more uniform way for callers to
     handle specification errors (e.g., skip a stage, warn, re-raise, etc.)
 
-    :param stage_spec:
-    :type stage_spec: (str, callable) | callable
-    :return: Pair of name and Stage instance from parsing input specification
-    :rtype: (name, Stage)
+    :param (str, pypiper.Stage) | callable stage_spec: name and Stage
+    :return (name, pypiper.Stage): Pair of name and Stage instance from parsing
+        input specification
+    :raise TypeError: if the specification of the stage is not a supported type
     """
 
     # The logic used here, a message to a user about how to specify Stage.

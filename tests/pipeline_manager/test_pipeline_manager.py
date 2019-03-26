@@ -14,7 +14,7 @@ from pypiper.exceptions import SubprocessError
 
 
 __author__ = "Nathan Sheffield"
-__email__ = "nsheff@virginia.edu"
+__email__ = "nathan@code.databio.org"
 
 
 
@@ -105,15 +105,15 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(os.path.isdir(self.pp.outfolder))
 
         print("Testing status flags...")
-        self.pp.set_status_flag("testing")
+        self.pp._set_status_flag("testing")
         self._assertFile("sample_pipeline_testing.flag")
-        self.pp.set_status_flag("running")
+        self.pp._set_status_flag("running")
         self._assertNotFile("sample_pipeline_testing.flag")
         self._assertFile("sample_pipeline_running.flag")
 
         print("Testing waiting for locks...")
-        self.pp2.wait=False
-        self.pp.wait=False
+        self.pp2.wait = False
+        self.pp.wait = False
         sleep_lock = pipeline_filepath(self.pp, filename="lock.sleep")
         subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
         self.pp._create_file(sleep_lock)
@@ -187,7 +187,7 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(tgt3))
         self.assertTrue(os.path.isfile(tgt4))
 
-        self.pp.report_figure("Test figure", os.path.join("fig", "fig.jpg"))
+        self.pp.report_object("Test figure", os.path.join("fig", "fig.jpg"))
 
         # But in regular mode, they should be deleted:
         self.pp.dirty=False
@@ -244,7 +244,7 @@ class PipelineManagerTests(unittest.TestCase):
 
         # Should not raise an error
         self.pp.run(cmd, target=None, lock_name="badcommand", nofail=True)
-        self.pp.callprint(cmd, nofail=True)
+        self.pp.callprint(cmd, shell=None, nofail=True)
 
         # Should raise an error
         with self.assertRaises(SubprocessError):
@@ -264,6 +264,41 @@ class PipelineManagerTests(unittest.TestCase):
         self.pp.run(cmd, lock_name="sleep")
 
         #subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
+
+        print("Test new start")
+        if os.path.isfile(target):  # for repeat runs.
+            os.remove(target)
+        self.pp.run("echo first > " + target, target, shell=True)
+        # Should not run
+        self.pp.run("echo second > " + target, target, shell=True)
+        with open(target) as f:
+            lines = f.readlines()
+        self._assertLines(["first"], lines)
+        self.pp.new_start = True
+        # Should run
+        self.pp.run("echo third > " + target, target, shell=True)
+        with open(target) as f:
+            lines = f.readlines()
+        self._assertLines(["third"], lines)
+
+        print("Test dual target")
+        self.pp.new_start = False
+        if os.path.isfile(tgt1):
+            os.remove(tgt1) 
+        self.pp.run("touch " + tgt6, tgt6)
+        self.assertTrue(os.path.isfile(tgt6))
+        # if target exists, should not run
+        self.pp.run("touch " + tgt1, tgt6)
+        self.assertFalse(os.path.isfile(tgt1))
+        # if two targets, only one exists, should run
+        self.assertFalse(os.path.isfile(tgt5))
+        self.pp.run("touch " + tgt1, [tgt5, tgt6])
+        self.assertTrue(os.path.isfile(tgt1))
+        # if two targets, both exist, should not run
+        self.assertFalse(os.path.isfile(tgt5))
+        self.pp.run("touch " + tgt5, [tgt1, tgt6])
+        self.assertFalse(os.path.isfile(tgt5))
+
 
 
 

@@ -15,8 +15,6 @@ def test_starts_running(get_pipe_manager):
     """ A PipelineManager begins running during its construction. """
     pm = get_pipe_manager(name="TestPM")
     assert pm._active
-    assert pm.is_running
-
 
 # Parameters governing execution:
 # 1 -- checkpoint existence
