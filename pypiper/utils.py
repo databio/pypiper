@@ -1,14 +1,13 @@
 """ Shared utilities """
 
-from collections import Iterable
 import os
 import sys
 import re
 
 if sys.version_info < (3, 3):
-    from collections import Sequence
+    from collections import Iterable, Sequence
 else:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
 
 from .const import \
     CHECKPOINT_EXTENSION, PIPELINE_CHECKPOINT_DELIMITER, \
@@ -305,7 +304,7 @@ def get_proc_name(cmd):
     :param str | list[str] cmd: a command to be processed
     :return str: the basename representative command
     """
-    if isinstance(cmd, list):
+    if isinstance(cmd, Iterable) and not isinstance(cmd, str):
         cmd = " ".join(cmd)
 
     return cmd.split()[0].replace('(', '').replace(')', '')
