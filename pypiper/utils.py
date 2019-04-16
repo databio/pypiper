@@ -22,7 +22,7 @@ __email__ = "vreuter@virginia.edu"
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
 # packages, and import from utils within pypiper for other functions.
-__all__ = ["add_pypiper_args", "build_command", "get_first_value"]
+__all__ = ["add_pypiper_args", "build_command", "get_first_value", "head"]
 
 
 CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
@@ -355,6 +355,25 @@ def get_first_value(param, param_pools, on_missing=None, error=True):
                 "parameter is missing should accept that parameter and return "
                 "a value.")
         return on_missing
+
+
+def head(obj):
+    """
+    Facilitate syntactic uniformity for notion of "object-or-first-item."
+
+    :param object | Iterable[object] obj: single item or collection of items.
+    :return obj: object itself if non-Iterable, otherwise the first element
+        if one exists
+    :raise ValueError: if the given object is an empty Iterable
+    """
+    if isinstance(obj, str):
+        return obj
+    try:
+        next(obj)
+    except StopIteration:
+        raise ValueError("Requested head of empty iterable")
+    except Exception:
+        return obj
 
 
 def is_in_file_tree(fpath, folder):
