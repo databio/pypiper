@@ -4,6 +4,10 @@ import os
 import sys
 import re
 
+if sys.version_info < (3, ):
+    CHECK_TEXT_TYPES = (str, unicode)
+else:
+    CHECK_TEXT_TYPES = (str, )
 if sys.version_info < (3, 3):
     from collections import Iterable, Sequence
 else:
@@ -366,7 +370,7 @@ def head(obj):
         if one exists
     :raise ValueError: if the given object is an empty Iterable
     """
-    if isinstance(obj, str):
+    if isinstance(obj, CHECK_TEXT_TYPES):
         return obj
     try:
         return next(iter(obj))
