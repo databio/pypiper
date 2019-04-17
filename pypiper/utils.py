@@ -369,11 +369,11 @@ def head(obj):
     if isinstance(obj, str):
         return obj
     try:
-        next(obj)
+        return next(iter(obj))
+    except TypeError:
+        return obj
     except StopIteration:
         raise ValueError("Requested head of empty iterable")
-    except Exception:
-        return obj
 
 
 def is_in_file_tree(fpath, folder):
