@@ -18,23 +18,23 @@ Pypiper provides automatic restartability, process monitoring for time and memor
 
 ## Installing
 
-Release versions are posted on the GitHub [pypiper releases page](https://github.com/databio/pypiper/releases). You can install the latest release directly from PyPI using `pip`.
+Releases are posted as [GitHub releases](https://github.com/databio/pypiper/releases), or you can install from PyPI using `pip`:
 
 Global scope for single user:
-```{console}
+``{console}
 pip install --user --upgrade piper
-```
+``
 
 Within an active virtual environment:
-```{console}
+``{console}
 pip install --upgrade piper
-```
+``
 
 ## Quick start
 
 To employ pypiper, you build something like a shell script, but pass the commands through the `run` method on a `PipelineManager` object. Build your pipeline in **pure python**:
 
-```{python}
+``{python}
 #!/usr/bin/env python
 
 import pypiper
@@ -52,13 +52,13 @@ command = "echo 'Hello, Pypiper!' > " + target_file
 pm.run(command, target_file)
 
 pm.stop_pipeline()
-```
+``
 
 Then invoke your pipeline via the command-line:
 
-```{console}
+``{console}
 python my_pipeline.py --help
-```
+``
 
 ## Pypiper strengths
 
