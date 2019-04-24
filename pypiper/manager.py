@@ -474,11 +474,11 @@ class PipelineManager(object):
         try:
             print("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
             print("* " + "Pypiper version".rjust(20) + ":  " + __version__)
-            print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash']).strip())
-            print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch']).strip())
-            print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date']).strip())
-            if "" != str(gitvars['pypiper_diff']):
-                print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff']).strip())
+            print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash'].decode()).strip())
+            print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch'].decode()).strip())
+            print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date'].decode()).strip())
+            if "" != str(gitvars['pypiper_diff'].decode()):
+                print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff'].decode()).strip())
         except KeyError:
             # It is ok if keys aren't set, it means pypiper isn't in a  git repo.
             pass
