@@ -474,9 +474,9 @@ class PipelineManager(object):
         try:
             print("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
             print("* " + "Pypiper version".rjust(20) + ":  " + __version__)
-            print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash'])
-            print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch'])
-            print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date'])
+            print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash']))
+            print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch']))
+            print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date']))
             if "" != str(gitvars['pypiper_diff'].decode()):
                 print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff'])
         except KeyError:
