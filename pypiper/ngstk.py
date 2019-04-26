@@ -653,7 +653,7 @@ class NGSTk(AttMapEcho):
         :param str file_name: name of file whose lines are to be counted
         """
         x = subprocess.check_output("wc -l " + file_name + " | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
-        return x.strip()
+        return x.decode().strip()
 
     def count_lines_zip(self, file_name):
         """
@@ -662,7 +662,7 @@ class NGSTk(AttMapEcho):
         :param file: file_name
         """
         x = subprocess.check_output("gunzip -c " + file_name + " | wc -l | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
-        return x.strip()
+        return x.decode().strip()
 
     def get_chrs_from_bam(self, file_name):
         """
@@ -671,7 +671,7 @@ class NGSTk(AttMapEcho):
         """
         x = subprocess.check_output(self.tools.samtools + " view -H " + file_name + " | grep '^@SQ' | cut -f2| sed s'/SN://'", shell=True)
         # Chromosomes will be separated by newlines; split into list to return
-        return x.split()
+        return x.decode().split()
 
     ###################################
     # Read counting functions
@@ -803,7 +803,9 @@ class NGSTk(AttMapEcho):
         """
         cmd = "{} view {} {} {}".format(
                 self.tools.samtools, param, file_name, postpend)
-        return subprocess.check_output(cmd, shell=True)
+        # in python 3, check_output returns a byte string which causes issues.
+        # with python 3.6 we could use argument: "encoding='UTF-8'""
+        return subprocess.check_output(cmd, shell=True).decode().strip()
 
 
     def count_reads(self, file_name, paired_end):
@@ -846,7 +848,7 @@ class NGSTk(AttMapEcho):
         cmd = self.tools.samtools + " view " + aligned_bam + " | "
         cmd += "grep 'YT:Z:CP'" + " | uniq -u | wc -l | sed -E 's/^[[:space:]]+//'"
         
-        return subprocess.check_output(cmd, shell=True)
+        return subprocess.check_output(cmd, shell=True).decode().strip()
 
 
     def count_mapped_reads(self, file_name, paired_end):
@@ -1437,7 +1439,7 @@ class NGSTk(AttMapEcho):
         :return float: fraction of reads in peaks defined in given peaks file
         """
         cmd = self.simple_frip(input_bam, input_bed, threads)
-        return subprocess.check_output(cmd.split(" "), shell=True)
+        return subprocess.check_output(cmd.split(" "), shell=True).decode().strip()
 
 
     def simple_frip(self, input_bam, input_bed, threads=4):

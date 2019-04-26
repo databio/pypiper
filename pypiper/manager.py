@@ -441,20 +441,20 @@ class PipelineManager(object):
             # pypiper dir
             ppd = os.path.dirname(os.path.realpath(__file__))
             gitvars['pypiper_dir'] = ppd
-            gitvars['pypiper_hash'] = subprocess.check_output("cd " + ppd + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
-            gitvars['pypiper_date'] = subprocess.check_output("cd " + ppd + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
-            gitvars['pypiper_diff'] = subprocess.check_output("cd " + ppd + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
-            gitvars['pypiper_branch'] = subprocess.check_output("cd " + ppd + "; git branch | grep '*' 2>/dev/null", shell=True)
+            gitvars['pypiper_hash'] = subprocess.check_output("cd " + ppd + "; git rev-parse --verify HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pypiper_date'] = subprocess.check_output("cd " + ppd + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pypiper_diff'] = subprocess.check_output("cd " + ppd + "; git diff --shortstat HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pypiper_branch'] = subprocess.check_output("cd " + ppd + "; git branch | grep '*' 2>/dev/null", shell=True).decode().strip()
         except Exception:
             pass
         try:
             # pipeline dir
             pld = os.path.dirname(os.path.realpath(sys.argv[0]))
             gitvars['pipe_dir'] = pld
-            gitvars['pipe_hash'] = subprocess.check_output("cd " + pld + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
-            gitvars['pipe_date'] = subprocess.check_output("cd " + pld + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
-            gitvars['pipe_diff'] = subprocess.check_output("cd " + pld + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
-            gitvars['pipe_branch'] = subprocess.check_output("cd " + pld + "; git branch | grep '*' 2>/dev/null", shell=True)
+            gitvars['pipe_hash'] = subprocess.check_output("cd " + pld + "; git rev-parse --verify HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pipe_date'] = subprocess.check_output("cd " + pld + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pipe_diff'] = subprocess.check_output("cd " + pld + "; git diff --shortstat HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pipe_branch'] = subprocess.check_output("cd " + pld + "; git branch | grep '*' 2>/dev/null", shell=True).decode().strip()
         except Exception:
             pass
         
@@ -474,11 +474,11 @@ class PipelineManager(object):
         try:
             print("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
             print("* " + "Pypiper version".rjust(20) + ":  " + __version__)
-            print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash'].decode()).strip())
-            print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch'].decode()).strip())
-            print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date'].decode()).strip())
+            print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash'])
+            print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch'])
+            print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date'])
             if "" != str(gitvars['pypiper_diff'].decode()):
-                print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff'].decode()).strip())
+                print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff'])
         except KeyError:
             # It is ok if keys aren't set, it means pypiper isn't in a  git repo.
             pass
@@ -802,7 +802,7 @@ class PipelineManager(object):
             cmd = shlex.split(cmd)
             
         try:
-            return subprocess.check_output(cmd, shell=shell)
+            return subprocess.check_output(cmd, shell=shell).decode().strip()
         except Exception as e:
             self._triage_error(e, nofail)
 
@@ -1922,7 +1922,7 @@ class PipelineManager(object):
             # TODO: Put some debug output here with switch to Logger
             # since this is relatively untested.
             cmd = "docker stats " + container + " --format '{{.MemUsage}}' --no-stream"
-            mem_use_str = subprocess.check_output(cmd, shell=True)
+            mem_use_str = subprocess.check_output(cmd, shell=True).decode().print()
             mem_use = mem_use_str.split("/")[0].split()
             
             mem_num = re.findall('[\d\.]+', mem_use_str.split("/")[0])[0]
