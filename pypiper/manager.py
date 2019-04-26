@@ -478,7 +478,7 @@ class PipelineManager(object):
             print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch']))
             print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date']))
             if "" != str(gitvars['pypiper_diff'].decode()):
-                print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff'])
+                print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff']))
         except KeyError:
             # It is ok if keys aren't set, it means pypiper isn't in a  git repo.
             pass
