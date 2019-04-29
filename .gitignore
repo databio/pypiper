@@ -12,7 +12,6 @@ tests/test/*
 
 # ignore built docs
 doc/build/*
-docs_jupyter/build/*
 docs/autodoc_build/*
 
 # ignore test results
@@ -78,7 +77,6 @@ open_pipelines/
 *RESERVE*
 
 # Build-related stuff
-build/
 dist/
 pypiper.egg-info/
 piper.egg-info/
