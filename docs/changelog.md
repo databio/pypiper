@@ -1,6 +1,9 @@
 # Changelog
 
-## [0.10] - 2019-03-22
+## Unreleased
+- Improve python3 handling of integers and strings
+
+## [0.10.0] - 2019-03-22
 - Fixed a bug that raised exception with empty commands
 - Fixed the pipeline profiling issues
 - Major updates to internal systems: Switch to `attmap`
@@ -14,25 +17,25 @@ handling of rogues subprocesses during pipeline failure.
 - Fixed a bug that had prevented new start mode from working in certain cases.
 - Allow user to change units of memory passed in with default pypiper cli.
 
-## [0.9] - 2019-01-31
+## [0.9.4] - 2019-01-31
 
 - Point release to PyPI for README rendering.
 
-## [0.9] - 2019-01-31
+## [0.9.3] - 2019-01-31
 
 - Simple point release update to fix PyPI landing page.
 
-## [0.9] - 2019-01-30
+## [0.9.2] - 2019-01-30
 
 - Never echo protected-looking attribute request.
 
-## [0.9] - 2019-01-29
+## [0.9.1] - 2019-01-29
 
 - Fixed a bug in NGSTk that caused errors for read counting functions on 
 MACOS. MACOS `wc` returns leading whitespace, which caused these functions
 to fail.
 
-## [0.9] 2018-11-19
+## [0.9.0] 2018-11-19
 
 - Use `psutil` to track aggregate memory usage for processes that spawn
 children. This results in accurate memory records for these processes.
@@ -44,7 +47,7 @@ fail. Previously, only the final return command was recorded, as in `bash`.
 flags)
 
 
-## [0.8] - 2018-09-20
+## [0.8.1] - 2018-09-20
 
 - Fixed a bug that caused a problem for some pipelines adding groups of pypiper args.
 - Improved the `run` waiting method to immediately stop upon job
@@ -53,7 +56,7 @@ flags)
   improve accuracy of timing profiles.
 
 
-## [0.8] - 2018-06-15
+## [0.8.0] - 2018-06-15
 
 - Implemented 'new start' mode.
 - Improved error messages and exception handling for missing child software.
@@ -63,7 +66,7 @@ flags)
 - Clarified the license is BSD2
 - Fixed a bug that neglected to list pyyaml as a dependency
 
-## [0.7] - 2018-06-05
+## [0.7.2] - 2018-06-05
 
 - Implemented the 'report object' function.
 - Cleanup files are now relative, so a moved folder could still be cleaned.
@@ -71,11 +74,11 @@ flags)
 - Fixed a bug that caused an error in containers where /proc wasn't accessible
 
 
-## [0.7] - 2018-02-27
+## [0.7.1] - 2018-02-27
 
 - Package cleanup for Pypi.
 
-## [0.7] - 2017-12-12
+## [0.7.0] - 2017-12-12
 
 - Standardize `NGSTk` function naming.
 - Introduce `Stage` as a model for a logically related set of pipeline processing steps.
@@ -84,7 +87,7 @@ flags)
 - Introduce new state for a paused/halted pipeline.
 - Improve spawned process shutdown to avoid zombie processes.
 
-## [0.6] - 2017-08-24
+## [0.6.0] - 2017-08-24
 
 - Adds 'dynamic recovery' capability. For jobs that are terminated by an interrupt, such as a SIGINT or SIGTERM (as opposed to a failed command), pypiper will now set a dynamic recovery flags. These jobs, when restarted, will automatically pick up where they left off, without requiring any user intervention. Previously, the user would have to specify recover mode (`-R`). Now, recover mode forces a recover regardless of failure type, but interrupted pipelines will auto-recover.
 - Pypiper now appropriately adds cleanup files intermediate files for failed runs. It adds them to the cleanup script.
@@ -95,7 +98,7 @@ flags)
 - Major improvements to documentation and tutorials.
 - Adds `report_figure` function.
 
-## [0.5] - 2017-07-21
+## [0.5.0] - 2017-07-21
 
 - Adds preliminary support for handling docker containers
 - Updates docs, adds Hello World example
@@ -105,7 +108,7 @@ flags)
 - Updates Success time format to eliminate space
 - Improves efficiency in some ngstk merging functions
 
-## [0.4] - 2017-01-23
+## [0.4.0] - 2017-01-23
 
 - First major public release!
 - Revamps pypiper args
