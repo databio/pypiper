@@ -1,0 +1,5 @@
+mkdocs>=1.0
+markdown-include
+pydoc-markdown
+piper
+https://github.com/databio/mkdocs-databio/archive/master.zip
