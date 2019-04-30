@@ -913,7 +913,7 @@ class PipelineManager(object):
         if not self.wait:
             print("</pre>")
             ids = [x.pid for x in processes]
-            print ("Not waiting for subprocess(es): " + str(ids))
+            print ("Not waiting for subprocesses: " + str(ids))
             return [0, -1]
 
         def proc_wrapup(i):
