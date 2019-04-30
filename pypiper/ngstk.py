@@ -431,7 +431,8 @@ class NGSTk(AttMapEcho):
                 output = fastq_prefix + "_R" + str(in_i + 1) + ".fastq"
                 result_cmd, uf, result_file = \
                     self.input_to_fastq(in_arg, sample_name, paired_end,
-                                        fastq_folder, output, multiclass=True, zipmode=zipmode)
+                                        fastq_folder, output, multiclass=True, 
+                                        zipmode=zipmode)
                 cmd.append(result_cmd)
                 output_file.append(result_file)
 
@@ -694,7 +695,7 @@ class NGSTk(AttMapEcho):
         For compressed files.
         :param file: file_name
         """
-        x = subprocess.check_output("gunzip -c " + file_name + " | wc -l | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
+        x = subprocess.check_output(self.ziptool + " -d -c " + file_name + " | wc -l | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
         return x.decode().strip()
 
     def get_chrs_from_bam(self, file_name):
