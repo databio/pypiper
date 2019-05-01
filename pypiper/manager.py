@@ -477,7 +477,7 @@ class PipelineManager(object):
             print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash']))
             print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch']))
             print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date']))
-            if "" != str(gitvars['pypiper_diff'].decode()):
+            if "" != str(gitvars['pypiper_diff']):
                 print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff']))
         except KeyError:
             # It is ok if keys aren't set, it means pypiper isn't in a  git repo.
@@ -913,7 +913,7 @@ class PipelineManager(object):
         if not self.wait:
             print("</pre>")
             ids = [x.pid for x in processes]
-            print ("Not waiting for subprocess(es): " + str(ids))
+            print ("Not waiting for subprocesses: " + str(ids))
             return [0, -1]
 
         def proc_wrapup(i):
@@ -1922,7 +1922,7 @@ class PipelineManager(object):
             # TODO: Put some debug output here with switch to Logger
             # since this is relatively untested.
             cmd = "docker stats " + container + " --format '{{.MemUsage}}' --no-stream"
-            mem_use_str = subprocess.check_output(cmd, shell=True).decode().print()
+            mem_use_str = subprocess.check_output(cmd, shell=True).decode()
             mem_use = mem_use_str.split("/")[0].split()
             
             mem_num = re.findall('[\d\.]+', mem_use_str.split("/")[0])[0]

@@ -216,26 +216,37 @@ class NGSTk(AttMapEcho):
         return cmd
 
 
-    def bam_to_fastq_awk(self, bam_file, out_fastq_pre, paired_end):
+    def bam_to_fastq_awk(self, bam_file, out_fastq_pre, paired_end, zipmode=False):
         """
         This converts bam file to fastq files, but using awk. As of 2016, this is much faster 
         than the standard way of doing this using Picard, and also much faster than the 
         bedtools implementation as well; however, it does no sanity checks and assumes the reads
         (for paired data) are all paired (no singletons), in the correct order.
-
+        :param bool zipmode: Should the output be zipped?
         """
         self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
         fq1 = out_fastq_pre + "_R1.fastq"
+        fq2 = out_fastq_pre + "_R2.fastq"
+
+
+        if zipmode:
+            fq1 = fq1 + ".gz"
+            fq2 = fq2 + ".gz"
+            fq1_target = " | " + self.ziptool + " -c > " + fq1
+            fq2_target = " | " + self.ziptool + " -c > " + fq2
+        else:
+            fq1_target = ' > "' + fq1 + '"'
+            fq2_target = ' > "' + fq2 + '"'
+            
         if paired_end:
-            fq2 = out_fastq_pre + "_R2.fastq"
             cmd = self.tools.samtools + " view " + bam_file + " | awk '"
-            cmd += r'{ if (NR%2==1) print "@"$1"/1\n"$10"\n+\n"$11 > "' + fq1 + '";'
-            cmd += r' else print "@"$1"/2\n"$10"\n+\n"$11 > "' + fq2 + '"; }'
+            cmd += r'{ if (NR%2==1) print "@"$1"/1\n"$10"\n+\n"$11' + fq1_target + ';'
+            cmd += r' else print "@"$1"/2\n"$10"\n+\n"$11' + fq2_target + '; }'
             cmd += "'"  # end the awk command
         else:
             fq2 = None
             cmd = self.tools.samtools + " view " + bam_file + " | awk '"
-            cmd += r'{ print "@"$1"\n"$10"\n+\n"$11 > "' + fq1 + '"; }'
+            cmd += r'{ print "@"$1"\n"$10"\n+\n"$11' + fq1_target + '; }'
             cmd += "'"
         return cmd, fq1, fq2
 
@@ -275,9 +286,9 @@ class NGSTk(AttMapEcho):
 
     def merge_or_link(self, input_args, raw_folder, local_base="sample"):
         """
-        This function standardizes various input possibilities by converting
-        either .bam, .fastq, or .fastq.gz files into a local file; merging those
-        if multiple files given.
+        Standardizes various input possibilities by converting either .bam,
+        .fastq, or .fastq.gz files into a local file; merging those if multiple
+        files given.
 
         :param list input_args: This is a list of arguments, each one is a
             class of inputs (which can in turn be a string or a list).
@@ -297,7 +308,7 @@ class NGSTk(AttMapEcho):
             # We have a list of lists. Process each individually.
             local_input_files = list()
             n_input_files = len(filter(bool, input_args))
-            print("Number of input file sets:\t\t" + str(n_input_files))
+            print("Number of input file sets: " + str(n_input_files))
 
             for input_i, input_arg in enumerate(input_args):
                 # Count how many non-null items there are in the list;
@@ -382,20 +393,25 @@ class NGSTk(AttMapEcho):
 
 
     def input_to_fastq(
-        self, input_file, sample_name,
-        paired_end, fastq_folder, output_file=None, multiclass=False):
+        self, input_file, sample_name, paired_end, fastq_folder,
+        output_file=None, multiclass=False, zipmode=False):
         """
         Builds a command to convert input file to fastq, for various inputs.
 
         Takes either .bam, .fastq.gz, or .fastq input and returns
         commands that will create the .fastq file, regardless of input type.
         This is useful to made your pipeline easily accept any of these input
-        types seamlessly, standardizing you to the fastq which is still the
-        most common format for adapter trimmers, etc.
+        types seamlessly, standardizing you to fastq which is still the
+        most common format for adapter trimmers, etc. You can specify you want
+        output either zipped or not.
 
-        It will place the output fastq file in given `fastq_folder`.
+        Commands will place the output fastq file in given `fastq_folder`.
 
         :param str input_file: filename of input you want to convert to fastq
+        :param bool multiclass: Are both read1 and read2 included in a single
+            file? User should not need to set this; it will be inferred and used
+            in recursive calls, based on number files, and the paired_end arg.
+        :param bool zipmode: Should the output be .fastq.gz? Otherwise, just fastq
         :return str: A command (to be run with PipelineManager) that will ensure
             your fastq file exists.
         """
@@ -403,10 +419,11 @@ class NGSTk(AttMapEcho):
         fastq_prefix = os.path.join(fastq_folder, sample_name)
         self.make_sure_path_exists(fastq_folder)
 
-        # this expects a list; if it gets a string, convert it to a list.
+        # this expects a list; if it gets a string, wrap it in a list.
         if type(input_file) != list:
             input_file = [input_file]
 
+        # If multiple files were provided, recurse on each file individually
         if len(input_file) > 1:
             cmd = []
             output_file = []
@@ -414,7 +431,8 @@ class NGSTk(AttMapEcho):
                 output = fastq_prefix + "_R" + str(in_i + 1) + ".fastq"
                 result_cmd, uf, result_file = \
                     self.input_to_fastq(in_arg, sample_name, paired_end,
-                                        fastq_folder, output, multiclass=True)
+                                        fastq_folder, output, multiclass=True, 
+                                        zipmode=zipmode)
                 cmd.append(result_cmd)
                 output_file.append(result_file)
 
@@ -424,17 +442,25 @@ class NGSTk(AttMapEcho):
             input_file = input_file[0]
             if not output_file:
                 output_file = fastq_prefix + "_R1.fastq"
-            input_ext = self.get_input_ext(input_file)
+            if zipmode:
+                output_file = output_file + ".gz"
+
+            input_ext = self.get_input_ext(input_file)  # handles .fq or .fastq
 
             if input_ext == ".bam":
                 print("Found .bam file")
                 #cmd = self.bam_to_fastq(input_file, fastq_prefix, paired_end)
-                cmd, fq1, fq2 = self.bam_to_fastq_awk(input_file, fastq_prefix, paired_end)
+                cmd, fq1, fq2 = self.bam_to_fastq_awk(input_file, fastq_prefix, paired_end, zipmode)
                 # pm.run(cmd, output_file, follow=check_fastq)
             elif input_ext == ".fastq.gz":
                 print("Found .fastq.gz file")
                 if paired_end and not multiclass:
-                    # For paired-end reads in one fastq file, we must split the file into 2.
+                    # For paired-end reads in one fastq file, we must split the
+                    # file into 2. The pipeline author will need to include this
+                    # python script in the scripts directory. 
+                    # TODO: make this self-contained in pypiper. This is a rare
+                    # use case these days, as fastq files are almost never
+                    # interleaved anymore.
                     script_path = os.path.join(
                             self.tools.scripts_dir, "fastq_split.py")
                     cmd = self.tools.python + " -u " + script_path
@@ -443,16 +469,24 @@ class NGSTk(AttMapEcho):
                     # Must also return the set of output files
                     output_file = [fastq_prefix + "_R1.fastq", fastq_prefix + "_R2.fastq"]
                 else:
-                    # For single-end reads, we just unzip the fastq.gz file.
-                    # or, paired-end reads that were already split.
-                    cmd = self.ziptool + " -d -c " + input_file + " > " + output_file
-                    # a non-shell version
-                    # cmd1 = "gunzip --force " + input_file
-                    # cmd2 = "mv " + os.path.splitext(input_file)[0] + " " + output_file
-                    # cmd = [cmd1, cmd2]
+                    if zipmode:
+                        # we do nothing!
+                        cmd = "ln -sf " + input_file + " " + output_file
+                        print("Found .fq.gz file; no conversion necessary")
+                    else:
+                        # For single-end reads, we just unzip the fastq.gz file.
+                        # or, paired-end reads that were already split.
+                        cmd = self.ziptool + " -d -c " + input_file + " > " + output_file
+                        # a non-shell version
+                        # cmd1 = "gunzip --force " + input_file
+                        # cmd2 = "mv " + os.path.splitext(input_file)[0] + " " + output_file
+                        # cmd = [cmd1, cmd2]
             elif input_ext == ".fastq":
-                cmd = "ln -sf " + input_file + " " + output_file
-                print("Found .fastq file; no conversion necessary")
+                if zipmode:
+                    cmd = self.ziptool + " -c " + input_file + " > " + output_file
+                else:
+                    cmd = "ln -sf " + input_file + " " + output_file
+                    print("Found .fastq file; no conversion necessary")
 
         return [cmd, fastq_prefix, output_file]
 
@@ -482,9 +516,6 @@ class NGSTk(AttMapEcho):
                 input_files = [input_files]
             if type(output_files) != list:
                 output_files = [output_files]
-
-            print(input_files)
-            print(output_files)
 
             n_input_files = len(filter(bool, input_files))
 
@@ -661,7 +692,7 @@ class NGSTk(AttMapEcho):
         For compressed files.
         :param file: file_name
         """
-        x = subprocess.check_output("gunzip -c " + file_name + " | wc -l | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
+        x = subprocess.check_output(self.ziptool + " -d -c " + file_name + " | wc -l | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
         return x.decode().strip()
 
     def get_chrs_from_bam(self, file_name):

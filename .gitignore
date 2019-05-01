@@ -11,6 +11,7 @@ tests/test/*
 *.egg
 
 # ignore built docs
+build/*
 doc/build/*
 docs/autodoc_build/*
 
