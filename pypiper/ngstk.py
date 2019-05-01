@@ -118,6 +118,70 @@ class NGSTk(AttMapEcho):
         """ Alias for make_dir """
         self.make_dir(path)
 
+    def check_fastq(self, input_files, output_files, paired_end):
+        """
+        Create sanity-check function to be run after a FASTQ conversion.
+
+        This function will make sure any input files have the same number of reads
+        as the output files.
+
+        :param Iterable[str] input_files: collection of paths to input files
+        :param Iterable[str] output_files: collection of paths to output files
+        :param bool paired_end: whether the files are paired-end
+        :return function() -> int: function that returns total when called
+            gives total read count across FASTQ files
+        """
+
+        # Define a temporary function which we will return, to be called by the
+        # pipeline.
+        # Must define default parameters here based on the parameters passed in. This locks
+        # these values in place, so that the variables will be defined when this function
+        # is called without parameters as a follow function by pm.run.
+
+        # This is AFTER merge, so if there are multiple files it means the
+        # files were split into read1/read2; therefore I must divide by number
+        # of files for final reads.
+        def temp_func(input_files=input_files, output_files=output_files,
+                      paired_end=paired_end):
+
+            if not isinstance(input_files, list):
+                input_files = [input_files]
+            if not isinstance(output_files, list):
+                output_files = [output_files]
+
+            print(input_files)
+            print(output_files)
+
+            n_input_files = sum(1 if f else 0 for f in input_files)
+
+            total_reads = sum([int(count_reads(input_file, paired_end))
+                               for input_file in input_files])
+            raw_reads = total_reads / n_input_files
+            pm.report_result("Raw_reads", str(raw_reads))
+
+            total_fastq_reads = sum(
+                [int(count_reads(output_file, paired_end))
+                 for output_file in output_files])
+            fastq_reads = total_fastq_reads / n_input_files
+
+            pm.report_result("Fastq_reads", fastq_reads)
+            input_ext = get_input_ext(input_files[0])
+            # We can only assess pass filter reads in bam files with flags.
+            if input_ext == ".bam":
+                num_failed_filter = sum(
+                    int(count_fail_reads(
+                        f, paired_end, prog_path=self.tools.samtools))
+                    for f in input_files)
+                pf_reads = int(raw_reads) - num_failed_filter
+                pm.report_result("PF_reads", str(pf_reads))
+            if fastq_reads != int(raw_reads):
+                raise Exception("Fastq conversion error? Number of reads "
+                                "doesn't match unaligned bam")
+
+            return fastq_reads
+
+        return temp_func
+
     # Borrowed from looper
     def check_command(self, command):
         """
@@ -295,7 +359,7 @@ class NGSTk(AttMapEcho):
                 # it, regardless of file type:
                 # Pull the value out of the list
                 input_arg = input_args[0]
-                input_ext = self.get_input_ext(input_arg)
+                input_ext = get_input_ext(input_arg)
 
                 # Convert to absolute path
                 if not os.path.isabs(input_arg):
@@ -314,7 +378,7 @@ class NGSTk(AttMapEcho):
                 # Otherwise, there are multiple inputs.
                 # If more than 1 input file is given, then these are to be merged
                 # if they are in bam format.
-                if all([self.get_input_ext(x) == ".bam" for x in input_args]):
+                if all([get_input_ext(x) == ".bam" for x in input_args]):
                     sample_merged = local_base + ".merged.bam"
                     output_merge = os.path.join(raw_folder, sample_merged)
                     cmd = self.merge_bams(input_args, output_merge)
@@ -324,7 +388,7 @@ class NGSTk(AttMapEcho):
                     return output_merge
 
                 # if multiple fastq
-                if all([self.get_input_ext(x) == ".fastq.gz" for x in input_args]):
+                if all([get_input_ext(x) == ".fastq.gz" for x in input_args]):
                     sample_merged_gz = local_base + ".merged.fastq.gz"
                     output_merge_gz = os.path.join(raw_folder, sample_merged_gz)
                     #cmd1 = self.ziptool + "-d -c " + " ".join(input_args) + " > " + output_merge
@@ -335,7 +399,7 @@ class NGSTk(AttMapEcho):
                     self.pm.run(cmd, output_merge_gz)
                     return output_merge_gz
 
-                if all([self.get_input_ext(x) == ".fastq" for x in input_args]):
+                if all([get_input_ext(x) == ".fastq" for x in input_args]):
                     sample_merged = local_base + ".merged.fastq"
                     output_merge = os.path.join(raw_folder, sample_merged)
                     cmd = "cat " + " ".join(input_args) + " > " + output_merge
@@ -391,7 +455,7 @@ class NGSTk(AttMapEcho):
             input_file = input_file[0]
             if not output_file:
                 output_file = fastq_prefix + "_R1.fastq"
-            input_ext = self.get_input_ext(input_file)
+            input_ext = get_input_ext(input_file)
 
             if input_ext == ".bam":
                 print("Found .bam file")
@@ -446,7 +510,7 @@ class NGSTk(AttMapEcho):
             if paired_end and not trimmed_fastq_R2:
                 print("WARNING: specified paired-end but no R2 file")
 
-            n_trim = float(self.count_reads(trimmed_fastq, paired_end))
+            n_trim = float(count_reads(trimmed_fastq, paired_end))
             self.pm.report_result("Trimmed_reads", int(n_trim))
             try:
                 rr = float(self.pm.get_stat("Raw_reads"))
@@ -581,10 +645,10 @@ class NGSTk(AttMapEcho):
             raise UnsupportedFiletypeException(
                 "Neither SAM nor BAM: {}".format(file_name))
         if paired_end:
-            r1 = samtools_view(file_name, param=param + " -f64", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
-            r2 = samtools_view(file_name, param=param + " -f128", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r1 = samtools_view(file_name, param=param + " -f64", prog_path=self.tools.samtools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r2 = samtools_view(file_name, param=param + " -f128", prog_path=self.tools.samtools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
         else:
-            r1 = samtools_view(file_name, param=param + "", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r1 = samtools_view(file_name, param=param + "", prog_path=self.tools.samtools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
             r2 = 0
         return int(r1) + int(r2)
 
@@ -605,10 +669,10 @@ class NGSTk(AttMapEcho):
                 "Neither SAM nor BAM: {}".format(file_name))
 
         if paired_end: 
-            r1 = samtools_view(file_name, param=param + " -f64", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
-            r2 = samtools_view(file_name, param=param + " -f128", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r1 = samtools_view(file_name, param=param + " -f64", prog_path=self.tools.samtools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r2 = samtools_view(file_name, param=param + " -f128", prog_path=self.tools.samtools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
         else:
-            r1 = samtools_view(file_name, param=param + "", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r1 = samtools_view(file_name, param=param + "", prog_path=self.tools.samtools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
             r2 = 0
 
         return int(r1) + int(r2)
@@ -626,7 +690,7 @@ class NGSTk(AttMapEcho):
             counting functions require the parameter. This makes it easier to swap counting functions during
             pipeline development.
         """
-        return int(self.count_flag_reads(file_name, 256, paired_end))
+        return int(count_flag_reads(file_name, 256, paired_end, prog_path=self.tools.samtools))
 
     def count_uniquelymapping_reads(self, file_name, paired_end):
         """
@@ -638,7 +702,7 @@ class NGSTk(AttMapEcho):
         param = " -c -F256"
         if file_name.endswith("sam"):
             param += " -S"
-        return samtools_view(file_name, param=param, tools=self.tools)
+        return samtools_view(file_name, param=param, prog_path=self.tools.samtools)
 
     def count_concordant(self, aligned_bam):
         """
@@ -668,7 +732,7 @@ class NGSTk(AttMapEcho):
             param = {".bam": "-c -F4", ".sam": "-c -F4 -S"}
         except KeyError:
             return -1
-        return samtools_view(file_name, tools=self.tools, param=param)
+        return samtools_view(file_name, param=param, prog_path=self.tools.samtools)
 
     def sam_conversions(self, sam_file, depth=True):
         """
@@ -716,7 +780,6 @@ class NGSTk(AttMapEcho):
         self.make_sure_path_exists(output_dir)
         return "{} --noextract --outdir {} {}".\
                 format(self.tools.fastqc, output_dir, file)
-
 
     def fastqc_rename(self, input_bam, output_dir, sample_name):
         """

@@ -15,6 +15,7 @@ import sys
 import subprocess
 import yaml
 import pypiper
+from ubiquerg import count_reads
 
 parser = ArgumentParser(
     description="A pipeline to count the number of reads and file size. Accepts"
@@ -95,7 +96,7 @@ pm.report_result("File_mb", ngstk.get_file_size(local_input_files))
 
 n_input_files = len(filter(bool, local_input_files))
 
-raw_reads = sum([int(ngstk.count_reads(input_file, args.paired_end)) 
+raw_reads = sum([int(count_reads(input_file, args.paired_end))
                 for input_file in local_input_files]) / n_input_files
 
 # Finally, we use the report_result() function to print the output and 
