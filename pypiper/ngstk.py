@@ -4,10 +4,8 @@ import os
 import re
 import subprocess
 import errno
-from .exceptions import UnsupportedFiletypeException
-from .utils import is_fastq, is_gzipped_fastq, is_sam_or_bam
 from attmap import AttMapEcho
-from ubiquerg import check_fastq
+from ubiquerg import *
 
 
 class NGSTk(AttMapEcho):
@@ -74,7 +72,6 @@ class NGSTk(AttMapEcho):
         else:
             self.ziptool_cmd = "gzip -f"
 
-
     def _ensure_folders(self, *paths):
         """
         Ensure that paths to folder(s) exist.
@@ -96,7 +93,6 @@ class NGSTk(AttMapEcho):
             # Otherwise, just ensure that we have path to file's folder.
             self.make_dir(fpath if ext else p)
 
-
     @property
     def ziptool(self):
         """
@@ -105,7 +101,6 @@ class NGSTk(AttMapEcho):
         :return str: Either 'gzip' or 'pigz' if installed and multiple cores
         """
         return self.ziptool_cmd
-
 
     def make_dir(self, path):
         """
@@ -119,11 +114,9 @@ class NGSTk(AttMapEcho):
             if exception.errno != errno.EEXIST:
                 raise
 
-
     def make_sure_path_exists(self, path):
         """ Alias for make_dir """
         self.make_dir(path)
-
 
     # Borrowed from looper
     def check_command(self, command):
@@ -141,7 +134,6 @@ class NGSTk(AttMapEcho):
         else:
             return True
 
-
     def get_file_size(self, filenames):
         """
         Get size of all files in string (space-separated) in megabytes (Mb).
@@ -157,7 +149,6 @@ class NGSTk(AttMapEcho):
 
         return round(sum([float(os.stat(f).st_size) for f in filenames.split(" ")]) / (1024 ** 2), 4)
 
-
     def mark_duplicates(self, aligned_file, out_file, metrics_file, remove_duplicates="True"):
         cmd = self.tools.java
         if self.pm.javamem:  # If a memory restriction exists.
@@ -168,7 +159,6 @@ class NGSTk(AttMapEcho):
         cmd += " METRICS_FILE=" + metrics_file
         cmd += " REMOVE_DUPLICATES=" + remove_duplicates
         return cmd
-
 
     def bam2fastq(self, input_bam, output_fastq,
                   output_fastq2=None, unpaired_fastq=None):
@@ -190,7 +180,6 @@ class NGSTk(AttMapEcho):
             cmd += " SECOND_END_FASTQ={0}".format(output_fastq2)
             cmd += " UNPAIRED_FASTQ={0}".format(unpaired_fastq)
         return cmd
-
 
     def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
         """
@@ -215,7 +204,6 @@ class NGSTk(AttMapEcho):
         cmd += " VALIDATION_STRINGENCY=SILENT"
         return cmd
 
-
     def bam_to_fastq_awk(self, bam_file, out_fastq_pre, paired_end):
         """
         This converts bam file to fastq files, but using awk. As of 2016, this is much faster 
@@ -239,7 +227,6 @@ class NGSTk(AttMapEcho):
             cmd += "'"
         return cmd, fq1, fq2
 
-
     def bam_to_fastq_bedtools(self, bam_file, out_fastq_pre, paired_end):
         """
         Converts bam to fastq; A version using bedtools
@@ -253,25 +240,6 @@ class NGSTk(AttMapEcho):
             cmd += " -fq2 " + fq2
 
         return cmd, fq1, fq2
-
-
-    def get_input_ext(self, input_file):
-        """
-        Get the extension of the input_file. Assumes you're using either
-        .bam or .fastq/.fq or .fastq.gz/.fq.gz.
-        """
-        if input_file.endswith(".bam"):
-            input_ext = ".bam"
-        elif input_file.endswith(".fastq.gz") or input_file.endswith(".fq.gz"):
-            input_ext = ".fastq.gz"
-        elif input_file.endswith(".fastq") or input_file.endswith(".fq"):
-            input_ext = ".fastq"
-        else:
-            errmsg = "'{}'; this pipeline can only deal with .bam, .fastq, " \
-                     "or .fastq.gz files".format(input_file)
-            raise UnsupportedFiletypeException(errmsg)
-        return input_ext
-
 
     def merge_or_link(self, input_args, raw_folder, local_base="sample"):
         """
@@ -380,7 +348,6 @@ class NGSTk(AttMapEcho):
                         "Input files must be of the same type, and can only "
                         "merge bam or fastq.")
 
-
     def input_to_fastq(
         self, input_file, sample_name,
         paired_end, fastq_folder, output_file=None, multiclass=False):
@@ -430,7 +397,6 @@ class NGSTk(AttMapEcho):
                 print("Found .bam file")
                 #cmd = self.bam_to_fastq(input_file, fastq_prefix, paired_end)
                 cmd, fq1, fq2 = self.bam_to_fastq_awk(input_file, fastq_prefix, paired_end)
-                # pm.run(cmd, output_file, follow=check_fastq)
             elif input_ext == ".fastq.gz":
                 print("Found .fastq.gz file")
                 if paired_end and not multiclass:
@@ -455,7 +421,6 @@ class NGSTk(AttMapEcho):
                 print("Found .fastq file; no conversion necessary")
 
         return [cmd, fastq_prefix, output_file]
-
 
     def check_trim(self, trimmed_fastq, paired_end, trimmed_fastq_R2=None, fastqc_folder=None):
         """
@@ -586,25 +551,6 @@ class NGSTk(AttMapEcho):
         else:
             return cmd
 
-
-    def count_lines(self, file_name):
-        """
-        Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
-
-        :param str file_name: name of file whose lines are to be counted
-        """
-        x = subprocess.check_output("wc -l " + file_name + " | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
-        return x.decode().strip()
-
-    def count_lines_zip(self, file_name):
-        """
-        Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
-        For compressed files.
-        :param file: file_name
-        """
-        x = subprocess.check_output("gunzip -c " + file_name + " | wc -l | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '", shell=True)
-        return x.decode().strip()
-
     def get_chrs_from_bam(self, file_name):
         """
         Uses samtools to grab the chromosomes from the header that are contained
@@ -629,18 +575,18 @@ class NGSTk(AttMapEcho):
         This accounts for paired end or not for free because pairs have the same read name.
         In this function, a paired-end read would count as 2 reads.
         """
-        if file_name.endswith("sam"):
-            param = "-S"
-        if file_name.endswith("bam"):
-            param = ""
+        try:
+            param = {".sam": "-S", ".bam": ""}[os.path.splitext(file_name)[1].lower()]
+        except KeyError:
+            raise UnsupportedFiletypeException(
+                "Neither SAM nor BAM: {}".format(file_name))
         if paired_end:
-            r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
-            r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r1 = samtools_view(file_name, param=param + " -f64", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r2 = samtools_view(file_name, param=param + " -f128", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
         else:
-            r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r1 = samtools_view(file_name, param=param + "", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
             r2 = 0
         return int(r1) + int(r2)
-
 
     def count_unique_mapped_reads(self, file_name, paired_end):
         """
@@ -652,44 +598,20 @@ class NGSTk(AttMapEcho):
         :param bool paired_end: True/False paired end data
         :return int: Number of uniquely mapped reads.
         """
-
-        _, ext = os.path.splitext(file_name)
-        ext = ext.lower()
-
-        if ext == ".sam":
-            param = "-S -F4"
-        elif ext == "bam":
-            param = "-F4"
-        else:
-            raise ValueError("Not a SAM or BAM: '{}'".format(file_name))
+        try:
+            param = {".sam": "-S -F4", ".bam": "-F4"}[os.path.splitext(file_name)[1].lower()]
+        except KeyError:
+            raise UnsupportedFiletypeException(
+                "Neither SAM nor BAM: {}".format(file_name))
 
         if paired_end: 
-            r1 = self.samtools_view(file_name, param=param + " -f64", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
-            r2 = self.samtools_view(file_name, param=param + " -f128", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r1 = samtools_view(file_name, param=param + " -f64", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r2 = samtools_view(file_name, param=param + " -f128", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
         else:
-            r1 = self.samtools_view(file_name, param=param + "", postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
+            r1 = samtools_view(file_name, param=param + "", tools=self.tools, postpend=" | cut -f1 | sort -k1,1 -u | wc -l | sed -E 's/^[[:space:]]+//'")
             r2 = 0
 
         return int(r1) + int(r2)
-
-
-    def count_flag_reads(self, file_name, flag, paired_end):
-        """
-        Counts the number of reads with the specified flag.
-
-        :param str file_name: name of reads file
-        :param str flag: sam flag value to be read
-        :param bool paired_end: This parameter is ignored; samtools automatically correctly responds depending
-            on the data in the bamfile. We leave the option here just for consistency, since all the other
-            counting functions require the parameter. This makes it easier to swap counting functions during
-            pipeline development.
-        """
-
-        param = " -c -f" + str(flag)
-        if file_name.endswith("sam"):
-            param += " -S"
-        return self.samtools_view(file_name, param=param)
-
 
     def count_multimapping_reads(self, file_name, paired_end):
         """
@@ -706,7 +628,6 @@ class NGSTk(AttMapEcho):
         """
         return int(self.count_flag_reads(file_name, 256, paired_end))
 
-
     def count_uniquelymapping_reads(self, file_name, paired_end):
         """
         Counts the number of reads that mapped to a unique position.
@@ -717,68 +638,7 @@ class NGSTk(AttMapEcho):
         param = " -c -F256"
         if file_name.endswith("sam"):
             param += " -S"
-        return self.samtools_view(file_name, param=param)
-
-
-    def count_fail_reads(self, file_name, paired_end):
-        """
-        Counts the number of reads that failed platform/vendor quality checks.
-        :param paired_end: This parameter is ignored; samtools automatically correctly responds depending
-        on the data in the bamfile. We leave the option here just for consistency, since all the other
-        counting functions require the parameter. This makes it easier to swap counting functions during
-        pipeline development.
-        """
-        return int(self.count_flag_reads(file_name, 512, paired_end))
-
-
-    def samtools_view(self, file_name, param, postpend=""):
-        """
-        Run samtools view, with flexible parameters and post-processing.
-
-        This is used internally to implement the various count_reads functions.
-
-        :param str file_name: file_name
-        :param str param: String of parameters to pass to samtools view
-        :param str postpend: String to append to the samtools command;
-            useful to add cut, sort, wc operations to the samtools view output.
-        """
-        cmd = "{} view {} {} {}".format(
-                self.tools.samtools, param, file_name, postpend)
-        # in python 3, check_output returns a byte string which causes issues.
-        # with python 3.6 we could use argument: "encoding='UTF-8'""
-        return subprocess.check_output(cmd, shell=True).decode().strip()
-
-
-    def count_reads(self, file_name, paired_end):
-        """
-        Count reads in a file.
-
-        Paired-end reads count as 2 in this function.
-        For paired-end reads, this function assumes that the reads are split
-        into 2 files, so it divides line count by 2 instead of 4.
-        This will thus give an incorrect result if your paired-end fastq files
-        are in only a single file (you must divide by 2 again).
-
-        :param str file_name: Name/path of file whose reads are to be counted.
-        :param bool paired_end: Whether the file contains paired-end reads.
-        """
-
-        _, ext = os.path.splitext(file_name)
-        if not (is_sam_or_bam(file_name) or is_fastq(file_name)):
-            # TODO: make this an exception and force caller to handle that
-            # rather than relying on knowledge of possibility of negative value.
-            return -1
-
-        if is_sam_or_bam(file_name):
-            param_text = "-c" if ext == ".bam" else "-c -S"
-            return self.samtools_view(file_name, param=param_text)
-        else:
-            num_lines = self.count_lines_zip(file_name) \
-                    if is_gzipped_fastq(file_name) \
-                    else self.count_lines(file_name)
-            divisor = 2 if paired_end else 4
-            return int(num_lines) / divisor
-
+        return samtools_view(file_name, param=param, tools=self.tools)
 
     def count_concordant(self, aligned_bam):
         """
@@ -790,7 +650,6 @@ class NGSTk(AttMapEcho):
         cmd += "grep 'YT:Z:CP'" + " | uniq -u | wc -l | sed -E 's/^[[:space:]]+//'"
         
         return subprocess.check_output(cmd, shell=True).decode().strip()
-
 
     def count_mapped_reads(self, file_name, paired_end):
         """
@@ -805,12 +664,11 @@ class NGSTk(AttMapEcho):
             pipeline development.
         :return int: Either return code from samtools view command, or -1 to indicate an error state.
         """
-        if file_name.endswith("bam"):
-            return self.samtools_view(file_name, param="-c -F4")
-        if file_name.endswith("sam"):
-            return self.samtools_view(file_name, param="-c -F4 -S")
-        return -1
-
+        try:
+            param = {".bam": "-c -F4", ".sam": "-c -F4 -S"}
+        except KeyError:
+            return -1
+        return samtools_view(file_name, tools=self.tools, param=param)
 
     def sam_conversions(self, sam_file, depth=True):
         """
@@ -825,7 +683,6 @@ class NGSTk(AttMapEcho):
             cmd += self.tools.samtools + " depth " + sam_file.replace(".sam", "_sorted.bam") + " > " + sam_file.replace(".sam", "_sorted.depth") + "\n"
         return cmd
 
-
     def bam_conversions(self, bam_file, depth=True):
         """
         Sort and index bam files for later use.
@@ -838,7 +695,6 @@ class NGSTk(AttMapEcho):
         if depth:
             cmd += self.tools.samtools + " depth " + bam_file.replace(".bam", "_sorted.bam") + " > " + bam_file.replace(".bam", "_sorted.depth") + "\n"
         return cmd
-
 
     def fastqc(self, file, output_dir):
         """
@@ -887,12 +743,10 @@ class NGSTk(AttMapEcho):
         cmds.append(cmd2)
         return cmds
 
-
     def samtools_index(self, bam_file):
         """Index a bam file."""
         cmd = self.tools.samtools + " index {0}".format(bam_file)
         return cmd
-
 
     def slurm_header(
         self, job_name, output, queue="shortq", n_tasks=1, time="10:00:00",
@@ -922,40 +776,32 @@ class NGSTk(AttMapEcho):
 
         return cmd
 
-
     def slurm_footer(self):
         return "     date"
-
 
     def slurm_submit_job(self, job_file):
         return os.system("sbatch %s" % job_file)
 
-
     def remove_file(self, file_name):
         return "rm {0}".format(file_name)
 
-
     def move_file(self, old, new):
         return "mv {0} {1}".format(old, new)
-
 
     def preseq_curve(self, bam_file, output_prefix):
         return """
         preseq c_curve -B -P -o {0}.yield.txt {1}
         """.format(output_prefix, bam_file)
 
-
     def preseq_extrapolate(self, bam_file, output_prefix):
         return """
         preseq lc_extrap -v -B -P -e 1e+9 -o {0}.future_yield.txt {1}
         """.format(output_prefix, bam_file)
 
-
     def preseq_coverage(self, bam_file, output_prefix):
         return """
         preseq gc_extrap -o {0}.future_coverage.txt {1}
         """.format(output_prefix, bam_file)
-
 
     def trimmomatic(
             self, input_fastq1, output_fastq1, cpus, adapters, log,

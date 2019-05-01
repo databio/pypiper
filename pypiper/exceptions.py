@@ -6,28 +6,25 @@ __email__ = "vreuter@virginia.edu"
 
 __all__ = ["PipelineError", "PipelineHalt", "IllegalPipelineDefinitionError",
            "IllegalPipelineExecutionError", "MissingCheckpointError",
-           "UnknownPipelineStageError", "UnsupportedFiletypeException",
-           "SubprocessError"]
-
-
+           "UnknownPipelineStageError", "SubprocessError"]
 
 
 class PipelineError(Exception):
     """ General pipeline error. """
     pass
 
+
 class SubprocessError(Exception):
     pass
+
 
 class IllegalPipelineDefinitionError(PipelineError):
     pass
 
 
-
 class IllegalPipelineExecutionError(PipelineError):
     """ Represent cases of illogical start/stop run() declarations. """
     pass
-
 
 
 class MissingCheckpointError(Exception):
@@ -38,7 +35,6 @@ class MissingCheckpointError(Exception):
         super(MissingCheckpointError, self).__init__(msg)
 
 
-
 class UnknownPipelineStageError(Exception):
     """
     Triggered by use of unknown/undefined name for a pipeline stage.
@@ -46,7 +42,6 @@ class UnknownPipelineStageError(Exception):
     :param str stage_name: Name of the stage triggering the exception.
     :param pypiper.Pipeline pipeline: Pipeline for which the stage is unknown/undefined.
     """
-
 
     def __init__(self, stage_name, pipeline=None):
         message = stage_name
@@ -60,7 +55,6 @@ class UnknownPipelineStageError(Exception):
                 message = "{}; defined stages: {}". \
                     format(message, ", ".join(map(str, stages)))
         super(UnknownPipelineStageError, self).__init__(message)
-
 
 
 class PipelineHalt(Exception):
@@ -93,11 +87,3 @@ class PipelineHalt(Exception):
                 else:
                     msg = "Stopped at '{}'".format(last_stage_done)
                 super(PipelineHalt, self).__init__(msg)
-
-
-
-class UnsupportedFiletypeException(Exception):
-    """ Restrict filetype domain. """
-    # Use superclass ctor to allow file name/path or extension to pass
-    # through as the message for why this error is occurring.
-    pass
