@@ -220,15 +220,63 @@ def check_shell_asterisk(cmd):
     """
     return r"*" in cmd
 
-def split_by_pipes(cmd):
+def split_by_pipes_nonnested(cmd):
     """
-    Split the command by shell pipes, but preserve the contents of the parantheses.
+    Split the command by shell pipes, but preserve contents in 
+    parentheses and braces.
 
     :param str cmd: Command to investigate.
     :return list: List of sub commands to be linked
     """
-    r = re.compile(r'(?:[^|(]|\([^)]*\))+')
+    # for posterity, this one will do parens only: re.compile(r'(?:[^|(]|\([^)]*\))+')
+    # r = re.compile(r'(?:[^|({]|[\({][^)}]*[\)}])+')
+    r = re.compile(r'(?:[^|(]|\([^)]*\)+|\{[^}]*\})')
     return r.findall(cmd)
+
+# cmd="a | b | { c | d } ABC | { x  | y } hello '( () e |f )"
+
+def split_by_pipes(cmd):
+    """
+    Split the command by shell pipes, but preserve contents in 
+    parentheses and braces. Also handles nested parens and braces.
+
+    :param str cmd: Command to investigate.
+    :return list: List of sub commands to be linked
+    """ 
+
+    # Build a simple finite state machine to split on pipes, while
+    # handling nested braces or parentheses.   
+    stack_brace = []
+    stack_paren = []
+    cmdlist = []
+    newcmd = str()
+    for char in cmd:
+        if char is "{":
+            stack_brace.append("{")
+        elif char is "}":
+            stack_brace.pop()
+        elif char is "(":
+            stack_paren.append("(")
+        elif char is ")":
+            stack_paren.pop()
+
+        if len(stack_brace) > 0 or len(stack_paren) > 0:
+            # We are inside a parenthetic of some kind; emit character
+            # no matter what it is
+            newcmd += char
+        elif char is "|":
+            # if it's a pipe, finish the command and start a new one
+            cmdlist.append(newcmd)
+            newcmd = str()
+            next
+        else:
+            # otherwise, emit character.
+            newcmd += char
+
+    # collect the final command before returning
+    cmdlist.append(newcmd)
+    return cmdlist
+
 
 def check_shell_pipes(cmd):
     """
@@ -237,8 +285,21 @@ def check_shell_pipes(cmd):
     :param str cmd: Command to investigate.
     :return bool: Whether the command appears to contain shell pipes.
     """
-    return "|" in cmd
+    return "|" in strip_braced_txt(cmd)
 
+
+def strip_braced_txt(cmd):
+    curly_braces = True
+    while curly_braces:
+        SRE_match_obj = re.search(r'\{(.*?)}',cmd)
+        if not SRE_match_obj is None:
+            cmd = cmd[:SRE_match_obj.start()] + cmd[(SRE_match_obj.end()+1):]
+            if re.search(r'\{(.*?)}',cmd) is None:
+                curly_braces = False
+        else:
+            curly_braces = False
+
+    return cmd
 
 def check_shell_redirection(cmd):
     """
@@ -247,16 +308,8 @@ def check_shell_redirection(cmd):
     :param str cmd: Command to investigate.
     :return bool: Whether the command appears to contain shell redirection.
     """
-    curly_brackets = True
-    while curly_brackets:
-        SRE_match_obj = re.search(r'\{(.*?)}',cmd)
-        if SRE_match_obj is not None:
-            cmd = cmd[:SRE_match_obj.start()] + cmd[(SRE_match_obj.end()+1):]
-            if re.search(r'\{(.*?)}',cmd) is None:
-                curly_brackets = False
-        else:
-            curly_brackets = False
-    return ">" in cmd
+
+    return ">" in strip_braced_txt(cmd)
 
 
 def clear_flags(pm, flag_names=None):
