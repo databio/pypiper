@@ -232,8 +232,8 @@ class NGSTk(AttMapEcho):
         if zipmode:
             fq1 = fq1 + ".gz"
             fq2 = fq2 + ".gz"
-            fq1_target = " | " + self.ziptool + " -c > " + fq1
-            fq2_target = " | " + self.ziptool + " -c > " + fq2
+            fq1_target = " | \"" + self.ziptool + " -c  > " + fq1 + '"'
+            fq2_target = " | \"" + self.ziptool + " -c  > " + fq2 + '"'
         else:
             fq1_target = ' > "' + fq1 + '"'
             fq2_target = ' > "' + fq2 + '"'

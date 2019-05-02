@@ -878,7 +878,8 @@ class PipelineManager(object):
             cmd = "docker exec " + container + " " + cmd
 
         param_list = [make_dict(c) for c in split_by_pipes(cmd)] \
-            if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
+            if not shell and check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
+
 
         proc_name = get_proc_name(cmd)
 
