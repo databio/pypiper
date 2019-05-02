@@ -521,16 +521,17 @@ class NGSTk(AttMapEcho):
                 output_files = [output_files]
 
             n_input_files = len(filter(bool, input_files))
+            n_output_files = len(filter(bool, output_files))
 
             total_reads = sum([int(self.count_reads(input_file, paired_end))
                                for input_file in input_files])
-            raw_reads = total_reads / n_input_files
+            raw_reads = int(total_reads / n_input_files)
             self.pm.report_result("Raw_reads", str(raw_reads))
 
             total_fastq_reads = sum(
                 [int(self.count_reads(output_file, paired_end))
                  for output_file in output_files])
-            fastq_reads = total_fastq_reads / n_input_files
+            fastq_reads = int(total_fastq_reads / n_output_files)
 
             self.pm.report_result("Fastq_reads", fastq_reads)
             input_ext = self.get_input_ext(input_files[0])
@@ -542,8 +543,8 @@ class NGSTk(AttMapEcho):
                 pf_reads = int(raw_reads) - num_failed_filter
                 self.pm.report_result("PF_reads", str(pf_reads))
             if fastq_reads != int(raw_reads):
-                raise Exception("Fastq conversion error? Number of reads "
-                                "doesn't match unaligned bam")
+                raise Exception("Fastq conversion error? Number of input reads "
+                                "doesn't number of output reads.")
 
             return fastq_reads
 
