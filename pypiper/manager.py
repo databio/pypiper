@@ -1552,6 +1552,7 @@ class PipelineManager(object):
             self.timestamp("### Pipeline failed at: ")
             total_time = datetime.timedelta(seconds=self.time_elapsed(self.starttime))
             print("Total time: " + str(total_time))
+            print("Failure reason: " + str(e))
             self._set_status_flag(FAIL_FLAG)
 
         raise e
