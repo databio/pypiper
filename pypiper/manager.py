@@ -42,6 +42,7 @@ __all__ = ["PipelineManager"]
 
 LOCK_PREFIX = "lock."
 
+
 class Unbuffered(object):
     def __init__(self, stream):
         self.stream = stream
@@ -56,6 +57,7 @@ class Unbuffered(object):
 
     def __getattr__(self, attr):
         return getattr(self.stream, attr)
+
 
 class PipelineManager(object):
     """
@@ -199,7 +201,6 @@ class PipelineManager(object):
         self.cores1of8 = int(self.cores) / 8
         self.cores7of8 = int(self.cores) - int(self.cores1of8)
 
-
         self.pl_version = version
         # Set relative output_parent directory to absolute
         # not necessary after all. . .
@@ -245,8 +246,6 @@ class PipelineManager(object):
         # In-memory holder for report_result
         self.stats_dict = {}
 
-
-
         # Checkpoint-related parameters
         self.overwrite_checkpoints = overwrite_checkpoints
         self.halt_on_next = False
@@ -256,7 +255,6 @@ class PipelineManager(object):
         # Pypiper can keep track of intermediate files to clean up at the end
         self.cleanup_list = []
         self.cleanup_list_conditional = []
-        
 
         # Register handler functions to deal with interrupt and termination signals;
         # If received, we would then clean up properly (set pipeline status to FAIL, etc).
