@@ -93,7 +93,7 @@ pm.report_result("File_mb", ngstk.get_file_size(local_input_files))
 
 # And then count the number of reads in the file
 
-n_input_files = len(filter(bool, local_input_files))
+n_input_files = len(list(filter(bool, local_input_files)))
 
 raw_reads = sum([int(ngstk.count_reads(input_file, args.paired_end)) 
                 for input_file in local_input_files]) / n_input_files
