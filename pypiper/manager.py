@@ -1126,11 +1126,11 @@ class PipelineManager(object):
         """
         Writes a string to self.pipeline_profile_file.
         """
+        rel_lock_name = lock_name if lock_name is None else os.path.relpath(lock_name, self.outfolder)
         message_raw = str(command) + "\t" + \
             str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
             str(memory)  + "\t" + \
-            str(os.path.relpath(lock_name, self.outfolder))
-
+            str(rel_lock_name)
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
 
