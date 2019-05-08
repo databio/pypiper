@@ -1266,7 +1266,7 @@ class PipelineManager(object):
         print(line)
 
         with open(self.pipeline_commands_file, "a") as myfile:
-            myfile.write(line + "\n\n")
+            myfile.write(line)
 
 
     ###################################
