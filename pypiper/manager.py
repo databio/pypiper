@@ -1126,10 +1126,10 @@ class PipelineManager(object):
         """
         Writes a string to self.pipeline_profile_file.
         """
-        message_raw = str(command) + "\t " + \
-            str(lock_name) + "\t" + \
+        message_raw = str(command) + "\t" + \
             str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
-            str(memory)
+            str(memory)  + "\t" + \
+            str(os.path.relpath(lock_name, self.outfolder))
 
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
