@@ -892,10 +892,8 @@ class PipelineManager(object):
             else:
                 param_list[i]["stdin"] = processes[i - 1].stdout
                 processes.append(psutil.Popen(preexec_fn=os.setpgrp, **param_list[i]))
-
             self.procs[processes[-1].pid] = {
-                "proc_name": proc_name,
-                "subproc_name" : get_proc_name(param_list[i]["args"]),
+                "proc_name": get_proc_name(param_list[i]["args"]),
                 "start_time": start_time,
                 "container": container,
                 "p": processes[-1]
@@ -1674,7 +1672,7 @@ class PipelineManager(object):
             elapsed_time = time.time() - self.procs[pid]["start_time"]
             process_peak_mem = self._memory_usage(pid, container=proc_dict["container"])/1e6
             self._report_profile(self.procs[pid]["proc_name"], None, elapsed_time, process_peak_mem)
-            self._kill_child_process(pid, proc_dict["subproc_name"])
+            self._kill_child_process(pid, proc_dict["proc_name"])
             del self.procs[pid]
 
 
