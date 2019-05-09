@@ -27,6 +27,7 @@ else:
     from collections.abc import Iterable
 
 from attmap import AttMapEcho
+from hashlib import md5
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
@@ -872,6 +873,18 @@ class PipelineManager(object):
             a, s = (command, True) if check_shell(command, shell) else (shlex.split(command), False)
             return dict(args=a, stdout=subprocess.PIPE, shell=s)
 
+        def make_hash(o):
+            """
+            Convert the object to string and hash it, return None in case of failure
+            :param o: object of any type, in our case it is a dict
+            :return str: hahsed string representation of the dict
+            """
+            try:
+                hsh = md5(str(o).encode("utf-8")).hexdigest()[:10]
+            except:
+                hsh = None
+            return hsh
+
         if container:
             cmd = "docker exec " + container + " " + cmd
 
@@ -896,7 +909,8 @@ class PipelineManager(object):
                 "proc_name": get_proc_name(param_list[i]["args"]),
                 "start_time": start_time,
                 "container": container,
-                "p": processes[-1]
+                "p": processes[-1],
+                "args_hash": make_hash(param_list[i])
             }
 
         self._report_command(cmd, [x.pid for x in processes])
@@ -926,7 +940,9 @@ class PipelineManager(object):
                 mem=display_memory(local_maxmems[i]))
             
             # report process profile
-            self._report_profile(self.procs[current_pid]["proc_name"], lock_file, time.time() - self.procs[current_pid]["start_time"], local_maxmems[i])
+            self._report_profile(self.procs[current_pid]["proc_name"], lock_file,
+                                 time.time() - self.procs[current_pid]["start_time"], local_maxmems[i],
+                                 current_pid, self.procs[current_pid]["args_hash"])
 
             # Remove this as a running subprocess
             del self.procs[current_pid]
@@ -1120,12 +1136,14 @@ class PipelineManager(object):
         return round(time.time() - time_since, 0)
 
 
-    def _report_profile(self, command, lock_name, elapsed_time, memory):
+    def _report_profile(self, command, lock_name, elapsed_time, memory, pid, args_hash):
         """
         Writes a string to self.pipeline_profile_file.
         """
         rel_lock_name = lock_name if lock_name is None else os.path.relpath(lock_name, self.outfolder)
-        message_raw = str(command) + "\t" + \
+        message_raw = str(pid) + "\t" + \
+            str(args_hash) + "\t" + \
+            str(command) + "\t" + \
             str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
             str(memory)  + "\t" + \
             str(rel_lock_name)
@@ -1584,7 +1602,8 @@ class PipelineManager(object):
         self.report_result("Time", str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
         print("\n##### [Epilogue:]")
-        print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
+        print("* " + "Total elapsed time".rjust(20) + ":  "
+              + str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         # print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
         print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
         if self.halted:
@@ -1671,7 +1690,8 @@ class PipelineManager(object):
             # record profile of any running processes before killing
             elapsed_time = time.time() - self.procs[pid]["start_time"]
             process_peak_mem = self._memory_usage(pid, container=proc_dict["container"])/1e6
-            self._report_profile(self.procs[pid]["proc_name"], None, elapsed_time, process_peak_mem)
+            self._report_profile(self.procs[pid]["proc_name"], None, elapsed_time, process_peak_mem, pid,
+                                 self.procs[pid]["args_hash"])
             self._kill_child_process(pid, proc_dict["proc_name"])
             del self.procs[pid]
 
@@ -1892,7 +1912,8 @@ class PipelineManager(object):
                         pass
             else:
                 print("\nConditional flag found: " + str([os.path.basename(i) for i in flag_files]))
-                print("\nThese conditional files were left in place:\n\n- " + "\n- ".join(self.cleanup_list_conditional))
+                print("\nThese conditional files were left in place:\n\n- " +
+                      "\n- ".join(self.cleanup_list_conditional))
                 # Produce a cleanup script.
                 no_cleanup_script = []
                 for cleandir in self.cleanup_list_conditional:
