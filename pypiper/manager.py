@@ -168,7 +168,7 @@ class PipelineManager(object):
         self.output_parent = params['output_parent']
 
         # Keep track of an ID for the number of processes attempted
-        self.proc_count
+        self.proc_count = 0
 
         # We use this memory to pass a memory limit to processes like java that
         # can take a memory limit, so they don't get killed by a SLURM (or other
