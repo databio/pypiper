@@ -317,7 +317,7 @@ class PipelineManager(object):
                 # later to pass to, for example, toolkits
                 import yaml
                 # An also use yaml.FullLoader for trusted input. . .
-                config = yaml.load(conf, LoaderF=yaml.SafeLoader)
+                config = yaml.load(conf, Loader=yaml.SafeLoader)
                 self.config = AttMapEcho(config)
         else:
             print("No config file")
