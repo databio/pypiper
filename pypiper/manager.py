@@ -167,6 +167,9 @@ class PipelineManager(object):
         self.cores = params['cores']
         self.output_parent = params['output_parent']
 
+        # Keep track of an ID for the number of processes attempted
+        self.proc_count
+
         # We use this memory to pass a memory limit to processes like java that
         # can take a memory limit, so they don't get killed by a SLURM (or other
         # cluster manager) overage. However, with java, the -Xmx argument can only
@@ -314,7 +317,7 @@ class PipelineManager(object):
                 # later to pass to, for example, toolkits
                 import yaml
                 # An also use yaml.FullLoader for trusted input. . .
-                config = yaml.load(conf, Loader=yaml.SafeLoader)
+                config = yaml.load(conf, LoaderF=yaml.SafeLoader)
                 self.config = AttMapEcho(config)
         else:
             print("No config file")
@@ -687,6 +690,9 @@ class PipelineManager(object):
                 # Normally we don't run the follow, but if you want to force. . .
                 if self.force_follow:
                     call_follow()
+
+                # Increment process count here
+
                 break  # Do not run command
 
             # Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
@@ -940,9 +946,10 @@ class PipelineManager(object):
                 mem=display_memory(local_maxmems[i]))
             
             # report process profile
+            self.proc_count += 1
             self._report_profile(self.procs[current_pid]["proc_name"], lock_file,
                                  time.time() - self.procs[current_pid]["start_time"], local_maxmems[i],
-                                 current_pid, self.procs[current_pid]["args_hash"])
+                                 current_pid, self.procs[current_pid]["args_hash"], self.proc_count)
 
             # Remove this as a running subprocess
             del self.procs[current_pid]
