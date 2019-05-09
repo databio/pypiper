@@ -906,6 +906,7 @@ class PipelineManager(object):
         start_time = time.time()
         for i in range(len(param_list)):
             running_processes.append(i)
+            self.proc_count += 1
             if i == 0:
                 processes.append(psutil.Popen(preexec_fn=os.setpgrp, **param_list[i]))
             else:
@@ -916,7 +917,8 @@ class PipelineManager(object):
                 "start_time": start_time,
                 "container": container,
                 "p": processes[-1],
-                "args_hash": make_hash(param_list[i])
+                "args_hash": make_hash(param_list[i]),
+                "local_proc_id": self.proc_count
             }
 
         self._report_command(cmd, [x.pid for x in processes])
@@ -947,10 +949,9 @@ class PipelineManager(object):
                 mem=display_memory(local_maxmems[i]))
             
             # report process profile
-            self.proc_count += 1
             self._report_profile(self.procs[current_pid]["proc_name"], lock_file,
                                  time.time() - self.procs[current_pid]["start_time"], local_maxmems[i],
-                                 current_pid, self.procs[current_pid]["args_hash"], self.proc_count)
+                                 current_pid, self.procs[current_pid]["args_hash"], self.procs[current_pid]["local_proc_id"])
 
             # Remove this as a running subprocess
             del self.procs[current_pid]
@@ -1144,7 +1145,7 @@ class PipelineManager(object):
         return round(time.time() - time_since, 0)
 
 
-    def _report_profile(self, command, lock_name, elapsed_time, memory, pid, args_hash):
+    def _report_profile(self, command, lock_name, elapsed_time, memory, pid, args_hash, proc_count):
         """
         Writes a string to self.pipeline_profile_file.
         """
@@ -1699,7 +1700,7 @@ class PipelineManager(object):
             elapsed_time = time.time() - self.procs[pid]["start_time"]
             process_peak_mem = self._memory_usage(pid, container=proc_dict["container"])/1e6
             self._report_profile(self.procs[pid]["proc_name"], None, elapsed_time, process_peak_mem, pid,
-                                 self.procs[pid]["args_hash"])
+                                 self.procs[pid]["args_hash"], self.procs[pid]["local_proc_id"])
             self._kill_child_process(pid, proc_dict["proc_name"])
             del self.procs[pid]
 
