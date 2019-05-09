@@ -933,7 +933,6 @@ class PipelineManager(object):
             print ("Not waiting for subprocesses: " + str(ids))
             return [0, -1]
 
-        info = "Process returns and memory:"
 
         def proc_wrapup(i):
             """
@@ -942,7 +941,7 @@ class PipelineManager(object):
             returncode = processes[i].returncode
             current_pid = processes[i].pid
 
-            info += "{pid}: {ret} ({mem}); ".format(
+            info = "{pid}: {ret} ({mem}); ".format(
                 pid=current_pid, 
                 ret=processes[i].returncode,
                 mem=display_memory(local_maxmems[i]))
@@ -962,7 +961,7 @@ class PipelineManager(object):
 
 
         sleeptime = .0001
-        info = ""
+        info = "Process returns and memory:"
         while running_processes:
             for i in running_processes:
                 local_maxmems[i] = max(local_maxmems[i], (get_mem_child_sum(processes[i])))
