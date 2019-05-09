@@ -933,6 +933,8 @@ class PipelineManager(object):
             print ("Not waiting for subprocesses: " + str(ids))
             return [0, -1]
 
+        info = "Process returns and memory:"
+
         def proc_wrapup(i):
             """
             :param i: internal ID number of the subprocess
@@ -940,7 +942,7 @@ class PipelineManager(object):
             returncode = processes[i].returncode
             current_pid = processes[i].pid
 
-            info = "Process {pid} returned {ret}; memory: {mem}. ".format(
+            info += "{pid}: {ret} ({mem}); ".format(
                 pid=current_pid, 
                 ret=processes[i].returncode,
                 mem=display_memory(local_maxmems[i]))
