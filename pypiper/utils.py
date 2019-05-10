@@ -3,6 +3,8 @@
 import os
 import sys
 import re
+from subprocess import PIPE
+from shlex import split
 
 if sys.version_info < (3, ):
     CHECK_TEXT_TYPES = (str, unicode)
@@ -530,6 +532,22 @@ def is_multi_target(target):
     else:
         raise TypeError("Could not interpret argument as a target: {} ({})".
                         format(target, type(target)))
+
+
+def parse_cmd(cmd, shell):
+    """
+    Create a list of Popen-distable dicts of commands. The commands are split by pipes, if possible
+
+    :param str cmd: the command
+    :param bool shell: if the command should be run in the shell rather that in a subprocess
+    :return list[dict]: list of dicts of commands
+    """
+    def _make_dict(command):
+        a, s = (command, True) if check_shell(command, shell) else (split(command), False)
+        return dict(args=a, stdout=PIPE, shell=s)
+
+    return [_make_dict(c) for c in split_by_pipes(cmd)] if not shell and check_shell_pipes(cmd) \
+        else [dict(args=cmd, stdout=None, shell=True)]
 
 
 def parse_cores(cores, pm, default):

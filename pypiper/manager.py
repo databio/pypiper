@@ -33,7 +33,7 @@ from .flags import *
 from .utils import \
     check_shell, check_shell_pipes, checkpoint_filepath, clear_flags, flag_name, \
     is_multi_target, make_lock_name, pipeline_filepath, \
-    CHECKPOINT_SPECIFICATIONS, split_by_pipes, get_proc_name
+    CHECKPOINT_SPECIFICATIONS, split_by_pipes, get_proc_name, parse_cmd
 from ._version import __version__
 import __main__
 
@@ -641,6 +641,7 @@ class PipelineManager(object):
 
         process_return_code = 0
         local_maxmem = 0
+        has_follow = False
 
         # Decide how to do follow-up.
         if not follow:
@@ -691,8 +692,24 @@ class PipelineManager(object):
                 if self.force_follow:
                     call_follow()
 
-                # Increment process count here
-
+                # Increment process count
+                increment_info_pattern = "Skipped command: `{}`\nCommand ID incremented by: `{}`. Current ID: `{}`\n"
+                if isinstance(cmd, list):
+                    for c in cmd:
+                        count = len(parse_cmd(c, shell))
+                        self.proc_count += count
+                        print(increment_info_pattern.format(str(c), count, self.proc_count))
+                else:
+                    count = len(parse_cmd(cmd, shell))
+                    self.proc_count += count
+                    print(increment_info_pattern.format(str(cmd), count, self.proc_count))
+                if has_follow:
+                    # TODO: all the follow functions increment the proc_count,
+                    #  whereas only ones that use the run method do it originally. Needs correction.
+                    self.proc_count += 1
+                    print(
+                        "Command had a follow function. Skipped. \nCommand ID incremented by: `1`. Current ID: `{}`\n".format(
+                            self.proc_count))
                 break  # Do not run command
 
             # Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
@@ -894,10 +911,7 @@ class PipelineManager(object):
         if container:
             cmd = "docker exec " + container + " " + cmd
 
-        param_list = [make_dict(c) for c in split_by_pipes(cmd)] \
-            if not shell and check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
-
-
+        param_list = parse_cmd(cmd, shell)
         proc_name = get_proc_name(cmd)
 
         # stop_times = []
@@ -917,7 +931,7 @@ class PipelineManager(object):
                 "start_time": start_time,
                 "container": container,
                 "p": processes[-1],
-                "args_hash": make_hash(param_list[i]),
+                "args_hash": make_hash(param_list[i]["args"]),
                 "local_proc_id": self.proc_count
             }
 
@@ -951,7 +965,8 @@ class PipelineManager(object):
             # report process profile
             self._report_profile(self.procs[current_pid]["proc_name"], lock_file,
                                  time.time() - self.procs[current_pid]["start_time"], local_maxmems[i],
-                                 current_pid, self.procs[current_pid]["args_hash"], self.procs[current_pid]["local_proc_id"])
+                                 current_pid, self.procs[current_pid]["args_hash"],
+                                 self.procs[current_pid]["local_proc_id"])
 
             # Remove this as a running subprocess
             del self.procs[current_pid]
@@ -1152,6 +1167,7 @@ class PipelineManager(object):
         rel_lock_name = lock_name if lock_name is None else os.path.relpath(lock_name, self.outfolder)
         message_raw = str(pid) + "\t" + \
             str(args_hash) + "\t" + \
+            str(proc_count) + "\t" + \
             str(command) + "\t" + \
             str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
             str(memory)  + "\t" + \
