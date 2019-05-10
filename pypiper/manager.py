@@ -1831,9 +1831,11 @@ class PipelineManager(object):
                 self.clean_initialized = True
 
         if manual:
-            try:
-                filenames = glob.glob(regex)
-                for filename in filenames:
+            filenames = glob.glob(regex)
+            if not filenames:
+                print("No files match cleanup pattern: {}".format(regex))
+            for filename in filenames:
+                try:
                     with open(self.cleanup_file, "a") as myfile:
                         relative_filename = os.path.relpath(filename, self.outfolder) \
                             if os.path.isabs(filename) else filename
@@ -1844,8 +1846,8 @@ class PipelineManager(object):
                             myfile.write("rm " + relative_filename + "/*\n")
                             # and the directory itself
                             myfile.write("rmdir " + relative_filename + "\n")
-            except:
-                pass
+                except Exception as e:
+                    print("Error in clean_add on path {}: {}".format(filename, str(e)))
         elif conditional:
             self.cleanup_list_conditional.append(regex)
         else:
@@ -1854,7 +1856,6 @@ class PipelineManager(object):
             # Remove it from the conditional list if added to the absolute list
             while regex in self.cleanup_list_conditional:
                 self.cleanup_list_conditional.remove(regex)
-
 
     def _cleanup(self, dry_run=False):
         """
