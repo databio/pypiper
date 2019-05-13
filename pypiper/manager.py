@@ -1196,7 +1196,7 @@ class PipelineManager(object):
             str(args_hash) + "\t" + \
             str(proc_count) + "\t" + \
             str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
-            str(round(memory, 4))  + "\t" + \
+            str(round(memory, 4))qq  + "\t" + \
             str(command) + "\t" + \
             str(rel_lock_name)
         with open(self.pipeline_profile_file, "a") as myfile:
@@ -1331,10 +1331,15 @@ class PipelineManager(object):
             line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=procs)
         else:
             line = "\n> `{cmd}`\n".format(cmd=str(cmd))
+
+        # Print line to stdout
         print(line)
 
+        # And also add to commands file
+
+        cmd_line = "{cmd}\n".format(cmd=str(cmd))
         with open(self.pipeline_commands_file, "a") as myfile:
-            myfile.write(line)
+            myfile.write(cmd_line)
 
 
     ###################################
