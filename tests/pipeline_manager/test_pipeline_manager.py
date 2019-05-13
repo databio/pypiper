@@ -41,6 +41,9 @@ class PipelineManagerTests(unittest.TestCase):
         self.pp2 = pypiper.PipelineManager(
                 "sample_pipeline2", outfolder=self.OUTFOLDER, multi=True)
 
+        self.pp3 = pypiper.PipelineManager(
+                "sample_pipeline3", outfolder=self.OUTFOLDER + "3", multi=True)
+
 
     def tearDown(self):
         """ Scrub the decks after each test case completes. """
@@ -269,8 +272,6 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(tgt7))
 
         print("Test failure and nofail options...")
-        self.pp3 = pypiper.PipelineManager(
-                "sample_pipeline3", outfolder=self.OUTFOLDER + "3", multi=True)
 
         cmd = "thiscommandisbad"
 
