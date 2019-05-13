@@ -294,6 +294,7 @@ class PipelineManager(object):
                     if os.path.isfile(abs_config):
                         config_to_load = abs_config
                     else:
+                        print(__file__)
                         #print("Can't find custom config file: " + abs_config)
                         pass
                 if config_to_load is not None:
@@ -1818,6 +1819,9 @@ class PipelineManager(object):
             called {pipeline_name}_cleanup.sh
         :param bool manual: True means the files will just be added to a manual cleanup script.
         """
+
+        # TODO: print this message (and several below) in debug
+        # print("Adding regex to cleanup: {}".format(regex))
         if self.dirty:
             # Override the user-provided option and force manual cleanup.
             manual = True
@@ -1835,16 +1839,27 @@ class PipelineManager(object):
                 filenames = glob.glob(regex)
                 for filename in filenames:
                     with open(self.cleanup_file, "a") as myfile:
-                        relative_filename = os.path.relpath(filename, self.outfolder) \
-                            if os.path.isabs(filename) else filename
-                        if os.path.isfile(relative_filename):
+                        if os.path.isabs(filename):
+                            relative_filename = os.path.relpath(filename, self.outfolder)
+                            absolute_filename = filename
+                        else:
+                            relative_filename = os.path.relpath(filename, self.outfolder)
+                            absolute_filename = os.path.abspath(os.path.join(self.outfolder, relative_filename))
+                        if os.path.isfile(absolute_filename):
+                            # print("Adding file to cleanup: {}".format(filename))
                             myfile.write("rm " + relative_filename + "\n")
-                        elif os.path.isdir(relative_filename):
+                        elif os.path.isdir(absolute_filename):
+                            # print("Adding directory to cleanup: {}".format(filename))
                             # first, add all filenames in the directory
                             myfile.write("rm " + relative_filename + "/*\n")
                             # and the directory itself
                             myfile.write("rmdir " + relative_filename + "\n")
-            except:
+                        else:
+                            print("File not added to cleanup: {}".format(relative_filename))
+            except Exception as e:
+                # TODO: print this message in debug
+                print("Could not add {} to cleanup".format(regex))
+                print(e)
                 pass
         elif conditional:
             self.cleanup_list_conditional.append(regex)
@@ -1868,6 +1883,10 @@ class PipelineManager(object):
         :param bool dry_run: Set to True if you want to build a cleanup
             script, but not actually delete the files.
         """
+
+        print("Starting cleanup: {} files; {} conditional files for cleanup".format(
+            len(self.cleanup_list),
+            len(self.cleanup_list_conditional)))
 
         if dry_run:
             # Move all unconditional cleans into the conditional list

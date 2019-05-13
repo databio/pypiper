@@ -171,7 +171,7 @@ class PipelineManagerTests(unittest.TestCase):
         tgt9 = pipeline_filepath(self.pp, filename="tgt9.cond")
         tgt10 = pipeline_filepath(self.pp, filename="tgt10.txt")
 
-        self.pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5, lock_name="test")
+        self.pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5 + " " + tgt6, lock_name="test")
         self.pp.run("touch " + tgt8 + " " + tgt9, lock_name="test")
 
         # In global dirty mode, even non-manual clean files should not be deleted:
@@ -186,6 +186,38 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(tgt2))
         self.assertTrue(os.path.isfile(tgt3))
         self.assertTrue(os.path.isfile(tgt4))
+
+        # But, these files *should* have been added to the cleanup script
+
+        # test from different wd:
+        tgt6_abs = os.path.abspath(tgt6)
+        cfile = self.pp.cleanup_file
+        ofolder = self.pp.outfolder
+        cwd = os.getcwd()
+        self.pp.clean_add(tgt6_abs)
+
+        os.chdir("pipeline_output")
+        self.pp.outfolder = "../" + ofolder
+        self.pp.cleanup_file = "../" + cfile
+        self.pp.clean_add(tgt6_abs)
+        os.chdir(cwd)
+        self.pp.cleanup_file = cfile
+        self.pp.outfolder = ofolder
+
+        print("Test manual cleanup adds")
+        with open(self.pp.cleanup_file) as f:
+            lines = f.readlines()
+
+        print(lines)
+
+
+        self.assertTrue(lines[2] == 'rm tgt3.temp\n')
+        self.assertTrue(lines[9] == 'rm tgt6.txt\n')
+        self.assertTrue(lines[10] == 'rm tgt6.txt\n')
+
+
+
+
 
         self.pp.report_object("Test figure", os.path.join("fig", "fig.jpg"))
 
@@ -298,8 +330,6 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertFalse(os.path.isfile(tgt5))
         self.pp.run("touch " + tgt5, [tgt1, tgt6])
         self.assertFalse(os.path.isfile(tgt5))
-
-
 
 
 def _make_pipe_filepath(pm, filename):
