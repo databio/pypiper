@@ -1196,7 +1196,7 @@ class PipelineManager(object):
             str(args_hash) + "\t" + \
             str(proc_count) + "\t" + \
             str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
-            str(memory)  + "\t" + \
+            str(round(memory, 4))  + "\t" + \
             str(command) + "\t" + \
             str(rel_lock_name)
         with open(self.pipeline_profile_file, "a") as myfile:
