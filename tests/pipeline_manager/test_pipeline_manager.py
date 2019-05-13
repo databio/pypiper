@@ -128,8 +128,8 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(self.pp.time_elapsed(stamp) > 1)
 
         print("Wait for subprocess...")
-        for p in self.pp.procs.copy():
-            self.pp._wait_for_process(self.pp.procs[p]["p"])
+        for p in self.pp.running_procs.copy():
+            self.pp._wait_for_process(self.pp.running_procs[p]["p"])
         self.pp2.wait = True
         self.pp.wait = True
 
