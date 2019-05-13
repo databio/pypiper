@@ -179,6 +179,7 @@ class PipelineManagerTests(unittest.TestCase):
 
         # In global dirty mode, even non-manual clean files should not be deleted:
         self.pp.dirty = True
+        self.pp.clean_add(tgt3)
         self.pp.clean_add(pipeline_filepath(self.pp, filename="*.temp"))
         self.pp.clean_add(tgt4)
         self.pp.clean_add(tgt5, conditional=True)
@@ -215,8 +216,8 @@ class PipelineManagerTests(unittest.TestCase):
 
 
         self.assertTrue(lines[2] == 'rm tgt3.temp\n')
-        self.assertTrue(lines[9] == 'rm tgt6.txt\n')
         self.assertTrue(lines[10] == 'rm tgt6.txt\n')
+        self.assertTrue(lines[11] == 'rm tgt6.txt\n')
 
 
 
