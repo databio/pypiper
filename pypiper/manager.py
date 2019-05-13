@@ -1195,9 +1195,9 @@ class PipelineManager(object):
         message_raw = str(pid) + "\t" + \
             str(args_hash) + "\t" + \
             str(proc_count) + "\t" + \
-            str(command) + "\t" + \
             str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
             str(memory)  + "\t" + \
+            str(command) + "\t" + \
             str(rel_lock_name)
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
