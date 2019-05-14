@@ -1,24 +1,24 @@
-# <img src="img/pypiper_logo.svg" class="img-header">
+# <img src="img/pypiper_logo.svg" class="img-header"> a developer's pipeline framework
 
 [![PEP compatible](http://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
 
-## Introduction
+## What is pypiper?
 
-Pypiper is a **development-oriented** pipeline framework. Pypiper pipelines are:
+`Pypiper` is a **development-oriented** pipeline framework. It is a python package that helps you write robust pipelines directly in python, handling mundane tasks like restartability, monitoring for time and memory use, monitoring job status, copious log output, robust error handling, easy debugging tools, and guaranteed file output integrity.
 
-1. written in pure python, so they require learning no new language;
-2. simple to update and maintain, so they respond well to changes;
+
+## What makes pypiper better? 
+With Pypiper, **simplicity is paramount**. Prerequisites are few: base python and 2 common packages (`pyyaml` and `psutil`). It should take fewer than 15 minutes to build your first pipeline and only an hour or two to learn the advanced features. Pypiper pipelines are:
+
+1. written in pure python, so they do not require learning a new language;
+2. easy to modify, so they are simple to update and maintain;
 3. simple to understand for an outsider, so they can be approached by others.
 
-
-These traits make pypiper ideally suited for **pipelines under active development**.
-
-With Pypiper, **simplicity is paramount**. Prerequisites are few: base python and 2 common packages (`pyyaml` and `psutil`). It should take fewer than 15 minutes to build your first pipeline and only an hour or two to learn the advanced features.
-Pypiper provides automatic restartability, process monitoring for time and memory use, status monitoring, copious log output, robust error handling, easy debugging tools, guaranteed file output integrity, and a bunch of useful pipeline development helper functions.  Read more about the [pypiper philosophy](philosophy).
+These traits make pypiper ideally suited for **pipelines under active development**. Read more about the [pypiper philosophy](philosophy).
 
 ## Installing
 
-Release versions are posted on the GitHub [pypiper releases page](https://github.com/databio/pypiper/releases). You can install the latest release directly from PyPI using `pip`.
+Releases are posted as [GitHub releases](https://github.com/databio/pypiper/releases), or you can install from PyPI using `pip`:
 
 Global scope for single user:
 ```{console}
@@ -62,4 +62,4 @@ python my_pipeline.py --help
 
 ## Pypiper strengths
 
-Pypiper differs from existing frameworks in its focus on **simplicity**. Pypiper requires learning no new language, as **pipelines are written in pure python**. Pypiper is geared toward **developing pipelines** that are contained in a single file, easy to update, and easy to understand. Read more about
+Pypiper differs from existing frameworks in its focus on **simplicity**. Pypiper requires learning no new language, as **pipelines are written in pure python**. Pypiper is geared toward **developing pipelines** that are contained in a single file, easy to update, and easy to understand.

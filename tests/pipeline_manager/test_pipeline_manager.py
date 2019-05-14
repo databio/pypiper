@@ -41,6 +41,9 @@ class PipelineManagerTests(unittest.TestCase):
         self.pp2 = pypiper.PipelineManager(
                 "sample_pipeline2", outfolder=self.OUTFOLDER, multi=True)
 
+        self.pp3 = pypiper.PipelineManager(
+                "sample_pipeline3", outfolder=self.OUTFOLDER + "3", multi=True)
+
 
     def tearDown(self):
         """ Scrub the decks after each test case completes. """
@@ -125,8 +128,8 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(self.pp.time_elapsed(stamp) > 1)
 
         print("Wait for subprocess...")
-        for p in self.pp.procs.copy():
-            self.pp._wait_for_process(self.pp.procs[p]["p"])
+        for p in self.pp.running_procs.copy():
+            self.pp._wait_for_process(self.pp.running_procs[p]["p"])
         self.pp2.wait = True
         self.pp.wait = True
 
@@ -171,11 +174,12 @@ class PipelineManagerTests(unittest.TestCase):
         tgt9 = pipeline_filepath(self.pp, filename="tgt9.cond")
         tgt10 = pipeline_filepath(self.pp, filename="tgt10.txt")
 
-        self.pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5, lock_name="test")
+        self.pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4 + " " + tgt5 + " " + tgt6, lock_name="test")
         self.pp.run("touch " + tgt8 + " " + tgt9, lock_name="test")
 
         # In global dirty mode, even non-manual clean files should not be deleted:
         self.pp.dirty = True
+        self.pp.clean_add(tgt3)
         self.pp.clean_add(pipeline_filepath(self.pp, filename="*.temp"))
         self.pp.clean_add(tgt4)
         self.pp.clean_add(tgt5, conditional=True)
@@ -186,6 +190,38 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(tgt2))
         self.assertTrue(os.path.isfile(tgt3))
         self.assertTrue(os.path.isfile(tgt4))
+
+        # But, these files *should* have been added to the cleanup script
+
+        # test from different wd:
+        tgt6_abs = os.path.abspath(tgt6)
+        cfile = self.pp.cleanup_file
+        ofolder = self.pp.outfolder
+        cwd = os.getcwd()
+        self.pp.clean_add(tgt6_abs)
+
+        os.chdir("pipeline_output")
+        self.pp.outfolder = "../" + ofolder
+        self.pp.cleanup_file = "../" + cfile
+        self.pp.clean_add(tgt6_abs)
+        os.chdir(cwd)
+        self.pp.cleanup_file = cfile
+        self.pp.outfolder = ofolder
+
+        print("Test manual cleanup adds")
+        with open(self.pp.cleanup_file) as f:
+            lines = f.readlines()
+
+        print(lines)
+
+
+        self.assertTrue(lines[2] == 'rm tgt3.temp\n')
+        self.assertTrue(lines[10] == 'rm tgt6.txt\n')
+        self.assertTrue(lines[11] == 'rm tgt6.txt\n')
+
+
+
+
 
         self.pp.report_object("Test figure", os.path.join("fig", "fig.jpg"))
 
@@ -237,8 +273,6 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertTrue(os.path.isfile(tgt7))
 
         print("Test failure and nofail options...")
-        self.pp3 = pypiper.PipelineManager(
-                "sample_pipeline3", outfolder=self.OUTFOLDER + "3", multi=True)
 
         cmd = "thiscommandisbad"
 
@@ -298,8 +332,6 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertFalse(os.path.isfile(tgt5))
         self.pp.run("touch " + tgt5, [tgt1, tgt6])
         self.assertFalse(os.path.isfile(tgt5))
-
-
 
 
 def _make_pipe_filepath(pm, filename):

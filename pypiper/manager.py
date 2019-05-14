@@ -27,12 +27,13 @@ else:
     from collections.abc import Iterable
 
 from attmap import AttMapEcho
+from hashlib import md5
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
     check_shell, check_shell_pipes, checkpoint_filepath, clear_flags, flag_name, \
     is_multi_target, make_lock_name, pipeline_filepath, \
-    CHECKPOINT_SPECIFICATIONS, split_by_pipes, get_proc_name
+    CHECKPOINT_SPECIFICATIONS, split_by_pipes, get_proc_name, parse_cmd
 from ._version import __version__
 import __main__
 
@@ -41,6 +42,7 @@ __all__ = ["PipelineManager"]
 
 
 LOCK_PREFIX = "lock."
+
 
 class Unbuffered(object):
     def __init__(self, stream):
@@ -56,6 +58,7 @@ class Unbuffered(object):
 
     def __getattr__(self, attr):
         return getattr(self.stream, attr)
+
 
 class PipelineManager(object):
     """
@@ -164,6 +167,9 @@ class PipelineManager(object):
         self.cores = params['cores']
         self.output_parent = params['output_parent']
 
+        # Keep track of an ID for the number of processes attempted
+        self.proc_count = 0
+
         # We use this memory to pass a memory limit to processes like java that
         # can take a memory limit, so they don't get killed by a SLURM (or other
         # cluster manager) overage. However, with java, the -Xmx argument can only
@@ -199,7 +205,6 @@ class PipelineManager(object):
         self.cores1of8 = int(self.cores) / 8
         self.cores7of8 = int(self.cores) - int(self.cores1of8)
 
-
         self.pl_version = version
         # Set relative output_parent directory to absolute
         # not necessary after all. . .
@@ -232,7 +237,8 @@ class PipelineManager(object):
         self.last_timestamp = self.starttime  # time of the last call to timestamp()
 
         self.locks = []
-        self.procs = {}
+        self.running_procs = {}
+        self.completed_procs = {}
         
         self.wait = True  # turn off for debugging
 
@@ -245,8 +251,6 @@ class PipelineManager(object):
         # In-memory holder for report_result
         self.stats_dict = {}
 
-
-
         # Checkpoint-related parameters
         self.overwrite_checkpoints = overwrite_checkpoints
         self.halt_on_next = False
@@ -256,7 +260,6 @@ class PipelineManager(object):
         # Pypiper can keep track of intermediate files to clean up at the end
         self.cleanup_list = []
         self.cleanup_list_conditional = []
-        
 
         # Register handler functions to deal with interrupt and termination signals;
         # If received, we would then clean up properly (set pipeline status to FAIL, etc).
@@ -292,6 +295,7 @@ class PipelineManager(object):
                     if os.path.isfile(abs_config):
                         config_to_load = abs_config
                     else:
+                        print(__file__)
                         #print("Can't find custom config file: " + abs_config)
                         pass
                 if config_to_load is not None:
@@ -441,20 +445,20 @@ class PipelineManager(object):
             # pypiper dir
             ppd = os.path.dirname(os.path.realpath(__file__))
             gitvars['pypiper_dir'] = ppd
-            gitvars['pypiper_hash'] = subprocess.check_output("cd " + ppd + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
-            gitvars['pypiper_date'] = subprocess.check_output("cd " + ppd + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
-            gitvars['pypiper_diff'] = subprocess.check_output("cd " + ppd + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
-            gitvars['pypiper_branch'] = subprocess.check_output("cd " + ppd + "; git branch | grep '*' 2>/dev/null", shell=True)
+            gitvars['pypiper_hash'] = subprocess.check_output("cd " + ppd + "; git rev-parse --verify HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pypiper_date'] = subprocess.check_output("cd " + ppd + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pypiper_diff'] = subprocess.check_output("cd " + ppd + "; git diff --shortstat HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pypiper_branch'] = subprocess.check_output("cd " + ppd + "; git branch | grep '*' 2>/dev/null", shell=True).decode().strip()
         except Exception:
             pass
         try:
             # pipeline dir
             pld = os.path.dirname(os.path.realpath(sys.argv[0]))
             gitvars['pipe_dir'] = pld
-            gitvars['pipe_hash'] = subprocess.check_output("cd " + pld + "; git rev-parse --verify HEAD 2>/dev/null", shell=True)
-            gitvars['pipe_date'] = subprocess.check_output("cd " + pld + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True)
-            gitvars['pipe_diff'] = subprocess.check_output("cd " + pld + "; git diff --shortstat HEAD 2>/dev/null", shell=True)
-            gitvars['pipe_branch'] = subprocess.check_output("cd " + pld + "; git branch | grep '*' 2>/dev/null", shell=True)
+            gitvars['pipe_hash'] = subprocess.check_output("cd " + pld + "; git rev-parse --verify HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pipe_date'] = subprocess.check_output("cd " + pld + "; git show -s --format=%ai HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pipe_diff'] = subprocess.check_output("cd " + pld + "; git diff --shortstat HEAD 2>/dev/null", shell=True).decode().strip()
+            gitvars['pipe_branch'] = subprocess.check_output("cd " + pld + "; git branch | grep '*' 2>/dev/null", shell=True).decode().strip()
         except Exception:
             pass
         
@@ -474,11 +478,11 @@ class PipelineManager(object):
         try:
             print("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
             print("* " + "Pypiper version".rjust(20) + ":  " + __version__)
-            print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash']).strip())
-            print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch']).strip())
-            print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date']).strip())
-            if "" != str(gitvars['pypiper_diff']):
-                print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff']).strip())
+            print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash']))
+            print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch']))
+            print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date']))
+            if gitvars['pypiper_diff']:
+                print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff']))
         except KeyError:
             # It is ok if keys aren't set, it means pypiper isn't in a  git repo.
             pass
@@ -650,9 +654,12 @@ class PipelineManager(object):
             call_follow = lambda: None
         else:
             # Wrap the follow-up function so that the log shows what's going on.
+            # additionally, the in_follow attribute is set to enable proper command count handling
             def call_follow():
                 print("Follow:")
+                self.in_follow = True
                 follow()
+                self.in_follow = False
 
 
         # The while=True loop here is unlikely to be triggered, and is just a
@@ -688,6 +695,17 @@ class PipelineManager(object):
                 # Normally we don't run the follow, but if you want to force. . .
                 if self.force_follow:
                     call_follow()
+                # Increment process count
+                increment_info_pattern = "Skipped command: `{}`\nCommand ID incremented by: `{}`. Current ID: `{}`\n"
+                if isinstance(cmd, list):
+                    for c in cmd:
+                        count = len(parse_cmd(c, shell))
+                        self.proc_count += count
+                        print(increment_info_pattern.format(str(c), count, self.proc_count))
+                else:
+                    count = len(parse_cmd(cmd, shell))
+                    self.proc_count += count
+                    print(increment_info_pattern.format(str(cmd), count, self.proc_count))
                 break  # Do not run command
 
             # Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
@@ -802,7 +820,7 @@ class PipelineManager(object):
             cmd = shlex.split(cmd)
             
         try:
-            return subprocess.check_output(cmd, shell=shell)
+            return subprocess.check_output(cmd, shell=shell).decode().strip()
         except Exception as e:
             self._triage_error(e, nofail)
 
@@ -874,17 +892,27 @@ class PipelineManager(object):
             a, s = (command, True) if check_shell(command, shell) else (shlex.split(command), False)
             return dict(args=a, stdout=subprocess.PIPE, shell=s)
 
+        def make_hash(o):
+            """
+            Convert the object to string and hash it, return None in case of failure
+            :param o: object of any type, in our case it is a dict
+            :return str: hahsed string representation of the dict
+            """
+            try:
+                hsh = md5(str(o).encode("utf-8")).hexdigest()[:10]
+            except:
+                hsh = None
+            return hsh
+
         if container:
             cmd = "docker exec " + container + " " + cmd
 
-        param_list = [make_dict(c) for c in split_by_pipes(cmd)] \
-            if check_shell_pipes(cmd) else [dict(args=cmd, stdout=None, shell=True)]
-
+        param_list = parse_cmd(cmd, shell)
         proc_name = get_proc_name(cmd)
 
-        # stop_times = []
         processes = []
         running_processes = []
+        completed_processes = []
         start_time = time.time()
         for i in range(len(param_list)):
             running_processes.append(i)
@@ -893,13 +921,13 @@ class PipelineManager(object):
             else:
                 param_list[i]["stdin"] = processes[i - 1].stdout
                 processes.append(psutil.Popen(preexec_fn=os.setpgrp, **param_list[i]))
-
-            self.procs[processes[-1].pid] = {
-                "proc_name": proc_name,
-                "subproc_name" : get_proc_name(param_list[i]["args"]),
+            self.running_procs[processes[-1].pid] = {
+                "proc_name": get_proc_name(param_list[i]["args"]),
                 "start_time": start_time,
                 "container": container,
-                "p": processes[-1]
+                "p": processes[-1],
+                "args_hash": make_hash(param_list[i]["args"]),
+                "local_proc_id": self.process_counter()
             }
 
         self._report_command(cmd, [x.pid for x in processes])
@@ -909,12 +937,14 @@ class PipelineManager(object):
 
         local_maxmems = [-1] * len(running_processes)
         returncodes = [None] * len(running_processes)
+        proc_wrapup_text = [None] * len(running_processes)
 
         if not self.wait:
             print("</pre>")
             ids = [x.pid for x in processes]
-            print ("Not waiting for subprocess(es): " + str(ids))
+            print ("Not waiting for subprocesses: " + str(ids))
             return [0, -1]
+
 
         def proc_wrapup(i):
             """
@@ -923,30 +953,38 @@ class PipelineManager(object):
             returncode = processes[i].returncode
             current_pid = processes[i].pid
 
-            info = "Process {pid} returned {ret}; memory: {mem}. ".format(
+            info = "PID: {pid};\tCommand: {cmd};\tReturn code: {ret};\tMemory used: {mem}".format(
                 pid=current_pid, 
+                cmd=self.running_procs[current_pid]["proc_name"],
                 ret=processes[i].returncode,
                 mem=display_memory(local_maxmems[i]))
             
             # report process profile
-            self._report_profile(self.procs[current_pid]["proc_name"], lock_file, time.time() - self.procs[current_pid]["start_time"], local_maxmems[i])
+            self._report_profile(self.running_procs[current_pid]["proc_name"], lock_file,
+                                 time.time() - self.running_procs[current_pid]["start_time"], local_maxmems[i],
+                                 current_pid, self.running_procs[current_pid]["args_hash"],
+                                 self.running_procs[current_pid]["local_proc_id"])
 
             # Remove this as a running subprocess
-            del self.procs[current_pid]
+            self.running_procs[current_pid]["info"] = info
+            self.running_procs[current_pid]["returncode"] = returncode
+            self.completed_procs[current_pid] = self.running_procs[current_pid]
+            del self.running_procs[current_pid]
             running_processes.remove(i)
-
+            completed_processes.append(i)
+            proc_wrapup_text[i] = info
             returncodes[i] = returncode
             return info
 
 
         sleeptime = .0001
-        info = ""
+        
         while running_processes:
             for i in running_processes:
                 local_maxmems[i] = max(local_maxmems[i], (get_mem_child_sum(processes[i])))
                 self.peak_memory = max(self.peak_memory, local_maxmems[i])
                 if not self._attend_process(processes[i], sleeptime):
-                    info += proc_wrapup(i)
+                    proc_wrapup_text[i] = proc_wrapup(i)
 
             # the sleeptime is extremely short at the beginning and gets longer exponentially 
             # (+ constant to prevent copious checks at the very beginning)
@@ -955,11 +993,17 @@ class PipelineManager(object):
 
         # All jobs are done, print a final closing and job info
         stop_time = time.time()
-        info += " Elapsed: " + str(datetime.timedelta(seconds=self.time_elapsed(start_time))) + "."
-        info += " Peak memory: {pipe}.".format(pipe=display_memory(self.peak_memory))
+        proc_message = "Command completed. {info}"
+        info = "Elapsed time: " + str(datetime.timedelta(seconds=self.time_elapsed(start_time))) + "."
+        info += " Running peak memory: {pipe}.".format(pipe=display_memory(self.peak_memory))
+        # if len(proc_wrapup_text) == 1:
+            # info += " {}".format(proc_wrapup_text[0])
 
+        for i in completed_processes:
+            info += "\n  {}".format(self.completed_procs[processes[i].pid]["info"])
+    
         print("</pre>")
-        print(info)
+        print(proc_message.format(info=info))
 
         for rc in returncodes:
             if rc != 0:
@@ -970,6 +1014,23 @@ class PipelineManager(object):
 
         return [returncodes, local_maxmems]
 
+    def process_counter(self):
+        """
+        Increments process counter with regard to the follow state:
+        if currently executed command is a follow function of another one, the counter is not incremented.
+
+        :return str | int: current counter state, a number if the counter has beed incremented or a number
+        of the previous process plus "f" otherwise
+        """
+        try:
+            if self.in_follow:
+                return str(self.proc_count) + "f"
+            else:
+                self.proc_count += 1
+                return self.proc_count
+        except AttributeError:
+            self.proc_count += 1
+            return self.proc_count
 
     ###################################
     # Waiting functions
@@ -993,7 +1054,7 @@ class PipelineManager(object):
 
         self.peak_memory = max(self.peak_memory, local_maxmem)
         
-        del self.procs[p.pid]
+        del self.running_procs[p.pid]
 
         info = "Process " + str(p.pid) + " returned: (" + str(p.returncode) + ")."
         if not shell:
@@ -1014,11 +1075,18 @@ class PipelineManager(object):
         """
         sleeptime = .5
         first_message_flag = False
+        long_message_flag = False
         dot_count = 0
+        totaltime = 0
         recover_file = self._recoverfile_from_lockfile(lock_file)
         while os.path.isfile(lock_file):
             if first_message_flag is False:
                 self.timestamp("Waiting for file lock: " + lock_file)
+                print("This indicates that another process may be executing this "
+                    "command, or the pipeline was not properly shut down.  If the "
+                    "pipeline was not properly shut down last time, "
+                    "you should restart it in 'recover' mode (-R) to indicate that "
+                    "this step should be restarted.")
                 self._set_status_flag(WAIT_FLAG)
                 first_message_flag = True
             else:
@@ -1026,13 +1094,18 @@ class PipelineManager(object):
                 dot_count = dot_count + 1
                 if dot_count % 60 == 0:
                     print("")  # linefeed
-            # prevents the issue of pypier waiting for the lock file to be gone infinitely
+            # prevents the issue of pypiper waiting for the lock file to be gone infinitely
             # in case the recovery flag is sticked by other pipeline when it's interrupted
             if os.path.isfile(recover_file):
                 sys.stdout.write(" Dynamic recovery flag found")
                 break
             time.sleep(sleeptime)
+            totaltime += sleeptime
             sleeptime = min(sleeptime + 2.5, 60)
+            if sleeptime > 3600 and not long_message_flag:
+                long_message_flag = True
+
+
 
         if first_message_flag:
             self.timestamp("File unlocked.")
@@ -1123,15 +1196,18 @@ class PipelineManager(object):
         return round(time.time() - time_since, 0)
 
 
-    def _report_profile(self, command, lock_name, elapsed_time, memory):
+    def _report_profile(self, command, lock_name, elapsed_time, memory, pid, args_hash, proc_count):
         """
         Writes a string to self.pipeline_profile_file.
         """
-        message_raw = str(command) + "\t " + \
-            str(lock_name) + "\t" + \
+        rel_lock_name = lock_name if lock_name is None else os.path.relpath(lock_name, self.outfolder)
+        message_raw = str(pid) + "\t" + \
+            str(args_hash) + "\t" + \
+            str(proc_count) + "\t" + \
             str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
-            str(memory)
-
+            str(round(memory, 4))  + "\t" + \
+            str(command) + "\t" + \
+            str(rel_lock_name)
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
 
@@ -1264,10 +1340,15 @@ class PipelineManager(object):
             line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=procs)
         else:
             line = "\n> `{cmd}`\n".format(cmd=str(cmd))
+
+        # Print line to stdout
         print(line)
 
+        # And also add to commands file
+
+        cmd_line = "{cmd}\n".format(cmd=str(cmd))
         with open(self.pipeline_commands_file, "a") as myfile:
-            myfile.write(line + "\n\n")
+            myfile.write(cmd_line)
 
 
     ###################################
@@ -1551,6 +1632,7 @@ class PipelineManager(object):
             self.timestamp("### Pipeline failed at: ")
             total_time = datetime.timedelta(seconds=self.time_elapsed(self.starttime))
             print("Total time: " + str(total_time))
+            print("Failure reason: " + str(e))
             self._set_status_flag(FAIL_FLAG)
 
         raise e
@@ -1586,7 +1668,8 @@ class PipelineManager(object):
         self.report_result("Time", str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
         print("\n##### [Epilogue:]")
-        print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
+        print("* " + "Total elapsed time".rjust(20) + ":  "
+              + str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         # print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
         print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
         if self.halted:
@@ -1666,16 +1749,17 @@ class PipelineManager(object):
     def _terminate_running_subprocesses(self):
 
         # make a copy of the list to iterate over since we'll be removing items
-        for pid in self.procs.copy():
-            proc_dict = self.procs[pid]
+        for pid in self.running_procs.copy():
+            proc_dict = self.running_procs[pid]
 
             # Close the preformat tag that we opened when the process was spawned.
             # record profile of any running processes before killing
-            elapsed_time = time.time() - self.procs[pid]["start_time"]
+            elapsed_time = time.time() - self.running_procs[pid]["start_time"]
             process_peak_mem = self._memory_usage(pid, container=proc_dict["container"])/1e6
-            self._report_profile(self.procs[pid]["proc_name"], None, elapsed_time, process_peak_mem)
-            self._kill_child_process(pid, proc_dict["subproc_name"])
-            del self.procs[pid]
+            self._report_profile(self.running_procs[pid]["proc_name"], None, elapsed_time, process_peak_mem, pid,
+                                 self.running_procs[pid]["args_hash"], self.running_procs[pid]["local_proc_id"])
+            self._kill_child_process(pid, proc_dict["proc_name"])
+            del self.running_procs[pid]
 
 
     def _kill_child_process(self, child_pid, proc_name=None):
@@ -1791,6 +1875,9 @@ class PipelineManager(object):
             called {pipeline_name}_cleanup.sh
         :param bool manual: True means the files will just be added to a manual cleanup script.
         """
+
+        # TODO: print this message (and several below) in debug
+        # print("Adding regex to cleanup: {}".format(regex))
         if self.dirty:
             # Override the user-provided option and force manual cleanup.
             manual = True
@@ -1804,21 +1891,31 @@ class PipelineManager(object):
                 self.clean_initialized = True
 
         if manual:
-            try:
-                filenames = glob.glob(regex)
-                for filename in filenames:
+            filenames = glob.glob(regex)
+            if not filenames:
+                print("No files match cleanup pattern: {}".format(regex))
+            for filename in filenames:
+                try:
                     with open(self.cleanup_file, "a") as myfile:
-                        relative_filename = os.path.relpath(filename, self.outfolder) \
-                            if os.path.isabs(filename) else filename
-                        if os.path.isfile(relative_filename):
+                        if os.path.isabs(filename):
+                            relative_filename = os.path.relpath(filename, self.outfolder)
+                            absolute_filename = filename
+                        else:
+                            relative_filename = os.path.relpath(filename, self.outfolder)
+                            absolute_filename = os.path.abspath(os.path.join(self.outfolder, relative_filename))
+                        if os.path.isfile(absolute_filename):
+                            # print("Adding file to cleanup: {}".format(filename))
                             myfile.write("rm " + relative_filename + "\n")
-                        elif os.path.isdir(relative_filename):
+                        elif os.path.isdir(absolute_filename):
+                            # print("Adding directory to cleanup: {}".format(filename))
                             # first, add all filenames in the directory
                             myfile.write("rm " + relative_filename + "/*\n")
                             # and the directory itself
                             myfile.write("rmdir " + relative_filename + "\n")
-            except:
-                pass
+                        else:
+                            print("File not added to cleanup: {}".format(relative_filename))
+                except Exception as e:
+                    print("Error in clean_add on path {}: {}".format(filename, str(e)))
         elif conditional:
             self.cleanup_list_conditional.append(regex)
         else:
@@ -1827,7 +1924,6 @@ class PipelineManager(object):
             # Remove it from the conditional list if added to the absolute list
             while regex in self.cleanup_list_conditional:
                 self.cleanup_list_conditional.remove(regex)
-
 
     def _cleanup(self, dry_run=False):
         """
@@ -1841,6 +1937,10 @@ class PipelineManager(object):
         :param bool dry_run: Set to True if you want to build a cleanup
             script, but not actually delete the files.
         """
+
+        print("Starting cleanup: {} files; {} conditional files for cleanup".format(
+            len(self.cleanup_list),
+            len(self.cleanup_list_conditional)))
 
         if dry_run:
             # Move all unconditional cleans into the conditional list
@@ -1894,7 +1994,8 @@ class PipelineManager(object):
                         pass
             else:
                 print("\nConditional flag found: " + str([os.path.basename(i) for i in flag_files]))
-                print("\nThese conditional files were left in place:\n\n- " + "\n- ".join(self.cleanup_list_conditional))
+                print("\nThese conditional files were left in place:\n\n- " +
+                      "\n- ".join(self.cleanup_list_conditional))
                 # Produce a cleanup script.
                 no_cleanup_script = []
                 for cleandir in self.cleanup_list_conditional:
@@ -1922,13 +2023,11 @@ class PipelineManager(object):
             # TODO: Put some debug output here with switch to Logger
             # since this is relatively untested.
             cmd = "docker stats " + container + " --format '{{.MemUsage}}' --no-stream"
-            mem_use_str = subprocess.check_output(cmd, shell=True)
-            mem_use = mem_use_str.split("/")[0].split()
-            
+            mem_use_str = subprocess.check_output(cmd, shell=True).decode()
+
             mem_num = re.findall('[\d\.]+', mem_use_str.split("/")[0])[0]
             mem_scale = re.findall('[A-Za-z]+', mem_use_str.split("/")[0])[0]
 
-            #print(mem_use_str, mem_num, mem_scale)
             mem_num = float(mem_num)
             if mem_scale == "GiB":
                 return mem_num * 1e6

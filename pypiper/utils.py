@@ -3,7 +3,13 @@
 import os
 import sys
 import re
+from subprocess import PIPE
+from shlex import split
 
+if sys.version_info < (3, ):
+    CHECK_TEXT_TYPES = (str, unicode)
+else:
+    CHECK_TEXT_TYPES = (str, )
 if sys.version_info < (3, 3):
     from collections import Iterable, Sequence
 else:
@@ -22,7 +28,7 @@ __email__ = "vreuter@virginia.edu"
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
 # packages, and import from utils within pypiper for other functions.
-__all__ = ["add_pypiper_args", "build_command", "get_first_value"]
+__all__ = ["add_pypiper_args", "build_command", "get_first_value", "head"]
 
 
 CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
@@ -216,15 +222,63 @@ def check_shell_asterisk(cmd):
     """
     return r"*" in cmd
 
-def split_by_pipes(cmd):
+def split_by_pipes_nonnested(cmd):
     """
-    Split the command by shell pipes, but preserve the contents of the parantheses.
+    Split the command by shell pipes, but preserve contents in 
+    parentheses and braces.
 
     :param str cmd: Command to investigate.
     :return list: List of sub commands to be linked
     """
-    r = re.compile(r'(?:[^|(]|\([^)]*\))+')
+    # for posterity, this one will do parens only: re.compile(r'(?:[^|(]|\([^)]*\))+')
+    # r = re.compile(r'(?:[^|({]|[\({][^)}]*[\)}])+')
+    r = re.compile(r'(?:[^|(]|\([^)]*\)+|\{[^}]*\})')
     return r.findall(cmd)
+
+# cmd="a | b | { c | d } ABC | { x  | y } hello '( () e |f )"
+
+def split_by_pipes(cmd):
+    """
+    Split the command by shell pipes, but preserve contents in 
+    parentheses and braces. Also handles nested parens and braces.
+
+    :param str cmd: Command to investigate.
+    :return list: List of sub commands to be linked
+    """ 
+
+    # Build a simple finite state machine to split on pipes, while
+    # handling nested braces or parentheses.   
+    stack_brace = []
+    stack_paren = []
+    cmdlist = []
+    newcmd = str()
+    for char in cmd:
+        if char is "{":
+            stack_brace.append("{")
+        elif char is "}":
+            stack_brace.pop()
+        elif char is "(":
+            stack_paren.append("(")
+        elif char is ")":
+            stack_paren.pop()
+
+        if len(stack_brace) > 0 or len(stack_paren) > 0:
+            # We are inside a parenthetic of some kind; emit character
+            # no matter what it is
+            newcmd += char
+        elif char is "|":
+            # if it's a pipe, finish the command and start a new one
+            cmdlist.append(newcmd)
+            newcmd = str()
+            next
+        else:
+            # otherwise, emit character.
+            newcmd += char
+
+    # collect the final command before returning
+    cmdlist.append(newcmd)
+    return cmdlist
+
 
 def check_shell_pipes(cmd):
     """
@@ -233,8 +287,21 @@ def check_shell_pipes(cmd):
     :param str cmd: Command to investigate.
     :return bool: Whether the command appears to contain shell pipes.
     """
-    return "|" in cmd
+    return "|" in strip_braced_txt(cmd)
 
+
+def strip_braced_txt(cmd):
+    curly_braces = True
+    while curly_braces:
+        SRE_match_obj = re.search(r'\{(.*?)}',cmd)
+        if not SRE_match_obj is None:
+            cmd = cmd[:SRE_match_obj.start()] + cmd[(SRE_match_obj.end()+1):]
+            if re.search(r'\{(.*?)}',cmd) is None:
+                curly_braces = False
+        else:
+            curly_braces = False
+
+    return cmd
 
 def check_shell_redirection(cmd):
     """
@@ -243,16 +310,8 @@ def check_shell_redirection(cmd):
     :param str cmd: Command to investigate.
     :return bool: Whether the command appears to contain shell redirection.
     """
-    curly_brackets = True
-    while curly_brackets:
-        SRE_match_obj = re.search(r'\{(.*?)}',cmd)
-        if SRE_match_obj is not None:
-            cmd = cmd[:SRE_match_obj.start()] + cmd[(SRE_match_obj.end()+1):]
-            if re.search(r'\{(.*?)}',cmd) is None:
-                curly_brackets = False
-        else:
-            curly_brackets = False
-    return ">" in cmd
+
+    return ">" in strip_braced_txt(cmd)
 
 
 def clear_flags(pm, flag_names=None):
@@ -357,6 +416,25 @@ def get_first_value(param, param_pools, on_missing=None, error=True):
         return on_missing
 
 
+def head(obj):
+    """
+    Facilitate syntactic uniformity for notion of "object-or-first-item."
+
+    :param object | Iterable[object] obj: single item or collection of items.
+    :return obj: object itself if non-Iterable, otherwise the first element
+        if one exists
+    :raise ValueError: if the given object is an empty Iterable
+    """
+    if isinstance(obj, CHECK_TEXT_TYPES):
+        return obj
+    try:
+        return next(iter(obj))
+    except TypeError:
+        return obj
+    except StopIteration:
+        raise ValueError("Requested head of empty iterable")
+
+
 def is_in_file_tree(fpath, folder):
     """
     Determine whether a file is in a folder.
@@ -454,6 +532,22 @@ def is_multi_target(target):
     else:
         raise TypeError("Could not interpret argument as a target: {} ({})".
                         format(target, type(target)))
+
+
+def parse_cmd(cmd, shell):
+    """
+    Create a list of Popen-distable dicts of commands. The commands are split by pipes, if possible
+
+    :param str cmd: the command
+    :param bool shell: if the command should be run in the shell rather that in a subprocess
+    :return list[dict]: list of dicts of commands
+    """
+    def _make_dict(command):
+        a, s = (command, True) if check_shell(command, shell) else (split(command), False)
+        return dict(args=a, stdout=PIPE, shell=s)
+
+    return [_make_dict(c) for c in split_by_pipes(cmd)] if not shell and check_shell_pipes(cmd) \
+        else [dict(args=cmd, stdout=None, shell=True)]
 
 
 def parse_cores(cores, pm, default):

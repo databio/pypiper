@@ -11,6 +11,7 @@ tests/test/*
 *.egg
 
 # ignore built docs
+build/*
 doc/build/*
 docs/autodoc_build/*
 
@@ -72,6 +73,7 @@ open_pipelines/
 .cache/
 .coverage
 .pytest_cache
+.hypothesis
 
 # Reserved files for comparison
 *RESERVE*
