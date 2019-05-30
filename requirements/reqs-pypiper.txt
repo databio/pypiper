@@ -1,4 +1,4 @@
-attmap>=0.4
+attmap>=0.12.4
 pyyaml>=5
 psutil
 
