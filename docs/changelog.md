@@ -1,5 +1,11 @@
 # Changelog
 
+
+## [0.11.2] -- 2019-06-06
+### Fixed
+- Elevate `attmap` depdendency bound to require inclusion of improved path expansion behavior.
+
+
 ## [0.11.1] -- 2019-05-30
 ### Fixed
 - Elevate `attmap` depdendency bound to require inclusion of a bugfix there.
