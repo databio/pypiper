@@ -12,7 +12,7 @@
 
 ## [0.11.1] -- 2019-05-30
 ### Fixed
-- Elevate `attmap` depdendency bound to require inclusion of a bugfix there.
+- Elevate `attmap` dependency bound to require inclusion of a bugfix there.
 
 
 ## [0.11.0] -- 2019-05-13
