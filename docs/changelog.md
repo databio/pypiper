@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.11.3] -- 2019-06-18
+### Fixed
+- Fixed a bug that caused an OSError removing lock files for some filesystems.
+
 
 ## [0.11.2] -- 2019-06-06
 ### Fixed
