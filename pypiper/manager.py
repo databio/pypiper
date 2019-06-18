@@ -1378,7 +1378,8 @@ class PipelineManager(object):
         :param str file: File to create.
         """
         write_lock_flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
-        os.open(file, write_lock_flags)
+        fd = os.open(file, write_lock_flags)
+        os.close(fd)
 
 
     @staticmethod
