@@ -32,9 +32,9 @@ from hashlib import md5
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
-    check_shell, checkpoint_filepath, clear_flags, flag_name, \
-    is_multi_target, make_lock_name, pipeline_filepath, \
-    CHECKPOINT_SPECIFICATIONS, get_proc_name, parse_cmd
+    check_shell, checkpoint_filepath, clear_flags, default_pipeline_config, \
+    flag_name, get_proc_name, is_multi_target, make_lock_name, parse_cmd, \
+    pipeline_filepath, CHECKPOINT_SPECIFICATIONS
 from .const import PROFILE_COLNAMES
 from ._version import __version__
 import __main__
@@ -305,8 +305,7 @@ class PipelineManager(object):
                     # print("\nUsing custom config file: {}".format(config_to_load))
             else:
                 # No custom config file specified. Check for default
-                pipe_path_base, _ = os.path.splitext(os.path.basename(sys.argv[0]))
-                default_config = "{}.yaml".format(pipe_path_base)
+                default_config = default_pipeline_config(sys.argv[0])
                 if os.path.isfile(default_config):
                     config_to_load = default_config
                     print("Using default pipeline config file: {}".

@@ -735,6 +735,16 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     return uniqify(final_args)
 
 
+def default_pipeline_config(pipeline_filepath):
+    """
+    Determine the default filepath for a pipeline's config file.
+
+    :param str pipeline_filepath: path to a pipeline
+    :return str: default filepath for pipeline's config file
+    """
+    return os.path.splitext(os.path.basename(pipeline_filepath))[0] + ".yaml"
+
+
 def _add_args(parser, args, required):
     """
     Add new arguments to an ArgumentParser.
@@ -749,10 +759,7 @@ def _add_args(parser, args, required):
 
     required = required or []
 
-    # Determine the default pipeline config file.
-    pipeline_script = os.path.basename(sys.argv[0])
-    default_config, _ = os.path.splitext(pipeline_script)
-    default_config += ".yaml"
+    default_config = default_pipeline_config(sys.argv[0])
 
     # Define the arguments.
     argument_data = {
