@@ -1,7 +1,7 @@
 # Changelog
 
 ## [0.11.4] -- unreleased
-### Addded
+### Added
 - Use profile to determine total elapsed time
 
 ## [0.11.3] -- 2019-06-17
