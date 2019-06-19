@@ -20,6 +20,7 @@ import signal
 import subprocess
 import sys
 import time
+import pandas as _pd
 
 if sys.version_info < (3, 3):
     from collections import Iterable
@@ -31,9 +32,10 @@ from hashlib import md5
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
-    check_shell, check_shell_pipes, checkpoint_filepath, clear_flags, flag_name, \
+    check_shell, checkpoint_filepath, clear_flags, flag_name, \
     is_multi_target, make_lock_name, pipeline_filepath, \
-    CHECKPOINT_SPECIFICATIONS, split_by_pipes, get_proc_name, parse_cmd
+    CHECKPOINT_SPECIFICATIONS, get_proc_name, parse_cmd
+from .const import PROFILE_COLNAMES
 from ._version import __version__
 import __main__
 
@@ -509,7 +511,8 @@ class PipelineManager(object):
             myfile.write("# Pipeline started at " + time.strftime("%m-%d %H:%M:%S", time.localtime(self.starttime)) + "\n\n")
 
         with open(self.pipeline_profile_file, "a") as myfile:
-            myfile.write("# Pipeline started at " + time.strftime("%m-%d %H:%M:%S", time.localtime(self.starttime)) + "\n\n")
+            myfile.write("# Pipeline started at " + time.strftime("%m-%d %H:%M:%S", time.localtime(self.starttime))
+                         + "\n\n" + "# " + "\t".join(PROFILE_COLNAMES) + "\n")
 
     def _set_status_flag(self, status):
         """
@@ -1166,7 +1169,8 @@ class PipelineManager(object):
         print(msg)
         self.last_timestamp = time.time()
 
-    def time_elapsed(self, time_since):
+    @staticmethod
+    def time_elapsed(time_since):
         """
         Returns the number of seconds that have elapsed since the time_since parameter.
 
@@ -1327,7 +1331,8 @@ class PipelineManager(object):
     # Filepath functions
     ###################################
 
-    def _create_file(self, file):
+    @staticmethod
+    def _create_file(file):
         """
         Creates a file, but will not fail if the file already exists. 
         This is vulnerable to race conditions; use this for cases where it 
@@ -1338,7 +1343,8 @@ class PipelineManager(object):
         with open(file, 'w') as fout:
             fout.write('')
 
-    def _create_file_racefree(self, file):
+    @staticmethod
+    def _create_file_racefree(file):
         """
         Creates a file, but fails if the file already exists.
         
@@ -1390,7 +1396,8 @@ class PipelineManager(object):
             lockfile = self._make_lock_path(lockfile)
         return lockfile.replace(LOCK_PREFIX, "recover." + LOCK_PREFIX)
 
-    def make_sure_path_exists(self, path):
+    @staticmethod
+    def make_sure_path_exists(path):
         """
         Creates all directories in a path if it does not exist.
 
@@ -1613,6 +1620,20 @@ class PipelineManager(object):
         if raise_error:
             raise PipelineHalt(checkpoint, finished)
 
+    def get_elapsed_time(self):
+        """
+        Parse the pipeline profile file, collect the unique and last duplicated runtimes and sum them up. In case the
+        profile is not found, an estimate is calculated (which is correct only in case the pipeline was not rerun)
+
+        :return int: sum of runtimes in seconds
+        """
+        if os.path.isfile(self.pipeline_profile_file):
+            df = _pd.read_csv(self.pipeline_profile_file, sep="\t", comment="#", names=PROFILE_COLNAMES)
+            df['runtime'] = _pd.to_timedelta(df['runtime'])
+            unique_df = df[~df.duplicated('cid', keep='last').values]
+            return sum(unique_df['runtime'].apply(lambda x: x.total_seconds()))
+        return self.time_elapsed(self.starttime)
+
     def stop_pipeline(self, status=COMPLETE_FLAG):
         """
         Terminate the pipeline.
@@ -1626,9 +1647,11 @@ class PipelineManager(object):
         self._cleanup()
         self.report_result("Time", str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
+
         print("\n##### [Epilogue:]")
-        print("* " + "Total elapsed time".rjust(20) + ":  "
-              + str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
+        # print("* " + "Total elapsed time".rjust(20) + ":  "
+        #       + str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
+        print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds=self.get_elapsed_time())))
         # print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
         print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
         if self.halted:
@@ -1787,7 +1810,8 @@ class PipelineManager(object):
                 child_pid=child_pid, proc_string=proc_string, note=note)
             print(msg)
 
-    def _atexit_register(self, *args):
+    @staticmethod
+    def _atexit_register(*args):
         """ Convenience alias to register exit functions without having to import atexit in the pipeline. """
         atexit.register(*args)
 
