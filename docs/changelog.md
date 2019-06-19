@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.11.4] -- unreleased
+### Addded
+- Use profile to determine total elapsed time
+
 ## [0.11.3] -- 2019-06-17
 ### Fixed
 - Fixed a bug that caused an OSError removing lock files for some filesystems.
