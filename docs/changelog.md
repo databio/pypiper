@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.11.4] -- unreleased
+## [0.12.0] -- unreleased
 ### Added
 - Use profile to determine total elapsed time
 
