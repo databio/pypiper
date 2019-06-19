@@ -141,8 +141,7 @@ class PipelineManager(object):
             setattr(self, optname, checkpoint)
         if self.stop_before and self.stop_after:
             raise TypeError("Cannot specify both pre-stop and post-stop; "
-                            "got '{}' and '{}'".format(
-                    self.stop_before, self.stop_after))
+                            "got '{}' and '{}'".format(self.stop_before, self.stop_after))
 
         # Update this manager's parameters with non-checkpoint-related
         # command-line parameterization.
@@ -335,7 +334,6 @@ class PipelineManager(object):
         """
         return self.status == COMPLETE_FLAG
 
-
     @property
     def _failed(self):
         """
@@ -345,7 +343,6 @@ class PipelineManager(object):
         """
         return self.status == FAIL_FLAG
 
-
     @property
     def halted(self):
         """
@@ -354,7 +351,6 @@ class PipelineManager(object):
         :return bool: Whether the managed pipeline is in a paused/halted state.
         """
         return self.status == PAUSE_FLAG
-
 
     @property
     def _has_exit_status(self):
@@ -366,7 +362,6 @@ class PipelineManager(object):
         """
         return self._completed or self.halted or self._failed
 
-
     def _ignore_interrupts(self):
         """
         Ignore interrupt and termination signals. Used as a pre-execution
@@ -375,7 +370,6 @@ class PipelineManager(object):
         """
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
-
 
     def start_pipeline(self, args=None, multi=False):
         """
@@ -517,7 +511,6 @@ class PipelineManager(object):
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write("# Pipeline started at " + time.strftime("%m-%d %H:%M:%S", time.localtime(self.starttime)) + "\n\n")
 
-
     def _set_status_flag(self, status):
         """
         Configure state and files on disk to match current processing status.
@@ -544,7 +537,6 @@ class PipelineManager(object):
         print("\nChanged status from {} to {}.".format(
                 prev_status, self.status))
 
-
     def _flag_file_path(self, status=None):
         """
         Create path to flag file based on indicated or current status.
@@ -558,7 +550,6 @@ class PipelineManager(object):
         flag_file_name = "{}_{}".format(
                 self.name, flag_name(status or self.status))
         return pipeline_filepath(self, filename=flag_file_name)
-
 
     ###################################
     # Process calling functions
@@ -824,7 +815,6 @@ class PipelineManager(object):
         except Exception as e:
             self._triage_error(e, nofail)
 
-
     def _attend_process(self, proc, sleeptime):
         """
         Waits on a process for a given time to see if it finishes, returns True
@@ -841,7 +831,6 @@ class PipelineManager(object):
         except psutil.TimeoutExpired:
             return True
         return False
-
 
     def callprint(self, cmd, shell=None, lock_file=None, nofail=False, container=None):
         """
@@ -883,7 +872,6 @@ class PipelineManager(object):
                 print(e)
                 print("Warning: couldn't add memory use for process: {}".format(proc.pid))
                 return 0
-
 
         def display_memory(memval):
             return None if memval < 0 else "{}GB".format(round(memval, 3))
@@ -945,7 +933,6 @@ class PipelineManager(object):
             print ("Not waiting for subprocesses: " + str(ids))
             return [0, -1]
 
-
         def proc_wrapup(i):
             """
             :param i: internal ID number of the subprocess
@@ -976,7 +963,6 @@ class PipelineManager(object):
             returncodes[i] = returncode
             return info
 
-
         sleeptime = .0001
         
         while running_processes:
@@ -989,7 +975,7 @@ class PipelineManager(object):
             # the sleeptime is extremely short at the beginning and gets longer exponentially 
             # (+ constant to prevent copious checks at the very beginning)
             # = more precise mem tracing for short processes
-            sleeptime = min((sleeptime + 0.25) * 3 , 60/len(processes))
+            sleeptime = min((sleeptime + 0.25) * 3, 60/len(processes))
 
         # All jobs are done, print a final closing and job info
         stop_time = time.time()
@@ -1009,8 +995,6 @@ class PipelineManager(object):
             if rc != 0:
                 msg = "Subprocess returned nonzero result. Check above output for details"
                 self._triage_error(SubprocessError(msg), nofail)
-
-
 
         return [returncodes, local_maxmems]
 
@@ -1066,7 +1050,6 @@ class PipelineManager(object):
             raise Exception("Process returned nonzero result.")
         return [p.returncode, local_maxmem]
 
-
     def _wait_for_lock(self, lock_file):
         """
         Just sleep until the lock_file does not exist or a lock_file-related dynamic recovery flag is spotted
@@ -1105,12 +1088,9 @@ class PipelineManager(object):
             if sleeptime > 3600 and not long_message_flag:
                 long_message_flag = True
 
-
-
         if first_message_flag:
             self.timestamp("File unlocked.")
             self._set_status_flag(RUN_FLAG)
-
 
     ###################################
     # Logging functions
@@ -1186,7 +1166,6 @@ class PipelineManager(object):
         print(msg)
         self.last_timestamp = time.time()
 
-
     def time_elapsed(self, time_since):
         """
         Returns the number of seconds that have elapsed since the time_since parameter.
@@ -1194,7 +1173,6 @@ class PipelineManager(object):
         :param float time_since: Time as a float given by time.time().
         """
         return round(time.time() - time_since, 0)
-
 
     def _report_profile(self, command, lock_name, elapsed_time, memory, pid, args_hash, proc_count):
         """
@@ -1210,7 +1188,6 @@ class PipelineManager(object):
             str(rel_lock_name)
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
-
 
     def report_result(self, key, value, annotation=None):
         """
@@ -1241,8 +1218,6 @@ class PipelineManager(object):
         # Just to be extra careful, let's lock the file while we we write
         # in case multiple pipelines write to the same file.
         self._safe_write_to_file(self.pipeline_stats_file, message_raw)
-
-
 
     def report_object(self, key, filename, anchor_text=None, anchor_image=None,
        annotation=None):
@@ -1294,7 +1269,6 @@ class PipelineManager(object):
 
         self._safe_write_to_file(self.pipeline_objects_file, message_raw)
 
-
     def _safe_write_to_file(self, file, message):
         """
         Writes a string to a file safely (with file locks).
@@ -1325,7 +1299,6 @@ class PipelineManager(object):
                 # If you make it to the end of the while loop, you're done
                 break
 
-
     def _report_command(self, cmd, procs=None):
         """
         Writes a command to both stdout and to the commands log file 
@@ -1350,7 +1323,6 @@ class PipelineManager(object):
         with open(self.pipeline_commands_file, "a") as myfile:
             myfile.write(cmd_line)
 
-
     ###################################
     # Filepath functions
     ###################################
@@ -1366,7 +1338,6 @@ class PipelineManager(object):
         with open(file, 'w') as fout:
             fout.write('')
 
-
     def _create_file_racefree(self, file):
         """
         Creates a file, but fails if the file already exists.
@@ -1381,13 +1352,11 @@ class PipelineManager(object):
         fd = os.open(file, write_lock_flags)
         os.close(fd)
 
-
     @staticmethod
     def _ensure_lock_prefix(lock_name_base):
         """ Ensure that an alleged lock file is correctly prefixed. """
         return lock_name_base if lock_name_base.startswith(LOCK_PREFIX) \
                 else LOCK_PREFIX + lock_name_base
-
 
     def _make_lock_path(self, lock_name_base):
         """
@@ -1407,7 +1376,6 @@ class PipelineManager(object):
             lock_name = os.path.join(base, lock_name)
         return pipeline_filepath(self, filename=lock_name)
 
-
     def _recoverfile_from_lockfile(self, lockfile):
         """
         Create path to recovery file with given name as base.
@@ -1422,7 +1390,6 @@ class PipelineManager(object):
             lockfile = self._make_lock_path(lockfile)
         return lockfile.replace(LOCK_PREFIX, "recover." + LOCK_PREFIX)
 
-
     def make_sure_path_exists(self, path):
         """
         Creates all directories in a path if it does not exist.
@@ -1436,7 +1403,6 @@ class PipelineManager(object):
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 raise
-
 
     ###################################
     # Pipeline stats calculation helpers
@@ -1467,8 +1433,6 @@ class PipelineManager(object):
 
                     if annotation.rstrip() == self.name or annotation.rstrip() == "shared":
                         self.stats_dict[key] = value.strip()
-
-
         #if os.path.isfile(self.pipeline_stats_file):
 
     def get_stat(self, key):
@@ -1492,7 +1456,6 @@ class PipelineManager(object):
             except KeyError:
                 print("Missing stat '{}'".format(key))
                 return None
-
 
     ###################################
     # Pipeline termination functions
@@ -1557,7 +1520,6 @@ class PipelineManager(object):
             check_fpath = checkpoint_filepath(stage, pm=self)
         return self._touch_checkpoint(check_fpath)
 
-
     def _touch_checkpoint(self, check_file):
         """
         Alternative way for a pipeline to designate a checkpoint.
@@ -1593,11 +1555,9 @@ class PipelineManager(object):
 
         return already_exists
 
-
     def complete(self):
         """ Stop a completely finished pipeline. """
         self.stop_pipeline(status=COMPLETE_FLAG)
-
 
     def fail_pipeline(self, e, dynamic_recover=False):
         """
@@ -1638,7 +1598,6 @@ class PipelineManager(object):
 
         raise e
 
-
     def halt(self, checkpoint=None, finished=False, raise_error=True):
         """
         Stop the pipeline before completion point.
@@ -1653,7 +1612,6 @@ class PipelineManager(object):
         self._active = False
         if raise_error:
             raise PipelineHalt(checkpoint, finished)
-
 
     def stop_pipeline(self, status=COMPLETE_FLAG):
         """
@@ -1676,7 +1634,6 @@ class PipelineManager(object):
         if self.halted:
             return
         self.timestamp("* Pipeline completed at: ".rjust(20))
-
 
     def _signal_term_handler(self, signal, frame):
         """
@@ -1718,7 +1675,6 @@ class PipelineManager(object):
         signal_type = "SIGINT"
         self._generic_signal_handler(signal_type)
 
-
     def _exit_handler(self):
         """
         This function I register with atexit to run whenever the script is completing.
@@ -1728,7 +1684,6 @@ class PipelineManager(object):
         # TODO: consider handling sys.stderr/sys.stdout exceptions related to
         # TODO (cont.): order of interpreter vs. subprocess shutdown signal receipt.
         # TODO (cont.): see https://bugs.python.org/issue11380
-
 
         # Make the cleanup file executable if it exists
         if os.path.isfile(self.cleanup_file):
@@ -1762,7 +1717,6 @@ class PipelineManager(object):
             self._kill_child_process(pid, proc_dict["proc_name"])
             del self.running_procs[pid]
 
-
     def _kill_child_process(self, child_pid, proc_name=None):
         """
         Pypiper spawns subprocesses. We need to kill them to exit gracefully,
@@ -1782,7 +1736,6 @@ class PipelineManager(object):
             for child_proc in parent_process.children(recursive=True):
                 child_proc.send_signal(sig)
             parent_process.send_signal(sig)
-
 
         if child_pid is None:
             return
@@ -1819,7 +1772,6 @@ class PipelineManager(object):
             if not self._attend_process(psutil.Process(child_pid), sleeptime):
                 still_running = False
 
-
         if still_running:
             # still running!?
             print("Child process {child_pid}{proc_string} never responded"
@@ -1835,11 +1787,9 @@ class PipelineManager(object):
                 child_pid=child_pid, proc_string=proc_string, note=note)
             print(msg)
 
-
     def _atexit_register(self, *args):
         """ Convenience alias to register exit functions without having to import atexit in the pipeline. """
         atexit.register(*args)
-
 
     def get_container(self, image, mounts):
         # image is something like "nsheff/refgenie"
@@ -1855,12 +1805,10 @@ class PipelineManager(object):
         print("Using docker container: " + container)
         self._atexit_register(self.remove_container, container)
 
-
     def remove_container(self, container):
         print("Removing docker container. . .")
         cmd = "docker rm -f " + container
         self.callprint(cmd)
-
 
     def clean_add(self, regex, conditional=False, manual=False):
         """
