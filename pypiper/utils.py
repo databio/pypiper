@@ -222,6 +222,7 @@ def check_shell_asterisk(cmd):
     """
     return r"*" in cmd
 
+
 def split_by_pipes_nonnested(cmd):
     """
     Split the command by shell pipes, but preserve contents in 
@@ -235,7 +236,9 @@ def split_by_pipes_nonnested(cmd):
     r = re.compile(r'(?:[^|(]|\([^)]*\)+|\{[^}]*\})')
     return r.findall(cmd)
 
+
 # cmd="a | b | { c | d } ABC | { x  | y } hello '( () e |f )"
+
 
 def split_by_pipes(cmd):
     """
@@ -302,6 +305,7 @@ def strip_braced_txt(cmd):
             curly_braces = False
 
     return cmd
+
 
 def check_shell_redirection(cmd):
     """
@@ -399,7 +403,7 @@ def get_first_value(param, param_pools, on_missing=None, error=True):
         if param in pool:
             return pool[param]
 
-    # Raise error if unfound and no strategy or value is provided or handling
+    # Raise error if not found and no strategy or value is provided or handling
     # unmapped parameter requests.
     if error and on_missing is None:
         raise KeyError("Unmapped parameter: '{}'".format(param))
@@ -691,7 +695,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
 
     # Define the argument groups.
     args_by_group = {
-        "pypiper": ["recover", "new-start", "dirty", "force-follow"],
+        "pypiper": ["recover", "new-start", "dirty", "force-follow", "testmode"],
         "config": ["config"],
         "checkpoint": ["stop-before", "stop-after"],
         "resource": ["mem", "cores"],
@@ -735,6 +739,16 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     return uniqify(final_args)
 
 
+def default_pipeline_config(pipeline_filepath):
+    """
+    Determine the default filepath for a pipeline's config file.
+
+    :param str pipeline_filepath: path to a pipeline
+    :return str: default filepath for pipeline's config file
+    """
+    return os.path.splitext(os.path.basename(pipeline_filepath))[0] + ".yaml"
+
+
 def _add_args(parser, args, required):
     """
     Add new arguments to an ArgumentParser.
@@ -749,13 +763,13 @@ def _add_args(parser, args, required):
 
     required = required or []
 
-    # Determine the default pipeline config file.
-    pipeline_script = os.path.basename(sys.argv[0])
-    default_config, _ = os.path.splitext(pipeline_script)
-    default_config += ".yaml"
+    default_config = default_pipeline_config(sys.argv[0])
 
     # Define the arguments.
     argument_data = {
+        "testmode":
+            ("-T", {"action": "store_true",
+                    "help": "Only print commands, don't run"}),
         "recover":
             ("-R", {"action": "store_true",
                     "help": "Overwrite locks to recover from previous failed run"}),

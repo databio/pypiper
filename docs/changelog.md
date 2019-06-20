@@ -1,9 +1,25 @@
 # Changelog
 
-## Unreleased
+## [0.12.0] -- unreleased
+### Added
+- Use profile to determine total elapsed time
+
+## [0.11.3] -- 2019-06-17
+### Fixed
+- Fixed a bug that caused an OSError removing lock files for some filesystems.
 
 
-## [0.11.0] -- 2019-5-13
+## [0.11.2] -- 2019-06-06
+### Fixed
+- Elevate `attmap` depdendency bound to require inclusion of improved path expansion behavior.
+
+
+## [0.11.1] -- 2019-05-30
+### Fixed
+- Elevate `attmap` dependency bound to require inclusion of a bugfix there.
+
+
+## [0.11.0] -- 2019-05-13
 - Improve python3 handling of integers and strings
 - Fixed a bug with cleanup scripts in `dirty` mode
 - Restructured profile output with hash and processID, and made lock paths relative
@@ -12,7 +28,6 @@
 - Fixed a bug that would have split a pipe within a braced command
 - Some performance improvements for ngstk functions
 - Allow `ngstk.input_to_fastq` to yield gzipped fastq files
-
 
 
 ## [0.10.0] -- 2019-03-22

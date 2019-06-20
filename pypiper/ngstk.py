@@ -1,13 +1,13 @@
-#!/usr/env python
+""" Broadly applicable NGS processing/analysis functionality """
 
 import os
 import re
 import subprocess
 import errno
 from attmap import AttMapEcho
+from yacman import load_yaml
 from .exceptions import UnsupportedFiletypeException
 from .utils import is_fastq, is_gzipped_fastq, is_sam_or_bam
-
 
 
 class NGSTk(AttMapEcho):
@@ -42,14 +42,8 @@ class NGSTk(AttMapEcho):
     def __init__(self, config_file=None, pm=None):
         # parse yaml into the project's attributes
         # self.add_entries(**config)
-
-        if config_file is None:
-            super(NGSTk, self).__init__()
-        else:
-            import yaml
-            with open(config_file, 'r') as config_file:
-                config = yaml.load(config_file)
-            super(NGSTk, self).__init__(config)
+        super(NGSTk, self).__init__(
+            None if config_file is None else load_yaml(config_file))
 
         # Keep a link to the pipeline manager, if one is provided.
         # if None is provided, instantiate "tools" and "parameters" with empty AttMaps
