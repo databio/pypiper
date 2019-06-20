@@ -318,8 +318,7 @@ class PipelineManager(object):
         # Finally load the config we found.
         if config_to_load is not None:
             print("\nLoading config file: {}\n".format(config_to_load))
-            with open(config_to_load, 'r') as conf:
-                self.config = AttMapEcho(load_yaml(conf))
+            self.config = AttMapEcho(load_yaml(config_to_load))
         else:
             print("No config file")
             self.config = None
