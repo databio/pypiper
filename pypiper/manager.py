@@ -124,7 +124,9 @@ class PipelineManager(object):
             'config_file': config_file,
             'output_parent': output_parent,
             'cores': cores,
-            'mem': mem}
+            'mem': mem,
+            'testmode': False
+        }
 
         # Transform the command-line namespace into a Mapping.
         args_dict = vars(args) if args else dict()
@@ -168,6 +170,7 @@ class PipelineManager(object):
         self.dirty = params['dirty']
         self.cores = params['cores']
         self.output_parent = params['output_parent']
+        self.testmode = params['testmode']
 
         # Keep track of an ID for the number of processes attempted
         self.proc_count = 0
@@ -794,9 +797,12 @@ class PipelineManager(object):
         :param bool nofail: Should the pipeline bail on a nonzero return from a process? Default: False
             Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
             they will not cause the pipeline to bail out.
+        :return str: text output by the executed subprocess (check_output)
         """
 
         self._report_command(cmd)
+        if self.testmode:
+            return ""
 
         likely_shell = check_shell(cmd, shell)
 
@@ -874,10 +880,6 @@ class PipelineManager(object):
         def display_memory(memval):
             return None if memval < 0 else "{}GB".format(round(memval, 3))
 
-        def make_dict(command):
-            a, s = (command, True) if check_shell(command, shell) else (shlex.split(command), False)
-            return dict(args=a, stdout=subprocess.PIPE, shell=s)
-
         def make_hash(o):
             """
             Convert the object to string and hash it, return None in case of failure
@@ -892,6 +894,10 @@ class PipelineManager(object):
 
         if container:
             cmd = "docker exec " + container + " " + cmd
+
+        if self.testmode:
+            self._report_command(cmd)
+            return 0, 0
 
         param_list = parse_cmd(cmd, shell)
         proc_name = get_proc_name(cmd)
@@ -929,7 +935,7 @@ class PipelineManager(object):
             print("</pre>")
             ids = [x.pid for x in processes]
             print ("Not waiting for subprocesses: " + str(ids))
-            return [0, -1]
+            return 0, -1
 
         def proc_wrapup(i):
             """
@@ -1307,7 +1313,7 @@ class PipelineManager(object):
         :param str | list[str] procs: process numbers for processes in the command
         """
         if isinstance(procs, list):
-            procs = ",".join(map(str,procs))
+            procs = ",".join(map(str, procs))
         if procs:
             line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=procs)
         else:
