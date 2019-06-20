@@ -701,11 +701,11 @@ class PipelineManager(object):
                     for c in cmd:
                         count = len(parse_cmd(c, shell))
                         self.proc_count += count
-                        print(increment_info_pattern.format(str(c), count, self.proc_count))
+                        # print(increment_info_pattern.format(str(c), count, self.proc_count))
                 else:
                     count = len(parse_cmd(cmd, shell))
                     self.proc_count += count
-                    print(increment_info_pattern.format(str(cmd), count, self.proc_count))
+                    # print(increment_info_pattern.format(str(cmd), count, self.proc_count))
                 break  # Do not run command
 
             # Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
