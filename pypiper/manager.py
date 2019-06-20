@@ -1841,6 +1841,7 @@ class PipelineManager(object):
         atexit.register(*args)
 
 
+
     def get_container(self, image, mounts):
         # image is something like "nsheff/refgenie"
         if type(mounts) == str:
@@ -1849,6 +1850,13 @@ class PipelineManager(object):
         for mnt in mounts:
             absmnt = os.path.abspath(mnt)
             cmd += " -v " + absmnt + ":" + absmnt
+        cmd += " -v {cwd}:{cwd} --workdir={cwd}".format(cwd=os.getcwd())
+        cmd += " --user={uid}".format(uid=os.getuid())
+        cmd += " --volume=/etc/group:/etc/group:ro"
+        cmd += " --volume=/etc/passwd:/etc/passwd:ro"
+        cmd += " --volume=/etc/shadow:/etc/shadow:ro"
+        cmd += " --volume=/etc/sudoers.d:/etc/sudoers.d:ro"
+        cmd += " --volume=/tmp/.X11-unix:/tmp/.X11-unix:rw"
         cmd += " " + image
         container = self.checkprint(cmd).rstrip()
         self.container = container
