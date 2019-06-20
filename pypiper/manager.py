@@ -29,6 +29,7 @@ else:
 
 from attmap import AttMapEcho
 from hashlib import md5
+from yacman import load_yaml
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
@@ -315,12 +316,7 @@ class PipelineManager(object):
         if config_to_load is not None:
             print("\nLoading config file: {}\n".format(config_to_load))
             with open(config_to_load, 'r') as conf:
-                # Set the args to the new config file, so it can be used
-                # later to pass to, for example, toolkits
-                import yaml
-                # An also use yaml.FullLoader for trusted input. . .
-                config = yaml.load(conf, Loader=yaml.SafeLoader)
-                self.config = AttMapEcho(config)
+                self.config = AttMapEcho(load_yaml(conf))
         else:
             print("No config file")
             self.config = None

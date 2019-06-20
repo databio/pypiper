@@ -1,4 +1,4 @@
 numpy
 pandas
 pysam
-pyyaml
+yacman
