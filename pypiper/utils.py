@@ -1,5 +1,6 @@
 """ Shared utilities """
 
+from collections import Iterable, Sequence
 import os
 import sys
 import re
@@ -8,12 +9,12 @@ from shlex import split
 
 if sys.version_info < (3, ):
     CHECK_TEXT_TYPES = (str, unicode)
+    from inspect import getargspec as get_fun_sig
 else:
     CHECK_TEXT_TYPES = (str, )
-if sys.version_info < (3, 3):
-    from collections import Iterable, Sequence
-else:
-    from collections.abc import Iterable, Sequence
+    from inspect import getfullargspec as get_fun_sig
+
+from ubiquerg import expandpath, is_command_callable
 
 from .const import \
     CHECKPOINT_EXTENSION, PIPELINE_CHECKPOINT_DELIMITER, \
@@ -28,7 +29,8 @@ __email__ = "vreuter@virginia.edu"
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
 # packages, and import from utils within pypiper for other functions.
-__all__ = ["add_pypiper_args", "build_command", "get_first_value", "head"]
+__all__ = ["add_pypiper_args", "build_command", "check_all_commands",
+           "determine_uncallable", "get_first_value", "head"]
 
 
 CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
@@ -221,6 +223,90 @@ def check_shell_asterisk(cmd):
     :return bool: Whether the command appears to involve shell stars.
     """
     return r"*" in cmd
+
+
+def check_all_commands(
+        cmds,
+        get_bad_result=lambda bads: Exception("{} uncallable commands: "),
+        handle=None):
+    """
+    Determine whether all commands are callable
+
+    :param Iterable[str] | str cmds: collection of commands to check for
+        callability
+    :param function(Iterable[(str, str)]) -> object get_bad_result: how to
+        create result when at least one command is uncallable
+    :param function(object) -> object handle: how to handle with result of
+        failed check
+    :return bool: whether all commands given appear callable
+    :raise TypeError: if error handler is provided but isn't callable or
+        isn't a single-argument function
+    """
+    bads = determine_uncallable(cmds)
+    if handle is None:
+        def handle(res):
+            if isinstance(res, Exception):
+                raise res
+            print("Command check result: {}".format(res))
+    elif not hasattr(handle, "__call__") or not 1 == len(get_fun_sig(handle).args):
+        raise TypeError("Command check error handler must be a one-arg function")
+    if bads:
+        handle(get_bad_result(bads))
+        return False
+    return True
+
+
+def determine_uncallable(
+        commands, transformations=(
+                (lambda f: isinstance(f, str) and
+                           os.path.isfile(expandpath(f)) and
+                           expandpath(f).endswith(".jar"),
+                 lambda f: "java -jar {}".format(expandpath(f)))
+        ), accumulate=False):
+    """
+    Determine which commands are not callable.
+
+    :param Iterable[str] | str commands: commands to check for callability
+    :param Iterable[(function(str) -> bool, function(str) -> str)] transformations:
+        pairs in which first element is a predicate and second is a transformation
+        to apply to the input if the predicate is satisfied
+    :param bool accumulate: whether to accumulate transformations (more than
+        one possible per command)
+    :return list[(str, str)]: collection of commands that appear uncallable;
+        each element is a pair in which the first element is the original
+        'command' and the second is what was actually assessed for callability.
+    :raise TypeError: if transformations are provided but are argument is a
+        string or is non-Iterable
+    :raise Exception: if accumulation of transformation is False but the
+        collection of transformations is unordered
+    """
+    commands = [commands] if isinstance(commands, str) else commands
+    if transformations:
+        if not isinstance(transformations, Iterable) or isinstance(transformations, str):
+            raise TypeError(
+                "Transformations argument should be a collection of pairs; got "
+                "{} ({})".format(transformations, type(transformations).__name__))
+        if accumulate:
+            def finalize(cmd):
+                for p, t in transformations:
+                    if p(cmd):
+                        return t(cmd)
+                return cmd
+        else:
+            if not isinstance(transformations, (tuple, list)):
+                raise Exception(
+                    "If transformations are unordered, non-accumulation of "
+                    "effects may lead to nondeterministic behavior.")
+            def finalize(cmd):
+                for p, t in transformations:
+                    if p(cmd):
+                        cmd = t(cmd)
+                    return cmd
+
+    else:
+        finalize = lambda cmd: cmd
+    return list(filter(lambda _, cmd: not is_command_callable(cmd),
+                       map(lambda c: (c, finalize(c)), commands)))
 
 
 def split_by_pipes_nonnested(cmd):

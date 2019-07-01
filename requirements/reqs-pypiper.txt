@@ -1,4 +1,5 @@
 attmap>=0.12.5
 psutil
 pandas
+ubiquerg>=0.4.5
 yacman
