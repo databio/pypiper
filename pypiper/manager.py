@@ -8,6 +8,7 @@ The PipelineManager class can be used to create a procedural pipeline in python.
 """
 
 import atexit
+from collections import Iterable
 import datetime
 import errno
 import glob
@@ -22,13 +23,9 @@ import sys
 import time
 import pandas as _pd
 
-if sys.version_info < (3, 3):
-    from collections import Iterable
-else:
-    from collections.abc import Iterable
-
 from attmap import AttMapEcho
 from hashlib import md5
+from logmuse import init_logger
 from yacman import load_yaml
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
@@ -107,7 +104,7 @@ class PipelineManager(object):
         self, name, outfolder, version=None, args=None, multi=False,
         dirty=False, recover=False, new_start=False, force_follow=False,
         cores=1, mem="1000M", config_file=None, output_parent=None,
-        overwrite_checkpoints=False, **kwargs):
+        overwrite_checkpoints=False, logger_kwargs=None, **kwargs):
 
         # Params defines the set of options that could be updated via
         # command line args to a pipeline run, that can be forwarded
@@ -323,6 +320,14 @@ class PipelineManager(object):
             print("No config file")
             self.config = None
 
+        logger_kwargs = logger_kwargs or {}
+        try:
+            name = logger_kwargs.pop("name")
+        except KeyError:
+            pass
+        else:
+            name = ".".join([__name__, self.__class__.__name__, self.name])
+        self._logger = init_logger(name, **logger_kwargs)
 
     @property
     def _completed(self):
@@ -1098,6 +1103,24 @@ class PipelineManager(object):
     ###################################
     # Logging functions
     ###################################
+
+    def debug(self, msg, *args, **kwargs):
+        self._logger.debug(msg, *args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        self._logger.info(msg, *args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        self._logger.warning(msg, *args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        self._logger.error(msg, *args, **kwargs)
+
+    def critical(self, msg, *args, **kwargs):
+        self._logger.critical(msg, *args, **kwargs)
+
+    def fatal(self, msg, *args, **kwargs):
+        self._logger.fatal(msg, *args, **kwargs)
 
     def timestamp(self, message="", checkpoint=None,
                   finished=False, raise_error=True):
