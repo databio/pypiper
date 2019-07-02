@@ -31,8 +31,8 @@ from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import \
     check_shell, checkpoint_filepath, clear_flags, default_pipeline_config, \
-    flag_name, get_proc_name, is_multi_target, make_lock_name, parse_cmd, \
-    pipeline_filepath, CHECKPOINT_SPECIFICATIONS
+    flag_name, get_proc_name, is_multi_target, logger_via_cli, make_lock_name, \
+    parse_cmd, pipeline_filepath, CHECKPOINT_SPECIFICATIONS
 from .const import PROFILE_COLNAMES
 from ._version import __version__
 import __main__
@@ -321,13 +321,18 @@ class PipelineManager(object):
             self.config = None
 
         logger_kwargs = logger_kwargs or {}
-        try:
-            name = logger_kwargs.pop("name")
-        except KeyError:
-            pass
+        default_logname = ".".join([__name__, self.__class__.__name__, self.name])
+        if not args:
+            # strict is only for logger_via_cli.
+            kwds = {k: v for k, v in logger_kwargs.items() if k != "strict"}
+            try:
+                name = kwds.pop("name")
+            except KeyError:
+                name = default_logname
+            self._logger = init_logger(name, **kwds)
         else:
-            name = ".".join([__name__, self.__class__.__name__, self.name])
-        self._logger = init_logger(name, **logger_kwargs)
+            logger_kwargs.setdefault("name", default_logname)
+            self._logger = logger_via_cli(args, **logger_kwargs)
 
     @property
     def _completed(self):

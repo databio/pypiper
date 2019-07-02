@@ -30,7 +30,7 @@ __email__ = "vreuter@virginia.edu"
 # Conceptually, reserve this for functions expected to be used in other
 # packages, and import from utils within pypiper for other functions.
 __all__ = ["add_pypiper_args", "build_command", "check_all_commands",
-           "determine_uncallable", "get_first_value", "head"]
+           "determine_uncallable", "get_first_value", "head", "logger_via_cli"]
 
 
 CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
@@ -586,6 +586,22 @@ def is_sam_or_bam(file_name):
             """
     _, ext = os.path.splitext(file_name)
     return ext in [".bam", ".sam"]
+
+
+def logger_via_cli(opts, **kwargs):
+    """
+    Build and initialize logger from CLI specification.
+
+    :param argparse.Namespace opts: parse of command-line interface
+    :param kwargs: keyword arguments to pass along to underlying logmuse function
+    :return logging.Logger: newly created and configured logger
+    """
+    from copy import deepcopy
+    import logmuse
+    kwds = deepcopy(kwargs)
+    # By default, don't require the logging options to have been added to the parser.
+    kwds.setdefault("strict", False)
+    return logmuse.logger_via_cli(opts, **kwds)
 
 
 def make_lock_name(original_path, path_base_folder):
