@@ -227,7 +227,7 @@ def check_shell_asterisk(cmd):
 
 def check_all_commands(
         cmds,
-        get_bad_result=lambda bads: Exception("{} uncallable commands: "),
+        get_bad_result=lambda bads: Exception("{} uncallable commands: {}".format(len(bads), bads)),
         handle=None):
     """
     Determine whether all commands are callable
@@ -243,6 +243,8 @@ def check_all_commands(
         isn't a single-argument function
     """
     bads = determine_uncallable(cmds)
+    if not bads:
+        return True
     if handle is None:
         def handle(res):
             if isinstance(res, Exception):
@@ -250,10 +252,8 @@ def check_all_commands(
             print("Command check result: {}".format(res))
     elif not hasattr(handle, "__call__") or not 1 == len(get_fun_sig(handle).args):
         raise TypeError("Command check error handler must be a one-arg function")
-    if bads:
-        handle(get_bad_result(bads))
-        return False
-    return True
+    handle(get_bad_result(bads))
+    return False
 
 
 def determine_uncallable(
@@ -261,7 +261,7 @@ def determine_uncallable(
                 (lambda f: isinstance(f, str) and
                            os.path.isfile(expandpath(f)) and
                            expandpath(f).endswith(".jar"),
-                 lambda f: "java -jar {}".format(expandpath(f)))
+                 lambda f: "java -jar {}".format(expandpath(f))),
         ), accumulate=False):
     """
     Determine which commands are not callable.
@@ -282,7 +282,11 @@ def determine_uncallable(
     """
     commands = [commands] if isinstance(commands, str) else commands
     if transformations:
-        if not isinstance(transformations, Iterable) or isinstance(transformations, str):
+        if not isinstance(transformations, Iterable) or \
+                isinstance(transformations, str) or \
+                not all(map(lambda func_pair: isinstance(func_pair, tuple)
+                                              and len(func_pair) == 2,
+                            transformations)):
             raise TypeError(
                 "Transformations argument should be a collection of pairs; got "
                 "{} ({})".format(transformations, type(transformations).__name__))
@@ -298,6 +302,7 @@ def determine_uncallable(
                     "If transformations are unordered, non-accumulation of "
                     "effects may lead to nondeterministic behavior.")
             def finalize(cmd):
+                print("Transformations: {}".format(transformations))
                 for p, t in transformations:
                     if p(cmd):
                         cmd = t(cmd)
@@ -305,8 +310,9 @@ def determine_uncallable(
 
     else:
         finalize = lambda cmd: cmd
-    return list(filter(lambda _, cmd: not is_command_callable(cmd),
-                       map(lambda c: (c, finalize(c)), commands)))
+    return [(orig, used) for orig, used in
+            map(lambda c: (c, finalize(c)), commands)
+            if not is_command_callable(used)]
 
 
 def split_by_pipes_nonnested(cmd):
