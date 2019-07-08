@@ -878,7 +878,7 @@ class PipelineManager(object):
                 # get children processes
                 children = proc.children(recursive=True)
                 # get RSS memory of each child proc and sum all
-                mem_sum = sum([x.memory_info().rss for x in children])
+                mem_sum = sum([x.memory_info().rss for x in children]) if children else proc.memory_info().rss
                 # return in gigs
                 return mem_sum/1e9
             except (psutil.NoSuchProcess, psutil.ZombieProcess) as e:
