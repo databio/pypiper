@@ -1,6 +1,6 @@
 """ Shared utilities """
 
-from collections import Iterable, Sequence
+from collections import Iterable, Mapping, Sequence
 import os
 import sys
 import re
@@ -284,9 +284,9 @@ def determine_uncallable(
     if transformations:
         if not isinstance(transformations, Iterable) or \
                 isinstance(transformations, str) or \
-                not all(map(lambda func_pair: isinstance(func_pair, tuple)
-                                              and len(func_pair) == 2,
-                            transformations)):
+                not all(map(
+                    lambda func_pair: isinstance(func_pair, tuple) and len(func_pair) == 2,
+                    transformations.values() if isinstance(transformations, Mapping) else transformations)):
             raise TypeError(
                 "Transformations argument should be a collection of pairs; got "
                 "{} ({})".format(transformations, type(transformations).__name__))
@@ -294,7 +294,7 @@ def determine_uncallable(
             def finalize(cmd):
                 for p, t in transformations:
                     if p(cmd):
-                        return t(cmd)
+                        cmd = t(cmd)
                 return cmd
         else:
             if not isinstance(transformations, (tuple, list)):
@@ -305,8 +305,8 @@ def determine_uncallable(
                 print("Transformations: {}".format(transformations))
                 for p, t in transformations:
                     if p(cmd):
-                        cmd = t(cmd)
-                    return cmd
+                        return t(cmd)
+                return cmd
 
     else:
         finalize = lambda cmd: cmd
