@@ -6,7 +6,8 @@
 - `logging` functions directly on `PipelineManager`
 - Re-export `add_logging_options` from `logmuse`, for direct use by a pipeline author.
 - `logger_via_cli` that defaults to the `strict=False` behavior of the same-named function from `logmuse`
-
+- Fix childless processes memory monitoring issue
+ 
 ## [0.11.3] -- 2019-06-17
 ### Fixed
 - Fixed a bug that caused an OSError removing lock files for some filesystems.
