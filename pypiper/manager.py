@@ -1659,7 +1659,12 @@ class PipelineManager(object):
         """
         if os.path.isfile(self.pipeline_profile_file):
             df = _pd.read_csv(self.pipeline_profile_file, sep="\t", comment="#", names=PROFILE_COLNAMES)
-            df['runtime'] = _pd.to_timedelta(df['runtime'])
+            try:
+                df['runtime'] = _pd.to_timedelta(df['runtime'])
+            except ValueError:
+                # return runtime estimate
+                # this happens if old profile style is mixed with the new one and the columns do not match
+                return self.time_elapsed(self.starttime)
             unique_df = df[~df.duplicated('cid', keep='last').values]
             return sum(unique_df['runtime'].apply(lambda x: x.total_seconds()))
         return self.time_elapsed(self.starttime)
