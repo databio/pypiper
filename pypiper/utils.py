@@ -282,11 +282,9 @@ def determine_uncallable(
     """
     commands = [commands] if isinstance(commands, str) else commands
     if transformations:
-        if not isinstance(transformations, Iterable) or \
-                isinstance(transformations, str) or \
-                not all(map(
-                    lambda func_pair: isinstance(func_pair, tuple) and len(func_pair) == 2,
-                    transformations.values() if isinstance(transformations, Mapping) else transformations)):
+        trans = transformations.values() if isinstance(transformations, Mapping) else transformations
+        if not isinstance(transformations, Iterable) or isinstance(transformations, str) or \
+                not all(map(lambda func_pair: isinstance(func_pair, tuple) and len(func_pair) == 2, trans)):
             raise TypeError(
                 "Transformations argument should be a collection of pairs; got "
                 "{} ({})".format(transformations, type(transformations).__name__))
