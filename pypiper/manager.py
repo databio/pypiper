@@ -25,7 +25,7 @@ import pandas as _pd
 
 from attmap import AttMapEcho
 from hashlib import md5
-from logmuse import init_logger
+import logmuse
 from yacman import load_yaml
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
@@ -329,10 +329,13 @@ class PipelineManager(object):
                 name = kwds.pop("name")
             except KeyError:
                 name = default_logname
-            self._logger = init_logger(name, **kwds)
+            self._logger = logmuse.init_logger(name, **kwds)
         else:
             logger_kwargs.setdefault("name", default_logname)
-            self._logger = logger_via_cli(args, **logger_kwargs)
+            try:
+                self._logger = logger_via_cli(args, **logger_kwargs)
+            except logmuse.est.AbsentOptionException:
+                self._logger = logmuse.init_logger("pypiper")
 
     @property
     def _completed(self):
@@ -544,7 +547,7 @@ class PipelineManager(object):
         prev_status = self.status
         self.status = status
         self._create_file(self._flag_file_path())
-        print("\nChanged status from {} to {}.".format(
+        self._logger.info("\nChanged status from {} to {}.".format(
                 prev_status, self.status))
 
     def _flag_file_path(self, status=None):
@@ -1965,9 +1968,9 @@ class PipelineManager(object):
                 self.cleanup_list = []
 
         if len(self.cleanup_list) > 0:
-            print("\nCleaning up flagged intermediate files. . .")
+            self.info("\nCleaning up flagged intermediate files. . .")
             for expr in self.cleanup_list:
-                print("\nRemoving glob: " + expr)
+                self.debug("\nRemoving glob: " + expr)
                 try:
                     # Expand regular expression
                     files = glob.glob(expr)
@@ -1977,10 +1980,10 @@ class PipelineManager(object):
                     # and delete the files
                     for file in files:
                         if os.path.isfile(file):
-                            print("`rm " + file + "`")
+                            self.debug("`rm {}`".format(file))
                             os.remove(os.path.join(file))
                         elif os.path.isdir(file):
-                            print("`rmdir " + file + "`")
+                            self.debug("`rmdir {}`".format(file))
                             os.rmdir(os.path.join(file))
                 except:
                     pass
@@ -1991,19 +1994,19 @@ class PipelineManager(object):
                           if COMPLETE_FLAG not in os.path.basename(fn)
                           and not "{}_{}".format(self.name, run_flag) == os.path.basename(fn)]
             if len(flag_files) == 0 and not dry_run:
-                print("\nCleaning up conditional list. . .")
+                self.info("\nCleaning up conditional list. . .")
                 for expr in self.cleanup_list_conditional:
-                    print("\nRemoving glob: " + expr)
+                    self.debug("\nRemoving glob: " + expr)
                     try:
                         files = glob.glob(expr)
                         while files in self.cleanup_list_conditional:
                             self.cleanup_list_conditional.remove(files)
                         for file in files:
                             if os.path.isfile(file):
-                                print("`rm " + file + "`")
+                                self.debug("`rm {}`".format(file))
                                 os.remove(os.path.join(file))
                             elif os.path.isdir(file):
-                                print("`rmdir " + file + "`")
+                                self.debug("`rmdir {}`".format(file))
                                 os.rmdir(os.path.join(file))
                     except:
                         pass
