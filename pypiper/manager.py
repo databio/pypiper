@@ -169,6 +169,28 @@ class PipelineManager(object):
         self.output_parent = params['output_parent']
         self.testmode = params['testmode']
 
+
+        # Set up logger
+        logger_kwargs = logger_kwargs or {}
+        default_logname = ".".join([__name__, self.__class__.__name__, self.name])
+        if not args:
+            # strict is only for logger_via_cli.
+            kwds = {k: v for k, v in logger_kwargs.items() if k != "strict"}
+            try:
+                name = kwds.pop("name")
+            except KeyError:
+                name = default_logname
+            self._logger = logmuse.init_logger(name, **kwds)
+            self.debug("Logger set with logmuse.init_logger")
+        else:
+            logger_kwargs.setdefault("name", default_logname)
+            try:
+                self._logger = logmuse.logger_via_cli(args)
+                self.debug("Logger set with logmuse.logger_via_cli")
+            except logmuse.est.AbsentOptionException:
+                self._logger = logmuse.init_logger("pypiper", level="DEBUG")
+                self.debug("logger_via_cli failed; Logger set with logmuse.init_logger")
+
         # Keep track of an ID for the number of processes attempted
         self.proc_count = 0
 
@@ -287,7 +309,7 @@ class PipelineManager(object):
                     if os.path.isfile(cmdl_config_file):
                         config_to_load = cmdl_config_file
                     else:
-                        #print("Can't find custom config file: " + cmdl_config_file)
+                        self.debug("Can't find custom config file: " + cmdl_config_file)
                         pass
                 else:
                     # Relative custom config file specified
@@ -297,45 +319,30 @@ class PipelineManager(object):
                     if os.path.isfile(abs_config):
                         config_to_load = abs_config
                     else:
-                        print(__file__)
-                        #print("Can't find custom config file: " + abs_config)
+                        self.debug("File: {}".format(__file__))
+                        self.debug("Can't find custom config file: " + abs_config)
                         pass
                 if config_to_load is not None:
                     pass
                     # TODO: Switch this message to a debug message using _LOGGER
-                    # print("\nUsing custom config file: {}".format(config_to_load))
+                    self.debug("\nUsing custom config file: {}".format(config_to_load))
             else:
                 # No custom config file specified. Check for default
                 default_config = default_pipeline_config(sys.argv[0])
                 if os.path.isfile(default_config):
                     config_to_load = default_config
-                    print("Using default pipeline config file: {}".
+                    self.debug("Using default pipeline config file: {}".
                           format(config_to_load))
 
         # Finally load the config we found.
         if config_to_load is not None:
-            print("\nLoading config file: {}\n".format(config_to_load))
+            self.debug("\nLoading config file: {}\n".format(config_to_load))
             self.config = AttMapEcho(load_yaml(config_to_load))
         else:
-            print("No config file")
+            self.debug("No config file")
             self.config = None
 
-        logger_kwargs = logger_kwargs or {}
-        default_logname = ".".join([__name__, self.__class__.__name__, self.name])
-        if not args:
-            # strict is only for logger_via_cli.
-            kwds = {k: v for k, v in logger_kwargs.items() if k != "strict"}
-            try:
-                name = kwds.pop("name")
-            except KeyError:
-                name = default_logname
-            self._logger = logmuse.init_logger(name, **kwds)
-        else:
-            logger_kwargs.setdefault("name", default_logname)
-            try:
-                self._logger = logger_via_cli(args, **logger_kwargs)
-            except logmuse.est.AbsentOptionException:
-                self._logger = logmuse.init_logger("pypiper")
+
 
     @property
     def _completed(self):
@@ -400,7 +407,7 @@ class PipelineManager(object):
 
         interactive_mode = multi or not hasattr(__main__, "__file__")
         if interactive_mode:
-            print("Warning: You're running an interactive python session. "
+            self.warn("Warning: You're running an interactive python session. "
                   "This works, but pypiper cannot tee the output, so results "
                   "are only logged to screen.")
         else:
@@ -471,47 +478,47 @@ class PipelineManager(object):
         # Print out a header section in the pipeline log:
         # Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
         # print("----------------------------------------")
-        print("### [Pipeline run code and environment:]\n")
-        print("* " + "Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv)) + "`")
-        print("* " + "Compute host".rjust(20) + ":  " + platform.node())
-        print("* " + "Working dir".rjust(20) + ":  " + os.getcwd())
-        print("* " + "Outfolder".rjust(20) + ":  " + self.outfolder)
+        self.info("### [Pipeline run code and environment:]\n")
+        self.info("* " + "Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv)) + "`")
+        self.info("* " + "Compute host".rjust(20) + ":  " + platform.node())
+        self.info("* " + "Working dir".rjust(20) + ":  " + os.getcwd())
+        self.info("* " + "Outfolder".rjust(20) + ":  " + self.outfolder)
 
         self.timestamp("* " + "Pipeline started at".rjust(20) + ":  ")
 
-        print("\n### [Version log:]\n")
-        print("* " + "Python version".rjust(20) + ":  " + platform.python_version())
+        self.info("\n### [Version log:]\n")
+        self.info("* " + "Python version".rjust(20) + ":  " + platform.python_version())
         try:
-            print("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
-            print("* " + "Pypiper version".rjust(20) + ":  " + __version__)
-            print("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash']))
-            print("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch']))
-            print("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date']))
+            self.info("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
+            self.info("* " + "Pypiper version".rjust(20) + ":  " + __version__)
+            self.info("* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars['pypiper_hash']))
+            self.info("* " + "Pypiper branch".rjust(20) + ":  " + str(gitvars['pypiper_branch']))
+            self.info("* " + "Pypiper date".rjust(20) + ":  " + str(gitvars['pypiper_date']))
             if gitvars['pypiper_diff']:
-                print("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff']))
+                self.info("* " + "Pypiper diff".rjust(20) + ":  " + str(gitvars['pypiper_diff']))
         except KeyError:
             # It is ok if keys aren't set, it means pypiper isn't in a  git repo.
             pass
 
         try:
-            print("* " + "Pipeline dir".rjust(20) + ":  " + "`" + gitvars['pipe_dir'].strip() + "`")
-            print("* " + "Pipeline version".rjust(20) + ":  " + str(self.pl_version))
-            print("* " + "Pipeline hash".rjust(20) + ":  " + str(gitvars['pipe_hash']).strip())
-            print("* " + "Pipeline branch".rjust(20) + ":  " + str(gitvars['pipe_branch']).strip())
-            print("* " + "Pipeline date".rjust(20) + ":  " + str(gitvars['pipe_date']).strip())
+            self.info("* " + "Pipeline dir".rjust(20) + ":  " + "`" + gitvars['pipe_dir'].strip() + "`")
+            self.info("* " + "Pipeline version".rjust(20) + ":  " + str(self.pl_version))
+            self.info("* " + "Pipeline hash".rjust(20) + ":  " + str(gitvars['pipe_hash']).strip())
+            self.info("* " + "Pipeline branch".rjust(20) + ":  " + str(gitvars['pipe_branch']).strip())
+            self.info("* " + "Pipeline date".rjust(20) + ":  " + str(gitvars['pipe_date']).strip())
             if (gitvars['pipe_diff'] != ""):
-                print("* " + "Pipeline diff".rjust(20) + ":  " + str(gitvars['pipe_diff']).strip())
+                self.info("* " + "Pipeline diff".rjust(20) + ":  " + str(gitvars['pipe_diff']).strip())
         except KeyError:
             # It is ok if keys aren't set, it means the pipeline isn't a git repo.
             pass
 
-        # Print all arguments (if any)
-        print("\n### [Arguments passed to pipeline:]\n")
+        # self.info all arguments (if any)
+        self.info("\n### [Arguments passed to pipeline:]\n")
         for arg, val in (vars(args) if args else dict()).items():
             argtext = "`{}`".format(arg)
             valtext = "`{}`".format(val)
-            print("* {}:  {}".format(argtext.rjust(20), valtext))
-        print("\n----------------------------------------\n")
+            self.info("* {}:  {}".format(argtext.rjust(20), valtext))
+        self.info("\n----------------------------------------\n")
         self._set_status_flag(RUN_FLAG)
 
         # Record the start in PIPE_profile and PIPE_commands output files so we
@@ -540,14 +547,14 @@ class PipelineManager(object):
             # is unexpected; there's no flag for initialization, so we
             # can't remove the file.
             if self.status != "initializing":
-                print("Could not remove flag file: '{}'".format(flag_file_path))
+                self.debug("Could not remove flag file: '{}'".format(flag_file_path))
             pass
 
         # Set new status.
         prev_status = self.status
         self.status = status
         self._create_file(self._flag_file_path())
-        self._logger.info("\nChanged status from {} to {}.".format(
+        self.info("\nChanged status from {} to {}.".format(
                 prev_status, self.status))
 
     def _flag_file_path(self, status=None):
@@ -605,7 +612,7 @@ class PipelineManager(object):
         if not self._active:
             cmds = [cmd] if isinstance(cmd, str) else cmd
             cmds_text = [c if isinstance(c, str) else " ".join(c) for c in cmds]
-            print("Pipeline is inactive; skipping {} command(s):\n{}".
+            self.info("Pipeline is inactive; skipping {} command(s):\n{}".
                   format(len(cmds), "\n".join(cmds_text)))
             return 0
 
@@ -614,7 +621,7 @@ class PipelineManager(object):
         if self.curr_checkpoint is not None:
             check_fpath = checkpoint_filepath(self.curr_checkpoint, self)
             if os.path.isfile(check_fpath) and not self.overwrite_checkpoints:
-                print("Checkpoint file exists for '{}' ('{}'), and the {} has "
+                self.info("Checkpoint file exists for '{}' ('{}'), and the {} has "
                       "been configured to not overwrite checkpoints; "
                       "skipping command '{}'".format(
                     self.curr_checkpoint, check_fpath,
@@ -653,14 +660,14 @@ class PipelineManager(object):
             call_follow = lambda: None
         elif not hasattr(follow, "__call__"):
             # Warn about non-callable argument to follow-up function.
-            print("Follow-up function is not callable and won't be used: {}".
+            self.warn("Follow-up function is not callable and won't be used: {}".
                   format(type(follow)))
             call_follow = lambda: None
         else:
             # Wrap the follow-up function so that the log shows what's going on.
             # additionally, the in_follow attribute is set to enable proper command count handling
             def call_follow():
-                print("Follow:")
+                self.debug("Follow:")
                 self.in_follow = True
                 follow()
                 self.in_follow = False
@@ -688,9 +695,9 @@ class PipelineManager(object):
                     and not any([os.path.isfile(l) for l in lock_files]) \
                     and not local_newstart:
                 for tgt in target:
-                    if os.path.exists(tgt): print("Target exists: `" + tgt + "`")
+                    if os.path.exists(tgt): self.info("Target exists: `" + tgt + "`")
                 if self.new_start:
-                    print("New start mode; run anyway.")
+                    self.info("New start mode; run anyway.")
                     # Set the local_newstart flag so the command will run anyway.
                     # Doing this in here instead of outside the loop allows us
                     # to still report the target existence.
@@ -717,13 +724,13 @@ class PipelineManager(object):
                 for lock_file in lock_files:
                     recover_file = self._recoverfile_from_lockfile(lock_file)
                     if os.path.isfile(lock_file):
-                        print("Found lock file: {}".format(lock_file))
+                        self.info("Found lock file: {}".format(lock_file))
                         if self.overwrite_locks:
-                            print("Overwriting target. . .")
+                            self.info("Overwriting target...")
                             proceed_through_locks = True
                         elif os.path.isfile(recover_file):
-                            print("Found dynamic recovery file ({}); "
-                                  "overwriting target. . .".format(recover_file))
+                            self.info("Found dynamic recovery file ({}); "
+                                  "overwriting target...".format(recover_file))
                             # remove the lock file which will then be promptly re-created for the current run.
                             local_recover = True
                             proceed_through_locks = True
@@ -748,7 +755,7 @@ class PipelineManager(object):
                         self._create_file_racefree(lock_file)  # Create lock
                     except OSError as e:
                         if e.errno == errno.EEXIST:  # File already exists
-                            print ("Lock file created after test! Looping again: {}".format(
+                            self.info("Lock file created after test! Looping again: {}".format(
                                 lock_file))
 
                             # Since a lock file was created by a different source, 
@@ -760,9 +767,9 @@ class PipelineManager(object):
             # If you make it past these tests, we should proceed to run the process.
 
             if target is not None:
-                print("Target to produce: {}\n".format(",".join(['`'+x+'`' for x in target])))
+                self.info("Target to produce: {}\n".format(",".join(['`'+x+'`' for x in target])))
             else:
-                print("Targetless command, running...\n")
+                self.info("Targetless command, running...\n")
 
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
@@ -823,7 +830,7 @@ class PipelineManager(object):
 
         if not shell:
             if likely_shell:
-                print("Should this command run in a shell instead of directly in a subprocess?")
+                self.debug("Should this command run in a shell instead of directly in a subprocess?")
             cmd = shlex.split(cmd)
             
         try:
@@ -887,8 +894,8 @@ class PipelineManager(object):
                 # return in gigs
                 return mem_sum/1e9
             except (psutil.NoSuchProcess, psutil.ZombieProcess) as e:
-                print(e)
-                print("Warning: couldn't add memory use for process: {}".format(proc.pid))
+                self.warn(e)
+                self.warn("Warning: couldn't add memory use for process: {}".format(proc.pid))
                 return 0
 
         def display_memory(memval):
@@ -939,16 +946,16 @@ class PipelineManager(object):
         self._report_command(cmd, [x.pid for x in processes])
             # Capture the subprocess output in <pre> tags to make it format nicely
             # if the markdown log file is displayed as HTML.
-        print("<pre>")
+        self.info("<pre>")
 
         local_maxmems = [-1] * len(running_processes)
         returncodes = [None] * len(running_processes)
         proc_wrapup_text = [None] * len(running_processes)
 
         if not self.wait:
-            print("</pre>")
+            self.info("</pre>")
             ids = [x.pid for x in processes]
-            print ("Not waiting for subprocesses: " + str(ids))
+            self.debug("Not waiting for subprocesses: " + str(ids))
             return 0, -1
 
         def proc_wrapup(i):
@@ -1006,8 +1013,8 @@ class PipelineManager(object):
         for i in completed_processes:
             info += "\n  {}".format(self.completed_procs[processes[i].pid]["info"])
     
-        print("</pre>")
-        print(proc_message.format(info=info))
+        self.info("</pre>")
+        self.info(proc_message.format(info=info))
 
         for rc in returncodes:
             if rc != 0:
@@ -1063,7 +1070,7 @@ class PipelineManager(object):
             info += " Peak memory: (Process: " + str(round(local_maxmem, 3)) + "GB;"
             info += " Pipeline: " + str(round(self.peak_memory, 3)) + "GB)\n"
 
-        print(info + "\n")
+        self.info(info + "\n")
         if p.returncode != 0:
             raise Exception("Process returned nonzero result.")
         return [p.returncode, local_maxmem]
@@ -1083,7 +1090,7 @@ class PipelineManager(object):
         while os.path.isfile(lock_file):
             if first_message_flag is False:
                 self.timestamp("Waiting for file lock: " + lock_file)
-                print("This indicates that another process may be executing this "
+                self.warn("This indicates that another process may be executing this "
                     "command, or the pipeline was not properly shut down.  If the "
                     "pipeline was not properly shut down last time, "
                     "you should restart it in 'recover' mode (-R) to indicate that "
@@ -1094,7 +1101,7 @@ class PipelineManager(object):
                 sys.stdout.write(".")
                 dot_count = dot_count + 1
                 if dot_count % 60 == 0:
-                    print("")  # linefeed
+                    self.info("")  # linefeed
             # prevents the issue of pypiper waiting for the lock file to be gone infinitely
             # in case the recovery flag is sticked by other pipeline when it's interrupted
             if os.path.isfile(recover_file):
@@ -1199,7 +1206,7 @@ class PipelineManager(object):
                        stage=checkpoint, delta_t=elapsed)
         if re.match("^###", message):
             msg = "\n{}\n".format(msg)
-        print(msg)
+        self.info(msg)
         self.last_timestamp = time.time()
 
     @staticmethod
@@ -1250,7 +1257,7 @@ class PipelineManager(object):
         message_markdown = "\n> `{key}`\t{value}\t{annotation}\t_RES_".format(
             key=key, value=value, annotation=annotation)
 
-        print(message_markdown)
+        self.info(message_markdown)
 
         # Just to be extra careful, let's lock the file while we we write
         # in case multiple pipelines write to the same file.
@@ -1302,7 +1309,7 @@ class PipelineManager(object):
             key=key, filename=relative_filename, anchor_text=anchor_text, 
             anchor_image=relative_anchor_image,annotation=annotation)
 
-        print(message_markdown)
+        self.warn(message_markdown)
 
         self._safe_write_to_file(self.pipeline_objects_file, message_raw)
 
@@ -1323,7 +1330,7 @@ class PipelineManager(object):
                     self._create_file_racefree(lock_file)
                 except OSError as e:
                     if e.errno == errno.EEXIST:
-                        print ("Lock file created after test! Looping again.")
+                        self.warn("Lock file created after test! Looping again.")
                         continue  # Go back to start
 
                 # Proceed with file writing
@@ -1352,7 +1359,7 @@ class PipelineManager(object):
             line = "\n> `{cmd}`\n".format(cmd=str(cmd))
 
         # Print line to stdout
-        print(line)
+        self.info(line)
 
         # And also add to commands file
 
@@ -1469,7 +1476,7 @@ class PipelineManager(object):
                         # if so, shame on him, but we can just ignore it.
                         key, value, annotation  = line.split('\t')
                     except ValueError:
-                        print("WARNING: Each row in a stats file is expected to have 3 columns")
+                        self.warn("WARNING: Each row in a stats file is expected to have 3 columns")
 
                     if annotation.rstrip() == self.name or annotation.rstrip() == "shared":
                         self.stats_dict[key] = value.strip()
@@ -1494,7 +1501,7 @@ class PipelineManager(object):
             try:
                 return self.stats_dict[key]
             except KeyError:
-                print("Missing stat '{}'".format(key))
+                self.warn("Missing stat '{}'".format(key))
                 return None
 
     ###################################
@@ -1544,16 +1551,16 @@ class PipelineManager(object):
                 # be expected to characterize the extension of a file name/path.
                 base, ext = os.path.splitext(stage)
                 if ext and "." not in base:
-                    print("WARNING: '{}' looks like it may be the name or path of "
+                    self.warn("WARNING: '{}' looks like it may be the name or path of "
                           "a file; for such a checkpoint, use touch_checkpoint.".
                           format(stage))
         else:
             if not is_checkpoint:
-                print("Not a checkpoint: {}".format(stage))
+                self.warn("Not a checkpoint: {}".format(stage))
                 return False
             stage = stage.name
 
-        print("Checkpointing: '{}'".format(stage))
+        self.info("Checkpointing: '{}'".format(stage))
         if os.path.isabs(stage):
             check_fpath = stage
         else:
@@ -1591,7 +1598,7 @@ class PipelineManager(object):
         already_exists = os.path.isfile(fpath)
         open(fpath, 'w').close()
         action = "Updated" if already_exists else "Created"
-        print("{} checkpoint file: '{}'".format(action, fpath))
+        self.info("{} checkpoint file: '{}'".format(action, fpath))
 
         return already_exists
 
@@ -1616,12 +1623,12 @@ class PipelineManager(object):
             # flag this run as recoverable.
             if len(self.locks) < 1:
                 # If there is no process locked, then recovery will be automatic.
-                print("No locked process. Dynamic recovery will be automatic.")
+                self.info("No locked process. Dynamic recovery will be automatic.")
             # make a copy of self.locks to iterate over since we'll be clearing them as we go
             # set a recovery flag for each lock.
             for lock_file in self.locks[:]:
                 recover_file = self._recoverfile_from_lockfile(lock_file)
-                print("Setting dynamic recover file: {}".format(recover_file))
+                self.info("Setting dynamic recover file: {}".format(recover_file))
                 self._create_file(recover_file)
                 self.locks.remove(lock_file)
 
@@ -1632,8 +1639,8 @@ class PipelineManager(object):
         if not self._failed:  # and not self._completed:
             self.timestamp("### Pipeline failed at: ")
             total_time = datetime.timedelta(seconds=self.time_elapsed(self.starttime))
-            print("Total time: " + str(total_time))
-            print("Failure reason: " + str(e))
+            self.info("Total time: " + str(total_time))
+            self.info("Failure reason: " + str(e))
             self._set_status_flag(FAIL_FLAG)
 
         raise e
@@ -1686,12 +1693,12 @@ class PipelineManager(object):
         self.report_result("Time", str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
         self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
 
-        print("\n##### [Epilogue:]")
+        self.info("\n##### [Epilogue:]")
         # print("* " + "Total elapsed time".rjust(20) + ":  "
         #       + str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
-        print("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds=self.get_elapsed_time())))
+        self.info("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds=self.get_elapsed_time())))
         # print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-        print("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
+        self.info("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
         if self.halted:
             return
         self.timestamp("* Pipeline completed at: ".rjust(20))
@@ -1712,7 +1719,7 @@ class PipelineManager(object):
         """
         Function for handling both SIGTERM and SIGINT
         """
-        print("</pre>")
+        self.info("</pre>")
         message = "Got " + signal_type + ". Failing gracefully..."
         self.timestamp(message)
         self.fail_pipeline(KeyboardInterrupt(signal_type), dynamic_recover=True)
@@ -1757,7 +1764,7 @@ class PipelineManager(object):
         # as failed, then mark it as failed now.
 
         if not self._has_exit_status:
-            print("Pipeline status: {}".format(self.status))
+            self.debug("Pipeline status: {}".format(self.status))
             self.fail_pipeline(Exception("Pipeline failure. See details above."))
 
         if self.tee:
@@ -1835,7 +1842,7 @@ class PipelineManager(object):
 
         if still_running:
             # still running!?
-            print("Child process {child_pid}{proc_string} never responded"
+            self.warn("Child process {child_pid}{proc_string} never responded"
                 "I just can't take it anymore. I don't know what to do...".format(child_pid=child_pid,
                     proc_string=proc_string))
         else:
@@ -1846,7 +1853,7 @@ class PipelineManager(object):
 
             msg = "Child process {child_pid}{proc_string} {note}.".format(
                 child_pid=child_pid, proc_string=proc_string, note=note)
-            print(msg)
+            self.info(msg)
 
     @staticmethod
     def _atexit_register(*args):
@@ -1871,11 +1878,11 @@ class PipelineManager(object):
         cmd += " " + image
         container = self.checkprint(cmd).rstrip()
         self.container = container
-        print("Using docker container: " + container)
+        self.info("Using docker container: " + container)
         self._atexit_register(self.remove_container, container)
 
     def remove_container(self, container):
-        print("Removing docker container. . .")
+        self.info("Removing docker container. . .")
         cmd = "docker rm -f " + container
         self.callprint(cmd)
 
@@ -1911,7 +1918,7 @@ class PipelineManager(object):
         if manual:
             filenames = glob.glob(regex)
             if not filenames:
-                print("No files match cleanup pattern: {}".format(regex))
+                self.info("No files match cleanup pattern: {}".format(regex))
             for filename in filenames:
                 try:
                     with open(self.cleanup_file, "a") as myfile:
@@ -1931,9 +1938,9 @@ class PipelineManager(object):
                             # and the directory itself
                             myfile.write("rmdir " + relative_filename + "\n")
                         else:
-                            print("File not added to cleanup: {}".format(relative_filename))
+                            self.info("File not added to cleanup: {}".format(relative_filename))
                 except Exception as e:
-                    print("Error in clean_add on path {}: {}".format(filename, str(e)))
+                    self.error("Error in clean_add on path {}: {}".format(filename, str(e)))
         elif conditional:
             self.cleanup_list_conditional.append(regex)
         else:
@@ -1956,7 +1963,7 @@ class PipelineManager(object):
             script, but not actually delete the files.
         """
 
-        print("Starting cleanup: {} files; {} conditional files for cleanup".format(
+        self.info("Starting cleanup: {} files; {} conditional files for cleanup".format(
             len(self.cleanup_list),
             len(self.cleanup_list_conditional)))
 
@@ -1970,7 +1977,7 @@ class PipelineManager(object):
         if len(self.cleanup_list) > 0:
             self.info("\nCleaning up flagged intermediate files. . .")
             for expr in self.cleanup_list:
-                self.debug("\nRemoving glob: " + expr)
+                self.debug("Removing glob: " + expr)
                 try:
                     # Expand regular expression
                     files = glob.glob(expr)
@@ -2011,8 +2018,8 @@ class PipelineManager(object):
                     except:
                         pass
             else:
-                print("\nConditional flag found: " + str([os.path.basename(i) for i in flag_files]))
-                print("\nThese conditional files were left in place:\n\n- " +
+                self.info("\nConditional flag found: " + str([os.path.basename(i) for i in flag_files]))
+                self.info("\nThese conditional files were left in place:\n\n- " +
                       "\n- ".join(self.cleanup_list_conditional))
                 # Produce a cleanup script.
                 no_cleanup_script = []
@@ -2028,7 +2035,7 @@ class PipelineManager(object):
                     except Exception as e:
                         no_cleanup_script.append(cleandir)
                 if no_cleanup_script: 
-                    print('\n\nCould not produce cleanup script for item(s):\n\n- ' + '\n- '.join(no_cleanup_script))
+                    self.warn('\n\nCould not produce cleanup script for item(s):\n\n- ' + '\n- '.join(no_cleanup_script))
 
     def _memory_usage(self, pid='self', category="hwm", container=None):
         """
@@ -2086,9 +2093,9 @@ class PipelineManager(object):
         if not nofail:
             self.fail_pipeline(e)
         elif self._failed:
-            print("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
+            self.info("This is a nofail process, but the pipeline was terminated for other reasons, so we fail.")
             raise e
         else:
-            print(e)
-            print("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
+            self.error(e)
+            self.error("ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True")
         # TODO: return nonzero, or something. . .?

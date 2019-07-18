@@ -799,15 +799,19 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     else:
         from collections.abc import Iterable
 
+
+    from logmuse import LOGGING_CLI_OPTDATA
     # Define the argument groups.
     args_by_group = {
-        "pypiper": ["recover", "new-start", "dirty", "force-follow", "testmode"],
+        "pypiper": ["recover", "new-start", "dirty", "force-follow", "testmode"] +
+            LOGGING_CLI_OPTDATA.keys(),
         "config": ["config"],
         "checkpoint": ["stop-before", "stop-after"],
         "resource": ["mem", "cores"],
         "looper": ["config", "output-parent", "mem", "cores"],
         "common": ["input", "sample-name"],
-        "ngs": ["sample-name", "input", "input2", "genome", "single-or-paired"]
+        "ngs": ["sample-name", "input", "input2", "genome", "single-or-paired"],
+        "logmuse": LOGGING_CLI_OPTDATA.keys()
     }
 
     # Handle various types of group specifications.
@@ -929,6 +933,9 @@ def _add_args(parser, args, required):
             ("-Q", {"default": "single",
                     "help": "Single- or paired-end sequencing protocol"})
     }
+    
+    from logmuse import LOGGING_CLI_OPTDATA
+    argument_data.update(LOGGING_CLI_OPTDATA)
 
     if len(required) > 0:
         required_named = parser.add_argument_group('required named arguments')
