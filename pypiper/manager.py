@@ -407,7 +407,7 @@ class PipelineManager(object):
 
         interactive_mode = multi or not hasattr(__main__, "__file__")
         if interactive_mode:
-            self.warn("Warning: You're running an interactive python session. "
+            self.warning("Warning: You're running an interactive python session. "
                   "This works, but pypiper cannot tee the output, so results "
                   "are only logged to screen.")
         else:
@@ -660,7 +660,7 @@ class PipelineManager(object):
             call_follow = lambda: None
         elif not hasattr(follow, "__call__"):
             # Warn about non-callable argument to follow-up function.
-            self.warn("Follow-up function is not callable and won't be used: {}".
+            self.warning("Follow-up function is not callable and won't be used: {}".
                   format(type(follow)))
             call_follow = lambda: None
         else:
@@ -894,8 +894,8 @@ class PipelineManager(object):
                 # return in gigs
                 return mem_sum/1e9
             except (psutil.NoSuchProcess, psutil.ZombieProcess) as e:
-                self.warn(e)
-                self.warn("Warning: couldn't add memory use for process: {}".format(proc.pid))
+                self.warning(e)
+                self.warning("Warning: couldn't add memory use for process: {}".format(proc.pid))
                 return 0
 
         def display_memory(memval):
@@ -1090,7 +1090,7 @@ class PipelineManager(object):
         while os.path.isfile(lock_file):
             if first_message_flag is False:
                 self.timestamp("Waiting for file lock: " + lock_file)
-                self.warn("This indicates that another process may be executing this "
+                self.warning("This indicates that another process may be executing this "
                     "command, or the pipeline was not properly shut down.  If the "
                     "pipeline was not properly shut down last time, "
                     "you should restart it in 'recover' mode (-R) to indicate that "
@@ -1309,7 +1309,7 @@ class PipelineManager(object):
             key=key, filename=relative_filename, anchor_text=anchor_text, 
             anchor_image=relative_anchor_image,annotation=annotation)
 
-        self.warn(message_markdown)
+        self.warning(message_markdown)
 
         self._safe_write_to_file(self.pipeline_objects_file, message_raw)
 
@@ -1330,7 +1330,7 @@ class PipelineManager(object):
                     self._create_file_racefree(lock_file)
                 except OSError as e:
                     if e.errno == errno.EEXIST:
-                        self.warn("Lock file created after test! Looping again.")
+                        self.warning("Lock file created after test! Looping again.")
                         continue  # Go back to start
 
                 # Proceed with file writing
@@ -1476,7 +1476,7 @@ class PipelineManager(object):
                         # if so, shame on him, but we can just ignore it.
                         key, value, annotation  = line.split('\t')
                     except ValueError:
-                        self.warn("WARNING: Each row in a stats file is expected to have 3 columns")
+                        self.warning("WARNING: Each row in a stats file is expected to have 3 columns")
 
                     if annotation.rstrip() == self.name or annotation.rstrip() == "shared":
                         self.stats_dict[key] = value.strip()
@@ -1501,7 +1501,7 @@ class PipelineManager(object):
             try:
                 return self.stats_dict[key]
             except KeyError:
-                self.warn("Missing stat '{}'".format(key))
+                self.warning("Missing stat '{}'".format(key))
                 return None
 
     ###################################
@@ -1551,12 +1551,12 @@ class PipelineManager(object):
                 # be expected to characterize the extension of a file name/path.
                 base, ext = os.path.splitext(stage)
                 if ext and "." not in base:
-                    self.warn("WARNING: '{}' looks like it may be the name or path of "
+                    self.warning("WARNING: '{}' looks like it may be the name or path of "
                           "a file; for such a checkpoint, use touch_checkpoint.".
                           format(stage))
         else:
             if not is_checkpoint:
-                self.warn("Not a checkpoint: {}".format(stage))
+                self.warning("Not a checkpoint: {}".format(stage))
                 return False
             stage = stage.name
 
@@ -1842,7 +1842,7 @@ class PipelineManager(object):
 
         if still_running:
             # still running!?
-            self.warn("Child process {child_pid}{proc_string} never responded"
+            self.warning("Child process {child_pid}{proc_string} never responded"
                 "I just can't take it anymore. I don't know what to do...".format(child_pid=child_pid,
                     proc_string=proc_string))
         else:
@@ -2035,7 +2035,7 @@ class PipelineManager(object):
                     except Exception as e:
                         no_cleanup_script.append(cleandir)
                 if no_cleanup_script: 
-                    self.warn('\n\nCould not produce cleanup script for item(s):\n\n- ' + '\n- '.join(no_cleanup_script))
+                    self.warning('\n\nCould not produce cleanup script for item(s):\n\n- ' + '\n- '.join(no_cleanup_script))
 
     def _memory_usage(self, pid='self', category="hwm", container=None):
         """
