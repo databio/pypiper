@@ -647,6 +647,12 @@ class NGSTk(AttMapEcho):
         cmd += " VALIDATION_STRINGENCY=SILENT"
         if tmp_dir:
             cmd += " TMP_DIR=" + tmp_dir
+    
+    
+    def merge_bams_samtools(self, input_bams, merged_bam):
+        cmd = self.tools.samtools + " merge " 
+        cmd += merged_bam + " " 
+        cmd += " ".join(input_bams)
         return cmd
 
     
