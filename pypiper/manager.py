@@ -930,10 +930,10 @@ class PipelineManager(object):
         for i in range(len(param_list)):
             running_processes.append(i)
             if i == 0:
-                processes.append(psutil.Popen(preexec_fn=os.setpgrp, **param_list[i]))
+                processes.append(psutil.Popen(preexec_fn=os.setsid, **param_list[i]))
             else:
                 param_list[i]["stdin"] = processes[i - 1].stdout
-                processes.append(psutil.Popen(preexec_fn=os.setpgrp, **param_list[i]))
+                processes.append(psutil.Popen(preexec_fn=os.setsid, **param_list[i]))
             self.running_procs[processes[-1].pid] = {
                 "proc_name": get_proc_name(param_list[i]["args"]),
                 "start_time": start_time,
@@ -991,9 +991,11 @@ class PipelineManager(object):
         sleeptime = .0001
         
         while running_processes:
+            self.debug("running")
             for i in running_processes:
                 local_maxmems[i] = max(local_maxmems[i], (get_mem_child_sum(processes[i])))
                 self.peak_memory = max(self.peak_memory, local_maxmems[i])
+                self.debug(processes[i])
                 if not self._attend_process(processes[i], sleeptime):
                     proc_wrapup_text[i] = proc_wrapup(i)
 

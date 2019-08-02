@@ -1,15 +1,18 @@
 # Changelog
 
-## [0.12.0] -- unreleased
+## [0.12.0] -- 2019-08-02
+
 ### Added
 - Use profile to determine total elapsed time
 - `logging` functions directly on `PipelineManager`
 - Re-export `add_logging_options` from `logmuse`, for direct use by a pipeline author.
 - `logger_via_cli` that defaults to the `strict=False` behavior of the same-named function from `logmuse`
+- Use logging for pypiper-generated output.
+
 ### Fixed
 - Fix childless processes memory monitoring issue
 - Fix problems with runtime reading from pipeline profile TSV formatted according to two styles
-
+- Fix problems running containerized executables that would sometimes hang
  
 ## [0.11.3] -- 2019-06-17
 ### Fixed
