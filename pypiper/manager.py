@@ -695,9 +695,9 @@ class PipelineManager(object):
                     and not any([os.path.isfile(l) for l in lock_files]) \
                     and not local_newstart:
                 for tgt in target:
-                    if os.path.exists(tgt): self.info("Target exists: `" + tgt + "`")
+                    if os.path.exists(tgt): self.info("Target exists: `" + tgt + "`  ")
                 if self.new_start:
-                    self.info("New start mode; run anyway.")
+                    self.info("New start mode; run anyway.  ")
                     # Set the local_newstart flag so the command will run anyway.
                     # Doing this in here instead of outside the loop allows us
                     # to still report the target existence.
@@ -712,11 +712,11 @@ class PipelineManager(object):
                     for c in cmd:
                         count = len(parse_cmd(c, shell))
                         self.proc_count += count
-                        # print(increment_info_pattern.format(str(c), count, self.proc_count))
+                        self.debug(increment_info_pattern.format(str(c), count, self.proc_count))
                 else:
                     count = len(parse_cmd(cmd, shell))
                     self.proc_count += count
-                    # print(increment_info_pattern.format(str(cmd), count, self.proc_count))
+                    self.debug(increment_info_pattern.format(str(cmd), count, self.proc_count))
                 break  # Do not run command
 
             # Scenario 1: Lock file exists, but we're supposed to overwrite target; Run process.
@@ -767,9 +767,9 @@ class PipelineManager(object):
             # If you make it past these tests, we should proceed to run the process.
 
             if target is not None:
-                self.info("Target to produce: {}\n".format(",".join(['`'+x+'`' for x in target])))
+                self.info("Target to produce: {}  ".format(",".join(['`'+x+'`' for x in target])))
             else:
-                self.info("Targetless command, running...\n")
+                self.info("Targetless command, running...  ")
 
             if isinstance(cmd, list):  # Handle command lists
                 for cmd_i in cmd:
@@ -1013,8 +1013,10 @@ class PipelineManager(object):
             # info += " {}".format(proc_wrapup_text[0])
 
         for i in completed_processes:
-            info += "\n  {}".format(self.completed_procs[processes[i].pid]["info"])
+            info += "  \n  {}".format(self.completed_procs[processes[i].pid]["info"])
     
+        
+        info += "\n"  ## finish out the 
         self.info("</pre>")
         self.info(proc_message.format(info=info))
 
@@ -1356,9 +1358,9 @@ class PipelineManager(object):
         if isinstance(procs, list):
             procs = ",".join(map(str, procs))
         if procs:
-            line = "\n> `{cmd}` ({procs})\n".format(cmd=str(cmd), procs=procs)
+            line = "\n> `{cmd}` ({procs})".format(cmd=str(cmd), procs=procs)
         else:
-            line = "\n> `{cmd}`\n".format(cmd=str(cmd))
+            line = "\n> `{cmd}`".format(cmd=str(cmd))
 
         # Print line to stdout
         self.info(line)
