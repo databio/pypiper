@@ -653,7 +653,7 @@ class NGSTk(AttMapEcho):
     
     
     def merge_bams_samtools(self, input_bams, merged_bam):
-        cmd = self.tools.samtools + " merge " 
+        cmd = self.tools.samtools + " merge -f " 
         cmd += " -@ " + str(self.pm.cores)
         cmd += " " + merged_bam + " " 
         cmd += " ".join(input_bams)
