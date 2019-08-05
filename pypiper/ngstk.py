@@ -354,7 +354,7 @@ class NGSTk(AttMapEcho):
                 if all([self.get_input_ext(x) == ".bam" for x in input_args]):
                     sample_merged = local_base + ".merged.bam"
                     output_merge = os.path.join(raw_folder, sample_merged)
-                    cmd = self.merge_bams(input_args, output_merge)
+                    cmd = self.merge_bams_samtools(input_args, output_merge)
                     self.pm.debug("cmd: {}".format(cmd))
                     self.pm.run(cmd, output_merge)
                     cmd2 = self.validate_bam(output_merge)
@@ -654,7 +654,8 @@ class NGSTk(AttMapEcho):
     
     def merge_bams_samtools(self, input_bams, merged_bam):
         cmd = self.tools.samtools + " merge " 
-        cmd += merged_bam + " " 
+        cmd += " -@ " + str(self.pm.cores)
+        cmd += " " + merged_bam + " " 
         cmd += " ".join(input_bams)
         return cmd
 
