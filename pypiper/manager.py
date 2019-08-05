@@ -649,6 +649,7 @@ class PipelineManager(object):
         
         # Default lock_name (if not provided) is based on the target file name,
         # but placed in the parent pipeline outfolder
+        self.debug("Lock_name {}; target '{}', outfolder '{}'".format(lock_name, target, self.outfolder))
         lock_name = lock_name or make_lock_name(target, self.outfolder)
         lock_files = [self._make_lock_path(ln) for ln in lock_name]
 

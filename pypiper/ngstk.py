@@ -447,7 +447,10 @@ class NGSTk(AttMapEcho):
                 #cmd = self.bam_to_fastq(input_file, fastq_prefix, paired_end)
                 cmd, fq1, fq2 = self.bam_to_fastq_awk(input_file, fastq_prefix, paired_end, zipmode)
                 # pm.run(cmd, output_file, follow=check_fastq)
-                output_file = [fq1, fq2]
+                if fq2:
+                    output_file = [fq1, fq2]
+                else:
+                    output_file = fq1
             elif input_ext == ".fastq.gz":
                 print("Found .fastq.gz file")
                 if paired_end and not multiclass:

@@ -618,11 +618,16 @@ def make_lock_name(original_path, path_base_folder):
         path to lock file
     """
     def make_name(p):
-        return p.replace(path_base_folder, "").replace(os.sep, "__")
+        if p:
+            return p.replace(path_base_folder, "").replace(os.sep, "__")
+        else:
+            return None
+
     if isinstance(original_path, str):
         return make_name(original_path)
     elif isinstance(original_path, Sequence):
-        return [make_name(p) for p in original_path]
+        result = [make_name(p) for p in original_path]
+        return [x for x in result if x]
     raise TypeError("Neither string nor other sequence type: {} ({})".
                     format(original_path, type(original_path)))
 
