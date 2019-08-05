@@ -355,6 +355,7 @@ class NGSTk(AttMapEcho):
                     sample_merged = local_base + ".merged.bam"
                     output_merge = os.path.join(raw_folder, sample_merged)
                     cmd = self.merge_bams(input_args, output_merge)
+                    self.pm.debug("cmd: {}".format(cmd))
                     self.pm.run(cmd, output_merge)
                     cmd2 = self.validate_bam(output_merge)
                     self.pm.run(cmd, output_merge, nofail=True)
@@ -647,6 +648,8 @@ class NGSTk(AttMapEcho):
         cmd += " VALIDATION_STRINGENCY=SILENT"
         if tmp_dir:
             cmd += " TMP_DIR=" + tmp_dir
+
+        return cmd
     
     
     def merge_bams_samtools(self, input_bams, merged_bam):
