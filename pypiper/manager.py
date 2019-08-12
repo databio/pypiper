@@ -478,7 +478,7 @@ class PipelineManager(object):
         # Print out a header section in the pipeline log:
         # Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
         # print("----------------------------------------")
-        self.info("### [Pipeline run code and environment:]\n")
+        self.info("### Pipeline run code and environment:\n")
         self.info("* " + "Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv)) + "`")
         self.info("* " + "Compute host".rjust(20) + ":  " + platform.node())
         self.info("* " + "Working dir".rjust(20) + ":  " + os.getcwd())
@@ -486,7 +486,7 @@ class PipelineManager(object):
 
         self.timestamp("* " + "Pipeline started at".rjust(20) + ":  ")
 
-        self.info("\n### [Version log:]\n")
+        self.info("\n### Version log:\n")
         self.info("* " + "Python version".rjust(20) + ":  " + platform.python_version())
         try:
             self.info("* " + "Pypiper dir".rjust(20) + ":  " + "`" + gitvars['pypiper_dir'].strip() + "`")
@@ -513,7 +513,7 @@ class PipelineManager(object):
             pass
 
         # self.info all arguments (if any)
-        self.info("\n### [Arguments passed to pipeline:]\n")
+        self.info("\n### Arguments passed to pipeline:\n")
         for arg, val in (vars(args) if args else dict()).items():
             argtext = "`{}`".format(arg)
             valtext = "`{}`".format(val)
@@ -554,7 +554,7 @@ class PipelineManager(object):
         prev_status = self.status
         self.status = status
         self._create_file(self._flag_file_path())
-        self.info("\nChanged status from {} to {}.".format(
+        self.debug("\nChanged status from {} to {}.".format(
                 prev_status, self.status))
 
     def _flag_file_path(self, status=None):
@@ -1238,15 +1238,18 @@ class PipelineManager(object):
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
 
-    def report_result(self, key, value, annotation=None):
+    def report_result(self, key, value, annotation=None, nolog=False):
         """
         Writes a string to self.pipeline_stats_file.
         
         :param str key: name (key) of the stat
-        :param str annotation: By default, the stats will be annotated with the pipeline
-            name, so you can tell which pipeline records which stats. If you want, you can
-            change this; use annotation='shared' if you need the stat to be used by
-            another pipeline (using get_stat()).
+        :param str annotation: By default, the stats will be annotated with the
+            pipeline name, so you can tell which pipeline records which stats.
+            If you want, you can change this; use annotation='shared' if you
+            need the stat to be used by another pipeline (using get_stat()).
+        :param nolog bool: Turn on this flag to NOT print this result in the
+            logfile. Use sparingly in case you will be printing the result in a
+            different format.
         """
         # Default annotation is current pipeline name.
         annotation = str(annotation or self.name)
@@ -1262,7 +1265,8 @@ class PipelineManager(object):
         message_markdown = "\n> `{key}`\t{value}\t{annotation}\t_RES_".format(
             key=key, value=value, annotation=annotation)
 
-        self.info(message_markdown)
+        if not nolog:
+            self.info(message_markdown)
 
         # Just to be extra careful, let's lock the file while we we write
         # in case multiple pipelines write to the same file.
@@ -1271,18 +1275,20 @@ class PipelineManager(object):
     def report_object(self, key, filename, anchor_text=None, anchor_image=None,
        annotation=None):
         """
-        Writes a string to self.pipeline_objects_file. Used to report figures and others.
+        Writes a string to self.pipeline_objects_file. Used to report figures
+        and others.
 
         :param str key: name (key) of the object
-        :param str filename: relative path to the file (relative to parent output dir)
+        :param str filename: relative path to the file (relative to parent
+            output dir)
         :param str anchor_text: text used as the link anchor test or caption to
             refer to the object. If not provided, defaults to the key.
-        :param str anchor_image: a path to an HTML-displayable image thumbnail (so,
-            .png or .jpg, for example). If a path, the path should be relative
-            to the parent output dir.
-        :param str annotation: By default, the figures will be annotated with the
-            pipeline name, so you can tell which pipeline records which figures.
-            If you want, you can change this.
+        :param str anchor_image: a path to an HTML-displayable image thumbnail
+            (so, .png or .jpg, for example). If a path, the path should be
+            relative to the parent output dir.
+        :param str annotation: By default, the figures will be annotated with
+            the pipeline name, so you can tell which pipeline records which
+            figures. If you want, you can change this.
         """
 
         # Default annotation is current pipeline name.
@@ -1667,8 +1673,9 @@ class PipelineManager(object):
 
     def get_elapsed_time(self):
         """
-        Parse the pipeline profile file, collect the unique and last duplicated runtimes and sum them up. In case the
-        profile is not found, an estimate is calculated (which is correct only in case the pipeline was not rerun)
+        Parse the pipeline profile file, collect the unique and last duplicated
+        runtimes and sum them up. In case the profile is not found, an estimate
+        is calculated (which is correct only in case the pipeline was not rerun)
 
         :return int: sum of runtimes in seconds
         """
@@ -1695,27 +1702,42 @@ class PipelineManager(object):
         """
         self._set_status_flag(status)
         self._cleanup()
-        self.report_result("Time", str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
-        self.report_result("Success", time.strftime("%m-%d-%H:%M:%S"))
+        elapsed_time_this_run = str(datetime.timedelta(seconds=self.time_elapsed(self.starttime)))
+        self.report_result("Time",
+            elapsed_time_this_run,
+            nolog=True)
+        self.report_result("Success",
+            time.strftime("%m-%d-%H:%M:%S"),
+            nolog=True)
 
-        self.info("\n##### [Epilogue:]")
+        self.info("\n### Pipeline completed. Epilogue")
         # print("* " + "Total elapsed time".rjust(20) + ":  "
         #       + str(datetime.timedelta(seconds=self.time_elapsed(self.starttime))))
-        self.info("* " + "Total elapsed time".rjust(20) + ":  " + str(datetime.timedelta(seconds=self.get_elapsed_time())))
-        # print("Peak memory used: " + str(memory_usage()["peak"]) + "kb")
-        self.info("* " + "Peak memory used".rjust(20) + ":  " + str(round(self.peak_memory, 2)) + " GB")
+        self.info("* " + "Elapsed time (this run)".rjust(30) + ":  " + 
+            elapsed_time_this_run)
+        self.info("* " + "Total elapsed time (all runs)".rjust(30) + ":  " + 
+            str(datetime.timedelta(seconds=self.get_elapsed_time())))
+        self.info("* " + "Peak memory (this run)".rjust(30) + ":  " + 
+            str(round(self.peak_memory, 2)) + " GB")
+        # self.info("* " + "Total peak memory (all runs)".rjust(30) + ":  " + 
+        #     str(round(self.peak_memory, 2)) + " GB")        
         if self.halted:
             return
-        self.timestamp("* Pipeline completed at: ".rjust(20))
+
+        t = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.info("* " + "Pipeline completed time".rjust(30) + ": " + t)
 
     def _signal_term_handler(self, signal, frame):
         """
-        TERM signal handler function: this function is run if the process receives a termination signal (TERM).
-        This may be invoked, for example, by SLURM if the job exceeds its memory or time limits.
-        It will simply record a message in the log file, stating that the process was terminated, and then
-        gracefully fail the pipeline. This is necessary to 1. set the status flag and 2. provide a meaningful
-        error message in the tee'd output; if you do not handle this, then the tee process will be terminated
-        before the TERM error message, leading to a confusing log file.
+        TERM signal handler function: this function is run if the process
+        receives a termination signal (TERM). This may be invoked, for example,
+        by SLURM if the job exceeds its memory or time limits. It will simply
+        record a message in the log file, stating that the process was
+        terminated, and then gracefully fail the pipeline. This is necessary to
+        1. set the status flag and 2. provide a meaningful error message in the
+        tee'd output; if you do not handle this, then the tee process will be
+        terminated before the TERM error message, leading to a confusing log
+        file.
         """
         signal_type = "SIGTERM"
         self._generic_signal_handler(signal_type)
