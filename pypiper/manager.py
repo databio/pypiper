@@ -910,7 +910,8 @@ class PipelineManager(object):
             """
             try:
                 hsh = md5(str(o).encode("utf-8")).hexdigest()[:10]
-            except:
+            except Exception as e:
+                self.debug("Could not create hash for '{}', caught exception: {}".format(str(o), e.__class__.__name__))
                 hsh = None
             return hsh
 
@@ -922,8 +923,9 @@ class PipelineManager(object):
             return 0, 0
 
         param_list = parse_cmd(cmd, shell)
-        proc_name = get_proc_name(cmd)
-
+        # cast all commands to str and concatenate for hashing
+        conc_cmd = "".join([str(x["args"]) for x in param_list])
+        self.debug("Hashed command '{}': {}".format(conc_cmd, make_hash(conc_cmd)))
         processes = []
         running_processes = []
         completed_processes = []
@@ -940,13 +942,13 @@ class PipelineManager(object):
                 "start_time": start_time,
                 "container": container,
                 "p": processes[-1],
-                "args_hash": make_hash(param_list[i]["args"]),
+                "args_hash": make_hash(conc_cmd),
                 "local_proc_id": self.process_counter()
             }
 
         self._report_command(cmd, [x.pid for x in processes])
-            # Capture the subprocess output in <pre> tags to make it format nicely
-            # if the markdown log file is displayed as HTML.
+        # Capture the subprocess output in <pre> tags to make it format nicely
+        # if the markdown log file is displayed as HTML.
         self.info("<pre>")
 
         local_maxmems = [-1] * len(running_processes)
@@ -1015,9 +1017,8 @@ class PipelineManager(object):
 
         for i in completed_processes:
             info += "  \n  {}".format(self.completed_procs[processes[i].pid]["info"])
-    
-        
-        info += "\n"  ## finish out the 
+
+        info += "\n"  # finish out the
         self.info("</pre>")
         self.info(proc_message.format(info=info))
 
@@ -1231,8 +1232,8 @@ class PipelineManager(object):
         message_raw = str(pid) + "\t" + \
             str(args_hash) + "\t" + \
             str(proc_count) + "\t" + \
-            str(datetime.timedelta(seconds = round(elapsed_time, 2))) + "\t " + \
-            str(round(memory, 4))  + "\t" + \
+            str(datetime.timedelta(seconds=round(elapsed_time, 2))) + "\t " + \
+            str(round(memory, 4)) + "\t" + \
             str(command) + "\t" + \
             str(rel_lock_name)
         with open(self.pipeline_profile_file, "a") as myfile:
@@ -1247,7 +1248,7 @@ class PipelineManager(object):
             pipeline name, so you can tell which pipeline records which stats.
             If you want, you can change this; use annotation='shared' if you
             need the stat to be used by another pipeline (using get_stat()).
-        :param nolog bool: Turn on this flag to NOT print this result in the
+        :param bool nolog: Turn on this flag to NOT print this result in the
             logfile. Use sparingly in case you will be printing the result in a
             different format.
         """
@@ -1272,8 +1273,7 @@ class PipelineManager(object):
         # in case multiple pipelines write to the same file.
         self._safe_write_to_file(self.pipeline_stats_file, message_raw)
 
-    def report_object(self, key, filename, anchor_text=None, anchor_image=None,
-       annotation=None):
+    def report_object(self, key, filename, anchor_text=None, anchor_image=None, annotation=None):
         """
         Writes a string to self.pipeline_objects_file. Used to report figures
         and others.
@@ -1318,7 +1318,7 @@ class PipelineManager(object):
 
         message_markdown = "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}\t_OBJ_".format(
             key=key, filename=relative_filename, anchor_text=anchor_text, 
-            anchor_image=relative_anchor_image,annotation=annotation)
+            anchor_image=relative_anchor_image, annotation=annotation)
 
         self.warning(message_markdown)
 
