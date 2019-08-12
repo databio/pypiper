@@ -1716,7 +1716,7 @@ class PipelineManager(object):
         self.info("* " + "Elapsed time (this run)".rjust(30) + ":  " + 
             elapsed_time_this_run)
         self.info("* " + "Total elapsed time (all runs)".rjust(30) + ":  " + 
-            str(datetime.timedelta(seconds=self.get_elapsed_time())))
+            str(datetime.timedelta(seconds=round(self.get_elapsed_time()))))
         self.info("* " + "Peak memory (this run)".rjust(30) + ":  " + 
             str(round(self.peak_memory, 2)) + " GB")
         # self.info("* " + "Total peak memory (all runs)".rjust(30) + ":  " + 
