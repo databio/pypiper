@@ -1968,18 +1968,24 @@ class PipelineManager(object):
             script, but not actually delete the files.
         """
 
-        self.info("Starting cleanup: {} files; {} conditional files for cleanup".format(
-            len(self.cleanup_list),
-            len(self.cleanup_list_conditional)))
+        n_to_clean = len(self.cleanup_list)
+        n_to_clean_cond = len(self.cleanup_list_conditional)
+
+        if n_to_clean + n_to_clean_cond > 0:
+            self.info("Starting cleanup: {} files; {} conditional files for cleanup".format(
+                n_to_clean,
+                n_to_clean_cond))
+        else:
+            self.debug("No files to clean.")
 
         if dry_run:
             # Move all unconditional cleans into the conditional list
-            if len(self.cleanup_list) > 0:
+            if n_to_clean > 0:
                 combined_list = self.cleanup_list_conditional + self.cleanup_list
                 self.cleanup_list_conditional = combined_list
                 self.cleanup_list = []
 
-        if len(self.cleanup_list) > 0:
+        if n_to_clean > 0:
             self.info("\nCleaning up flagged intermediate files. . .")
             for expr in self.cleanup_list:
                 self.debug("Removing glob: " + expr)
@@ -2000,7 +2006,7 @@ class PipelineManager(object):
                 except:
                     pass
 
-        if len(self.cleanup_list_conditional) > 0:
+        if n_to_clean_cond > 0:
             run_flag = flag_name(RUN_FLAG)
             flag_files = [fn for fn in glob.glob(self.outfolder + flag_name("*"))
                           if COMPLETE_FLAG not in os.path.basename(fn)
