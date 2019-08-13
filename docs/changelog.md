@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.12.0] -- 2019-08-02
+## [0.12.0] -- unreleased
 
 ### Added
 - Use profile to determine total elapsed time
@@ -13,6 +13,10 @@
 - Fix childless processes memory monitoring issue
 - Fix problems with runtime reading from pipeline profile TSV formatted according to two styles
 - Fix problems running containerized executables that would sometimes hang
+- Fix inaccurate elapsed time accumulation 
+
+### Changed
+- The hashes in the pipeline profile are produced from the entire original command, even if it is a pipe  
  
 ## [0.11.3] -- 2019-06-17
 ### Fixed
