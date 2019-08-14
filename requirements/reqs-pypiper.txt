@@ -1,3 +1,6 @@
 attmap>=0.12.5
-pyyaml>=5
+logmuse>=0.2.1
 psutil
+pandas
+ubiquerg>=0.4.5
+yacman

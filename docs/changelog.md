@@ -1,19 +1,34 @@
 # Changelog
 
+## [0.12.0] -- unreleased
+
+### Added
+- Use profile to determine total elapsed time
+- `logging` functions directly on `PipelineManager`
+- Re-export `add_logging_options` from `logmuse`, for direct use by a pipeline author.
+- `logger_via_cli` that defaults to the `strict=False` behavior of the same-named function from `logmuse`
+- Use logging for pypiper-generated output.
+
+### Fixed
+- Fix childless processes memory monitoring issue
+- Fix problems with runtime reading from pipeline profile TSV formatted according to two styles
+- Fix problems running containerized executables that would sometimes hang
+- Fix inaccurate elapsed time accumulation 
+
+### Changed
+- The hashes in the pipeline profile are produced from the entire original command, even if it is a pipe  
+ 
 ## [0.11.3] -- 2019-06-17
 ### Fixed
 - Fixed a bug that caused an OSError removing lock files for some filesystems.
-
 
 ## [0.11.2] -- 2019-06-06
 ### Fixed
 - Elevate `attmap` depdendency bound to require inclusion of improved path expansion behavior.
 
-
 ## [0.11.1] -- 2019-05-30
 ### Fixed
 - Elevate `attmap` dependency bound to require inclusion of a bugfix there.
-
 
 ## [0.11.0] -- 2019-05-13
 - Improve python3 handling of integers and strings
@@ -24,7 +39,6 @@
 - Fixed a bug that would have split a pipe within a braced command
 - Some performance improvements for ngstk functions
 - Allow `ngstk.input_to_fastq` to yield gzipped fastq files
-
 
 ## [0.10.0] -- 2019-03-22
 - Fixed a bug that raised exception with empty commands

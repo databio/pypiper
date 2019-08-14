@@ -1,5 +1,6 @@
 """ Shared utilities """
 
+from collections import Iterable, Mapping, Sequence
 import os
 import sys
 import re
@@ -8,12 +9,12 @@ from shlex import split
 
 if sys.version_info < (3, ):
     CHECK_TEXT_TYPES = (str, unicode)
+    from inspect import getargspec as get_fun_sig
 else:
     CHECK_TEXT_TYPES = (str, )
-if sys.version_info < (3, 3):
-    from collections import Iterable, Sequence
-else:
-    from collections.abc import Iterable, Sequence
+    from inspect import getfullargspec as get_fun_sig
+
+from ubiquerg import expandpath, is_command_callable
 
 from .const import \
     CHECKPOINT_EXTENSION, PIPELINE_CHECKPOINT_DELIMITER, \
@@ -28,7 +29,8 @@ __email__ = "vreuter@virginia.edu"
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
 # packages, and import from utils within pypiper for other functions.
-__all__ = ["add_pypiper_args", "build_command", "get_first_value", "head"]
+__all__ = ["add_pypiper_args", "build_command", "check_all_commands",
+           "determine_uncallable", "get_first_value", "head", "logger_via_cli"]
 
 
 CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
@@ -222,6 +224,95 @@ def check_shell_asterisk(cmd):
     """
     return r"*" in cmd
 
+
+def check_all_commands(
+        cmds,
+        get_bad_result=lambda bads: Exception("{} uncallable commands: {}".format(len(bads), bads)),
+        handle=None):
+    """
+    Determine whether all commands are callable
+
+    :param Iterable[str] | str cmds: collection of commands to check for
+        callability
+    :param function(Iterable[(str, str)]) -> object get_bad_result: how to
+        create result when at least one command is uncallable
+    :param function(object) -> object handle: how to handle with result of
+        failed check
+    :return bool: whether all commands given appear callable
+    :raise TypeError: if error handler is provided but isn't callable or
+        isn't a single-argument function
+    """
+    bads = determine_uncallable(cmds)
+    if not bads:
+        return True
+    if handle is None:
+        def handle(res):
+            if isinstance(res, Exception):
+                raise res
+            print("Command check result: {}".format(res))
+    elif not hasattr(handle, "__call__") or not 1 == len(get_fun_sig(handle).args):
+        raise TypeError("Command check error handler must be a one-arg function")
+    handle(get_bad_result(bads))
+    return False
+
+
+def determine_uncallable(
+        commands, transformations=(
+                (lambda f: isinstance(f, str) and
+                           os.path.isfile(expandpath(f)) and
+                           expandpath(f).endswith(".jar"),
+                 lambda f: "java -jar {}".format(expandpath(f))),
+        ), accumulate=False):
+    """
+    Determine which commands are not callable.
+
+    :param Iterable[str] | str commands: commands to check for callability
+    :param Iterable[(function(str) -> bool, function(str) -> str)] transformations:
+        pairs in which first element is a predicate and second is a transformation
+        to apply to the input if the predicate is satisfied
+    :param bool accumulate: whether to accumulate transformations (more than
+        one possible per command)
+    :return list[(str, str)]: collection of commands that appear uncallable;
+        each element is a pair in which the first element is the original
+        'command' and the second is what was actually assessed for callability.
+    :raise TypeError: if transformations are provided but are argument is a
+        string or is non-Iterable
+    :raise Exception: if accumulation of transformation is False but the
+        collection of transformations is unordered
+    """
+    commands = [commands] if isinstance(commands, str) else commands
+    if transformations:
+        trans = transformations.values() if isinstance(transformations, Mapping) else transformations
+        if not isinstance(transformations, Iterable) or isinstance(transformations, str) or \
+                not all(map(lambda func_pair: isinstance(func_pair, tuple) and len(func_pair) == 2, trans)):
+            raise TypeError(
+                "Transformations argument should be a collection of pairs; got "
+                "{} ({})".format(transformations, type(transformations).__name__))
+        if accumulate:
+            def finalize(cmd):
+                for p, t in transformations:
+                    if p(cmd):
+                        cmd = t(cmd)
+                return cmd
+        else:
+            if not isinstance(transformations, (tuple, list)):
+                raise Exception(
+                    "If transformations are unordered, non-accumulation of "
+                    "effects may lead to nondeterministic behavior.")
+            def finalize(cmd):
+                print("Transformations: {}".format(transformations))
+                for p, t in transformations:
+                    if p(cmd):
+                        return t(cmd)
+                return cmd
+
+    else:
+        finalize = lambda cmd: cmd
+    return [(orig, used) for orig, used in
+            map(lambda c: (c, finalize(c)), commands)
+            if not is_command_callable(used)]
+
+
 def split_by_pipes_nonnested(cmd):
     """
     Split the command by shell pipes, but preserve contents in 
@@ -235,7 +326,9 @@ def split_by_pipes_nonnested(cmd):
     r = re.compile(r'(?:[^|(]|\([^)]*\)+|\{[^}]*\})')
     return r.findall(cmd)
 
+
 # cmd="a | b | { c | d } ABC | { x  | y } hello '( () e |f )"
+
 
 def split_by_pipes(cmd):
     """
@@ -302,6 +395,7 @@ def strip_braced_txt(cmd):
             curly_braces = False
 
     return cmd
+
 
 def check_shell_redirection(cmd):
     """
@@ -399,7 +493,7 @@ def get_first_value(param, param_pools, on_missing=None, error=True):
         if param in pool:
             return pool[param]
 
-    # Raise error if unfound and no strategy or value is provided or handling
+    # Raise error if not found and no strategy or value is provided or handling
     # unmapped parameter requests.
     if error and on_missing is None:
         raise KeyError("Unmapped parameter: '{}'".format(param))
@@ -492,6 +586,22 @@ def is_sam_or_bam(file_name):
     return ext in [".bam", ".sam"]
 
 
+def logger_via_cli(opts, **kwargs):
+    """
+    Build and initialize logger from CLI specification.
+
+    :param argparse.Namespace opts: parse of command-line interface
+    :param kwargs: keyword arguments to pass along to underlying logmuse function
+    :return logging.Logger: newly created and configured logger
+    """
+    from copy import deepcopy
+    import logmuse
+    kwds = deepcopy(kwargs)
+    # By default, don't require the logging options to have been added to the parser.
+    kwds.setdefault("strict", False)
+    return logmuse.logger_via_cli(opts, **kwds)
+
+
 def make_lock_name(original_path, path_base_folder):
     """
     Create name for lock file from an absolute path.
@@ -508,11 +618,16 @@ def make_lock_name(original_path, path_base_folder):
         path to lock file
     """
     def make_name(p):
-        return p.replace(path_base_folder, "").replace(os.sep, "__")
+        if p:
+            return p.replace(path_base_folder, "").replace(os.sep, "__")
+        else:
+            return None
+
     if isinstance(original_path, str):
         return make_name(original_path)
     elif isinstance(original_path, Sequence):
-        return [make_name(p) for p in original_path]
+        result = [make_name(p) for p in original_path]
+        return [x for x in result if x]
     raise TypeError("Neither string nor other sequence type: {} ({})".
                     format(original_path, type(original_path)))
 
@@ -689,15 +804,19 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     else:
         from collections.abc import Iterable
 
+
+    from logmuse import LOGGING_CLI_OPTDATA
     # Define the argument groups.
     args_by_group = {
-        "pypiper": ["recover", "new-start", "dirty", "force-follow"],
+        "pypiper": ["recover", "new-start", "dirty", "force-follow", "testmode"] +
+            LOGGING_CLI_OPTDATA.keys(),
         "config": ["config"],
         "checkpoint": ["stop-before", "stop-after"],
         "resource": ["mem", "cores"],
         "looper": ["config", "output-parent", "mem", "cores"],
         "common": ["input", "sample-name"],
-        "ngs": ["sample-name", "input", "input2", "genome", "single-or-paired"]
+        "ngs": ["sample-name", "input", "input2", "genome", "single-or-paired"],
+        "logmuse": LOGGING_CLI_OPTDATA.keys()
     }
 
     # Handle various types of group specifications.
@@ -735,6 +854,16 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     return uniqify(final_args)
 
 
+def default_pipeline_config(pipeline_filepath):
+    """
+    Determine the default filepath for a pipeline's config file.
+
+    :param str pipeline_filepath: path to a pipeline
+    :return str: default filepath for pipeline's config file
+    """
+    return os.path.splitext(os.path.basename(pipeline_filepath))[0] + ".yaml"
+
+
 def _add_args(parser, args, required):
     """
     Add new arguments to an ArgumentParser.
@@ -749,13 +878,13 @@ def _add_args(parser, args, required):
 
     required = required or []
 
-    # Determine the default pipeline config file.
-    pipeline_script = os.path.basename(sys.argv[0])
-    default_config, _ = os.path.splitext(pipeline_script)
-    default_config += ".yaml"
+    default_config = default_pipeline_config(sys.argv[0])
 
     # Define the arguments.
     argument_data = {
+        "testmode":
+            ("-T", {"action": "store_true",
+                    "help": "Only print commands, don't run"}),
         "recover":
             ("-R", {"action": "store_true",
                     "help": "Overwrite locks to recover from previous failed run"}),
@@ -809,6 +938,9 @@ def _add_args(parser, args, required):
             ("-Q", {"default": "single",
                     "help": "Single- or paired-end sequencing protocol"})
     }
+    
+    from logmuse import LOGGING_CLI_OPTDATA
+    argument_data.update(LOGGING_CLI_OPTDATA)
 
     if len(required) > 0:
         required_named = parser.add_argument_group('required named arguments')

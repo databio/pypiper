@@ -1,13 +1,13 @@
-#!/usr/env python
+""" Broadly applicable NGS processing/analysis functionality """
 
 import os
 import re
 import subprocess
 import errno
 from attmap import AttMapEcho
+from yacman import load_yaml
 from .exceptions import UnsupportedFiletypeException
 from .utils import is_fastq, is_gzipped_fastq, is_sam_or_bam
-
 
 
 class NGSTk(AttMapEcho):
@@ -42,14 +42,8 @@ class NGSTk(AttMapEcho):
     def __init__(self, config_file=None, pm=None):
         # parse yaml into the project's attributes
         # self.add_entries(**config)
-
-        if config_file is None:
-            super(NGSTk, self).__init__()
-        else:
-            import yaml
-            with open(config_file, 'r') as config_file:
-                config = yaml.load(config_file)
-            super(NGSTk, self).__init__(config)
+        super(NGSTk, self).__init__(
+            None if config_file is None else load_yaml(config_file))
 
         # Keep a link to the pipeline manager, if one is provided.
         # if None is provided, instantiate "tools" and "parameters" with empty AttMaps
@@ -360,7 +354,8 @@ class NGSTk(AttMapEcho):
                 if all([self.get_input_ext(x) == ".bam" for x in input_args]):
                     sample_merged = local_base + ".merged.bam"
                     output_merge = os.path.join(raw_folder, sample_merged)
-                    cmd = self.merge_bams(input_args, output_merge)
+                    cmd = self.merge_bams_samtools(input_args, output_merge)
+                    self.pm.debug("cmd: {}".format(cmd))
                     self.pm.run(cmd, output_merge)
                     cmd2 = self.validate_bam(output_merge)
                     self.pm.run(cmd, output_merge, nofail=True)
@@ -452,7 +447,10 @@ class NGSTk(AttMapEcho):
                 #cmd = self.bam_to_fastq(input_file, fastq_prefix, paired_end)
                 cmd, fq1, fq2 = self.bam_to_fastq_awk(input_file, fastq_prefix, paired_end, zipmode)
                 # pm.run(cmd, output_file, follow=check_fastq)
-                output_file = [fq1, fq2]
+                if fq2:
+                    output_file = [fq1, fq2]
+                else:
+                    output_file = fq1
             elif input_ext == ".fastq.gz":
                 print("Found .fastq.gz file")
                 if paired_end and not multiclass:
@@ -653,6 +651,15 @@ class NGSTk(AttMapEcho):
         cmd += " VALIDATION_STRINGENCY=SILENT"
         if tmp_dir:
             cmd += " TMP_DIR=" + tmp_dir
+
+        return cmd
+    
+    
+    def merge_bams_samtools(self, input_bams, merged_bam):
+        cmd = self.tools.samtools + " merge -f " 
+        cmd += " -@ " + str(self.pm.cores)
+        cmd += " " + merged_bam + " " 
+        cmd += " ".join(input_bams)
         return cmd
 
     
