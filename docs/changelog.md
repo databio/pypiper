@@ -14,9 +14,12 @@
 - Fix problems with runtime reading from pipeline profile TSV formatted according to two styles
 - Fix problems running containerized executables that would sometimes hang
 - Fix inaccurate elapsed time accumulation 
+- Fixed a bug that caused hanging when running in singularity containerized executables
+- Fixed bugs with merging bamfiles using samtools
 
 ### Changed
 - The hashes in the pipeline profile are produced from the entire original command, even if it is a pipe  
+- Changed output to simplify and improve log readability
  
 ## [0.11.3] -- 2019-06-17
 ### Fixed
