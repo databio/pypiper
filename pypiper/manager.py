@@ -1685,7 +1685,8 @@ class PipelineManager(object):
                 df['runtime'] = _pd.to_timedelta(df['runtime'])
             except ValueError:
                 # return runtime estimate
-                # this happens if old profile style is mixed with the new one and the columns do not match
+                # this happens if old profile style is mixed with the new one
+                # and the columns do not match
                 return self.time_elapsed(self.starttime)
             unique_df = df[~df.duplicated('cid', keep='last').values]
             return sum(unique_df['runtime'].apply(lambda x: x.total_seconds()))
@@ -1718,9 +1719,9 @@ class PipelineManager(object):
         self.info("* " + "Total elapsed time (all runs)".rjust(30) + ":  " + 
             str(datetime.timedelta(seconds=round(self.get_elapsed_time()))))
         self.info("* " + "Peak memory (this run)".rjust(30) + ":  " + 
-            str(round(self.peak_memory, 2)) + " GB")
+            str(round(self.peak_memory, 4)) + " GB")
         # self.info("* " + "Total peak memory (all runs)".rjust(30) + ":  " + 
-        #     str(round(self.peak_memory, 2)) + " GB")        
+        #     str(round(self.peak_memory, 4)) + " GB")        
         if self.halted:
             return
 
