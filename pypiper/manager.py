@@ -324,7 +324,6 @@ class PipelineManager(object):
                         pass
                 if config_to_load is not None:
                     pass
-                    # TODO: Switch this message to a debug message using _LOGGER
                     self.debug("\nUsing custom config file: {}".format(config_to_load))
             else:
                 # No custom config file specified. Check for default
@@ -514,7 +513,7 @@ class PipelineManager(object):
 
         # self.info all arguments (if any)
         self.info("\n### Arguments passed to pipeline:\n")
-        for arg, val in (vars(args) if args else dict()).items():
+        for arg, val in sorted((vars(args) if args else dict()).items()):
             argtext = "`{}`".format(arg)
             valtext = "`{}`".format(val)
             self.info("* {}:  {}".format(argtext.rjust(20), valtext))
@@ -922,6 +921,7 @@ class PipelineManager(object):
             self._report_command(cmd)
             return 0, 0
 
+        self.debug("Command: {}".format(cmd))
         param_list = parse_cmd(cmd, shell)
         # cast all commands to str and concatenate for hashing
         conc_cmd = "".join([str(x["args"]) for x in param_list])
