@@ -1617,7 +1617,7 @@ class PipelineManager(object):
         """ Stop a completely finished pipeline. """
         self.stop_pipeline(status=COMPLETE_FLAG)
 
-    def fail_pipeline(self, e, dynamic_recover=False):
+    def fail_pipeline(self, exc, dynamic_recover=False):
         """
         If the pipeline does not complete, this function will stop the pipeline gracefully.
         It sets the status flag to failed and skips the normal success completion procedure.
@@ -1651,10 +1651,13 @@ class PipelineManager(object):
             self.timestamp("### Pipeline failed at: ")
             total_time = datetime.timedelta(seconds=self.time_elapsed(self.starttime))
             self.info("Total time: " + str(total_time))
-            self.info("Failure reason: " + str(e))
+            self.info("Failure reason: " + str(exc))
             self._set_status_flag(FAIL_FLAG)
 
-        raise e
+        if isinstance(exc, str):
+            exc = RuntimeError(exc)
+
+        raise exc
 
     def halt(self, checkpoint=None, finished=False, raise_error=True):
         """
