@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.12.1] -- 2019-08-29
+
+### Fixed
+- Increased requirement for logmuse
+
+### Changed
+- Sort argument outputs in logs
+- Fail messages can now be a string (previously required an Exception).
+
 ## [0.12.0] -- 2019-08-14
 
 ### Added

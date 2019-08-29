@@ -324,7 +324,6 @@ class PipelineManager(object):
                         pass
                 if config_to_load is not None:
                     pass
-                    # TODO: Switch this message to a debug message using _LOGGER
                     self.debug("\nUsing custom config file: {}".format(config_to_load))
             else:
                 # No custom config file specified. Check for default
@@ -514,7 +513,7 @@ class PipelineManager(object):
 
         # self.info all arguments (if any)
         self.info("\n### Arguments passed to pipeline:\n")
-        for arg, val in (vars(args) if args else dict()).items():
+        for arg, val in sorted((vars(args) if args else dict()).items()):
             argtext = "`{}`".format(arg)
             valtext = "`{}`".format(val)
             self.info("* {}:  {}".format(argtext.rjust(20), valtext))
@@ -922,6 +921,7 @@ class PipelineManager(object):
             self._report_command(cmd)
             return 0, 0
 
+        self.debug("Command: {}".format(cmd))
         param_list = parse_cmd(cmd, shell)
         # cast all commands to str and concatenate for hashing
         conc_cmd = "".join([str(x["args"]) for x in param_list])
@@ -1617,7 +1617,7 @@ class PipelineManager(object):
         """ Stop a completely finished pipeline. """
         self.stop_pipeline(status=COMPLETE_FLAG)
 
-    def fail_pipeline(self, e, dynamic_recover=False):
+    def fail_pipeline(self, exc, dynamic_recover=False):
         """
         If the pipeline does not complete, this function will stop the pipeline gracefully.
         It sets the status flag to failed and skips the normal success completion procedure.
@@ -1651,10 +1651,13 @@ class PipelineManager(object):
             self.timestamp("### Pipeline failed at: ")
             total_time = datetime.timedelta(seconds=self.time_elapsed(self.starttime))
             self.info("Total time: " + str(total_time))
-            self.info("Failure reason: " + str(e))
+            self.info("Failure reason: " + str(exc))
             self._set_status_flag(FAIL_FLAG)
 
-        raise e
+        if isinstance(exc, str):
+            exc = RuntimeError(exc)
+
+        raise exc
 
     def halt(self, checkpoint=None, finished=False, raise_error=True):
         """
