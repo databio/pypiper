@@ -759,7 +759,7 @@ class NGSTk(AttMapEcho):
 
         if ext == ".sam":
             param = "-S -F4"
-        elif ext == "bam":
+        elif ext == ".bam":
             param = "-F4"
         else:
             raise ValueError("Not a SAM or BAM: '{}'".format(file_name))
