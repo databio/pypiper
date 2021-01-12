@@ -23,6 +23,7 @@ import sys
 import time
 import pandas as _pd
 
+from pipestat import PipestatManager, PipestatError
 from attmap import AttMapEcho
 from hashlib import md5
 import logmuse
@@ -96,15 +97,19 @@ class PipelineManager(object):
         protect from a case in which a restart begins upstream of a stage
         for which a checkpoint file already exists, but that depends on the
         upstream stage and thus should be rerun if it's "parent" is rerun.
+    :param pipestat.PipestatManager: pipestat manager object to use for
+        reporting pipeline results
     :raise TypeError: if start or stop point(s) are provided both directly and
         via args namespace, or if both stopping types (exclusive/prospective
         and inclusive/retrospective) are provided.
     """
     def __init__(
-        self, name, outfolder, version=None, args=None, multi=False,
-        dirty=False, recover=False, new_start=False, force_follow=False,
-        cores=1, mem="1000M", config_file=None, output_parent=None,
-        overwrite_checkpoints=False, logger_kwargs=None, **kwargs):
+            self, name, outfolder, version=None, args=None, multi=False,
+            dirty=False, recover=False, new_start=False, force_follow=False,
+            cores=1, mem="1000M", config_file=None, output_parent=None,
+            overwrite_checkpoints=False, logger_kwargs=None,
+            pipestat_manager=None, **kwargs
+    ):
 
         # Params defines the set of options that could be updated via
         # command line args to a pipeline run, that can be forwarded
@@ -142,8 +147,10 @@ class PipelineManager(object):
             checkpoint = args_dict.pop(optname, None)
             setattr(self, optname, checkpoint)
         if self.stop_before and self.stop_after:
-            raise TypeError("Cannot specify both pre-stop and post-stop; "
-                            "got '{}' and '{}'".format(self.stop_before, self.stop_after))
+            raise TypeError(
+                "Cannot specify both pre-stop and post-stop; "
+                "got '{}' and '{}'".format(self.stop_before, self.stop_after)
+            )
 
         # Update this manager's parameters with non-checkpoint-related
         # command-line parameterization.
@@ -168,7 +175,6 @@ class PipelineManager(object):
         self.cores = params['cores']
         self.output_parent = params['output_parent']
         self.testmode = params['testmode']
-
 
         # Set up logger
         logger_kwargs = logger_kwargs or {}
@@ -203,7 +209,7 @@ class PipelineManager(object):
         # total memory limit provided.
         # This will give a little breathing room for non-heap java memory use.
 
-        if not params['mem'].endswith(('K','M','G','T')):
+        if not params['mem'].endswith(('K', 'M', 'G', 'T')):
             self.mem = params['mem'] + "M"
         else:
             # Assume the memory is in megabytes.
@@ -341,7 +347,20 @@ class PipelineManager(object):
             self.debug("No config file")
             self.config = None
 
+        self._pipestat_manager = pipestat_manager
 
+    @property
+    def pipestat(self):
+        """
+        PipestatManager - object to use for pipeline results reporting
+
+        Depending on the object configuration it can report to
+        a YAML-formatted file or PostgreSQL database. Please refer to pipestat
+        documentation for more details: http://pipestat.databio.org/
+
+        :return pipestat.PipestatManager: object to use for results reporting
+        """
+        return self._pipestat_manager
 
     @property
     def _completed(self):
@@ -379,6 +398,31 @@ class PipelineManager(object):
             has been safely stopped.
         """
         return self._completed or self.halted or self._failed
+
+    def setup_default_pipestat(self, schema_path, namespace=None,
+                               record_identifier=None, results_file_path=None):
+        """
+        A convenience method for ad hoc PipestatManager instantiation.
+
+        Requires only a pipestat-like schema to get a functional PipestatManager
+        for reporting to a YAML-formatted file.
+
+        :param str schema_path: path to the pipestat-like schema
+        :param str namespace: namespace to write into, default: pipeline name
+        :param record_identifier: recordID to report for, default: pipeline name
+        :param str results_file_path: YAML file to reoprt into, defaults to a
+            pipeline-named file in the standard pipeline output directory
+        """
+        if self.pipestat is not None:
+            raise PipestatError(f"{PipestatManager.__name__} is already "
+                                f"initialized:\n{str(self.pipestat)}")
+        self._pipestat_manager = PipestatManager(
+            schema_path=schema_path,
+            name=namespace or self.name,
+            record_identifier=record_identifier or self.name,
+            results_file_path=results_file_path or pipeline_filepath(
+                self, suffix="_results_pipestat.yaml")
+        )
 
     def _ignore_interrupts(self):
         """
