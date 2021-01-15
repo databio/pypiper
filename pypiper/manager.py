@@ -108,7 +108,8 @@ class PipelineManager(object):
             dirty=False, recover=False, new_start=False, force_follow=False,
             cores=1, mem="1000M", config_file=None, output_parent=None,
             overwrite_checkpoints=False, logger_kwargs=None,
-            pipestat_manager=None, **kwargs
+            pipestat_namespace=None, pipestat_record_id=None, pipestat_schema=None,
+            pipestat_results_file=None, pipestat_config=None, **kwargs
     ):
 
         # Params defines the set of options that could be updated via
@@ -347,7 +348,16 @@ class PipelineManager(object):
             self.debug("No config file")
             self.config = None
 
-        self._pipestat_manager = pipestat_manager
+        # pipesatat setup
+        potential_namespace = getattr(self, "sample_name", self.name)
+        self._pipestat_manager = PipestatManager(
+            namespace=pipestat_namespace or potential_namespace,
+            record_identifier=pipestat_record_id or potential_namespace,
+            schema_path=pipestat_schema,
+            results_file_path=pipestat_results_file or pipeline_filepath(
+                self, filename="pipestat_results.yaml"),
+            config=pipestat_config
+        )
 
     @property
     def pipestat(self):

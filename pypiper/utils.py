@@ -816,7 +816,10 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
         "looper": ["config", "output-parent", "mem", "cores"],
         "common": ["input", "sample-name"],
         "ngs": ["sample-name", "input", "input2", "genome", "single-or-paired"],
-        "logmuse": LOGGING_CLI_OPTDATA.keys()
+        "logmuse": LOGGING_CLI_OPTDATA.keys(),
+        "pipestat": ["pipestat-namespace", "pipestat-record-id",
+                     "pipestat-schema", "pipestat-results-file",
+                     "pipestat-config"]
     }
 
     # Handle various types of group specifications.
@@ -936,7 +939,20 @@ def _add_args(parser, args, required):
                     "help": "Identifier for genome assembly"}),
         "single-or-paired":
             ("-Q", {"default": "single",
-                    "help": "Single- or paired-end sequencing protocol"})
+                    "help": "Single- or paired-end sequencing protocol"}),
+        "pipestat-namespace":
+            {"help": "Namespace to report into. This will be the DB table name "
+                     "if using DB as the object back-end"},
+        "pipestat-record-id":
+            {"help": "Record identifier to report for"},
+        "pipestat-schema":
+            {"help": "Path to the output schema that formalizes the "
+                     "results structure"},
+        "pipestat-config":
+            {"help": "Path to the configuration file"},
+        "pipestat-results-file":
+            {"help": "YAML file to report into, if file is used as "
+                     "the object back-end"}
     }
     
     from logmuse import LOGGING_CLI_OPTDATA
