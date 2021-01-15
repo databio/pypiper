@@ -276,7 +276,7 @@ class PipelineManager(object):
         self.stats_dict = {}
 
         # Checkpoint-related parameters
-        self.overwrite_checkpoints = overwrite_checkpoints
+        self.overwrite_checkpoints = overwrite_checkpoints or self.new_start
         self.halt_on_next = False
         self.prev_checkpoint = None
         self.curr_checkpoint = None
