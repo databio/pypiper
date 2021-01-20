@@ -813,7 +813,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
         "config": ["config"],
         "checkpoint": ["stop-before", "stop-after"],
         "resource": ["mem", "cores"],
-        "looper": ["config", "output-parent", "mem", "cores"],
+        "looper": ["config", "output-parent", "mem", "cores", "pipeline-name"],
         "common": ["input", "sample-name"],
         "ngs": ["sample-name", "input", "input2", "genome", "single-or-paired"],
         "logmuse": LOGGING_CLI_OPTDATA.keys(),
@@ -914,6 +914,8 @@ def _add_args(parser, args, required):
                     "help": "Pipeline configuration file (YAML). "
                             "Relative paths are with respect to the "
                             "pipeline script."}),
+        "pipeline-name":
+            {"metavar": "PIPELINE_NAME", "help": "Name of the pipeline"},
         "sample-name":
             ("-S", {"metavar": "SAMPLE_NAME",
                     "help": "Name for sample to run"}),
