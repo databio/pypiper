@@ -348,21 +348,22 @@ class PipelineManager(object):
             self.debug("No config file")
             self.config = None
 
-        # pipesatat setup
-        potential_namespace = getattr(self, "sample_name", self.name)
+        if pipestat_schema is not None:
+            # pipesatat setup
+            potential_namespace = getattr(self, "sample_name", self.name)
 
-        # don't force default pipestat_results_file value unless
-        # pipestat config not provided
-        if pipestat_config is None and pipestat_results_file is None:
-            pipestat_results_file = pipeline_filepath(
-                self, filename="pipestat_results.yaml")
-        self._pipestat_manager = PipestatManager(
-            namespace=pipestat_namespace or potential_namespace,
-            record_identifier=pipestat_record_id or potential_namespace,
-            schema_path=pipestat_schema,
-            results_file_path=pipestat_results_file,
-            config=pipestat_config
-        )
+            # don't force default pipestat_results_file value unless
+            # pipestat config not provided
+            if pipestat_config is None and pipestat_results_file is None:
+                pipestat_results_file = pipeline_filepath(
+                    self, filename="pipestat_results.yaml")
+            self._pipestat_manager = PipestatManager(
+                namespace=pipestat_namespace or potential_namespace,
+                record_identifier=pipestat_record_id or potential_namespace,
+                schema_path=pipestat_schema,
+                results_file_path=pipestat_results_file,
+                config=pipestat_config
+            )
 
     @property
     def pipestat(self):
@@ -375,7 +376,7 @@ class PipelineManager(object):
 
         :return pipestat.PipestatManager: object to use for results reporting
         """
-        return self._pipestat_manager
+        return getattr(self, "_pipestat_manager", None)
 
     @property
     def _completed(self):
