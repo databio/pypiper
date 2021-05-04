@@ -1,30 +1,35 @@
 """ Pipeline base class """
 
 import abc
-from collections import OrderedDict
 import glob
 import os
 import sys
+from collections import OrderedDict
+
 if sys.version_info < (3, 3):
     from collections import Iterable, Mapping
 else:
     from collections.abc import Iterable, Mapping
 
-from .exceptions import \
-    IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
-    UnknownPipelineStageError
+from .exceptions import (
+    IllegalPipelineDefinitionError,
+    IllegalPipelineExecutionError,
+    UnknownPipelineStageError,
+)
 from .manager import PipelineManager
 from .stage import Stage
-from .utils import \
-    checkpoint_filepath, flag_name, parse_stage_name, translate_stage_name
-
+from .utils import (
+    checkpoint_filepath,
+    flag_name,
+    parse_stage_name,
+    translate_stage_name,
+)
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
 __all__ = ["Pipeline", "UnknownPipelineStageError"]
-
 
 
 class Pipeline(object):
@@ -49,35 +54,41 @@ class Pipeline(object):
     :raise pypiper.IllegalPipelineDefinitionError: Definition of collection of
         stages must be non-empty.
     """
-    
+
     __metaclass__ = abc.ABCMeta
-    
-    def __init__(self, name=None, manager=None, outfolder=None, args=None,
-                 **pl_mgr_kwargs):
+
+    def __init__(
+        self, name=None, manager=None, outfolder=None, args=None, **pl_mgr_kwargs
+    ):
 
         super(Pipeline, self).__init__()
         try:
             self.name = name or manager.name
         except AttributeError:
             raise TypeError(
-                    "If a pipeline manager isn't provided to create "
-                    "{}, a name is required.".format(Pipeline.__name__))
+                "If a pipeline manager isn't provided to create "
+                "{}, a name is required.".format(Pipeline.__name__)
+            )
         else:
             if not self.name:
                 raise ValueError(
                     "Invalid name, possible inferred from pipeline manager: "
-                    "{} ({})".format(self.name, type(self.name)))
+                    "{} ({})".format(self.name, type(self.name))
+                )
 
         # Determine the PipelineManager.
         if manager:
             self.manager = manager
             if outfolder:
-                print("Ignoring explicit output folder ({}) and using that of "
-                      "pipeline manager ({})".format(outfolder,
-                                                     manager.outfolder))
+                print(
+                    "Ignoring explicit output folder ({}) and using that of "
+                    "pipeline manager ({})".format(outfolder, manager.outfolder)
+                )
             if name and name != manager.name:
-                print("Warning: name for pipeline ('{}') doesn't match that "
-                      "of the given manager ('{}')".format(name, manager.name))
+                print(
+                    "Warning: name for pipeline ('{}') doesn't match that "
+                    "of the given manager ('{}')".format(name, manager.name)
+                )
         elif outfolder:
             # We're guaranteed by the upfront exception block around
             # name setting that we'll either have set the name for this
@@ -85,10 +96,13 @@ class Pipeline(object):
             # protected from passing a null name argument to the pipeline
             # manager's constructor.
             self.manager = PipelineManager(
-                    self.name, outfolder, args=args, **pl_mgr_kwargs)
+                self.name, outfolder, args=args, **pl_mgr_kwargs
+            )
         else:
-            raise TypeError("To create a {} instance, 'manager' or 'outfolder' "
-                            "is required".format(self.__class__.__name__))
+            raise TypeError(
+                "To create a {} instance, 'manager' or 'outfolder' "
+                "is required".format(self.__class__.__name__)
+            )
 
         # Require that checkpoints be overwritten.
         self.manager.overwrite_checkpoints = True
@@ -98,14 +112,19 @@ class Pipeline(object):
         # stage names are handled, parsed, and translated.
         self._unordered = _is_unordered(self.stages())
         if self._unordered:
-            print("NOTICE: Unordered definition of stages for "
-                  "pipeline {}".format(self.name))
+            print(
+                "NOTICE: Unordered definition of stages for "
+                "pipeline {}".format(self.name)
+            )
 
         # Get to a sequence of pairs of key (possibly in need of translation)
         # and actual callable. Key is stage name and value is either stage
         # callable or an already-made stage object.
-        stages = self.stages().items() \
-                if isinstance(self.stages(), Mapping) else self.stages()
+        stages = (
+            self.stages().items()
+            if isinstance(self.stages(), Mapping)
+            else self.stages()
+        )
         # Stage spec. parser handles callable validation.
         name_stage_pairs = [_parse_stage_spec(s) for s in stages]
 
@@ -133,9 +152,12 @@ class Pipeline(object):
             # Check that there's not a checkpoint name collision.
             if internal_name in _internal_to_external:
                 already_mapped = _internal_to_external[internal_name]
-                errmsg = "Duplicate stage name resolution (stage names are too " \
-                         "similar.) '{}' and '{}' both resolve to '{}'".\
-                    format(name, already_mapped, internal_name)
+                errmsg = (
+                    "Duplicate stage name resolution (stage names are too "
+                    "similar.) '{}' and '{}' both resolve to '{}'".format(
+                        name, already_mapped, internal_name
+                    )
+                )
                 raise IllegalPipelineDefinitionError(errmsg)
 
             # Store the stage name translations and the stage itself.
@@ -144,7 +166,6 @@ class Pipeline(object):
             self._stages.append(stage)
 
         self.skipped, self.executed = None, None
-
 
     @property
     def outfolder(self):
@@ -155,7 +176,6 @@ class Pipeline(object):
         """
         return self.manager.outfolder
 
-
     @abc.abstractmethod
     def stages(self):
         """
@@ -164,7 +184,6 @@ class Pipeline(object):
         :return Iterable[str]: Collection of pipeline stage names.
         """
         pass
-
 
     @property
     def stage_names(self):
@@ -176,7 +195,6 @@ class Pipeline(object):
         :return list[str]: Sequence of names of this pipeline's defined stages.
         """
         return [parse_stage_name(s) for s in self._stages]
-
 
     def checkpoint(self, stage, msg=""):
         """
@@ -192,8 +210,8 @@ class Pipeline(object):
         # pipeline completes, so fix the 'finished' parameter to the manager's
         # timestamp method to be True.
         return self.manager.timestamp(
-                message=msg, checkpoint=stage.checkpoint_name, finished=True)
-
+            message=msg, checkpoint=stage.checkpoint_name, finished=True
+        )
 
     def completed_stage(self, stage):
         """
@@ -207,11 +225,9 @@ class Pipeline(object):
         check_path = checkpoint_filepath(stage, self.manager)
         return os.path.exists(check_path)
 
-
     def halt(self, **kwargs):
-        """ Halt the pipeline """
+        """Halt the pipeline"""
         self.manager.halt(**kwargs)
-
 
     def list_flags(self, only_name=False):
         """
@@ -226,7 +242,6 @@ class Pipeline(object):
             return [os.path.split(p)[1] for p in paths]
         else:
             return paths
-
 
     def run(self, start_point=None, stop_before=None, stop_after=None):
         """
@@ -253,7 +268,8 @@ class Pipeline(object):
 
         if stop_before and stop_after:
             raise IllegalPipelineExecutionError(
-                    "Cannot specify both inclusive and exclusive stops.")
+                "Cannot specify both inclusive and exclusive stops."
+            )
 
         if stop_before:
             stop = stop_before
@@ -275,8 +291,10 @@ class Pipeline(object):
 
         # Permit order-agnostic pipelines, but warn.
         if self._unordered and (start_point or stop_before or stop_after):
-            print("WARNING: Starting and stopping points are nonsense for "
-                  "pipeline with unordered stages.")
+            print(
+                "WARNING: Starting and stopping points are nonsense for "
+                "pipeline with unordered stages."
+            )
 
         # TODO: consider context manager based on start/stop points.
 
@@ -287,7 +305,8 @@ class Pipeline(object):
         assert stop_index <= len(self._stages)
         if start_index >= stop_index:
             raise IllegalPipelineExecutionError(
-                    "Cannot start pipeline at or after stopping point")
+                "Cannot start pipeline at or after stopping point"
+            )
 
         # TODO: consider storing just stage name rather than entire stage.
         # TODO (cont.): the bad case for whole-Stage is if associated data
@@ -334,15 +353,15 @@ class Pipeline(object):
             self.halt(raise_error=False)
 
     def wrapup(self):
-        """ Final mock stage to run after final one finishes. """
+        """Final mock stage to run after final one finishes."""
         self.manager.complete()
 
     def _reset(self):
-        """ Scrub decks with respect to Stage status/label tracking. """
+        """Scrub decks with respect to Stage status/label tracking."""
         self.skipped, self.executed = [], []
 
     def _start_index(self, start=None):
-        """ Seek to the first stage to run. """
+        """Seek to the first stage to run."""
         if start is None:
             return 0
         start_stage = translate_stage_name(start)
@@ -378,7 +397,6 @@ class Pipeline(object):
         return stop_index + 1 if inclusive else stop_index
 
 
-
 def _is_unordered(collection):
     """
     Determine whether a collection appears to be unordered.
@@ -394,12 +412,10 @@ def _is_unordered(collection):
         illogical to investigate whether it's ordered.
     """
     if not isinstance(collection, Iterable):
-        raise TypeError("Non-iterable alleged collection: {}".
-                        format(type(collection)))
-    return isinstance(collection, set) or \
-           (isinstance(collection, dict) and
-            not isinstance(collection, OrderedDict))
-
+        raise TypeError("Non-iterable alleged collection: {}".format(type(collection)))
+    return isinstance(collection, set) or (
+        isinstance(collection, dict) and not isinstance(collection, OrderedDict)
+    )
 
 
 def _parse_stage_spec(stage_spec):
@@ -417,9 +433,11 @@ def _parse_stage_spec(stage_spec):
     """
 
     # The logic used here, a message to a user about how to specify Stage.
-    req_msg = "Stage specification must be either a {0} itself, a " \
-              "(<name>, {0}) pair, or a callable with a __name__ attribute " \
-              "(e.g., a non-anonymous function)".format(Stage.__name__)
+    req_msg = (
+        "Stage specification must be either a {0} itself, a "
+        "(<name>, {0}) pair, or a callable with a __name__ attribute "
+        "(e.g., a non-anonymous function)".format(Stage.__name__)
+    )
 
     # Simplest case is stage itself.
     if isinstance(stage_spec, Stage):

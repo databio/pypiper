@@ -1,13 +1,12 @@
 """ Fixtures and configuration visible to all tests """
 
 import copy
-from functools import partial
 import os
+from functools import partial
 
 import pytest
 
 from pypiper import Pipeline, PipelineManager, Stage
-
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -31,10 +30,10 @@ FILENAMES = [FILE1_NAME, FILE2_NAME, FILE3_NAME]
 FILE_TEXT_PAIRS = list(zip(FILENAMES, CONTENTS))
 
 
-
 @pytest.fixture
 def get_pipe_manager(tmpdir):
-    """ Provide safe creation of pipeline manager, with multi=True. """
+    """Provide safe creation of pipeline manager, with multi=True."""
+
     def get_mgr(**kwargs):
         if "outfolder" in kwargs:
             kwd_args = kwargs
@@ -42,52 +41,48 @@ def get_pipe_manager(tmpdir):
             kwd_args = copy.deepcopy(kwargs)
             kwd_args["outfolder"] = tmpdir.strpath
         return PipelineManager(multi=True, **kwd_args)
-    return get_mgr
 
+    return get_mgr
 
 
 @pytest.fixture
 def pl_mgr(request, get_pipe_manager):
-    """ Provide a PipelineManager and ensure that it's stopped. """
+    """Provide a PipelineManager and ensure that it's stopped."""
     pm = get_pipe_manager(name=TEST_PIPE_NAME)
+
     def _ensure_stopped():
         pm.stop_pipeline()
+
     request.addfinalizer(_ensure_stopped)
     return pm
 
 
-
 @pytest.fixture
 def dummy_pipe(pl_mgr):
-    """ Provide a basic Pipeline instance for a test case. """
+    """Provide a basic Pipeline instance for a test case."""
     return DummyPipeline(pl_mgr)
-
 
 
 def write_file1(folder):
     _write(*FILE_TEXT_PAIRS[0], folder=folder)
 
 
-
 def write_file2(folder):
     _write(*FILE_TEXT_PAIRS[1], folder=folder)
-
 
 
 def write_file3(folder):
     _write(*FILE_TEXT_PAIRS[2], folder=folder)
 
 
-
 def _write(filename, content, folder=None):
     path = os.path.join(folder, filename)
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         f.write(content)
 
 
-
 class DummyPipeline(Pipeline):
-    """ Basic pipeline implementation for tests """
+    """Basic pipeline implementation for tests"""
 
     def __init__(self, manager):
         super(DummyPipeline, self).__init__(TEST_PIPE_NAME, manager=manager)

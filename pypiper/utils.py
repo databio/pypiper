@@ -1,26 +1,27 @@
 """ Shared utilities """
 
-from collections import Iterable, Mapping, Sequence
 import os
-import sys
 import re
-from subprocess import PIPE
+import sys
+from collections import Iterable, Mapping, Sequence
 from shlex import split
+from subprocess import PIPE
 
-if sys.version_info < (3, ):
+if sys.version_info < (3,):
     CHECK_TEXT_TYPES = (str, unicode)
     from inspect import getargspec as get_fun_sig
 else:
-    CHECK_TEXT_TYPES = (str, )
+    CHECK_TEXT_TYPES = (str,)
     from inspect import getfullargspec as get_fun_sig
 
 from ubiquerg import expandpath, is_command_callable
 
-from .const import \
-    CHECKPOINT_EXTENSION, PIPELINE_CHECKPOINT_DELIMITER, \
-    STAGE_NAME_SPACE_REPLACEMENT
+from .const import (
+    CHECKPOINT_EXTENSION,
+    PIPELINE_CHECKPOINT_DELIMITER,
+    STAGE_NAME_SPACE_REPLACEMENT,
+)
 from .flags import FLAGS
-
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -29,15 +30,23 @@ __email__ = "vreuter@virginia.edu"
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
 # packages, and import from utils within pypiper for other functions.
-__all__ = ["add_pypiper_args", "build_command", "check_all_commands",
-           "determine_uncallable", "get_first_value", "head", "logger_via_cli"]
+__all__ = [
+    "add_pypiper_args",
+    "build_command",
+    "check_all_commands",
+    "determine_uncallable",
+    "get_first_value",
+    "head",
+    "logger_via_cli",
+]
 
 
 CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
 
 
-def add_pypiper_args(parser, groups=("pypiper", ), args=None,
-                     required=None, all_args=False):
+def add_pypiper_args(
+    parser, groups=("pypiper",), args=None, required=None, all_args=False
+):
     """
     Use this to add standardized pypiper arguments to your python pipeline.
 
@@ -57,7 +66,8 @@ def add_pypiper_args(parser, groups=("pypiper", ), args=None,
         pypiper arguments added
     """
     args_to_add = _determine_args(
-        argument_groups=groups, arguments=args, use_all_args=all_args)
+        argument_groups=groups, arguments=args, use_all_args=all_args
+    )
     parser = _add_args(parser, args_to_add, required)
     return parser
 
@@ -81,8 +91,7 @@ def build_command(chunks):
     """
 
     if not chunks:
-        raise ValueError(
-            "No command parts: {} ({})".format(chunks, type(chunks)))
+        raise ValueError("No command parts: {} ({})".format(chunks, type(chunks)))
 
     if isinstance(chunks, str):
         return chunks
@@ -149,8 +158,7 @@ def checkpoint_filename(checkpoint, pipeline_name=None):
     except AttributeError:
         base = translate_stage_name(checkpoint)
     if pipeline_name:
-        base = "{}{}{}".format(
-            pipeline_name, PIPELINE_CHECKPOINT_DELIMITER, base)
+        base = "{}{}{}".format(pipeline_name, PIPELINE_CHECKPOINT_DELIMITER, base)
     return base + CHECKPOINT_EXTENSION
 
 
@@ -178,7 +186,8 @@ def checkpoint_filepath(checkpoint, pm):
             else:
                 raise ValueError(
                     "Absolute checkpoint path '{}' is not in pipeline output "
-                    "folder '{}'".format(checkpoint, pm.outfolder))
+                    "folder '{}'".format(checkpoint, pm.outfolder)
+                )
         _, ext = os.path.splitext(checkpoint)
         if ext == CHECKPOINT_EXTENSION:
             return pipeline_filepath(pm, filename=checkpoint)
@@ -226,9 +235,12 @@ def check_shell_asterisk(cmd):
 
 
 def check_all_commands(
-        cmds,
-        get_bad_result=lambda bads: Exception("{} uncallable commands: {}".format(len(bads), bads)),
-        handle=None):
+    cmds,
+    get_bad_result=lambda bads: Exception(
+        "{} uncallable commands: {}".format(len(bads), bads)
+    ),
+    handle=None,
+):
     """
     Determine whether all commands are callable
 
@@ -246,10 +258,12 @@ def check_all_commands(
     if not bads:
         return True
     if handle is None:
+
         def handle(res):
             if isinstance(res, Exception):
                 raise res
             print("Command check result: {}".format(res))
+
     elif not hasattr(handle, "__call__") or not 1 == len(get_fun_sig(handle).args):
         raise TypeError("Command check error handler must be a one-arg function")
     handle(get_bad_result(bads))
@@ -257,12 +271,17 @@ def check_all_commands(
 
 
 def determine_uncallable(
-        commands, transformations=(
-                (lambda f: isinstance(f, str) and
-                           os.path.isfile(expandpath(f)) and
-                           expandpath(f).endswith(".jar"),
-                 lambda f: "java -jar {}".format(expandpath(f))),
-        ), accumulate=False):
+    commands,
+    transformations=(
+        (
+            lambda f: isinstance(f, str)
+            and os.path.isfile(expandpath(f))
+            and expandpath(f).endswith(".jar"),
+            lambda f: "java -jar {}".format(expandpath(f)),
+        ),
+    ),
+    accumulate=False,
+):
     """
     Determine which commands are not callable.
 
@@ -282,23 +301,41 @@ def determine_uncallable(
     """
     commands = [commands] if isinstance(commands, str) else commands
     if transformations:
-        trans = transformations.values() if isinstance(transformations, Mapping) else transformations
-        if not isinstance(transformations, Iterable) or isinstance(transformations, str) or \
-                not all(map(lambda func_pair: isinstance(func_pair, tuple) and len(func_pair) == 2, trans)):
+        trans = (
+            transformations.values()
+            if isinstance(transformations, Mapping)
+            else transformations
+        )
+        if (
+            not isinstance(transformations, Iterable)
+            or isinstance(transformations, str)
+            or not all(
+                map(
+                    lambda func_pair: isinstance(func_pair, tuple)
+                    and len(func_pair) == 2,
+                    trans,
+                )
+            )
+        ):
             raise TypeError(
                 "Transformations argument should be a collection of pairs; got "
-                "{} ({})".format(transformations, type(transformations).__name__))
+                "{} ({})".format(transformations, type(transformations).__name__)
+            )
         if accumulate:
+
             def finalize(cmd):
                 for p, t in transformations:
                     if p(cmd):
                         cmd = t(cmd)
                 return cmd
+
         else:
             if not isinstance(transformations, (tuple, list)):
                 raise Exception(
                     "If transformations are unordered, non-accumulation of "
-                    "effects may lead to nondeterministic behavior.")
+                    "effects may lead to nondeterministic behavior."
+                )
+
             def finalize(cmd):
                 print("Transformations: {}".format(transformations))
                 for p, t in transformations:
@@ -308,14 +345,16 @@ def determine_uncallable(
 
     else:
         finalize = lambda cmd: cmd
-    return [(orig, used) for orig, used in
-            map(lambda c: (c, finalize(c)), commands)
-            if not is_command_callable(used)]
+    return [
+        (orig, used)
+        for orig, used in map(lambda c: (c, finalize(c)), commands)
+        if not is_command_callable(used)
+    ]
 
 
 def split_by_pipes_nonnested(cmd):
     """
-    Split the command by shell pipes, but preserve contents in 
+    Split the command by shell pipes, but preserve contents in
     parentheses and braces.
 
     :param str cmd: Command to investigate.
@@ -323,7 +362,7 @@ def split_by_pipes_nonnested(cmd):
     """
     # for posterity, this one will do parens only: re.compile(r'(?:[^|(]|\([^)]*\))+')
     # r = re.compile(r'(?:[^|({]|[\({][^)}]*[\)}])+')
-    r = re.compile(r'(?:[^|(]|\([^)]*\)+|\{[^}]*\})')
+    r = re.compile(r"(?:[^|(]|\([^)]*\)+|\{[^}]*\})")
     return r.findall(cmd)
 
 
@@ -332,15 +371,15 @@ def split_by_pipes_nonnested(cmd):
 
 def split_by_pipes(cmd):
     """
-    Split the command by shell pipes, but preserve contents in 
+    Split the command by shell pipes, but preserve contents in
     parentheses and braces. Also handles nested parens and braces.
 
     :param str cmd: Command to investigate.
     :return list: List of sub commands to be linked
-    """ 
+    """
 
     # Build a simple finite state machine to split on pipes, while
-    # handling nested braces or parentheses.   
+    # handling nested braces or parentheses.
     stack_brace = []
     stack_paren = []
     cmdlist = []
@@ -386,10 +425,10 @@ def check_shell_pipes(cmd):
 def strip_braced_txt(cmd):
     curly_braces = True
     while curly_braces:
-        SRE_match_obj = re.search(r'\{(.*?)}',cmd)
+        SRE_match_obj = re.search(r"\{(.*?)}", cmd)
         if not SRE_match_obj is None:
-            cmd = cmd[:SRE_match_obj.start()] + cmd[(SRE_match_obj.end()+1):]
-            if re.search(r'\{(.*?)}',cmd) is None:
+            cmd = cmd[: SRE_match_obj.start()] + cmd[(SRE_match_obj.end() + 1) :]
+            if re.search(r"\{(.*?)}", cmd) is None:
                 curly_braces = False
         else:
             curly_braces = False
@@ -460,7 +499,7 @@ def get_proc_name(cmd):
     if isinstance(cmd, Iterable) and not isinstance(cmd, str):
         cmd = " ".join(cmd)
 
-    return cmd.split()[0].replace('(', '').replace(')', '')
+    return cmd.split()[0].replace("(", "").replace(")", "")
 
 
 def get_first_value(param, param_pools, on_missing=None, error=True):
@@ -506,7 +545,8 @@ def get_first_value(param, param_pools, on_missing=None, error=True):
             raise TypeError(
                 "Any callable passed as the action to take when a requested "
                 "parameter is missing should accept that parameter and return "
-                "a value.")
+                "a value."
+            )
         return on_missing
 
 
@@ -581,7 +621,7 @@ def is_sam_or_bam(file_name):
 
     :param str file_name: Name/path of file to check as SAM-formatted.
     :return bool: Whether file appears to be SAM-formatted
-            """
+    """
     _, ext = os.path.splitext(file_name)
     return ext in [".bam", ".sam"]
 
@@ -595,7 +635,9 @@ def logger_via_cli(opts, **kwargs):
     :return logging.Logger: newly created and configured logger
     """
     from copy import deepcopy
+
     import logmuse
+
     kwds = deepcopy(kwargs)
     # By default, don't require the logging options to have been added to the parser.
     kwds.setdefault("strict", False)
@@ -617,6 +659,7 @@ def make_lock_name(original_path, path_base_folder):
     :return str: Name or perhaps relative (to the base folder path indicated)
         path to lock file
     """
+
     def make_name(p):
         if p:
             return p.replace(path_base_folder, "").replace(os.sep, "__")
@@ -628,8 +671,11 @@ def make_lock_name(original_path, path_base_folder):
     elif isinstance(original_path, Sequence):
         result = [make_name(p) for p in original_path]
         return [x for x in result if x]
-    raise TypeError("Neither string nor other sequence type: {} ({})".
-                    format(original_path, type(original_path)))
+    raise TypeError(
+        "Neither string nor other sequence type: {} ({})".format(
+            original_path, type(original_path)
+        )
+    )
 
 
 def is_multi_target(target):
@@ -645,8 +691,11 @@ def is_multi_target(target):
     elif isinstance(target, Sequence):
         return len(target) > 1
     else:
-        raise TypeError("Could not interpret argument as a target: {} ({})".
-                        format(target, type(target)))
+        raise TypeError(
+            "Could not interpret argument as a target: {} ({})".format(
+                target, type(target)
+            )
+        )
 
 
 def parse_cmd(cmd, shell):
@@ -657,12 +706,18 @@ def parse_cmd(cmd, shell):
     :param bool shell: if the command should be run in the shell rather that in a subprocess
     :return list[dict]: list of dicts of commands
     """
+
     def _make_dict(command):
-        a, s = (command, True) if check_shell(command, shell) else (split(command), False)
+        a, s = (
+            (command, True) if check_shell(command, shell) else (split(command), False)
+        )
         return dict(args=a, stdout=PIPE, shell=s)
 
-    return [_make_dict(c) for c in split_by_pipes(cmd)] if not shell and check_shell_pipes(cmd) \
+    return (
+        [_make_dict(c) for c in split_by_pipes(cmd)]
+        if not shell and check_shell_pipes(cmd)
         else [dict(args=cmd, stdout=None, shell=True)]
+    )
 
 
 def parse_cores(cores, pm, default):
@@ -730,16 +785,16 @@ def pipeline_filepath(pm, filename=None, suffix=None):
     """
 
     if filename is None and suffix is None:
-        raise TypeError("Provide filename and/or suffix to create "
-                        "path to a pipeline file.")
+        raise TypeError(
+            "Provide filename and/or suffix to create " "path to a pipeline file."
+        )
 
     filename = (filename or pm.name) + (suffix or "")
 
     # Note that Pipeline and PipelineManager define the same outfolder.
     # In fact, a Pipeline just references its manager's outfolder.
     # So we can handle argument of either type to pm parameter.
-    return filename if os.path.isabs(filename) \
-        else os.path.join(pm.outfolder, filename)
+    return filename if os.path.isabs(filename) else os.path.join(pm.outfolder, filename)
 
 
 def translate_stage_name(stage):
@@ -804,12 +859,12 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     else:
         from collections.abc import Iterable
 
-
     from logmuse import LOGGING_CLI_OPTDATA
+
     # Define the argument groups.
     args_by_group = {
-        "pypiper": ["recover", "new-start", "dirty", "force-follow", "testmode"] +
-            LOGGING_CLI_OPTDATA.keys(),
+        "pypiper": ["recover", "new-start", "dirty", "force-follow", "testmode"]
+        + LOGGING_CLI_OPTDATA.keys(),
         "config": ["config"],
         "checkpoint": ["stop-before", "stop-after"],
         "resource": ["mem", "cores"],
@@ -817,9 +872,13 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
         "common": ["input", "sample-name"],
         "ngs": ["sample-name", "input", "input2", "genome", "single-or-paired"],
         "logmuse": LOGGING_CLI_OPTDATA.keys(),
-        "pipestat": ["pipestat-namespace", "pipestat-record-id",
-                     "pipestat-schema", "pipestat-results-file",
-                     "pipestat-config"]
+        "pipestat": [
+            "pipestat-namespace",
+            "pipestat-record-id",
+            "pipestat-schema",
+            "pipestat-results-file",
+            "pipestat-config",
+        ],
     }
 
     # Handle various types of group specifications.
@@ -885,83 +944,127 @@ def _add_args(parser, args, required):
 
     # Define the arguments.
     argument_data = {
-        "testmode":
-            ("-T", {"action": "store_true",
-                    "help": "Only print commands, don't run"}),
-        "recover":
-            ("-R", {"action": "store_true",
-                    "help": "Overwrite locks to recover from previous failed run"}),
-        "new-start":
-            ("-N", {"action": "store_true",
-                    "help": "Overwrite all results to start a fresh run"}),
-        "dirty":
-            ("-D", {"action": "store_true",
-                    "help": "Don't auto-delete intermediate files"}),
-        "force-follow":
-            ("-F", {"action": "store_true",
-                    "help": "Always run 'follow' commands"}),
-        "start-point":
-            {"help": "Name of pipeline stage at which to begin"},
-        "stop-before":
-            {"help": "Name of pipeline stage at which to stop "
-                     "(exclusive, i.e. not run)"},
-        "stop-after":
-            {"help": "Name of pipeline stage at which to stop "
-                     "(inclusive, i.e. run)"},
-        "config":
-            ("-C", {"dest": "config_file", "metavar": "CONFIG_FILE",
-                    "default": default_config,
-                    "help": "Pipeline configuration file (YAML). "
-                            "Relative paths are with respect to the "
-                            "pipeline script."}),
-        "pipeline-name":
-            {"metavar": "PIPELINE_NAME", "help": "Name of the pipeline"},
-        "sample-name":
-            ("-S", {"metavar": "SAMPLE_NAME",
-                    "help": "Name for sample to run"}),
-        "output-parent":
-            ("-O", {"metavar": "PARENT_OUTPUT_FOLDER",
-                    "help": "Parent output directory of project"}),
-        "cores":
-            ("-P", {"type": int, "default": 1, "metavar": "NUMBER_OF_CORES",
-                    "help": "Number of cores for parallelized processes"}),
-        "mem":
-            ("-M", {"default": "4000", "metavar": "MEMORY_LIMIT",
-                    "help": "Memory limit for processes accepting such. "
-                    "Default units are megabytes unless specified "
-                    "using the suffix [K|M|G|T]."}),
-        "input":
-            ("-I", {"nargs": "+", "metavar": "INPUT_FILES",
-                    "help": "One or more primary input files"}),
-        "input2":
-            ("-I2", {"nargs": "*", "metavar": "INPUT_FILES2",
-                     "help": "Secondary input files, such as read2"}),
-        "genome":
-            ("-G", {"dest": "genome_assembly",
-                    "help": "Identifier for genome assembly"}),
-        "single-or-paired":
-            ("-Q", {"default": "single",
-                    "help": "Single- or paired-end sequencing protocol"}),
-        "pipestat-namespace":
-            {"help": "Namespace to report into. This will be the DB table name "
-                     "if using DB as the object back-end"},
-        "pipestat-record-id":
-            {"help": "Record identifier to report for"},
-        "pipestat-schema":
-            {"help": "Path to the output schema that formalizes the "
-                     "results structure"},
-        "pipestat-config":
-            {"help": "Path to the configuration file"},
-        "pipestat-results-file":
-            {"help": "YAML file to report into, if file is used as "
-                     "the object back-end"}
+        "testmode": (
+            "-T",
+            {"action": "store_true", "help": "Only print commands, don't run"},
+        ),
+        "recover": (
+            "-R",
+            {
+                "action": "store_true",
+                "help": "Overwrite locks to recover from previous failed run",
+            },
+        ),
+        "new-start": (
+            "-N",
+            {
+                "action": "store_true",
+                "help": "Overwrite all results to start a fresh run",
+            },
+        ),
+        "dirty": (
+            "-D",
+            {"action": "store_true", "help": "Don't auto-delete intermediate files"},
+        ),
+        "force-follow": (
+            "-F",
+            {"action": "store_true", "help": "Always run 'follow' commands"},
+        ),
+        "start-point": {"help": "Name of pipeline stage at which to begin"},
+        "stop-before": {
+            "help": "Name of pipeline stage at which to stop "
+            "(exclusive, i.e. not run)"
+        },
+        "stop-after": {
+            "help": "Name of pipeline stage at which to stop " "(inclusive, i.e. run)"
+        },
+        "config": (
+            "-C",
+            {
+                "dest": "config_file",
+                "metavar": "CONFIG_FILE",
+                "default": default_config,
+                "help": "Pipeline configuration file (YAML). "
+                "Relative paths are with respect to the "
+                "pipeline script.",
+            },
+        ),
+        "pipeline-name": {"metavar": "PIPELINE_NAME", "help": "Name of the pipeline"},
+        "sample-name": (
+            "-S",
+            {"metavar": "SAMPLE_NAME", "help": "Name for sample to run"},
+        ),
+        "output-parent": (
+            "-O",
+            {
+                "metavar": "PARENT_OUTPUT_FOLDER",
+                "help": "Parent output directory of project",
+            },
+        ),
+        "cores": (
+            "-P",
+            {
+                "type": int,
+                "default": 1,
+                "metavar": "NUMBER_OF_CORES",
+                "help": "Number of cores for parallelized processes",
+            },
+        ),
+        "mem": (
+            "-M",
+            {
+                "default": "4000",
+                "metavar": "MEMORY_LIMIT",
+                "help": "Memory limit for processes accepting such. "
+                "Default units are megabytes unless specified "
+                "using the suffix [K|M|G|T].",
+            },
+        ),
+        "input": (
+            "-I",
+            {
+                "nargs": "+",
+                "metavar": "INPUT_FILES",
+                "help": "One or more primary input files",
+            },
+        ),
+        "input2": (
+            "-I2",
+            {
+                "nargs": "*",
+                "metavar": "INPUT_FILES2",
+                "help": "Secondary input files, such as read2",
+            },
+        ),
+        "genome": (
+            "-G",
+            {"dest": "genome_assembly", "help": "Identifier for genome assembly"},
+        ),
+        "single-or-paired": (
+            "-Q",
+            {"default": "single", "help": "Single- or paired-end sequencing protocol"},
+        ),
+        "pipestat-namespace": {
+            "help": "Namespace to report into. This will be the DB table name "
+            "if using DB as the object back-end"
+        },
+        "pipestat-record-id": {"help": "Record identifier to report for"},
+        "pipestat-schema": {
+            "help": "Path to the output schema that formalizes the " "results structure"
+        },
+        "pipestat-config": {"help": "Path to the configuration file"},
+        "pipestat-results-file": {
+            "help": "YAML file to report into, if file is used as "
+            "the object back-end"
+        },
     }
-    
+
     from logmuse import LOGGING_CLI_OPTDATA
+
     argument_data.update(LOGGING_CLI_OPTDATA)
 
     if len(required) > 0:
-        required_named = parser.add_argument_group('required named arguments')
+        required_named = parser.add_argument_group("required named arguments")
 
     # Configure the parser for each argument.
     for arg in args:
@@ -979,12 +1082,13 @@ def _add_args(parser, args, required):
                 raise TypeError(
                     "Option name must map to dict or two-tuple (short "
                     "name and dict) of argument command-line argument "
-                    "specification data.")
+                    "specification data."
+                )
 
         argdata["required"] = arg in required
 
         long_opt = "--{}".format(arg)
-        opts = (short_opt, long_opt) if short_opt else (long_opt, )
+        opts = (short_opt, long_opt) if short_opt else (long_opt,)
         if arg in required:
             required_named.add_argument(*opts, **argdata)
         else:

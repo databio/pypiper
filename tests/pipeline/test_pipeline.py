@@ -1,43 +1,54 @@
 """ Tests for the Pipeline data type """
 
-from functools import partial
 import glob
 import os
+from functools import partial
+
 import pytest
+
 from pypiper import Pipeline
 from pypiper.manager import COMPLETE_FLAG, PAUSE_FLAG, RUN_FLAG
-from pypiper.pipeline import \
-        checkpoint_filepath, IllegalPipelineDefinitionError, \
-        IllegalPipelineExecutionError, UnknownPipelineStageError
+from pypiper.pipeline import (
+    IllegalPipelineDefinitionError,
+    IllegalPipelineExecutionError,
+    UnknownPipelineStageError,
+    checkpoint_filepath,
+)
 from pypiper.stage import Stage
-from pypiper.utils import \
-    flag_name, pipeline_filepath, checkpoint_filename, translate_stage_name
+from pypiper.utils import (
+    checkpoint_filename,
+    flag_name,
+    pipeline_filepath,
+    translate_stage_name,
+)
+from tests.conftest import (
+    CONTENTS,
+    FILE1_NAME,
+    FILE_TEXT_PAIRS,
+    FILENAMES,
+    OUTPUT_SUFFIX,
+    TEST_PIPE_NAME,
+    write_file1,
+    write_file2,
+    write_file3,
+)
 from tests.helpers import named_param
-from tests.conftest import \
-    write_file1, write_file2, write_file3, \
-    CONTENTS, FILENAMES, FILE1_NAME, FILE_TEXT_PAIRS, \
-    OUTPUT_SUFFIX, TEST_PIPE_NAME
-
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
-
 
 
 BASIC_ACTIONS = [write_file1, write_file2, write_file3]
 STAGE_SPECS = ["stage", "name", "function"]
 
 
-
 def pytest_generate_tests(metafunc):
-    """ Dynamic creation and parameterization of cases in this module. """
-    if "test_type" in metafunc.fixturenames and \
-            metafunc.cls == MostBasicPipelineTests:
+    """Dynamic creation and parameterization of cases in this module."""
+    if "test_type" in metafunc.fixturenames and metafunc.cls == MostBasicPipelineTests:
         metafunc.parametrize(
-                argnames="test_type", 
-                argvalues=["effects", "stage_labels", 
-                           "checkpoints", "pipe_flag"])
-
+            argnames="test_type",
+            argvalues=["effects", "stage_labels", "checkpoints", "pipe_flag"],
+        )
 
 
 @pytest.fixture
@@ -61,7 +72,6 @@ def stage(request):
     return _parse_stage(s, spec_type)
 
 
-
 def _parse_stage(s, spec_type):
     """
     Do a type transformation on a Stage function.
@@ -81,42 +91,37 @@ def _parse_stage(s, spec_type):
     return s
 
 
-
 class EmptyStagesPipeline(Pipeline):
-    """ Illegal (via empty stages) Pipeline definition. """
+    """Illegal (via empty stages) Pipeline definition."""
 
     def __init__(self, manager):
-        super(EmptyStagesPipeline, self).__init__(
-                TEST_PIPE_NAME, manager=manager)
+        super(EmptyStagesPipeline, self).__init__(TEST_PIPE_NAME, manager=manager)
 
     def stages(self):
         return []
 
 
 class NameCollisionPipeline(Pipeline):
-    """ Illegal (via empty stages) Pipeline definition. """
+    """Illegal (via empty stages) Pipeline definition."""
 
     def __init__(self, manager):
-        super(NameCollisionPipeline, self).__init__(
-                TEST_PIPE_NAME, manager=manager)
+        super(NameCollisionPipeline, self).__init__(TEST_PIPE_NAME, manager=manager)
 
     def stages(self):
         name = "write file1"
-        return [("write file1", write_file1),
-                (translate_stage_name(name), write_file1)]
-
+        return [("write file1", write_file1), (translate_stage_name(name), write_file1)]
 
 
 class RunPipelineCornerCaseTests:
-    """ Tests for exceptional cases of pipeline execution. """
-
+    """Tests for exceptional cases of pipeline execution."""
 
     @named_param(argnames="point", argvalues=BASIC_ACTIONS)
     @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
     @named_param(argnames="inclusive", argvalues=[False, True])
     def test_start_point_equals_stop(
-            self, dummy_pipe, point, spec_type, stage, inclusive):
-        """ Start=stop is only permitted if stop should be run. """
+        self, dummy_pipe, point, spec_type, stage, inclusive
+    ):
+        """Start=stop is only permitted if stop should be run."""
 
         _assert_pipeline_initialization(dummy_pipe)
 
@@ -130,80 +135,83 @@ class RunPipelineCornerCaseTests:
             with pytest.raises(IllegalPipelineExecutionError):
                 dummy_pipe.run(start_point=stage, stop_before=stage)
 
-
     @pytest.mark.parametrize(
-            argnames=["start_point", "stop"],
-            argvalues=[(write_file2, write_file1),
-                       (write_file3, write_file2),
-                       (write_file3, write_file1)])
+        argnames=["start_point", "stop"],
+        argvalues=[
+            (write_file2, write_file1),
+            (write_file3, write_file2),
+            (write_file3, write_file1),
+        ],
+    )
     @pytest.mark.parametrize(argnames="spec_type", argvalues=STAGE_SPECS)
     @pytest.mark.parametrize(
-            argnames="stop_type", argvalues=["stop_before", "stop_after"])
+        argnames="stop_type", argvalues=["stop_before", "stop_after"]
+    )
     def test_start_point_after_stop(
-            self, dummy_pipe, start_point, stop, stop_type, spec_type):
-        """ Regardless of specification type, start > stop is prohibited. """
+        self, dummy_pipe, start_point, stop, stop_type, spec_type
+    ):
+        """Regardless of specification type, start > stop is prohibited."""
         start_point = _parse_stage(start_point, spec_type)
         stop = _parse_stage(stop, spec_type)
         with pytest.raises(IllegalPipelineExecutionError):
             dummy_pipe.run(**{"start_point": start_point, stop_type: stop})
 
-
     @named_param(
-            argnames="undefined_stage",
-            argvalues=["unsupported-pipeline-stage", "unknown_phase"])
-    @named_param(argnames="stage_point",
-                 argvalues=["start_point", "stop_before", "stop_after"])
+        argnames="undefined_stage",
+        argvalues=["unsupported-pipeline-stage", "unknown_phase"],
+    )
+    @named_param(
+        argnames="stage_point", argvalues=["start_point", "stop_before", "stop_after"]
+    )
     def test_unknown_stage(self, dummy_pipe, undefined_stage, stage_point):
-        """ Start specification must be of known stage name. """
+        """Start specification must be of known stage name."""
         with pytest.raises(UnknownPipelineStageError):
             dummy_pipe.run(**{stage_point: undefined_stage})
-
 
     @named_param(argnames="stop_before", argvalues=BASIC_ACTIONS)
     @named_param(argnames="stop_after", argvalues=BASIC_ACTIONS)
     @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
     def test_stop_before_and_stop_after(
-            self, dummy_pipe, stop_before, stop_after, spec_type):
-        """ Inclusive and exclusive stop cannot both be provided. """
+        self, dummy_pipe, stop_before, stop_after, spec_type
+    ):
+        """Inclusive and exclusive stop cannot both be provided."""
         inclusive_stop = _parse_stage(stop_after, spec_type)
         exclusive_stop = _parse_stage(stop_before, spec_type)
         kwargs = {"stop_before": exclusive_stop, "stop_after": inclusive_stop}
         with pytest.raises(IllegalPipelineExecutionError):
             dummy_pipe.run(**kwargs)
 
-
     def test_empty_stages_is_prohibited(self, pl_mgr):
-        """ Pipeline must have non-empty stages """
+        """Pipeline must have non-empty stages"""
         with pytest.raises(IllegalPipelineDefinitionError):
             EmptyStagesPipeline(manager=pl_mgr)
 
-
     def test_stage_name_collision_is_prohibited(self, pl_mgr):
-        """ Each stage needs unique translation, used for checkpoint file. """
+        """Each stage needs unique translation, used for checkpoint file."""
         with pytest.raises(IllegalPipelineDefinitionError):
             NameCollisionPipeline(manager=pl_mgr)
 
 
-
 class MostBasicPipelineTests:
-    """ Test pipeline defined with notion of 'absolute minimum' config. """
-
+    """Test pipeline defined with notion of 'absolute minimum' config."""
 
     def test_runs_through_full(self, dummy_pipe, test_type):
-        """ The entire basic pipeline should execute. """
+        """The entire basic pipeline should execute."""
 
         # Start with clean output folder.
         _assert_pipeline_initialization(dummy_pipe)
 
         # Make the call under test.
         dummy_pipe.run(start_point=None, stop_before=None, stop_after=None)
-        
+
         if test_type == "effects":
             # We're interested in existence and content of targets.
             exp_files, _ = zip(*FILE_TEXT_PAIRS)
             _assert_output(dummy_pipe, exp_files)
-            fpath_text_pairs = [(pipeline_filepath(dummy_pipe, fname), content)
-                                for fname, content in FILE_TEXT_PAIRS]
+            fpath_text_pairs = [
+                (pipeline_filepath(dummy_pipe, fname), content)
+                for fname, content in FILE_TEXT_PAIRS
+            ]
             for fpath, content in fpath_text_pairs:
                 _assert_expected_content(fpath, content)
 
@@ -214,8 +222,11 @@ class MostBasicPipelineTests:
                 try:
                     assert os.path.isfile(chkpt_fpath)
                 except AssertionError:
-                    print("Stage '{}' file doesn't exist: '{}'".format(
-                        stage.name, chkpt_fpath))
+                    print(
+                        "Stage '{}' file doesn't exist: '{}'".format(
+                            stage.name, chkpt_fpath
+                        )
+                    )
                     raise
 
         elif test_type == "stage_labels":
@@ -229,28 +240,26 @@ class MostBasicPipelineTests:
         else:
             raise ValueError("Unknown test type: {}".format(test_type))
 
-
     def test_skip_completed(self, dummy_pipe, test_type):
-        """ Pre-completed stage(s) are skipped. """
+        """Pre-completed stage(s) are skipped."""
 
         _assert_pipeline_initialization(dummy_pipe)
 
         first_stage = dummy_pipe.stages()[0]
         first_stage_chkpt_fpath = checkpoint_filepath(first_stage, dummy_pipe)
-        open(first_stage_chkpt_fpath, 'w').close()
+        open(first_stage_chkpt_fpath, "w").close()
         assert os.path.isfile(first_stage_chkpt_fpath)
 
         exp_skips = [first_stage]
         exp_execs = dummy_pipe.stages()[1:]
 
         # This should neither exist nor be created.
-        first_stage_outfile = pipeline_filepath(
-                dummy_pipe.manager, filename=FILE1_NAME)
+        first_stage_outfile = pipeline_filepath(dummy_pipe.manager, filename=FILE1_NAME)
         assert not os.path.isfile(first_stage_outfile)
-        
+
         # Do the action.
         dummy_pipe.run()
-        
+
         if test_type == "effects":
             # We should not have generated the first stage's output file.
             # That notion is covered in the outfiles assertion.
@@ -274,22 +283,21 @@ class MostBasicPipelineTests:
         else:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
-
-    @named_param(argnames="start_index",
-                 argvalues=range(len(BASIC_ACTIONS) - 1))
-    @named_param(argnames="start_spec_type",
-                 argvalues=["stage", "function", "name"])
+    @named_param(argnames="start_index", argvalues=range(len(BASIC_ACTIONS) - 1))
+    @named_param(argnames="start_spec_type", argvalues=["stage", "function", "name"])
     def test_execution_allows_specific_starting_point(
-            self, dummy_pipe, test_type, start_index, start_spec_type):
-        """ A pipeline may be started from an arbitrary checkpoint. """
+        self, dummy_pipe, test_type, start_index, start_spec_type
+    ):
+        """A pipeline may be started from an arbitrary checkpoint."""
         _assert_pipeline_initialization(dummy_pipe)
         s = _parse_stage(BASIC_ACTIONS[start_index], start_spec_type)
         dummy_pipe.run(start_point=s)
         if test_type == "effects":
             exp_files = FILENAMES[start_index:]
             _assert_output(dummy_pipe, exp_files)
-            fpaths = [pipeline_filepath(dummy_pipe.manager, filename=fn)
-                      for fn in exp_files]
+            fpaths = [
+                pipeline_filepath(dummy_pipe.manager, filename=fn) for fn in exp_files
+            ]
             for fp, content in zip(fpaths, CONTENTS[start_index:]):
                 _assert_expected_content(fp, content)
         elif test_type == "checkpoints":
@@ -298,17 +306,18 @@ class MostBasicPipelineTests:
         elif test_type == "stage_labels":
             # Ensure match between skipped and executed stage expectations
             # and observations.
-            _assert_stage_states(dummy_pipe, BASIC_ACTIONS[:start_index],
-                                 BASIC_ACTIONS[start_index:])
+            _assert_stage_states(
+                dummy_pipe, BASIC_ACTIONS[:start_index], BASIC_ACTIONS[start_index:]
+            )
         elif test_type == "pipe_flag":
             _assert_pipeline_completed(dummy_pipe)
         else:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
-
     def test_all_checkpoints_after_first_executed_are_overwritten(
-            self, dummy_pipe, test_type):
-        """ Potential for dependent results means execution is contiguous. """
+        self, dummy_pipe, test_type
+    ):
+        """Potential for dependent results means execution is contiguous."""
 
         # Start fresh.
         _assert_pipeline_initialization(dummy_pipe)
@@ -317,7 +326,7 @@ class MostBasicPipelineTests:
         fpath_time_pairs = []
         for s in BASIC_ACTIONS[1:]:
             check_fpath = checkpoint_filepath(s, dummy_pipe.manager)
-            open(check_fpath, 'w').close()
+            open(check_fpath, "w").close()
             fpath_time_pairs.append((check_fpath, os.path.getmtime(check_fpath)))
             assert os.path.isfile(check_fpath)
 
@@ -334,19 +343,19 @@ class MostBasicPipelineTests:
         elif test_type == "checkpoints":
             _assert_checkpoints(dummy_pipe, BASIC_ACTIONS)
         elif test_type == "stage_labels":
-            _assert_stage_states(dummy_pipe, expected_skipped=[],
-                                 expected_executed=BASIC_ACTIONS)
+            _assert_stage_states(
+                dummy_pipe, expected_skipped=[], expected_executed=BASIC_ACTIONS
+            )
         elif test_type == "pipe_flag":
             _assert_pipeline_completed(dummy_pipe)
         else:
             raise ValueError("Unknown test type: {}".format(test_type))
 
-
     @named_param(argnames="stop_index", argvalues=range(1, len(BASIC_ACTIONS)))
     @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
     @named_param(argnames="stop_type", argvalues=["stop_before", "stop_after"])
     def test_stop(self, dummy_pipe, test_type, stop_index, spec_type, stop_type):
-        """ A pipeline is capable of halting at/after a specified stage. """
+        """A pipeline is capable of halting at/after a specified stage."""
 
         # Negative control / pretest.
         _assert_pipeline_initialization(dummy_pipe)
@@ -366,8 +375,9 @@ class MostBasicPipelineTests:
         if test_type == "effects":
             exp_files = FILENAMES[:stop_index]
             _assert_output(dummy_pipe, exp_files)
-            fpaths = [pipeline_filepath(dummy_pipe.manager, filename=fn)
-                      for fn in exp_files]
+            fpaths = [
+                pipeline_filepath(dummy_pipe.manager, filename=fn) for fn in exp_files
+            ]
             for fp, content in zip(fpaths, CONTENTS[:stop_index]):
                 _assert_expected_content(fp, content)
 
@@ -375,11 +385,12 @@ class MostBasicPipelineTests:
             _assert_checkpoints(dummy_pipe, BASIC_ACTIONS[:stop_index])
         elif test_type == "stage_labels":
             _assert_stage_states(
-                    dummy_pipe, expected_skipped=BASIC_ACTIONS[stop_index:],
-                    expected_executed=BASIC_ACTIONS[:stop_index])
+                dummy_pipe,
+                expected_skipped=BASIC_ACTIONS[stop_index:],
+                expected_executed=BASIC_ACTIONS[:stop_index],
+            )
         elif test_type == "pipe_flag":
-            if (stop_index == len(BASIC_ACTIONS)) and \
-                    (stop_type == "stop_after"):
+            if (stop_index == len(BASIC_ACTIONS)) and (stop_type == "stop_after"):
                 _assert_pipeline_completed(dummy_pipe)
             else:
                 _assert_pipeline_halted(dummy_pipe)
@@ -387,20 +398,20 @@ class MostBasicPipelineTests:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
 
-
 @named_param(
-    argnames="spec_type",
-    argvalues=["filename", "filepath", "stage", "stage_name"])
+    argnames="spec_type", argvalues=["filename", "filepath", "stage", "stage_name"]
+)
 @named_param(argnames="completed", argvalues=[False, True])
 def test_stage_completion_determination(dummy_pipe, spec_type, completed):
-    """ Pipeline responds to variety of request forms of checkpoint status. """
+    """Pipeline responds to variety of request forms of checkpoint status."""
 
     # Allow dummy stage definition and determination of filename.
     def dummy_test_func():
         pass
 
     chkpt_name = checkpoint_filename(
-            dummy_test_func.__name__, pipeline_name=dummy_pipe.name)
+        dummy_test_func.__name__, pipeline_name=dummy_pipe.name
+    )
     chkpt_fpath = checkpoint_filepath(chkpt_name, dummy_pipe.manager)
 
     # Determine how to request the checkpoint completion status.
@@ -417,22 +428,24 @@ def test_stage_completion_determination(dummy_pipe, spec_type, completed):
 
     # Touch the checkpoint file iff we're positively testing completion.
     if completed:
-        open(chkpt_fpath, 'w').close()
+        open(chkpt_fpath, "w").close()
 
     # Check the completion status for concordance with expectation.
     # Print a bit of info to inform hypotheses about the source of a
     # hypothetical test error/failure.
     outfolder_contents = os.listdir(dummy_pipe.outfolder)
     print("Pipeline outfolder contents: {}".format(outfolder_contents))
-    print("Contents as pipeline files: {}".format(
-        [pipeline_filepath(dummy_pipe.manager, f) for f in outfolder_contents]))
+    print(
+        "Contents as pipeline files: {}".format(
+            [pipeline_filepath(dummy_pipe.manager, f) for f in outfolder_contents]
+        )
+    )
     print("Checking completion status: {} ({})".format(s, type(s)))
     observed_completion = dummy_pipe.completed_stage(s)
     if completed:
         assert observed_completion
     else:
         assert not observed_completion
-
 
 
 def _assert_checkpoints(pl, exp_stages):
@@ -449,7 +462,6 @@ def _assert_checkpoints(pl, exp_stages):
     assert set(exp_fpaths) == set(obs_fpaths)
 
 
-
 def _assert_expected_content(fpath, content):
     """
     Determine whether a filepath has the expected content.
@@ -460,10 +472,9 @@ def _assert_expected_content(fpath, content):
     """
     assert os.path.isfile(fpath)
     exp_content = content.split(os.linesep)
-    with open(fpath, 'r') as f:
+    with open(fpath, "r") as f:
         obs_content = [l.rstrip(os.linesep) for l in f.readlines()]
     assert exp_content == obs_content
-
 
 
 def _assert_output(pl, expected_filenames):
@@ -476,20 +487,21 @@ def _assert_output(pl, expected_filenames):
     :param Iterable[str] expected_filenames:
     :return:
     """
-    obs_outfiles = glob.glob(pipeline_filepath(
-            pl.manager, "*{}".format(OUTPUT_SUFFIX)))
+    obs_outfiles = glob.glob(pipeline_filepath(pl.manager, "*{}".format(OUTPUT_SUFFIX)))
     assert len(expected_filenames) == len(obs_outfiles)
     expected_filepaths = []
     for fname in expected_filenames:
-        fpath = fname if os.path.isabs(fname) else \
-                pipeline_filepath(pl.manager, filename=fname)
+        fpath = (
+            fname
+            if os.path.isabs(fname)
+            else pipeline_filepath(pl.manager, filename=fname)
+        )
         expected_filepaths.append(fpath)
     assert set(expected_filepaths) == set(obs_outfiles)
 
 
-
 def _assert_pipeline_status(pl, flag):
-    """ Assert, based on flag file presence, that a pipeline's completed. """
+    """Assert, based on flag file presence, that a pipeline's completed."""
     flags = glob.glob(pipeline_filepath(pl.manager, filename=flag_name("*")))
     assert 1 == len(flags)
     exp_flag = pipeline_filepath(pl, suffix="_" + flag_name(flag))
@@ -500,11 +512,8 @@ def _assert_pipeline_status(pl, flag):
         raise
 
 
-
-_assert_pipeline_completed = partial(
-        _assert_pipeline_status, flag=COMPLETE_FLAG)
+_assert_pipeline_completed = partial(_assert_pipeline_status, flag=COMPLETE_FLAG)
 _assert_pipeline_halted = partial(_assert_pipeline_status, flag=PAUSE_FLAG)
-
 
 
 def _assert_pipeline_initialization(pl):
@@ -514,21 +523,21 @@ def _assert_pipeline_initialization(pl):
     :param pypiper.Pipeline pl: Pipeline instance for test case.
     """
     # TODO: implement.
-    suffices = {"_commands.sh", "_profile.tsv",
-                "_{}".format(flag_name(RUN_FLAG))}
-    exp_init_contents = \
-            [pipeline_filepath(pl.manager, suffix=s) for s in suffices]
-    obs_init_contents = [pipeline_filepath(pl.manager, filename=n)
-                         for n in os.listdir(pl.outfolder)]
+    suffices = {"_commands.sh", "_profile.tsv", "_{}".format(flag_name(RUN_FLAG))}
+    exp_init_contents = [pipeline_filepath(pl.manager, suffix=s) for s in suffices]
+    obs_init_contents = [
+        pipeline_filepath(pl.manager, filename=n) for n in os.listdir(pl.outfolder)
+    ]
     assert len(exp_init_contents) == len(obs_init_contents)
     assert set(exp_init_contents) == set(obs_init_contents)
 
 
-
 def _assert_stage_states(pl, expected_skipped, expected_executed):
-    """ Assert equivalence between expected and observed stage states. """
+    """Assert equivalence between expected and observed stage states."""
+
     def _ensure_stage(s):
         return s if isinstance(s, Stage) else Stage(s)
+
     expected_skipped = [_ensure_stage(s) for s in expected_skipped]
     expected_executed = [_ensure_stage(s) for s in expected_executed]
     assert expected_skipped == pl.skipped

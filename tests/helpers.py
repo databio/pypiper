@@ -1,16 +1,16 @@
 """ Helpers for tests """
 
-from functools import partial
 import glob
 import os
+from functools import partial
+
 import pytest
+
 from pypiper import Pipeline
 from pypiper.utils import checkpoint_filepath
 
-
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
-
 
 
 def assert_equal_dirpath(p1, p2):
@@ -21,7 +21,6 @@ def assert_equal_dirpath(p1, p2):
     :param str p2: Other path to compare.
     """
     assert p1.rstrip(os.sep) == p2.rstrip(os.sep)
-
 
 
 def fetch_checkpoint_files(pm):
@@ -35,7 +34,6 @@ def fetch_checkpoint_files(pm):
     """
     pattern = checkpoint_filepath("*", pm)
     return glob.glob(pattern)
-
 
 
 def named_param(argnames, argvalues):
@@ -53,15 +51,19 @@ def named_param(argnames, argvalues):
     :return functools.partial: Parameterize version of parametrize, with
         values and ids fixed.
     """
-    return partial(pytest.mark.parametrize(
-                   argnames=argnames, argvalues=argvalues,
-                   ids=lambda val: "{}={}".format(argnames, val)))
-
+    return partial(
+        pytest.mark.parametrize(
+            argnames=argnames,
+            argvalues=argvalues,
+            ids=lambda val: "{}={}".format(argnames, val),
+        )
+    )
 
 
 class SafeTestPipeline(Pipeline):
-    """ Pipeline for tests that protects against bad file descriptor. """
+    """Pipeline for tests that protects against bad file descriptor."""
+
     def __init__(self, *args, **kwargs):
-        kwd_args = {"multi": True}    # Like interactive mode.
+        kwd_args = {"multi": True}  # Like interactive mode.
         kwd_args.update(kwargs)
         super(SafeTestPipeline, self).__init__(*args, **kwd_args)

@@ -4,39 +4,44 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-__all__ = ["PipelineError", "PipelineHalt", "IllegalPipelineDefinitionError",
-           "IllegalPipelineExecutionError", "MissingCheckpointError",
-           "UnknownPipelineStageError", "UnsupportedFiletypeException",
-           "SubprocessError"]
-
-
+__all__ = [
+    "PipelineError",
+    "PipelineHalt",
+    "IllegalPipelineDefinitionError",
+    "IllegalPipelineExecutionError",
+    "MissingCheckpointError",
+    "UnknownPipelineStageError",
+    "UnsupportedFiletypeException",
+    "SubprocessError",
+]
 
 
 class PipelineError(Exception):
-    """ General pipeline error. """
+    """General pipeline error."""
+
     pass
+
 
 class SubprocessError(Exception):
     pass
+
 
 class IllegalPipelineDefinitionError(PipelineError):
     pass
 
 
-
 class IllegalPipelineExecutionError(PipelineError):
-    """ Represent cases of illogical start/stop run() declarations. """
+    """Represent cases of illogical start/stop run() declarations."""
+
     pass
 
 
-
 class MissingCheckpointError(Exception):
-    """ Represent case of expected but absent checkpoint file. """
+    """Represent case of expected but absent checkpoint file."""
 
     def __init__(self, checkpoint, filepath):
         msg = "{}: '{}'".format(checkpoint, filepath)
         super(MissingCheckpointError, self).__init__(msg)
-
 
 
 class UnknownPipelineStageError(Exception):
@@ -47,7 +52,6 @@ class UnknownPipelineStageError(Exception):
     :param pypiper.Pipeline pipeline: Pipeline for which the stage is unknown/undefined.
     """
 
-
     def __init__(self, stage_name, pipeline=None):
         message = stage_name
         if pipeline is not None:
@@ -57,10 +61,10 @@ class UnknownPipelineStageError(Exception):
                 # Just don't contextualize the error with known stages.
                 pass
             else:
-                message = "{}; defined stages: {}". \
-                    format(message, ", ".join(map(str, stages)))
+                message = "{}; defined stages: {}".format(
+                    message, ", ".join(map(str, stages))
+                )
         super(UnknownPipelineStageError, self).__init__(message)
-
 
 
 class PipelineHalt(Exception):
@@ -74,6 +78,7 @@ class PipelineHalt(Exception):
     PipelineManager's halt method raise this exception.
 
     """
+
     def __init__(self, checkpoint=None, finished=None):
         if checkpoint is None:
             super(PipelineHalt, self).__init__()
@@ -81,8 +86,9 @@ class PipelineHalt(Exception):
             if isinstance(checkpoint, str):
                 last_stage_done = checkpoint
             else:
-                last_stage_done = getattr(checkpoint, "name", None) or \
-                                  getattr(checkpoint, "__name__", None)
+                last_stage_done = getattr(checkpoint, "name", None) or getattr(
+                    checkpoint, "__name__", None
+                )
             if not last_stage_done:
                 super(PipelineHalt, self).__init__()
             else:
@@ -95,9 +101,9 @@ class PipelineHalt(Exception):
                 super(PipelineHalt, self).__init__(msg)
 
 
-
 class UnsupportedFiletypeException(Exception):
-    """ Restrict filetype domain. """
+    """Restrict filetype domain."""
+
     # Use superclass ctor to allow file name/path or extension to pass
     # through as the message for why this error is occurring.
     pass

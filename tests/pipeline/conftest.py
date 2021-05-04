@@ -1,27 +1,24 @@
 """ Test configuration for Pipeline tests. """
 
 import os
+
 import pytest
+
 from pypiper import Stage
 from tests.helpers import SafeTestPipeline
 
-
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
-
 
 
 READ_ALIGNER_FILENAME = "aligner.lst"
 PEAK_CALLER_FILENAME = "caller.lst"
 
 
-
 def pytest_generate_tests(metafunc):
-    """ Dynamic test case parameterization. """
+    """Dynamic test case parameterization."""
     if "pl_name" in metafunc.fixturenames:
-        metafunc.parametrize(
-            "pl_name", [read_aligner.__name__, call_peaks.__name__])
-
+        metafunc.parametrize("pl_name", [read_aligner.__name__, call_peaks.__name__])
 
 
 # Dummy functions used as elements of pipeline stages() collections.
@@ -41,10 +38,8 @@ def call_peaks():
     pass
 
 
-
 class FunctionNameWriterPipeline(SafeTestPipeline):
-    """ Basic pipeline that writes to file the names of its functions. """
-
+    """Basic pipeline that writes to file the names of its functions."""
 
     def __init__(self, name, outfolder, filename, functions):
         """
@@ -62,9 +57,7 @@ class FunctionNameWriterPipeline(SafeTestPipeline):
         self.name_output_file = filename
         self.functions = functions
         # Get the stages() benefit of superclass extension.
-        super(FunctionNameWriterPipeline, self).__init__(
-            name=name, outfolder=outfolder)
-
+        super(FunctionNameWriterPipeline, self).__init__(name=name, outfolder=outfolder)
 
     def write_name(self, func):
         """
@@ -73,12 +66,11 @@ class FunctionNameWriterPipeline(SafeTestPipeline):
         :param callable func: Name of function to write to the output file.
         """
         outpath = os.path.join(self.outfolder, self.name_output_file)
-        with open(outpath, 'a') as f:
+        with open(outpath, "a") as f:
             f.write(func.__name__ + os.linesep)
 
-
     def run(self, **kwargs):
-        """ Start with clean output file, then use superclass method. """
+        """Start with clean output file, then use superclass method."""
         # Ensure that we start with a clean file since the nature of the
         # operations performed (sequential file writes) creates desire to
         # open output file in append mode rather than write mode.
@@ -87,30 +79,26 @@ class FunctionNameWriterPipeline(SafeTestPipeline):
             os.unlink(output_file)
         super(FunctionNameWriterPipeline, self).run(**kwargs)
 
-
     def stages(self):
-        """ Sequence of operations to perform. """
-        return [Stage(self.write_name, (f,), name=f.__name__)
-                for f in self.functions]
-
+        """Sequence of operations to perform."""
+        return [Stage(self.write_name, (f,), name=f.__name__) for f in self.functions]
 
 
 # Functions and fixtures
 
-def get_read_aligner(outfolder):
-    """ Create a dummy 'read aligner' pipeline. """
-    return FunctionNameWriterPipeline(
-        "read-aligner", outfolder,
-        READ_ALIGNER_FILENAME, [merge_input, qc, align_reads])
 
+def get_read_aligner(outfolder):
+    """Create a dummy 'read aligner' pipeline."""
+    return FunctionNameWriterPipeline(
+        "read-aligner", outfolder, READ_ALIGNER_FILENAME, [merge_input, qc, align_reads]
+    )
 
 
 def get_peak_caller(outfolder):
-    """ Create a dummy 'peak caller' pipeline. """
+    """Create a dummy 'peak caller' pipeline."""
     return FunctionNameWriterPipeline(
-        "peak-caller", outfolder,
-        PEAK_CALLER_FILENAME, [align_reads, call_peaks])
-
+        "peak-caller", outfolder, PEAK_CALLER_FILENAME, [align_reads, call_peaks]
+    )
 
 
 def get_pipeline(name, outfolder):
@@ -129,15 +117,13 @@ def get_pipeline(name, outfolder):
         raise ValueError("Unknown pipeline request: '{}'".format(name))
 
 
-
 @pytest.fixture
 def read_aligner(tmpdir):
-    """ Provide test case with a read aligner pipeline instance. """
+    """Provide test case with a read aligner pipeline instance."""
     return get_read_aligner(outfolder=tmpdir.strpath)
-
 
 
 @pytest.fixture
 def peak_caller(tmpdir):
-    """ Provide test case with a 'PeakCaller' pipeline instance. """
+    """Provide test case with a 'PeakCaller' pipeline instance."""
     return get_peak_caller(outfolder=tmpdir.strpath)

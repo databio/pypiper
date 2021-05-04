@@ -1,10 +1,11 @@
 """ Tests for utility functions """
 
 import os
+
 import mock
 import pytest
-from pypiper.utils import pipeline_filepath
 
+from pypiper.utils import pipeline_filepath
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -12,7 +13,6 @@ __email__ = "vreuter@virginia.edu"
 
 PIPELINE_NAMES = ["chiapet", "chipseq", "atacseq", "kallisto", "wgbs"]
 SUFFICES = [".txt", "_results.csv", ".stats.tsv", "-data.json"]
-
 
 
 @pytest.fixture
@@ -34,26 +34,25 @@ def pl_mgr(request, tmpdir):
 
     # Set output folder and name attributes for mocked PipelineManager.
     mock_mgr = mock.Mock(outfolder=tmpdir.strpath)
-    type(mock_mgr).name = pipe_name    # Circumvent 'name' keyword on Mock.
+    type(mock_mgr).name = pipe_name  # Circumvent 'name' keyword on Mock.
     return mock_mgr
 
 
-
 def test_requires_filename_or_suffix(pl_mgr):
-    """ Either filename or suffix is required to build a path. """
+    """Either filename or suffix is required to build a path."""
     with pytest.raises(TypeError):
         pipeline_filepath(pl_mgr)
-
 
 
 @pytest.mark.parametrize(argnames="pipe_name", argvalues=PIPELINE_NAMES)
 @pytest.mark.parametrize(argnames="suffix", argvalues=SUFFICES)
 @pytest.mark.parametrize(
-    argnames="test_type",
-    argvalues=["has_pipe_name", "has_suffix", "full_path"])
+    argnames="test_type", argvalues=["has_pipe_name", "has_suffix", "full_path"]
+)
 def test_uses_pipeline_name_if_no_filename(
-        pipe_name, suffix, test_type, pl_mgr, tmpdir):
-    """ Pipeline name is proxy for filename if just suffix is given. """
+    pipe_name, suffix, test_type, pl_mgr, tmpdir
+):
+    """Pipeline name is proxy for filename if just suffix is given."""
 
     observed = pipeline_filepath(pl_mgr, suffix=suffix)
 
@@ -74,12 +73,11 @@ def test_uses_pipeline_name_if_no_filename(
 
 
 @pytest.mark.parametrize(
-    argnames="filename",
-    argvalues=["testfile" + suffix for suffix in SUFFICES])
-@pytest.mark.parametrize(
-    argnames="test_type", argvalues=["filename", "filepath"])
+    argnames="filename", argvalues=["testfile" + suffix for suffix in SUFFICES]
+)
+@pytest.mark.parametrize(argnames="test_type", argvalues=["filename", "filepath"])
 def test_direct_filename(tmpdir, filename, pl_mgr, test_type):
-    """ When given, filename is used instead of pipeline name. """
+    """When given, filename is used instead of pipeline name."""
     fullpath = pipeline_filepath(pl_mgr, filename=filename)
     if test_type == "filename":
         _, observed = os.path.split(fullpath)
@@ -91,12 +89,10 @@ def test_direct_filename(tmpdir, filename, pl_mgr, test_type):
         raise ValueError("Unrecognized test type: '{}'".format(test_type))
 
 
-@pytest.mark.parametrize(
-    argnames="filename", argvalues=["output", "testfile"])
+@pytest.mark.parametrize(argnames="filename", argvalues=["output", "testfile"])
 @pytest.mark.parametrize(argnames="suffix", argvalues=SUFFICES)
-def test_suffix_is_appended_to_filename_if_both_are_provided(
-        pl_mgr, filename, suffix):
-    """ Suffix is appended to filename if both are provided. """
+def test_suffix_is_appended_to_filename_if_both_are_provided(pl_mgr, filename, suffix):
+    """Suffix is appended to filename if both are provided."""
     expected = filename + suffix
     fullpath = pipeline_filepath(pl_mgr, filename=filename, suffix=suffix)
     _, observed = os.path.split(fullpath)

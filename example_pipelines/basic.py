@@ -8,13 +8,13 @@
 # First, make sure you can import the pypiper package
 
 import os
+
 import pypiper
 
 # Create a PipelineManager instance (don't forget to name it!)
 # This starts the pipeline.
 
-pm = pypiper.PipelineManager(name="BASIC",
-    outfolder="pipeline_output/")
+pm = pypiper.PipelineManager(name="BASIC", outfolder="pipeline_output/")
 
 # Now just build shell command strings, and use the run function
 # to execute them in order. run needs 2 things: a command, and the
@@ -57,5 +57,5 @@ pm.report_result("last_entry", last_entry)
 # Now, stop the pipeline to complete gracefully.
 pm.stop_pipeline()
 
-# Observe your outputs in the pipeline_output folder 
+# Observe your outputs in the pipeline_output folder
 # to see what you've created.
