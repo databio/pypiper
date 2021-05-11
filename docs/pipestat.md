@@ -16,26 +16,29 @@ There are a multiple advantages of using piestat instead of the current pieline 
 
 In order to start reporting results with pipestat in your pipeline all you need to do is:  
 
-1. Define a [pipestat resuts schema](http://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema-format)
+### Define a [pipestat resuts schema](http://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema-format)
 
 ```yaml
 my_int_result:
-    type: integer
-    description: "This is my first result"
+  type: integer
+  description: "This is my first result"
 my_str_result:
-    type: string
+  type: string
 ```
-2. Pass the pipestat results schema to the `PipelineManager` object constructor.
+
+### Pass the pipestat results schema to the `PipelineManager` object constructor
 
 ```python
 pm = pypiper.PipelineManager(
-    name="hello_pypiper",
-    outfolfer="$HOME/hello_pypiper",
-    pipestat_schema="my_results_schema.yaml",
+  name="hello_pypiper",
+  outfolfer="$HOME/hello_pypiper",
+  pipestat_schema="pipestat_results_schema.yaml",
 ) 
 ```
 
-3. Use `pipestat` property of the `PipelineManager` object to report/retrieve results. See usage for more details.
+If `pipestat_schema` argument is not provided, by default pypiper will look for a `pipestat_results_schema.yaml` file next to the pipeline Python script.
+
+### Use `pipestat` property of the `PipelineManager` object to report/retrieve results. See usage for more details
 
 And in the simplest case... that's it! Pypiper *by default* will use a YAML-formated file to store the reported results in the selected `outfolder`.
 
@@ -43,7 +46,7 @@ And in the simplest case... that's it! Pypiper *by default* will use a YAML-form
 
 Pypiper-pipestat integration really shines when more advanced features are used. Here's how to set them up.
 
-**Use a database to store reported results**
+#### Use a database to store reported results*
 
 In order to establish a database connection pipestat requires few pieces of information, which *must* be provided in a [pipestat configuration file](http://pipestat.databio.org/en/latest/config/) passed to the `PipelineManager` constructor.
 
@@ -71,16 +74,11 @@ docker run -d --name pypiper-postgres \
 -v postgres-data:/var/lib/postgresql/data postgres
 ```
 
-**Highlight results**
+#### Highlight results
 
 The pipestat results schema can include any number of additional attributes for results. An example of that is *results highlighting*. 
 
 When a `highlight: true` attribute is included attribute under result identifier in the schema file the highlighted results can be later retrieved by pipestat clients via `PipelineManager.pipestat.highlighted_results` property, which simply returns a list of result identifiers. to be presented in a special way.
-
-**Custom run status management**
-
-
-
 
 ### Usage
 
@@ -94,14 +92,16 @@ Here we present the most commonly used features:
 
 ```python
 results = {
-    "my_int_result": 10,
-    "my_str_result": "test"
+  "my_int_result": 10,
+  "my_str_result": "test"
 }
 pm.pipestat.report(
-    values=results,
-    strict_type=True,
-    force_overwrite=True)
+  values=results,
+  strict_type=True,
+  force_overwrite=True
+)
 ```
+
 - results retrieval
 
 ```python
@@ -113,7 +113,6 @@ pm.pipestat.retrieve(result_identifier="my_int_result")
 ```python
 pm.pipestat.schema
 ```
-
 
 - exploration of canonical [jsonschema](https://json-schema.org/) representation of result schemas
 
