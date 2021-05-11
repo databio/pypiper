@@ -14,9 +14,7 @@ There are a multiple advantages of using piestat instead of the current pieline 
 
 ## Setup
 
-In order to start reporting results with pipestat in your pipeline all you need to do is:  
-
-### Define a [pipestat resuts schema](http://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema-format)
+In order to start reporting results with pipestat in your pipeline all you need to do is define a [pipestat resuts schema](http://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema-format):
 
 ```yaml
 my_int_result:
@@ -26,27 +24,30 @@ my_str_result:
   type: string
 ```
 
-### Pass the pipestat results schema to the `PipelineManager` object constructor
+And in the simplest case... that's it! Now you can use `pipestat` property of the `PipelineManager` object to report/retrieve results.
 
-```python
-pm = pypiper.PipelineManager(
-  name="hello_pypiper",
-  outfolfer="$HOME/hello_pypiper",
-  pipestat_schema="pipestat_results_schema.yaml",
-) 
-```
-
-If `pipestat_schema` argument is not provided, by default pypiper will look for a `pipestat_results_schema.yaml` file next to the pipeline Python script.
-
-### Use `pipestat` property of the `PipelineManager` object to report/retrieve results. See usage for more details
-
-And in the simplest case... that's it! Pypiper *by default* will use a YAML-formated file to store the reported results in the selected `outfolder`.
+Pypiper *by default* will use a YAML-formated file to store the reported results in the selected `outfolder` and will look for `pipestat_results_schema.yaml` file in the pipeline Python script directory.
 
 ### Advanced features
 
 Pypiper-pipestat integration really shines when more advanced features are used. Here's how to set them up.
 
-#### Use a database to store reported results*
+#### Configure custom pipestat options
+
+You can configure pipestat by passing arguments with custom values to `pypiper.PipelineManager` constructor:
+
+```python
+pm = pypiper.PipelineManager(
+  ...,
+  pipestat_schema="custom_results_schema.yaml",
+  pipestat_results_file="custom_results_file.yaml",
+  pipestat_record_id="my_record",
+  pipestat_namespace="my_namespace",
+  pipestat_config="custom_pipestat_config.yaml",
+) 
+```
+
+#### Use a database to store reported results
 
 In order to establish a database connection pipestat requires few pieces of information, which *must* be provided in a [pipestat configuration file](http://pipestat.databio.org/en/latest/config/) passed to the `PipelineManager` constructor.
 
