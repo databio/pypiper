@@ -926,6 +926,20 @@ def default_pipeline_config(pipeline_filepath):
     return os.path.splitext(os.path.basename(pipeline_filepath))[0] + ".yaml"
 
 
+def default_pipestat_schema(pipeline_filepath):
+    """
+    Determine the default filepath for a pipeline's pipestat output schema.
+
+    :param str pipeline_filepath: path to a pipeline
+    :return str: default filepath for a pipeline's pipestat output schema.
+    """
+    pipestat_results_schema = os.path.join(
+        os.path.dirname(pipeline_filepath), "pipestat_results_schema.yaml"
+    )
+    print(f"Using default schema: {pipestat_results_schema}")
+    return pipestat_results_schema if os.path.exists(pipestat_results_schema) else None
+
+
 def _add_args(parser, args, required):
     """
     Add new arguments to an ArgumentParser.

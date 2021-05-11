@@ -48,6 +48,7 @@ from .utils import (
     make_lock_name,
     parse_cmd,
     pipeline_filepath,
+    default_pipestat_schema,
 )
 
 __all__ = ["PipelineManager"]
@@ -322,6 +323,7 @@ class PipelineManager(object):
 
         # pipesatat setup
         potential_namespace = getattr(self, "sample_name", self.name)
+        potential_pipestat_schema = default_pipestat_schema(sys.argv[0])
 
         # don't force default pipestat_results_file value unless
         # pipestat config not provided
@@ -332,7 +334,7 @@ class PipelineManager(object):
         self._pipestat_manager = PipestatManager(
             namespace=pipestat_namespace or potential_namespace,
             record_identifier=pipestat_record_id or potential_namespace,
-            schema_path=pipestat_schema,
+            schema_path=pipestat_schema or potential_pipestat_schema,
             results_file_path=pipestat_results_file,
             config=pipestat_config,
         )
