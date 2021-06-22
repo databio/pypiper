@@ -559,7 +559,7 @@ class NGSTk(AttMapEcho):
                 ]
             )
             raw_reads = int(total_reads / n_input_files)
-            self.pm.report_result("Raw_reads", str(raw_reads))
+            self.pm.pipestat.report(values={"Raw_reads": str(raw_reads)})
 
             total_fastq_reads = sum(
                 [
@@ -569,7 +569,7 @@ class NGSTk(AttMapEcho):
             )
             fastq_reads = int(total_fastq_reads / n_output_files)
 
-            self.pm.report_result("Fastq_reads", fastq_reads)
+            self.pm.pipestat.report(values={"Fastq_reads": fastq_reads})
             input_ext = self.get_input_ext(input_files[0])
             # We can only assess pass filter reads in bam files with flags.
             if input_ext == ".bam":
@@ -577,7 +577,7 @@ class NGSTk(AttMapEcho):
                     [int(self.count_fail_reads(f, paired_end)) for f in input_files]
                 )
                 pf_reads = int(raw_reads) - num_failed_filter
-                self.pm.report_result("PF_reads", str(pf_reads))
+                self.pm.pipestat.report(values={"PF_reads": str(pf_reads)})
             if fastq_reads != int(raw_reads):
                 raise Exception(
                     "Fastq conversion error? Number of input reads "
@@ -615,9 +615,9 @@ class NGSTk(AttMapEcho):
                 print("WARNING: specified paired-end but no R2 file")
 
             n_trim = float(self.count_reads(trimmed_fastq, paired_end))
-            self.pm.report_result("Trimmed_reads", int(n_trim))
+            self.pm.pipestat.report(values={"Trimmed_reads": int(n_trim)})
             try:
-                rr = float(self.pm.get_stat("Raw_reads"))
+                rr = float(self.pm.pipestat.retrieve("Raw_reads"))
             except:
                 print("Can't calculate trim loss rate without raw read result.")
             else:
@@ -633,14 +633,28 @@ class NGSTk(AttMapEcho):
                 self.pm.run(cmd, lock_name="trimmed_fastqc", nofail=True)
                 fname, ext = os.path.splitext(os.path.basename(trimmed_fastq))
                 fastqc_html = os.path.join(fastqc_folder, fname + "_fastqc.html")
-                self.pm.report_object("FastQC report r1", fastqc_html)
+                self.pm.pipestat.report(
+                    values={
+                        "FastQC_report_R1": {
+                            "path": fastqc_html,
+                            "title": "FastQC report R1",
+                        }
+                    }
+                )
 
                 if paired_end and trimmed_fastq_R2:
                     cmd = self.fastqc(trimmed_fastq_R2, fastqc_folder)
                     self.pm.run(cmd, lock_name="trimmed_fastqc_R2", nofail=True)
                     fname, ext = os.path.splitext(os.path.basename(trimmed_fastq_R2))
                     fastqc_html = os.path.join(fastqc_folder, fname + "_fastqc.html")
-                    self.pm.report_object("FastQC report r2", fastqc_html)
+                    self.pm.pipestat.report(
+                        values={
+                            "FastQC_report_R2": {
+                                "path": fastqc_html,
+                                "title": "FastQC report R2",
+                            }
+                        }
+                    )
 
         return temp_func
 
