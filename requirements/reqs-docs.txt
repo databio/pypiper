@@ -3,4 +3,3 @@ markdown-include
 pydoc-markdown
 piper
 https://github.com/databio/mkdocs-databio/archive/master.zip
--e git+git://github.com/pepkit/pipestat@orm#egg=pipestat
