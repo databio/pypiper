@@ -1,5 +1,11 @@
 # Changelog
 
+
+## [0.12.2] -- unreleased
+### Added
+
+- [pipestat](http://pipestat.databio.org/en/latest/) support 
+
 ## [0.12.1] -- 2019-08-29
 
 ### Fixed
