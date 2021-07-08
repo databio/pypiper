@@ -109,12 +109,12 @@ class PipelineManager(object):
         protect from a case in which a restart begins upstream of a stage
         for which a checkpoint file already exists, but that depends on the
         upstream stage and thus should be rerun if it's "parent" is rerun.
-    :param pipestat.PipestatManager: pipestat manager object to use for
-        reporting pipeline results
     :raise TypeError: if start or stop point(s) are provided both directly and
         via args namespace, or if both stopping types (exclusive/prospective
         and inclusive/retrospective) are provided.
     """
+
+    # TODO: add pipestat-related args docstrings
 
     def __init__(
         self,
@@ -323,7 +323,6 @@ class PipelineManager(object):
 
         # pipesatat setup
         potential_namespace = getattr(self, "sample_name", self.name)
-        potential_pipestat_schema = default_pipestat_schema(sys.argv[0])
 
         # don't force default pipestat_results_file value unless
         # pipestat config not provided
@@ -331,12 +330,24 @@ class PipelineManager(object):
             pipestat_results_file = pipeline_filepath(
                 self, filename="pipestat_results.yaml"
             )
+
+        def _get_arg(args_dict, arg_name):
+            """safely get argument from arg dict -- return None if doesn't exist"""
+            return None if arg_name not in args_dict else args_dict[arg_name]
+
         self._pipestat_manager = PipestatManager(
-            namespace=pipestat_namespace or potential_namespace,
-            record_identifier=pipestat_record_id or potential_namespace,
-            schema_path=pipestat_schema or potential_pipestat_schema,
-            results_file_path=pipestat_results_file,
-            config=pipestat_config,
+            namespace=pipestat_namespace
+            or _get_arg(args_dict, "pipestat_namespace")
+            or potential_namespace,
+            record_identifier=pipestat_record_id
+            or _get_arg(args_dict, "pipestat_record_id")
+            or potential_namespace,
+            schema_path=pipestat_schema
+            or _get_arg(args_dict, "pipestat_schema")
+            or default_pipestat_schema(sys.argv[0]),
+            results_file_path=pipestat_results_file
+            or _get_arg(args_dict, "pipestat_results_file"),
+            config=pipestat_config or _get_arg(args_dict, "pipestat_config"),
         )
         self.start_pipeline(args, multi)
 
