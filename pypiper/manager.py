@@ -802,6 +802,7 @@ class PipelineManager(object):
         clean=False,
         follow=None,
         container=None,
+        default_return_code=0,
     ):
         """
         The primary workhorse function of PipelineManager, this runs a command.
@@ -832,6 +833,8 @@ class PipelineManager(object):
             to an auto cleanup list. Optional.
         :param callable follow: Function to call after executing (each) command.
         :param str container: Name for Docker container in which to run commands.
+        :param Any default_return_code: Return code to use, might be used to discriminate
+            between runs that did not execute any commands and runs that did.
         :return int: Return code of process. If a list of commands is passed,
             this is the maximum of all return codes for all commands.
         """
@@ -845,7 +848,7 @@ class PipelineManager(object):
                     len(cmds), "\n".join(cmds_text)
                 )
             )
-            return 0
+            return default_return_code
 
         # Short-circuit if the checkpoint file exists and the manager's not
         # been configured to overwrite such files.
@@ -859,7 +862,7 @@ class PipelineManager(object):
                         self.curr_checkpoint, check_fpath, self.__class__.__name__, cmd
                     )
                 )
-                return 0
+                return default_return_code
 
         # TODO: consider making the logic such that locking isn't implied, or
         # TODO (cont.): that we can make it otherwise such that it's not
@@ -891,7 +894,7 @@ class PipelineManager(object):
         lock_name = lock_name or make_lock_name(target, self.outfolder)
         lock_files = [self._make_lock_path(ln) for ln in lock_name]
 
-        process_return_code = 0
+        process_return_code = default_return_code
         local_maxmem = 0
 
         # Decide how to do follow-up.
