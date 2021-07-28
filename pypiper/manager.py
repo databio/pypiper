@@ -839,6 +839,25 @@ class PipelineManager(object):
             this is the maximum of all return codes for all commands.
         """
 
+        def _max_ret_code(codes_list):
+            """
+            Return the maximum of a list of return codes.
+
+            :param list[int] code: List of return codes to compare.
+            :return int: Maximum of list.
+            """
+            # filter out codes that are None
+            codes_list = [code for code in codes_list if code is not None]
+            # get the max of the remaining codes
+            if codes_list:
+                return max(codes_list)
+            # if no codes are left, return None
+            return
+
+        # validate default return code
+        if default_return_code is not None and not isinstance(default_return_code, int):
+            raise TypeError("default_return_code must be an int or None")
+
         # If the pipeline's not been started, skip ahead.
         if not self._active:
             cmds = [cmd] if isinstance(cmd, str) else cmd
@@ -1041,16 +1060,18 @@ class PipelineManager(object):
                     maxmem = max(maxmem) if isinstance(maxmem, Iterable) else maxmem
                     local_maxmem = max(local_maxmem, maxmem)
                     list_ret = (
-                        max(list_ret) if isinstance(list_ret, Iterable) else list_ret
+                        _max_ret_code(list_ret)
+                        if isinstance(list_ret, Iterable)
+                        else list_ret
                     )
-                    process_return_code = max(process_return_code, list_ret)
+                    process_return_code = _max_ret_code([process_return_code, list_ret])
 
             else:  # Single command (most common)
                 process_return_code, local_maxmem = self.callprint(
                     cmd, shell, lock_file, nofail, container
                 )  # Run command
                 if isinstance(process_return_code, list):
-                    process_return_code = max(process_return_code)
+                    process_return_code = _max_ret_code(process_return_code)
 
             # For temporary files, you can specify a clean option to automatically
             # add them to the clean list, saving you a manual call to clean_add
