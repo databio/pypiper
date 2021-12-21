@@ -1,5 +1,12 @@
 # Changelog
 
+
+## [0.12.2] -- 2021-12-20
+
+### Fixed
+- Removed use2to3 for compatibility with setuptools 58
+
+
 ## [0.12.1] -- 2019-08-29
 
 ### Fixed
