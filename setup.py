@@ -9,8 +9,6 @@ try:
     from setuptools import setup
     if sys.version_info < (2, 7):
         extra['install_requires'] = ['argparse']
-    if sys.version_info >= (3,):
-        extra['use_2to3'] = True
 except ImportError:
     from distutils.core import setup
     if sys.version_info < (2, 7):
@@ -45,15 +43,8 @@ addl_reqs["all"] = list({pkg for bundle in addl_reqs.values() for pkg in bundle}
 # Dev installation is full user + test.
 addl_reqs["dev"] = list(set(test_reqs + addl_reqs["all"]))
 
-# Handle the pypi README formatting.
-try:
-    import pypandoc
-    long_description = pypandoc.convert_file('README.md', 'rst')
-    msg = "\033[032mPandoc conversion succeeded.\033[0m"
-except(IOError, ImportError, OSError):
-    msg = "\033[0;31mWarning: pandoc conversion failed!\033[0m"
-    long_description = open('README.md').read()
-
+with open("README.md") as f:
+    long_description = f.read()
 
 setup(
     name='piper',
@@ -82,4 +73,3 @@ setup(
     **extra
 )
 
-print(msg)
