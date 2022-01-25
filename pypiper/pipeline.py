@@ -1,14 +1,10 @@
 """ Pipeline base class """
 
 import abc
-from collections import OrderedDict
 import glob
 import os
 import sys
-if sys.version_info < (3, 3):
-    from collections import Iterable, Mapping
-else:
-    from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping
 
 from .exceptions import \
     IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
@@ -396,9 +392,9 @@ def _is_unordered(collection):
     if not isinstance(collection, Iterable):
         raise TypeError("Non-iterable alleged collection: {}".
                         format(type(collection)))
-    return isinstance(collection, set) or \
-           (isinstance(collection, dict) and
-            not isinstance(collection, OrderedDict))
+
+
+    return isinstance(collection, set) or isinstance(collection, dict)
 
 
 

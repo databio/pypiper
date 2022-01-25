@@ -1,6 +1,6 @@
 """ Shared utilities """
 
-from collections import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 import os
 import sys
 import re
@@ -799,24 +799,21 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     :return set[str]: Collection of (unique) argument names to add to a parser.
     """
 
-    if sys.version_info < (3, 3):
-        from collections import Iterable
-    else:
-        from collections.abc import Iterable
+    from collections.abc import Iterable
 
 
     from logmuse import LOGGING_CLI_OPTDATA
     # Define the argument groups.
     args_by_group = {
-        "pypiper": ["recover", "new-start", "dirty", "force-follow", "testmode"] +
-            LOGGING_CLI_OPTDATA.keys(),
+        "pypiper": ["recover", "new-start", "dirty", "force-follow", "testmode"]
+        + [*LOGGING_CLI_OPTDATA],
         "config": ["config"],
         "checkpoint": ["stop-before", "stop-after"],
         "resource": ["mem", "cores"],
         "looper": ["config", "output-parent", "mem", "cores"],
         "common": ["input", "sample-name"],
         "ngs": ["sample-name", "input", "input2", "genome", "single-or-paired"],
-        "logmuse": LOGGING_CLI_OPTDATA.keys()
+        "logmuse": [*LOGGING_CLI_OPTDATA]
     }
 
     # Handle various types of group specifications.
