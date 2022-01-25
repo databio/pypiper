@@ -4,7 +4,7 @@ import abc
 import glob
 import os
 import sys
-from collections.abc import Iterable, Mapping, OrderedDict
+from collections.abc import Iterable, Mapping
 
 from .exceptions import \
     IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \
@@ -392,9 +392,9 @@ def _is_unordered(collection):
     if not isinstance(collection, Iterable):
         raise TypeError("Non-iterable alleged collection: {}".
                         format(type(collection)))
-    return isinstance(collection, set) or \
-           (isinstance(collection, dict) and
-            not isinstance(collection, OrderedDict))
+
+
+    return isinstance(collection, set) or isinstance(collection, dict)
 
 
 
