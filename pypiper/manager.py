@@ -8,7 +8,7 @@ The PipelineManager class can be used to create a procedural pipeline in python.
 """
 
 import atexit
-from collections import Iterable
+from collections.abc import Iterable
 import datetime
 import errno
 import glob
