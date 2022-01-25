@@ -864,14 +864,14 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     # Define the argument groups.
     args_by_group = {
         "pypiper": ["recover", "new-start", "dirty", "force-follow", "testmode"]
-        + LOGGING_CLI_OPTDATA.keys(),
+        + [*LOGGING_CLI_OPTDATA],
         "config": ["config"],
         "checkpoint": ["stop-before", "stop-after"],
         "resource": ["mem", "cores"],
         "looper": ["config", "output-parent", "mem", "cores", "pipeline-name"],
         "common": ["input", "sample-name"],
         "ngs": ["sample-name", "input", "input2", "genome", "single-or-paired"],
-        "logmuse": LOGGING_CLI_OPTDATA.keys(),
+        "logmuse": [*LOGGING_CLI_OPTDATA],
         "pipestat": [
             "pipestat-namespace",
             "pipestat-record-id",
