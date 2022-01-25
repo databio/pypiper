@@ -1,14 +1,10 @@
 """ Pipeline base class """
 
 import abc
-from collections import OrderedDict
 import glob
 import os
 import sys
-if sys.version_info < (3, 3):
-    from collections import Iterable, Mapping
-else:
-    from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, OrderedDict
 
 from .exceptions import \
     IllegalPipelineDefinitionError, IllegalPipelineExecutionError, \

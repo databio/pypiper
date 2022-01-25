@@ -1,6 +1,6 @@
 """ Shared utilities """
 
-from collections import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 import os
 import sys
 import re
@@ -799,10 +799,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     :return set[str]: Collection of (unique) argument names to add to a parser.
     """
 
-    if sys.version_info < (3, 3):
-        from collections import Iterable
-    else:
-        from collections.abc import Iterable
+    from collections.abc import Iterable
 
 
     from logmuse import LOGGING_CLI_OPTDATA
