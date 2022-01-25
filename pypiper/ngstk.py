@@ -301,7 +301,7 @@ class NGSTk(AttMapEcho):
         if any(isinstance(i, list) for i in input_args):
             # We have a list of lists. Process each individually.
             local_input_files = list()
-            n_input_files = len(filter(bool, input_args))
+            n_input_files = len(list(filter(bool, input_args)))
             print("Number of input file sets: " + str(n_input_files))
 
             for input_i, input_arg in enumerate(input_args):
@@ -518,8 +518,8 @@ class NGSTk(AttMapEcho):
             if type(output_files) != list:
                 output_files = [output_files]
 
-            n_input_files = len(filter(bool, input_files))
-            n_output_files = len(filter(bool, output_files))
+            n_input_files = len(list(filter(bool, input_files)))
+            n_output_files = len(list(filter(bool, output_files)))
 
             total_reads = sum([int(self.count_reads(input_file, paired_end))
                                for input_file in input_files])
