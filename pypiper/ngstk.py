@@ -2000,7 +2000,8 @@ class NGSTk(AttMapEcho):
         :param int n: Number of lines to read from bam file.
         :return str, int: tuple of read type and read length
         """
-        from collections import Counter
+
+        from collections.abc import Counter
 
         try:
             p = subprocess.Popen(

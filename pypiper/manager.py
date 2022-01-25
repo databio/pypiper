@@ -20,7 +20,8 @@ import subprocess
 import sys
 import time
 import warnings
-from collections import Iterable
+
+from collections.abc import Iterable
 from hashlib import md5
 
 import __main__

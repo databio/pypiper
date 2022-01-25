@@ -4,12 +4,8 @@ import abc
 import glob
 import os
 import sys
-from collections import OrderedDict
 
-if sys.version_info < (3, 3):
-    from collections import Iterable, Mapping
-else:
-    from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping
 
 from .exceptions import (
     IllegalPipelineDefinitionError,
@@ -412,10 +408,11 @@ def _is_unordered(collection):
         illogical to investigate whether it's ordered.
     """
     if not isinstance(collection, Iterable):
-        raise TypeError("Non-iterable alleged collection: {}".format(type(collection)))
-    return isinstance(collection, set) or (
-        isinstance(collection, dict) and not isinstance(collection, OrderedDict)
-    )
+        raise TypeError("Non-iterable alleged collection: {}".
+                        format(type(collection)))
+
+
+    return isinstance(collection, set) or isinstance(collection, dict)
 
 
 def _parse_stage_spec(stage_spec):

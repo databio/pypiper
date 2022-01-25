@@ -5,6 +5,11 @@
 
 - [pipestat](http://pipestat.databio.org/en/latest/) support 
 
+## [0.12.3] -- 2022-01-25
+
+### Fixed
+- A few bugs with compatibility with Python version 3.9
+
 ## [0.12.2] -- 2021-12-20
 
 ### Fixed
