@@ -1,11 +1,11 @@
 name: Run pytests
 
 on:
-  push:
-    branches: [master, dev]
   pull_request:
     branches: [master, dev]
-
+  workflow_dispatch:
+    inputs: null
+    
 jobs:
   pytest:
     runs-on: ${{ matrix.os }}
