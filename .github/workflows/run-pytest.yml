@@ -11,8 +11,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
-        os: [ubuntu-latest, macos-latest]
+        python-version: [3.7, 3.8, 3.9, 3.10]
+        os: [ubuntu-latest]
 
     steps:
       - uses: actions/checkout@v2
@@ -22,10 +22,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dev dependancies
+      - name: Install dev dependencies
         run: if [ -f requirements/requirements-dev.txt ]; then pip install -r requirements/requirements-dev.txt; fi
 
-      - name: Install test dependancies
+      - name: Install test dependencies
         run: if [ -f requirements/requirements-test.txt ]; then pip install -r requirements/requirements-test.txt; fi
 
       - name: Install package

@@ -18,7 +18,7 @@ except ImportError:
 def read_reqs_file(reqs_name):
     """ Read requirements file for given requirements group. """
     path_reqs_file = os.path.join(
-            "requirements", "reqs-{}.txt".format(reqs_name))
+            "requirements", "requirements-{}.txt".format(reqs_name))
     with open(path_reqs_file, 'r') as reqs_file:
         return [pkg.rstrip() for pkg in reqs_file.readlines()
                 if not pkg.startswith("#")]

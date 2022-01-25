@@ -1,2 +1,0 @@
-readme_renderer[md]
-twine>=1.12
