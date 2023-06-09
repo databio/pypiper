@@ -336,19 +336,17 @@ class PipelineManager(object):
             """safely get argument from arg dict -- return None if doesn't exist"""
             return None if arg_name not in args_dict else args_dict[arg_name]
 
+        #TEMP OVERWRITE
+        pipestat_schema = "/home/drc/GITHUB/pypiper/pypiper/tests/Data/sample_output_schema.yaml"
+        sample_name = "sample1"
         self._pipestat_manager = PipestatManager(
-            namespace=pipestat_namespace
-            or _get_arg(args_dict, "pipestat_namespace")
-            or potential_namespace,
-            record_identifier=pipestat_record_id
-            or _get_arg(args_dict, "pipestat_record_id")
-            or potential_namespace,
+            sample_name=sample_name,
             schema_path=pipestat_schema
             or _get_arg(args_dict, "pipestat_schema")
             or default_pipestat_schema(sys.argv[0]),
             results_file_path=pipestat_results_file
             or _get_arg(args_dict, "pipestat_results_file"),
-            config=pipestat_config or _get_arg(args_dict, "pipestat_config"),
+            config_file=pipestat_config or _get_arg(args_dict, "pipestat_config"),
         )
         self.start_pipeline(args, multi)
 
