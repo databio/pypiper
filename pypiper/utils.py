@@ -767,6 +767,31 @@ def parse_stage_name(stage):
             raise TypeError("Unsupported stage type: {}".format(type(stage)))
 
 
+def create_default_pipestat_output_schema(pm):
+    """
+    Pipestat requires an output schema
+    This function creates a blank default output schema in the output folder that can be edited by the user
+    """
+
+    # CHECK IF EXISTS
+    folder = pm
+    # CREATE BLANK OUTPUT FILE
+    pipestat_schema = "/home/drc/GITHUB/pypiper/pypiper/tests/Data/default_pipestat_output_schema.yaml"
+
+    # RETURN FILEPATH
+    # if filename is None and suffix is None:
+    #     raise TypeError(
+    #         "Provide filename and/or suffix to create " "path to a pipeline file."
+    #     )
+    #
+    # filename = (filename or pm.name) + (suffix or "")
+    #
+    # # Note that Pipeline and PipelineManager define the same outfolder.
+    # # In fact, a Pipeline just references its manager's outfolder.
+    # # So we can handle argument of either type to pm parameter.
+    return pipestat_schema
+
+
 def pipeline_filepath(pm, filename=None, suffix=None):
     """
     Derive path to file for managed pipeline.
@@ -924,7 +949,7 @@ def default_pipeline_config(pipeline_filepath):
     return os.path.splitext(os.path.basename(pipeline_filepath))[0] + ".yaml"
 
 
-def default_pipestat_schema(pipeline_filepath):
+def default_pipestat_output_schema(pipeline_filepath):
     """
     Determine the default filepath for a pipeline's pipestat output schema.
 

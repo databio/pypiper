@@ -49,7 +49,8 @@ from .utils import (
     make_lock_name,
     parse_cmd,
     pipeline_filepath,
-    default_pipestat_schema,
+    default_pipestat_output_schema,
+    create_default_pipestat_output_schema,
 )
 
 __all__ = ["PipelineManager"]
@@ -134,14 +135,13 @@ class PipelineManager(object):
         output_parent=None,
         overwrite_checkpoints=False,
         logger_kwargs=None,
-        pipestat_namespace=None,
-        pipestat_record_id=None,
+        pipestat_project_name=None,
+        pipestat_sample_name=None,
         pipestat_schema=None,
         pipestat_results_file=None,
         pipestat_config=None,
         **kwargs,
     ):
-
         # Params defines the set of options that could be updated via
         # command line args to a pipeline run, that can be forwarded
         # to Pypiper. If any pypiper arguments are passed
@@ -322,8 +322,8 @@ class PipelineManager(object):
         signal.signal(signal.SIGINT, self._signal_int_handler)
         signal.signal(signal.SIGTERM, self._signal_term_handler)
 
-        # pipesatat setup
-        potential_namespace = getattr(self, "sample_name", self.name)
+        # pipestat setup
+        potential_sample_name = getattr(self, "sample_name", self.name)
 
         # don't force default pipestat_results_file value unless
         # pipestat config not provided
@@ -336,14 +336,18 @@ class PipelineManager(object):
             """safely get argument from arg dict -- return None if doesn't exist"""
             return None if arg_name not in args_dict else args_dict[arg_name]
 
-        #TEMP OVERWRITE
-        pipestat_schema = "/home/drc/GITHUB/pypiper/pypiper/tests/Data/sample_output_schema.yaml"
-        sample_name = "sample1"
+        # TEMP OVERWRITE
+        # pipestat_schema = "/home/drc/GITHUB/pypiper/pypiper/tests/Data/sample_output_schema.yaml"
+        # pipestat_schema = "NONE PROVIDED"
+        DEFAULT_SAMPLE_NAME = "DEFAULT_SAMPLE_NAME"
         self._pipestat_manager = PipestatManager(
-            sample_name=sample_name,
+            sample_name=pipestat_sample_name
+            or _get_arg(args_dict, "pipestat_sample_name")
+            or DEFAULT_SAMPLE_NAME,
             schema_path=pipestat_schema
             or _get_arg(args_dict, "pipestat_schema")
-            or default_pipestat_schema(sys.argv[0]),
+            or default_pipestat_output_schema(sys.argv[0])
+            or create_default_pipestat_output_schema(None),
             results_file_path=pipestat_results_file
             or _get_arg(args_dict, "pipestat_results_file"),
             config_file=pipestat_config or _get_arg(args_dict, "pipestat_config"),
@@ -2189,7 +2193,6 @@ class PipelineManager(object):
             self.tee.kill()
 
     def _terminate_running_subprocesses(self):
-
         # make a copy of the list to iterate over since we'll be removing items
         for pid in self.running_procs.copy():
             proc_dict = self.running_procs[pid]

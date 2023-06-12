@@ -1,0 +1,9 @@
+#NOTE:
+#  This is output schema can be customized for your specific pipeline.
+#See here for more details:
+#  https://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema-format
+pipeline_name: default_pipeline_name
+samples:
+  number_of_things:
+    type: integer
+    description: "Number of things"
