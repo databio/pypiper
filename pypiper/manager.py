@@ -323,7 +323,7 @@ class PipelineManager(object):
         signal.signal(signal.SIGTERM, self._signal_term_handler)
 
         # pipestat setup
-        potential_sample_name = getattr(self, "sample_name", self.name)
+        pipestat_sample_name = getattr(self, "sample_name", self.name)
 
         # don't force default pipestat_results_file value unless
         # pipestat config not provided
@@ -431,7 +431,7 @@ class PipelineManager(object):
 
         :return bool: Whether the managed pipeline is in a completed state.
         """
-        return self.pipestat.get_status() == COMPLETE_FLAG
+        return self.pipestat.backend.get_status(self._pipestat_manager.sample_name) == COMPLETE_FLAG
         # return self.status == COMPLETE_FLAG
 
     @property
@@ -441,7 +441,7 @@ class PipelineManager(object):
 
         :return bool: Whether the managed pipeline is in a failed state.
         """
-        self.pipestat.get_status() == FAIL_FLAG
+        self.pipestat.backend.get_status(self._pipestat_manager.sample_name) == FAIL_FLAG
         # return self.status == FAIL_FLAG
 
     @property
@@ -451,7 +451,7 @@ class PipelineManager(object):
 
         :return bool: Whether the managed pipeline is in a paused/halted state.
         """
-        self.pipestat.get_status() == PAUSE_FLAG
+        return self.pipestat.backend.get_status(self._pipestat_manager.sample_name) == PAUSE_FLAG
         # return self.status == PAUSE_FLAG
 
     @property
@@ -732,7 +732,10 @@ class PipelineManager(object):
             self.info("* {}:  {}".format(argtext.rjust(20), valtext))
         self.info("\n----------------------------------------\n")
         # self._set_status_flag(RUN_FLAG)
-        self.pipestat.set_status(status_identifier="running")
+        #self._set_status_flag(RUN_FLAG)
+        self.status = "running"
+        self.pipestat.backend.set_status(sample_name=self._pipestat_manager.sample_name, status_identifier="running")
+        #self.status = "running"
 
         # Record the start in PIPE_profile and PIPE_commands output files so we
         # can trace which run they belong to
@@ -777,6 +780,7 @@ class PipelineManager(object):
         prev_status = self.status
         self.status = status
         self._create_file(self._flag_file_path())
+        #CALL PIPESTAT BACKEND HERE?
         self.debug("\nChanged status from {} to {}.".format(prev_status, self.status))
 
     def _flag_file_path(self, status=None):
@@ -789,7 +793,9 @@ class PipelineManager(object):
         :param str status: flag file type to create, default to current status
         :return str: path to flag file of indicated or current status.
         """
-        flag_file_name = "{}_{}".format(self.name, flag_name(status or self.status))
+        #pipestatreportedstatus = self.pipestat.backend.get_status(sample_name=self._pipestat_manager.sample_name)
+        #flag_file_name = "{}_{}_{}".format(self._pipestat_manager.backend.pipeline_name,self.name, flag_name(status or pipestatreportedstatus or self.status))#self.status))
+        flag_file_name = "{}_{}_{}".format(self._pipestat_manager.backend.pipeline_name, self.name, flag_name(status or self.status))
         return pipeline_filepath(self, filename=flag_file_name)
 
     ###################################
@@ -1418,7 +1424,7 @@ class PipelineManager(object):
                     "this step should be restarted."
                 )
                 # self._set_status_flag(WAIT_FLAG)
-                self.pipestat.set_status(status_identifier="waiting")
+                self.pipestat.backend.set_status(sample_name=self._pipestat_manager.sample_name,status_identifier="waiting")
                 first_message_flag = True
             else:
                 sys.stdout.write(".")
@@ -1439,7 +1445,7 @@ class PipelineManager(object):
         if first_message_flag:
             self.timestamp("File unlocked.")
             # self._set_status_flag(RUN_FLAG)
-            self.pipestat.set_status(status_identifier="running")
+            self.pipestat.backend.set_status(sample_name=self._pipestat_manager.sample_name,status_identifier="running")
 
     ###################################
     # Logging functions
@@ -2029,7 +2035,7 @@ class PipelineManager(object):
             self.info("Total time: " + str(total_time))
             self.info("Failure reason: " + str(exc))
             # self._set_status_flag(FAIL_FLAG)
-            self.pipestat.set_status(status_identifier="failed")
+            self.pipestat.backend.set_status(sample_name=self._pipestat_manager.sample_name, status_identifier="failed")
 
         if isinstance(exc, str):
             exc = RuntimeError(exc)
@@ -2087,7 +2093,7 @@ class PipelineManager(object):
         some time and memory statistics to the log file.
         """
         # self._set_status_flag(status)
-        self.pipestat.set_status(status_identifier=status)
+        self.pipestat.backend.set_status(sample_name=self._pipestat_manager.sample_name,status_identifier=status)
         self._cleanup()
         elapsed_time_this_run = str(
             datetime.timedelta(seconds=self.time_elapsed(self.starttime))
