@@ -40,7 +40,7 @@ class PipelineManagerTests(unittest.TestCase):
         )
 
         self.pp3 = pypiper.PipelineManager(
-            "sample_pipeline3", outfolder=self.OUTFOLDER, multi=True
+            "sample_pipeline3", outfolder=self.OUTFOLDER + "3", multi=True
         )
 
     def tearDown(self):

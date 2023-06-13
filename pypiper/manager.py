@@ -2461,7 +2461,7 @@ class PipelineManager(object):
                 fn
                 for fn in glob.glob(self.outfolder + flag_name("*"))
                 if COMPLETE_FLAG not in os.path.basename(fn)
-                and not "{}_{}".format(self.name, run_flag) == os.path.basename(fn)
+                and not "{}_{}_{}".format(self.pipestat.backend.pipeline_name, self.name, run_flag) == os.path.basename(fn)
             ]
             if len(flag_files) == 0 and not dry_run:
                 self.info("\nCleaning up conditional list. . .")
