@@ -779,8 +779,8 @@ class PipelineManager(object):
         # Set new status.
         prev_status = self.status
         self.status = status
-        self._create_file(self._flag_file_path())
-        #CALL PIPESTAT BACKEND HERE?
+        #self._create_file(self._flag_file_path())
+        self.pipestat.backend.set_status(sample_name=self._pipestat_manager.sample_name, status_identifier=status)
         self.debug("\nChanged status from {} to {}.".format(prev_status, self.status))
 
     def _flag_file_path(self, status=None):
