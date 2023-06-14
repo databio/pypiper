@@ -90,7 +90,6 @@ class PipelineManagerTests(unittest.TestCase):
         cls._clean()
 
     def test_me(self):
-
         print("Testing initialization...")
 
         # Names
@@ -224,8 +223,8 @@ class PipelineManagerTests(unittest.TestCase):
 
         self.assertTrue(lines[2] == "rm tgt3.temp\n")
         self.assertTrue(lines[10] == "rm tgt6.txt\n")
-        #lines is only 0-10 so the below code will error.
-        #self.assertTrue(lines[11] == "rm tgt6.txt\n")
+        # lines is only 0-10 so the below code will error.
+        # self.assertTrue(lines[11] == "rm tgt6.txt\n")
 
         self.pp.report_object("Test figure", os.path.join("fig", "fig.jpg"))
 
@@ -336,6 +335,9 @@ class PipelineManagerTests(unittest.TestCase):
         self.assertFalse(os.path.isfile(tgt5))
         self.pp.run("touch " + tgt5, [tgt1, tgt6])
         self.assertFalse(os.path.isfile(tgt5))
+        self.pp.pipestat.clear_status(self.pp.name, flag_names=["failed"])
+        self.pp2.pipestat.clear_status(self.pp2.name, flag_names=["failed"])
+        self.pp3.pipestat.clear_status(self.pp3.name, flag_names=["failed"])
 
 
 def _make_pipe_filepath(pm, filename):
