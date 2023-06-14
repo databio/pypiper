@@ -274,6 +274,7 @@ class PipelineManager(object):
 
         # File paths:
         self.outfolder = os.path.join(outfolder, "")  # trailing slash
+        self.make_sure_path_exists(self.outfolder)
         self.pipeline_log_file = pipeline_filepath(self, suffix="_log.md")
 
         self.pipeline_profile_file = pipeline_filepath(self, suffix="_profile.tsv")
@@ -500,7 +501,7 @@ class PipelineManager(object):
         You provide only the output directory (used for pipeline stats, log, and status flag files).
         """
         # Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
-        self.make_sure_path_exists(self.outfolder)
+        #self.make_sure_path_exists(self.outfolder)
 
         # By default, Pypiper will mirror every operation so it is displayed both
         # on sys.stdout **and** to a log file. Unfortunately, interactive python sessions
