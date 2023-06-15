@@ -51,6 +51,7 @@ from .utils import (
     pipeline_filepath,
     default_pipestat_output_schema,
 )
+from pipestat.helpers import read_yaml_data
 
 __all__ = ["PipelineManager"]
 
@@ -1590,15 +1591,11 @@ class PipelineManager(object):
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
 
-    def report_result(self, key, value, annotation=None, nolog=False):
+    def report_result(self, key, value, nolog=False):
         """
         Writes a string to self.pipeline_stats_file.
 
         :param str key: name (key) of the stat
-        :param str annotation: By default, the stats will be annotated with the
-            pipeline name, so you can tell which pipeline records which stats.
-            If you want, you can change this; use annotation='shared' if you
-            need the stat to be used by another pipeline (using get_stat()).
         :param bool nolog: Turn on this flag to NOT print this result in the
             logfile. Use sparingly in case you will be printing the result in a
             different format.
@@ -1610,19 +1607,8 @@ class PipelineManager(object):
         # keep the value in memory:
         self.stats_dict[key] = value
 
-        if annotation is not None:
-            annotation = str(annotation)
-            message_raw = "{value}\t{annotation}".format(
-                value=value, annotation=annotation
-            )
-            message_markdown = "\n> `{key}`\t{value}\t{annotation}\t_RES_".format(
-                key=key, value=value, annotation=annotation
-            )
-        else:
-            message_raw = "{value}".format(value=value)
-            message_markdown = "\n> `{key}`\t{value}\t_RES_".format(
-                key=key, value=value
-            )
+        message_raw = "{value}".format(value=value)
+        message_markdown = "\n> `{key}`\t{value}\t_RES_".format(key=key, value=value)
         val = {key: message_raw.replace("\t", "    ")}
 
         if not nolog:
@@ -1630,9 +1616,7 @@ class PipelineManager(object):
 
         self.pipestat.report(values=val, sample_name=self.name)
 
-    def report_object(
-        self, key, filename, anchor_text=None, anchor_image=None, annotation=None
-    ):
+    def report_object(self, key, filename, anchor_text=None, anchor_image=None):
         """
         Writes a string to self.pipeline_objects_file. Used to report figures
         and others.
@@ -1645,9 +1629,6 @@ class PipelineManager(object):
         :param str anchor_image: a path to an HTML-displayable image thumbnail
             (so, .png or .jpg, for example). If a path, the path should be
             relative to the parent output dir.
-        :param str annotation: By default, the figures will be annotated with
-            the pipeline name, so you can tell which pipeline records which
-            figures. If you want, you can change this.
         """
 
         # In case the value is passed with trailing whitespace.
@@ -1673,39 +1654,21 @@ class PipelineManager(object):
             )
         else:
             relative_anchor_image = "None"
-        if annotation is not None:
-            annotation = str(annotation)
-            message_raw = (
-                "{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
-                    filename=relative_filename,
-                    anchor_text=anchor_text,
-                    anchor_image=relative_anchor_image,
-                    annotation=annotation,
-                )
-            )
 
-            message_markdown = "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}\t_OBJ_".format(
+        message_raw = "{filename}\t{anchor_text}\t{anchor_image}".format(
+            filename=relative_filename,
+            anchor_text=anchor_text,
+            anchor_image=relative_anchor_image,
+        )
+
+        message_markdown = (
+            "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t_OBJ_".format(
                 key=key,
                 filename=relative_filename,
                 anchor_text=anchor_text,
                 anchor_image=relative_anchor_image,
-                annotation=annotation,
             )
-        else:
-            message_raw = "{filename}\t{anchor_text}\t{anchor_image}".format(
-                filename=relative_filename,
-                anchor_text=anchor_text,
-                anchor_image=relative_anchor_image,
-            )
-
-            message_markdown = (
-                "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t_OBJ_".format(
-                    key=key,
-                    filename=relative_filename,
-                    anchor_text=anchor_text,
-                    anchor_image=relative_anchor_image,
-                )
-            )
+        )
         self.warning(message_markdown)
 
         val = {key: message_raw.replace("\t", "    ")}
@@ -1829,35 +1792,21 @@ class PipelineManager(object):
 
     def _refresh_stats(self):
         """
-        Loads up the stats sheet created for this pipeline run and reads
+        Loads up the stats yaml created for this pipeline run and reads
         those stats into memory
         """
 
-        # regex identifies all possible stats files.
-        # regex = self.outfolder +  "*_stats.tsv"
-        # stats_files = glob.glob(regex)
-        # stats_files.insert(self.pipeline_stats_file) # last one is the current pipeline
-        # for stats_file in stats_files:
-
-        stats_file = self.pipeline_stats_file
         if os.path.isfile(self.pipeline_stats_file):
-            with open(stats_file, "r") as stat_file:
-                for line in stat_file:
-                    try:
-                        # Someone may have put something that's not 3 columns in the stats file
-                        # if so, shame on him, but we can just ignore it.
-                        key, value, annotation = line.split("\t")
-                    except ValueError:
-                        self.warning(
-                            "WARNING: Each row in a stats file is expected to have 3 columns"
-                        )
-
-                    if (
-                        annotation.rstrip() == self.name
-                        or annotation.rstrip() == "shared"
-                    ):
-                        self.stats_dict[key] = value.strip()
-        # if os.path.isfile(self.pipeline_stats_file):
+            _, data = read_yaml_data(path=self.pipeline_stats_file, what="stats_file")
+            print(data)
+            pipeline_key = list(
+                data[self.pipestat["_pipeline_name"]][self.pipestat["_pipeline_type"]]
+            )[0]
+            if self.name == pipeline_key:
+                for key, value in data[self.pipestat["_pipeline_name"]][
+                    self.pipestat["_pipeline_type"]
+                ][pipeline_key].items():
+                    self.stats_dict[key] = value.strip()
 
     def get_stat(self, key):
         """
@@ -1866,7 +1815,7 @@ class PipelineManager(object):
         if you first use report_result to report (number of trimmed reads), and then in a later stage
         want to report alignment rate, then this second stat (alignment rate) will require knowing the
         first stat (number of trimmed reads); however, that may not have been calculated in the current
-        pipeline run, so we must retrieve it from the stats.tsv output file. This command will retrieve
+        pipeline run, so we must retrieve it from the stats.yaml output file. This command will retrieve
         such previously reported stats if they were not already calculated in the current pipeline run.
         :param key: key of stat to retrieve
         """

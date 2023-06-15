@@ -145,12 +145,13 @@ class PipelineManagerTests(unittest.TestCase):
 
         # Test reporting results
         self.pp.report_result("key1", "abc")
-        self.pp.report_result("key2", "def", "shared")
+        self.pp.report_result("key2", "def")
         key1 = self.pp.get_stat("key1")
         self.assertEqual(key1, "abc")
 
-        # key1 = self.pp2.get_stat("key1")  # should fail
-        # self.assertEqual(key1, None)
+        key1 = self.pp2.get_stat("key1")  # should fail
+        self.assertEqual(key1, None)
+        # We can no longer group based on 'shared' annotations.
         # key2 = self.pp2.get_stat("key2")  # should succeed
         # self.assertEqual(key2, "def")
 
