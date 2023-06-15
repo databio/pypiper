@@ -21,7 +21,6 @@ import pypiper
 
 
 def build_argparser():
-
     parser = ArgumentParser(
         description="A pipeline to count the number of reads and file size. Accepts"
         " BAM, fastq, or fastq.gz files."

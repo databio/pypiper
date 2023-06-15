@@ -51,8 +51,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = u"pypiper"
-copyright = u"2015, Nathan Sheffield, Johanna Klughammer, Andre Rendeiro"
+project = "pypiper"
+copyright = "2015, Nathan Sheffield, Johanna Klughammer, Andre Rendeiro"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -215,8 +215,8 @@ latex_documents = [
     (
         "index",
         "pypiper.tex",
-        u"pypiper Documentation",
-        u"Nathan Sheffield, Johanna Klughammer, Andre Rendeiro",
+        "pypiper Documentation",
+        "Nathan Sheffield, Johanna Klughammer, Andre Rendeiro",
         "manual",
     ),
 ]
@@ -250,8 +250,8 @@ man_pages = [
     (
         "index",
         "pypiper",
-        u"pypiper Documentation",
-        [u"Nathan Sheffield, Johanna Klughammer, Andre Rendeiro"],
+        "pypiper Documentation",
+        ["Nathan Sheffield, Johanna Klughammer, Andre Rendeiro"],
         1,
     )
 ]
@@ -269,8 +269,8 @@ texinfo_documents = [
     (
         "index",
         "pypiper",
-        u"pypiper Documentation",
-        u"Nathan Sheffield, Johanna Klughammer, Andre Rendeiro",
+        "pypiper Documentation",
+        "Nathan Sheffield, Johanna Klughammer, Andre Rendeiro",
         "pypiper",
         "One line description of project.",
         "Miscellaneous",
@@ -293,10 +293,10 @@ texinfo_documents = [
 # -- Options for Epub output ----------------------------------------------
 
 # Bibliographic Dublin Core info.
-epub_title = u"pypiper"
-epub_author = u"Nathan Sheffield, Johanna Klughammer, Andre Rendeiro"
-epub_publisher = u"Nathan Sheffield, Johanna Klughammer, Andre Rendeiro"
-epub_copyright = u"2015, Nathan Sheffield, Johanna Klughammer, Andre Rendeiro"
+epub_title = "pypiper"
+epub_author = "Nathan Sheffield, Johanna Klughammer, Andre Rendeiro"
+epub_publisher = "Nathan Sheffield, Johanna Klughammer, Andre Rendeiro"
+epub_copyright = "2015, Nathan Sheffield, Johanna Klughammer, Andre Rendeiro"
 
 # The basename for the epub file. It defaults to the project name.
 # epub_basename = u'pypiper'
