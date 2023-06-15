@@ -33,7 +33,7 @@ from pipestat import PipestatError, PipestatManager
 from yacman import load_yaml
 
 from ._version import __version__
-from .const import PROFILE_COLNAMES
+from .const import PROFILE_COLNAMES, DEFAULT_SAMPLE_NAME
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import (
@@ -279,9 +279,7 @@ class PipelineManager(object):
         self.pipeline_profile_file = pipeline_filepath(self, suffix="_profile.tsv")
 
         # Stats and figures are general and so lack the pipeline name.
-        self.pipeline_stats_file = pipeline_filepath(self, filename="stats.tsv")
-        self.pipeline_figures_file = pipeline_filepath(self, filename="figures.tsv")
-        self.pipeline_objects_file = pipeline_filepath(self, filename="objects.tsv")
+        self.pipeline_stats_file = pipeline_filepath(self, filename="stats.yaml")
 
         # Record commands used and provide manual cleanup script.
         self.pipeline_commands_file = pipeline_filepath(self, suffix="_commands.sh")
@@ -336,8 +334,6 @@ class PipelineManager(object):
             """safely get argument from arg dict -- return None if doesn't exist"""
             return None if arg_name not in args_dict else args_dict[arg_name]
 
-        # TEMP OVERWRITE
-        DEFAULT_SAMPLE_NAME = "DEFAULT_SAMPLE_NAME"
         self._pipestat_manager = PipestatManager(
             sample_name=pipestat_sample_name
             or _get_arg(args_dict, "pipestat_sample_name")
@@ -345,10 +341,11 @@ class PipelineManager(object):
             schema_path=pipestat_schema
             or _get_arg(args_dict, "pipestat_schema")
             or default_pipestat_output_schema(sys.argv[0]),
-            results_file_path=pipestat_results_file
+            results_file_path=self.pipeline_stats_file
             or _get_arg(args_dict, "pipestat_results_file"),
             config_file=pipestat_config or _get_arg(args_dict, "pipestat_config"),
         )
+
         self.start_pipeline(args, multi)
 
         # Handle config file if it exists
@@ -1606,28 +1603,32 @@ class PipelineManager(object):
             logfile. Use sparingly in case you will be printing the result in a
             different format.
         """
-        # Default annotation is current pipeline name.
-        annotation = str(annotation or self.name)
 
         # In case the value is passed with trailing whitespace.
         value = str(value).strip()
 
         # keep the value in memory:
         self.stats_dict[key] = value
-        message_raw = "{key}\t{value}\t{annotation}".format(
-            key=key, value=value, annotation=annotation
-        )
 
-        message_markdown = "\n> `{key}`\t{value}\t{annotation}\t_RES_".format(
-            key=key, value=value, annotation=annotation
-        )
+        if annotation is not None:
+            annotation = str(annotation)
+            message_raw = "{value}\t{annotation}".format(
+                value=value, annotation=annotation
+            )
+            message_markdown = "\n> `{key}`\t{value}\t{annotation}\t_RES_".format(
+                key=key, value=value, annotation=annotation
+            )
+        else:
+            message_raw = "{value}".format(value=value)
+            message_markdown = "\n> `{key}`\t{value}\t_RES_".format(
+                key=key, value=value
+            )
+        val = {key: message_raw.replace("\t", "    ")}
 
         if not nolog:
             self.info(message_markdown)
 
-        # Just to be extra careful, let's lock the file while we we write
-        # in case multiple pipelines write to the same file.
-        self._safe_write_to_file(self.pipeline_stats_file, message_raw)
+        self.pipestat.report(values=val, sample_name=self.name)
 
     def report_object(
         self, key, filename, anchor_text=None, anchor_image=None, annotation=None
@@ -1648,9 +1649,6 @@ class PipelineManager(object):
             the pipeline name, so you can tell which pipeline records which
             figures. If you want, you can change this.
         """
-
-        # Default annotation is current pipeline name.
-        annotation = str(annotation or self.name)
 
         # In case the value is passed with trailing whitespace.
         filename = str(filename).strip()
@@ -1675,63 +1673,44 @@ class PipelineManager(object):
             )
         else:
             relative_anchor_image = "None"
+        if annotation is not None:
+            annotation = str(annotation)
+            message_raw = (
+                "{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
+                    filename=relative_filename,
+                    anchor_text=anchor_text,
+                    anchor_image=relative_anchor_image,
+                    annotation=annotation,
+                )
+            )
 
-        message_raw = (
-            "{key}\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
+            message_markdown = "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}\t_OBJ_".format(
                 key=key,
                 filename=relative_filename,
                 anchor_text=anchor_text,
                 anchor_image=relative_anchor_image,
                 annotation=annotation,
             )
-        )
+        else:
+            message_raw = "{filename}\t{anchor_text}\t{anchor_image}".format(
+                filename=relative_filename,
+                anchor_text=anchor_text,
+                anchor_image=relative_anchor_image,
+            )
 
-        message_markdown = "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}\t_OBJ_".format(
-            key=key,
-            filename=relative_filename,
-            anchor_text=anchor_text,
-            anchor_image=relative_anchor_image,
-            annotation=annotation,
-        )
-
+            message_markdown = (
+                "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t_OBJ_".format(
+                    key=key,
+                    filename=relative_filename,
+                    anchor_text=anchor_text,
+                    anchor_image=relative_anchor_image,
+                )
+            )
         self.warning(message_markdown)
 
-        self._safe_write_to_file(self.pipeline_objects_file, message_raw)
+        val = {key: message_raw.replace("\t", "    ")}
 
-    def _safe_write_to_file(self, file, message):
-        """
-        Writes a string to a file safely (with file locks).
-        """
-        warnings.warn(
-            "This function may be removed in future release. "
-            "The recommended way to report pipeline results is using PipelineManager.pipestat.report().",
-            category=DeprecationWarning,
-        )
-        target = file
-        lock_name = make_lock_name(target, self.outfolder)
-        lock_file = self._make_lock_path(lock_name)
-
-        while True:
-            if os.path.isfile(lock_file):
-                self._wait_for_lock(lock_file)
-            else:
-                try:
-                    self.locks.append(lock_file)
-                    self._create_file_racefree(lock_file)
-                except OSError as e:
-                    if e.errno == errno.EEXIST:
-                        self.warning("Lock file created after test! Looping again.")
-                        continue  # Go back to start
-
-                # Proceed with file writing
-                with open(file, "a") as myfile:
-                    myfile.write(message + "\n")
-
-                os.remove(lock_file)
-                self.locks.remove(lock_file)
-
-                # If you make it to the end of the while loop, you're done
-                break
+        self.pipestat.report(values=val, sample_name=self.name)
 
     def _report_command(self, cmd, procs=None):
         """
