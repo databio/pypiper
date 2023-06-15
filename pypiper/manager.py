@@ -1600,80 +1600,10 @@ class PipelineManager(object):
             logfile. Use sparingly in case you will be printing the result in a
             different format.
         """
-
-        # In case the value is passed with trailing whitespace.
-        value = str(value).strip()
-
         # keep the value in memory:
         self.stats_dict[key] = value
 
-        message_raw = "{value}".format(value=value)
-        message_markdown = "\n> `{key}`\t{value}\t_RES_".format(key=key, value=value)
-        val = {key: message_raw.replace("\t", "    ")}
-
-        if not nolog:
-            self.info(message_markdown)
-
-        self.pipestat.report(values=val, sample_name=self.name)
-
-    def report_object(self, key, filename, anchor_text=None, anchor_image=None):
-        """
-        Writes a string to self.pipeline_objects_file. Used to report figures
-        and others.
-
-        :param str key: name (key) of the object
-        :param str filename: relative path to the file (relative to parent
-            output dir)
-        :param str anchor_text: text used as the link anchor test or caption to
-            refer to the object. If not provided, defaults to the key.
-        :param str anchor_image: a path to an HTML-displayable image thumbnail
-            (so, .png or .jpg, for example). If a path, the path should be
-            relative to the parent output dir.
-        """
-
-        # In case the value is passed with trailing whitespace.
-        filename = str(filename).strip()
-        if anchor_text:
-            anchor_text = str(anchor_text).strip()
-        else:
-            anchor_text = str(key).strip()
-
-        # better to use a relative path in this file
-        # convert any absolute paths into relative paths
-        relative_filename = (
-            os.path.relpath(filename, self.outfolder)
-            if os.path.isabs(filename)
-            else filename
-        )
-
-        if anchor_image:
-            relative_anchor_image = (
-                os.path.relpath(anchor_image, self.outfolder)
-                if os.path.isabs(anchor_image)
-                else anchor_image
-            )
-        else:
-            relative_anchor_image = "None"
-
-        message_raw = "{filename}\t{anchor_text}\t{anchor_image}".format(
-            filename=relative_filename,
-            anchor_text=anchor_text,
-            anchor_image=relative_anchor_image,
-        )
-
-        message_markdown = (
-            "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t_OBJ_".format(
-                key=key,
-                filename=relative_filename,
-                anchor_text=anchor_text,
-                anchor_image=relative_anchor_image,
-            )
-        )
-        self.warning(message_markdown)
-
-        val = {key: message_raw.replace("\t", "    ")}
-
-        self.pipestat.report(values=val, sample_name=self.name)
+        self.pipestat.report(values={key: value}, sample_name=self.name)
 
     def _report_command(self, cmd, procs=None):
         """

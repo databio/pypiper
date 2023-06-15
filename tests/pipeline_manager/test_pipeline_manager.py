@@ -227,7 +227,7 @@ class PipelineManagerTests(unittest.TestCase):
         # lines is only 0-10 so the below code will error.
         # self.assertTrue(lines[11] == "rm tgt6.txt\n")
 
-        self.pp.report_object("Test figure", os.path.join("fig", "fig.jpg"))
+        self.pp.report_result("Test figure", os.path.join("fig", "fig.jpg"))
 
         # But in regular mode, they should be deleted:
         self.pp.dirty = False
