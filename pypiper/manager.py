@@ -51,7 +51,7 @@ from .utils import (
     pipeline_filepath,
     default_pipestat_output_schema,
 )
-from pipestat.helpers import read_yaml_data
+from pipestat.helpers import read_yaml_data, markdown_formatter
 
 __all__ = ["PipelineManager"]
 
@@ -1591,7 +1591,9 @@ class PipelineManager(object):
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
 
-    def report_result(self, key, value, nolog=False, result_format="md"):
+    def report_result(
+        self, key, value, nolog=False, result_formatter=markdown_formatter
+    ):
         """
         Writes a key:value pair to self.pipeline_stats_file.
 
@@ -1600,19 +1602,22 @@ class PipelineManager(object):
         :param bool nolog: Turn on this flag to NOT print this result in the
             logfile. Use sparingly in case you will be printing the result in a
             different format.
-        :param str result_format: Defaults to 'md' for Markdown formatting via pipestat backend
-        :return str reported_result: the reported result is returned as a formatted string.
+        :param str result_formatter: function for formatting via pipestat backend
+        :return str reported_result: the reported result is returned as a list of formatted strings.
 
         """
         # keep the value in memory:
         self.stats_dict[key] = value
 
         reported_result = self.pipestat.report(
-            values={key: value}, sample_name=self.name, result_format=result_format
+            values={key: value},
+            sample_name=self.name,
+            result_formatter=result_formatter,
         )
 
         if not nolog:
-            self.info(reported_result)
+            for r in reported_result:
+                self.info(r)
 
         return reported_result
 
@@ -1624,7 +1629,7 @@ class PipelineManager(object):
         anchor_image=None,
         annotation=None,
         nolog=False,
-        result_format="md",
+        result_formatter=markdown_formatter,
     ):
         """
         Writes a key:value pair to self.pipeline_stats_file. Note: this function
@@ -1644,8 +1649,8 @@ class PipelineManager(object):
         :param bool nolog: Turn on this flag to NOT print this result in the
             logfile. Use sparingly in case you will be printing the result in a
             different format.
-        :param str result_format: Defaults to 'md' for Markdown formatting via pipestat backend
-        :return str reported_result: the reported result is returned as a formatted string.
+        :param str result_formatter: function for formatting via pipestat backend
+        :return str reported_result: the reported result is returned as a list of formatted strings.
         """
         warnings.warn(
             "This function may be removed in future release. "
@@ -1687,10 +1692,11 @@ class PipelineManager(object):
         val = {key: message_raw.replace("\t", " ")}
 
         reported_result = self.pipestat.report(
-            values=val, sample_name=self.name, result_format=result_format
+            values=val, sample_name=self.name, result_formatter=result_formatter
         )
         if not nolog:
-            self.info(reported_result)
+            for r in reported_result:
+                self.info(r)
         return reported_result
 
     def _report_command(self, cmd, procs=None):
