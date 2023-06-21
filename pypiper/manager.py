@@ -1591,7 +1591,7 @@ class PipelineManager(object):
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
 
-    def report_result(self, key, value, nolog=False):
+    def report_result(self, key, value, nolog=False, result_format="md"):
         """
         Writes a key:value pair to self.pipeline_stats_file.
 
@@ -1600,16 +1600,35 @@ class PipelineManager(object):
         :param bool nolog: Turn on this flag to NOT print this result in the
             logfile. Use sparingly in case you will be printing the result in a
             different format.
+        :param str result_format: Defaults to 'md' for Markdown formatting via pipestat backend
+        :return str reported_result: the reported result is returned as a formatted string.
+
         """
         # keep the value in memory:
         self.stats_dict[key] = value
 
-        self.pipestat.report(values={key: value}, sample_name=self.name)
+        reported_result = self.pipestat.report(
+            values={key: value}, sample_name=self.name, result_format=result_format
+        )
 
-    def report_object(self, key, filename, anchor_text=None, anchor_image=None):
+        if not nolog:
+            self.info(reported_result)
+
+        return reported_result
+
+    def report_object(
+        self,
+        key,
+        filename,
+        anchor_text=None,
+        anchor_image=None,
+        annotation=None,
+        nolog=False,
+        result_format="md",
+    ):
         """
-        Writes a key:value pair to self.pipeline_stats_file. Used to report figures
-        and others.
+        Writes a key:value pair to self.pipeline_stats_file. Note: this function
+            will be deprecated. Using report_result is recommended.
 
         :param str key: name (key) of the object
         :param str filename: relative path to the file (relative to parent
@@ -1619,12 +1638,22 @@ class PipelineManager(object):
         :param str anchor_image: a path to an HTML-displayable image thumbnail
             (so, .png or .jpg, for example). If a path, the path should be
             relative to the parent output dir.
+        :param str annotation: By default, the figures will be annotated with
+            the pipeline name, so you can tell which pipeline records which
+            figures. If you want, you can change this.
+        :param bool nolog: Turn on this flag to NOT print this result in the
+            logfile. Use sparingly in case you will be printing the result in a
+            different format.
+        :param str result_format: Defaults to 'md' for Markdown formatting via pipestat backend
+        :return str reported_result: the reported result is returned as a formatted string.
         """
         warnings.warn(
             "This function may be removed in future release. "
             "The recommended way to report pipeline results is using PipelineManager.pipestat.report().",
             category=DeprecationWarning,
         )
+        # Default annotation is current pipeline name.
+        annotation = str(annotation or self.name)
         # In case the value is passed with trailing whitespace.
         filename = str(filename).strip()
         if anchor_text:
@@ -1648,15 +1677,21 @@ class PipelineManager(object):
         else:
             relative_anchor_image = "None"
 
-        message_raw = "{filename}\t{anchor_text}\t{anchor_image}".format(
+        message_raw = "{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
             filename=relative_filename,
             anchor_text=anchor_text,
             anchor_image=relative_anchor_image,
+            annotation=annotation,
         )
 
         val = {key: message_raw.replace("\t", " ")}
 
-        self.pipestat.report(values=val, sample_name=self.name)
+        reported_result = self.pipestat.report(
+            values=val, sample_name=self.name, result_format=result_format
+        )
+        if not nolog:
+            self.info(reported_result)
+        return reported_result
 
     def _report_command(self, cmd, procs=None):
         """
