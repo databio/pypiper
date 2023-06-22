@@ -39,6 +39,7 @@ __all__ = [
     "get_first_value",
     "head",
     "logger_via_cli",
+    "result_formatter_markdown",
 ]
 
 
@@ -1107,3 +1108,13 @@ def _add_args(parser, args, required):
             parser.add_argument(*opts, **argdata)
 
     return parser
+
+
+def result_formatter_markdown(pipeline_name, sample_name, res_id, value) -> str:
+    """
+    Returns Markdown formatted value as string
+    """
+
+    message_markdown = "\n> `{key}`\t{value}\t_RES_".format(key=res_id, value=value)
+
+    return message_markdown

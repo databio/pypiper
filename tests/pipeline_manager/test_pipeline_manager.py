@@ -101,10 +101,10 @@ class PipelineManagerTests(unittest.TestCase):
 
         print("Testing status flags...")
         self.pp._set_status_flag("completed")
-        self._assertFile("default_pipeline_name_sample_pipeline_completed.flag")
+        self._assertFile("sample_pipeline_DEFAULT_SAMPLE_NAME_completed.flag")
         self.pp._set_status_flag("running")
-        self._assertNotFile("default_pipeline_name_sample_pipeline_testing.flag")
-        self._assertFile("default_pipeline_name_sample_pipeline_running.flag")
+        self._assertNotFile("sample_pipeline_DEFAULT_SAMPLE_NAME_testing.flag")
+        self._assertFile("sample_pipeline_DEFAULT_SAMPLE_NAME_running.flag")
 
         print("Testing waiting for locks...")
         self.pp2.wait = False
@@ -149,7 +149,10 @@ class PipelineManagerTests(unittest.TestCase):
         key1 = self.pp.get_stat("key1")
         self.assertEqual(key1, "abc")
 
-        key1 = self.pp2.get_stat("key1")  # should fail
+        try:
+            key1 = self.pp2.get_stat("key1")  # should fail
+        except KeyError:
+            key1 = None
         self.assertEqual(key1, None)
         # We can no longer group based on 'shared' annotations.
         # key2 = self.pp2.get_stat("key2")  # should succeed

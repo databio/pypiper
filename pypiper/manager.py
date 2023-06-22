@@ -50,8 +50,9 @@ from .utils import (
     parse_cmd,
     pipeline_filepath,
     default_pipestat_output_schema,
+    result_formatter_markdown,
 )
-from pipestat.helpers import read_yaml_data, markdown_formatter
+from pipestat.helpers import read_yaml_data
 
 __all__ = ["PipelineManager"]
 
@@ -140,6 +141,7 @@ class PipelineManager(object):
         pipestat_schema=None,
         pipestat_results_file=None,
         pipestat_config=None,
+        pipestat_result_formatter=None,
         **kwargs,
     ):
         # Params defines the set of options that could be updated via
@@ -306,6 +308,11 @@ class PipelineManager(object):
         # In-memory holder for report_result
         self.stats_dict = {}
 
+        # Result formatter to pass to pipestat
+        self.pipestat_result_formatter = (
+            pipestat_result_formatter or result_formatter_markdown
+        )
+
         # Checkpoint-related parameters
         self.overwrite_checkpoints = overwrite_checkpoints
         self.halt_on_next = False
@@ -322,7 +329,8 @@ class PipelineManager(object):
         signal.signal(signal.SIGTERM, self._signal_term_handler)
 
         # pipestat setup
-        pipestat_sample_name = getattr(self, "sample_name", self.name)
+        self.pipestat_sample_name = pipestat_sample_name or DEFAULT_SAMPLE_NAME
+        # getattr(self, "sample_name", DEFAULT_SAMPLE_NAME)
 
         # don't force default pipestat_results_file value unless
         # pipestat config not provided
@@ -336,9 +344,10 @@ class PipelineManager(object):
             return None if arg_name not in args_dict else args_dict[arg_name]
 
         self._pipestat_manager = PipestatManager(
-            sample_name=pipestat_sample_name
+            sample_name=self.pipestat_sample_name
             or _get_arg(args_dict, "pipestat_sample_name")
             or DEFAULT_SAMPLE_NAME,
+            pipeline_name=self.name,
             schema_path=pipestat_schema
             or _get_arg(args_dict, "pipestat_schema")
             or default_pipestat_output_schema(sys.argv[0]),
@@ -796,7 +805,7 @@ class PipelineManager(object):
 
         flag_file_name = "{}_{}_{}".format(
             self._pipestat_manager["_pipeline_name"],
-            self.name,
+            self.pipestat_sample_name,
             flag_name(status or self.status),
         )
         return pipeline_filepath(self, filename=flag_file_name)
@@ -1591,9 +1600,7 @@ class PipelineManager(object):
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
 
-    def report_result(
-        self, key, value, nolog=False, result_formatter=markdown_formatter
-    ):
+    def report_result(self, key, value, nolog=False, result_formatter=None):
         """
         Writes a key:value pair to self.pipeline_stats_file.
 
@@ -1609,10 +1616,12 @@ class PipelineManager(object):
         # keep the value in memory:
         self.stats_dict[key] = value
 
+        rf = result_formatter or self.pipestat_result_formatter
+
         reported_result = self.pipestat.report(
             values={key: value},
-            sample_name=self.name,
-            result_formatter=result_formatter,
+            sample_name=self.pipestat_sample_name,
+            result_formatter=rf,
         )
 
         if not nolog:
@@ -1629,7 +1638,7 @@ class PipelineManager(object):
         anchor_image=None,
         annotation=None,
         nolog=False,
-        result_formatter=markdown_formatter,
+        result_formatter=None,
     ):
         """
         Writes a key:value pair to self.pipeline_stats_file. Note: this function
@@ -1657,6 +1666,7 @@ class PipelineManager(object):
             "The recommended way to report pipeline results is using PipelineManager.pipestat.report().",
             category=DeprecationWarning,
         )
+        rf = result_formatter or self.pipestat_result_formatter
         # Default annotation is current pipeline name.
         annotation = str(annotation or self.name)
         # In case the value is passed with trailing whitespace.
@@ -1692,7 +1702,7 @@ class PipelineManager(object):
         val = {key: message_raw.replace("\t", " ")}
 
         reported_result = self.pipestat.report(
-            values=val, sample_name=self.name, result_formatter=result_formatter
+            values=val, sample_name=self.pipestat_sample_name, result_formatter=rf
         )
         if not nolog:
             for r in reported_result:
@@ -2430,7 +2440,9 @@ class PipelineManager(object):
                 for fn in glob.glob(self.outfolder + flag_name("*"))
                 if COMPLETE_FLAG not in os.path.basename(fn)
                 and not "{}_{}_{}".format(
-                    self._pipestat_manager["_pipeline_name"], self.name, run_flag
+                    self._pipestat_manager["_pipeline_name"],
+                    self.pipestat_sample_name,
+                    run_flag,
                 )
                 == os.path.basename(fn)
             ]
