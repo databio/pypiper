@@ -356,8 +356,16 @@ class PipelineManager(object):
             config_file=pipestat_config or _get_arg(args_dict, "pipestat_config"),
             multi_pipelines=multi,
         )
+        # pipestat_args = {"sample_name": self._pipestat_manager.sample_name,
+        #                  "pipeline_name": self._pipestat_manager['_pipeline_name'],
+        #                  "schema_path": self._pipestat_manager.schema_path
+        #                  }
+        pipestat_args = {}
+        for k, v in self._pipestat_manager.items():
+            newdict = {k: v}
+            pipestat_args.update(newdict)
 
-        self.start_pipeline(args, multi)
+        self.start_pipeline(args, pipestat_args, multi)
 
         # Handle config file if it exists
 
@@ -504,7 +512,7 @@ class PipelineManager(object):
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
-    def start_pipeline(self, args=None, multi=False):
+    def start_pipeline(self, args=None, pipestat_args=None, multi=False):
         """
         Initialize setup. Do some setup, like tee output, print some diagnostics, create temp files.
         You provide only the output directory (used for pipeline stats, log, and status flag files).
@@ -737,6 +745,10 @@ class PipelineManager(object):
         # self.info all arguments (if any)
         self.info("\n### Arguments passed to pipeline:\n")
         for arg, val in sorted((vars(args) if args else dict()).items()):
+            argtext = "`{}`".format(arg)
+            valtext = "`{}`".format(val)
+            self.info("* {}:  {}".format(argtext.rjust(20), valtext))
+        for arg, val in sorted(pipestat_args.items()):
             argtext = "`{}`".format(arg)
             valtext = "`{}`".format(val)
             self.info("* {}:  {}".format(argtext.rjust(20), valtext))
