@@ -354,6 +354,7 @@ class PipelineManager(object):
             results_file_path=self.pipeline_stats_file
             or _get_arg(args_dict, "pipestat_results_file"),
             config_file=pipestat_config or _get_arg(args_dict, "pipestat_config"),
+            multi_pipelines=multi,
         )
 
         self.start_pipeline(args, multi)
