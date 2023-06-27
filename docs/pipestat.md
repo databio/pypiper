@@ -5,10 +5,10 @@ You can browse the pipestat documentation to learn more about it, but briefly pi
 
 ## Advancements
 
-There are a multiple advantages of using piestat instead of the current pieline results reporiting system:
+There are a multiple advantages of using pipestat instead of the current pipeline results reporting system:
 
 1. **Database results storage:** the results can be stored either in a database or a YAML-formatted results file. This way a pypiper pipeline running in an emphemeral compute environment can report the results to the database and exit. No need to sync the results with a central results storage.
-2. **Strict and clear results definition:** all the results that can be reported by a pipeline run *must* be pre-defined in a [pipestat results schema](http://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema-format) that in a simplest case just indicates the result's type. This presents piepstat clients with the possibility to *reliably* gather all the possible results and related metadata.
+2. **Strict and clear results definition:** all the results that can be reported by a pipeline run *must* be pre-defined in a [pipestat results schema](http://pipestat.databio.org/en/latest/pipestat_specification/#pipestat-schema-format) that in a simplest case just indicates the result's type. This presents pipestat clients with the possibility to *reliably* gather all the possible results and related metadata.
 3. **On-the-fly results validation:** the schema is used to validate and/or convert the reported result to a strictly determined type, which makes the connection of pypiper with downstream pipeline results processing software seamless.
 4. **Unified, pipeline-agnostic results interface:** other pipelines, possibly created with different pipeline frameworks, can read and write results via Python API or command line interface. This feature significantly incerases your pipeline interoperability.
 
@@ -41,8 +41,8 @@ pm = pypiper.PipelineManager(
   ...,
   pipestat_schema="custom_results_schema.yaml",
   pipestat_results_file="custom_results_file.yaml",
-  pipestat_record_id="my_record",
-  pipestat_namespace="my_namespace",
+  pipestat_sample_name="my_record",
+  pipestat_project_name="my_namespace",
   pipestat_config="custom_pipestat_config.yaml",
 ) 
 ```

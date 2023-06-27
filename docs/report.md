@@ -6,6 +6,8 @@ When you call `pm.report_result(key, value)`, pypiper simply writes the key-valu
 
 ## Reporting objects
 
+**Note**: Reporting objects will be deprecated in a future release. It is recommended to use `report_result`.
+
 Starting in version 0.8, pypiper now implements a second reporting function, `report_object`. This is analogous to the `report_result` function, but instead of reporting simple key-value pairs, it lets you record any produced file as an output. Most commonly, this is used to record figures (PDFs, PNGs, etc.) produced by the pipeline. It can also be used to report other files, like HTML files.
 
 Pypiper writes results to `objects.tsv`, which can then be aggregated for project-level summaries of plots and other pipeline result files.

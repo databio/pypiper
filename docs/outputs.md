@@ -9,7 +9,7 @@ Assume you are using a pypiper pipeline named `PIPE` ( it passes `name="PIPE"` t
 * **PIPE_status.flag**
 	As the pipeline runs, it produces a flag in the output directory, which can be either `PIPE_running.flag`, `PIPE_failed.flag`, or `PIPE_completed.flag`. These flags make it easy to assess the current state of running pipelines for individual samples, and for many samples in a project simultaneously.
 
-* **stats.tsv**
+* **stats.yaml**
 	Any results reported by the pipeline are saved as key-value pairs in this file, for easy parsing.
 
 * **PIPE_profile.md**
