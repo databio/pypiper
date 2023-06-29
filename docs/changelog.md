@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.13.0] -- unreleased
+## [0.13.0] -- 2023-06-29
 ### Added
 
 - [pipestat](http://pipestat.databio.org/en/latest/) support 
