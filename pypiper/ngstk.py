@@ -154,7 +154,7 @@ class NGSTk(AttMapEcho):
 
         return round(
             sum([float(os.stat(f).st_size) for f in filenames.split(" ")])
-            / (1024 ** 2),
+            / (1024**2),
             4,
         )
 
@@ -543,7 +543,6 @@ class NGSTk(AttMapEcho):
         def temp_func(
             input_files=input_files, output_files=output_files, paired_end=paired_end
         ):
-
             if type(input_files) != list:
                 input_files = [input_files]
             if type(output_files) != list:
@@ -608,7 +607,6 @@ class NGSTk(AttMapEcho):
         """
 
         def temp_func():
-
             print("Evaluating read trimming")
 
             if paired_end and not trimmed_fastq_R2:
@@ -1217,7 +1215,6 @@ class NGSTk(AttMapEcho):
         output_fastq2=None,
         output_fastq2_unpaired=None,
     ):
-
         PE = False if input_fastq2 is None else True
         pe = "PE" if PE else "SE"
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
@@ -1982,7 +1979,6 @@ class NGSTk(AttMapEcho):
     def center_peaks_on_motifs(
         self, peak_file, genome, window_width, motif_file, output_bed
     ):
-
         cmd = "annotatePeaks.pl {0} {1} -size {2} -center {3} |".format(
             peak_file, genome, window_width, motif_file
         )

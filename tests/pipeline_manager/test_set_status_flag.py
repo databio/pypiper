@@ -10,7 +10,16 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-@named_param(argnames="status", argvalues=ALL_FLAGS)
+@named_param(
+    argnames="status",
+    argvalues=[
+        RUN_FLAG,
+        COMPLETE_FLAG,
+        FAIL_FLAG,
+        PAUSE_FLAG,
+        WAIT_FLAG,
+    ],
+)
 def test_set_status_flag_is_idempotent(get_pipe_manager, status):
     """Calls to manager's status flag setter are idempotent."""
     pm = get_pipe_manager(name="TestPM")

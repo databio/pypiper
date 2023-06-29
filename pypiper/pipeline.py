@@ -56,7 +56,6 @@ class Pipeline(object):
     def __init__(
         self, name=None, manager=None, outfolder=None, args=None, **pl_mgr_kwargs
     ):
-
         super(Pipeline, self).__init__()
         try:
             self.name = name or manager.name
@@ -141,7 +140,6 @@ class Pipeline(object):
         self._stages = []
 
         for name, stage in name_stage_pairs:
-
             # Use external translator to further confound redefinition.
             internal_name = translate_stage_name(name)
 
@@ -316,7 +314,6 @@ class Pipeline(object):
         skip_mode = True
 
         for stage in self._stages[start_index:stop_index]:
-
             # TODO: Note that there's no way to tell whether a non-checkpointed
             # TODO (cont.) Stage has been completed, and thus this seek
             # TODO (cont.) operation will find the first Stage, starting
@@ -408,9 +405,7 @@ def _is_unordered(collection):
         illogical to investigate whether it's ordered.
     """
     if not isinstance(collection, Iterable):
-        raise TypeError("Non-iterable alleged collection: {}".
-                        format(type(collection)))
-
+        raise TypeError("Non-iterable alleged collection: {}".format(type(collection)))
 
     return isinstance(collection, set) or isinstance(collection, dict)
 

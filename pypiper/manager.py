@@ -33,7 +33,7 @@ from pipestat import PipestatError, PipestatManager
 from yacman import load_yaml
 
 from ._version import __version__
-from .const import PROFILE_COLNAMES
+from .const import PROFILE_COLNAMES, DEFAULT_SAMPLE_NAME
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import (
@@ -49,8 +49,10 @@ from .utils import (
     make_lock_name,
     parse_cmd,
     pipeline_filepath,
-    default_pipestat_schema,
+    default_pipestat_output_schema,
+    result_formatter_markdown,
 )
+from pipestat.helpers import read_yaml_data
 
 __all__ = ["PipelineManager"]
 
@@ -134,14 +136,14 @@ class PipelineManager(object):
         output_parent=None,
         overwrite_checkpoints=False,
         logger_kwargs=None,
-        pipestat_namespace=None,
-        pipestat_record_id=None,
+        pipestat_project_name=None,
+        pipestat_sample_name=None,
         pipestat_schema=None,
         pipestat_results_file=None,
         pipestat_config=None,
+        pipestat_result_formatter=None,
         **kwargs,
     ):
-
         # Params defines the set of options that could be updated via
         # command line args to a pipeline run, that can be forwarded
         # to Pypiper. If any pypiper arguments are passed
@@ -274,14 +276,13 @@ class PipelineManager(object):
 
         # File paths:
         self.outfolder = os.path.join(outfolder, "")  # trailing slash
+        self.make_sure_path_exists(self.outfolder)
         self.pipeline_log_file = pipeline_filepath(self, suffix="_log.md")
 
         self.pipeline_profile_file = pipeline_filepath(self, suffix="_profile.tsv")
 
         # Stats and figures are general and so lack the pipeline name.
-        self.pipeline_stats_file = pipeline_filepath(self, filename="stats.tsv")
-        self.pipeline_figures_file = pipeline_filepath(self, filename="figures.tsv")
-        self.pipeline_objects_file = pipeline_filepath(self, filename="objects.tsv")
+        self.pipeline_stats_file = pipeline_filepath(self, filename="stats.yaml")
 
         # Record commands used and provide manual cleanup script.
         self.pipeline_commands_file = pipeline_filepath(self, suffix="_commands.sh")
@@ -307,6 +308,11 @@ class PipelineManager(object):
         # In-memory holder for report_result
         self.stats_dict = {}
 
+        # Result formatter to pass to pipestat
+        self.pipestat_result_formatter = (
+            pipestat_result_formatter or result_formatter_markdown
+        )
+
         # Checkpoint-related parameters
         self.overwrite_checkpoints = overwrite_checkpoints
         self.halt_on_next = False
@@ -322,8 +328,9 @@ class PipelineManager(object):
         signal.signal(signal.SIGINT, self._signal_int_handler)
         signal.signal(signal.SIGTERM, self._signal_term_handler)
 
-        # pipesatat setup
-        potential_namespace = getattr(self, "sample_name", self.name)
+        # pipestat setup
+        self.pipestat_sample_name = pipestat_sample_name or DEFAULT_SAMPLE_NAME
+        # getattr(self, "sample_name", DEFAULT_SAMPLE_NAME)
 
         # don't force default pipestat_results_file value unless
         # pipestat config not provided
@@ -337,19 +344,19 @@ class PipelineManager(object):
             return None if arg_name not in args_dict else args_dict[arg_name]
 
         self._pipestat_manager = PipestatManager(
-            namespace=pipestat_namespace
-            or _get_arg(args_dict, "pipestat_namespace")
-            or potential_namespace,
-            record_identifier=pipestat_record_id
-            or _get_arg(args_dict, "pipestat_record_id")
-            or potential_namespace,
+            sample_name=self.pipestat_sample_name
+            or _get_arg(args_dict, "pipestat_sample_name")
+            or DEFAULT_SAMPLE_NAME,
+            pipeline_name=self.name,
             schema_path=pipestat_schema
             or _get_arg(args_dict, "pipestat_schema")
-            or default_pipestat_schema(sys.argv[0]),
-            results_file_path=pipestat_results_file
+            or default_pipestat_output_schema(sys.argv[0]),
+            results_file_path=self.pipeline_stats_file
             or _get_arg(args_dict, "pipestat_results_file"),
-            config=pipestat_config or _get_arg(args_dict, "pipestat_config"),
+            config_file=pipestat_config or _get_arg(args_dict, "pipestat_config"),
+            multi_pipelines=multi,
         )
+
         self.start_pipeline(args, multi)
 
         # Handle config file if it exists
@@ -429,8 +436,10 @@ class PipelineManager(object):
 
         :return bool: Whether the managed pipeline is in a completed state.
         """
-        return self.pipestat.get_status() == COMPLETE_FLAG
-        # return self.status == COMPLETE_FLAG
+        return (
+            self.pipestat.get_status(self._pipestat_manager.sample_name)
+            == COMPLETE_FLAG
+        )
 
     @property
     def _failed(self):
@@ -439,18 +448,17 @@ class PipelineManager(object):
 
         :return bool: Whether the managed pipeline is in a failed state.
         """
-        self.pipestat.get_status() == FAIL_FLAG
-        # return self.status == FAIL_FLAG
+        return self.pipestat.get_status(self._pipestat_manager.sample_name) == FAIL_FLAG
 
     @property
     def halted(self):
         """
         Is the managed pipeline in a paused/halted state?
-
         :return bool: Whether the managed pipeline is in a paused/halted state.
         """
-        self.pipestat.get_status() == PAUSE_FLAG
-        # return self.status == PAUSE_FLAG
+        return (
+            self.pipestat.get_status(self._pipestat_manager.sample_name) == PAUSE_FLAG
+        )
 
     @property
     def _has_exit_status(self):
@@ -461,27 +469,6 @@ class PipelineManager(object):
             has been safely stopped.
         """
         return self._completed or self.halted or self._failed
-
-    # def setup_default_pipestat(self, schema_path):
-    #     """
-    #     A convenience method for ad hoc PipestatManager instantiation.
-    #
-    #     Requires only a pipestat-like schema to get a functional PipestatManager
-    #     for reporting to a YAML-formatted file.
-    #
-    #     :param str schema_path: path to the pipestat-like schema
-    #     """
-    #     if self.pipestat is not None:
-    #         raise PipestatError(
-    #             f"{PipestatManager.__name__} is already "
-    #             f"initialized:\n{str(self.pipestat)}"
-    #         )
-    #     self._pipestat_manager = PipestatManager(
-    #         schema_path=schema_path,
-    #         namespace=self.name,
-    #         record_identifier=self.name,
-    #         results_file_path=pipeline_filepath(self, suffix="_results_pipestat.yaml"),
-    #     )
 
     def _ignore_interrupts(self):
         """
@@ -498,7 +485,7 @@ class PipelineManager(object):
         You provide only the output directory (used for pipeline stats, log, and status flag files).
         """
         # Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
-        self.make_sure_path_exists(self.outfolder)
+        # self.make_sure_path_exists(self.outfolder)
 
         # By default, Pypiper will mirror every operation so it is displayed both
         # on sys.stdout **and** to a log file. Unfortunately, interactive python sessions
@@ -728,9 +715,17 @@ class PipelineManager(object):
             argtext = "`{}`".format(arg)
             valtext = "`{}`".format(val)
             self.info("* {}:  {}".format(argtext.rjust(20), valtext))
+
+        self.info("\n### Initialized Pipestat Object:\n")
+        results = self._pipestat_manager.__str__().split("\n")
+        for i in results:
+            self.info("* " + i)
+        self.info("* Sample name: " + self.pipestat_sample_name + "\n")
         self.info("\n----------------------------------------\n")
-        # self._set_status_flag(RUN_FLAG)
-        self.pipestat.set_status(status_identifier="running")
+        self.status = "running"
+        self.pipestat.set_status(
+            sample_name=self._pipestat_manager.sample_name, status_identifier="running"
+        )
 
         # Record the start in PIPE_profile and PIPE_commands output files so we
         # can trace which run they belong to
@@ -774,7 +769,9 @@ class PipelineManager(object):
         # Set new status.
         prev_status = self.status
         self.status = status
-        self._create_file(self._flag_file_path())
+        self.pipestat.set_status(
+            sample_name=self._pipestat_manager.sample_name, status_identifier=status
+        )
         self.debug("\nChanged status from {} to {}.".format(prev_status, self.status))
 
     def _flag_file_path(self, status=None):
@@ -787,7 +784,12 @@ class PipelineManager(object):
         :param str status: flag file type to create, default to current status
         :return str: path to flag file of indicated or current status.
         """
-        flag_file_name = "{}_{}".format(self.name, flag_name(status or self.status))
+
+        flag_file_name = "{}_{}_{}".format(
+            self._pipestat_manager["_pipeline_name"],
+            self.pipestat_sample_name,
+            flag_name(status or self.status),
+        )
         return pipeline_filepath(self, filename=flag_file_name)
 
     ###################################
@@ -1416,7 +1418,10 @@ class PipelineManager(object):
                     "this step should be restarted."
                 )
                 # self._set_status_flag(WAIT_FLAG)
-                self.pipestat.set_status(status_identifier="waiting")
+                self.pipestat.set_status(
+                    sample_name=self._pipestat_manager.sample_name,
+                    status_identifier="waiting",
+                )
                 first_message_flag = True
             else:
                 sys.stdout.write(".")
@@ -1437,7 +1442,10 @@ class PipelineManager(object):
         if first_message_flag:
             self.timestamp("File unlocked.")
             # self._set_status_flag(RUN_FLAG)
-            self.pipestat.set_status(status_identifier="running")
+            self.pipestat.set_status(
+                sample_name=self._pipestat_manager.sample_name,
+                status_identifier="running",
+            )
 
     ###################################
     # Logging functions
@@ -1574,48 +1582,49 @@ class PipelineManager(object):
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
 
-    def report_result(self, key, value, annotation=None, nolog=False):
+    def report_result(self, key, value, nolog=False, result_formatter=None):
         """
-        Writes a string to self.pipeline_stats_file.
+        Writes a key:value pair to self.pipeline_stats_file.
 
         :param str key: name (key) of the stat
-        :param str annotation: By default, the stats will be annotated with the
-            pipeline name, so you can tell which pipeline records which stats.
-            If you want, you can change this; use annotation='shared' if you
-            need the stat to be used by another pipeline (using get_stat()).
+        :param dict value: value of the stat to report.
         :param bool nolog: Turn on this flag to NOT print this result in the
             logfile. Use sparingly in case you will be printing the result in a
             different format.
+        :param str result_formatter: function for formatting via pipestat backend
+        :return str reported_result: the reported result is returned as a list of formatted strings.
+
         """
-        # Default annotation is current pipeline name.
-        annotation = str(annotation or self.name)
-
-        # In case the value is passed with trailing whitespace.
-        value = str(value).strip()
-
         # keep the value in memory:
         self.stats_dict[key] = value
-        message_raw = "{key}\t{value}\t{annotation}".format(
-            key=key, value=value, annotation=annotation
-        )
 
-        message_markdown = "\n> `{key}`\t{value}\t{annotation}\t_RES_".format(
-            key=key, value=value, annotation=annotation
+        rf = result_formatter or self.pipestat_result_formatter
+
+        reported_result = self.pipestat.report(
+            values={key: value},
+            sample_name=self.pipestat_sample_name,
+            result_formatter=rf,
         )
 
         if not nolog:
-            self.info(message_markdown)
+            for r in reported_result:
+                self.info(r)
 
-        # Just to be extra careful, let's lock the file while we we write
-        # in case multiple pipelines write to the same file.
-        self._safe_write_to_file(self.pipeline_stats_file, message_raw)
+        return reported_result
 
     def report_object(
-        self, key, filename, anchor_text=None, anchor_image=None, annotation=None
+        self,
+        key,
+        filename,
+        anchor_text=None,
+        anchor_image=None,
+        annotation=None,
+        nolog=False,
+        result_formatter=None,
     ):
         """
-        Writes a string to self.pipeline_objects_file. Used to report figures
-        and others.
+        Writes a key:value pair to self.pipeline_stats_file. Note: this function
+            will be deprecated. Using report_result is recommended.
 
         :param str key: name (key) of the object
         :param str filename: relative path to the file (relative to parent
@@ -1628,18 +1637,26 @@ class PipelineManager(object):
         :param str annotation: By default, the figures will be annotated with
             the pipeline name, so you can tell which pipeline records which
             figures. If you want, you can change this.
+        :param bool nolog: Turn on this flag to NOT print this result in the
+            logfile. Use sparingly in case you will be printing the result in a
+            different format.
+        :param str result_formatter: function for formatting via pipestat backend
+        :return str reported_result: the reported result is returned as a list of formatted strings.
         """
-
+        warnings.warn(
+            "This function may be removed in future release. "
+            "The recommended way to report pipeline results is using PipelineManager.pipestat.report().",
+            category=DeprecationWarning,
+        )
+        rf = result_formatter or self.pipestat_result_formatter
         # Default annotation is current pipeline name.
         annotation = str(annotation or self.name)
-
         # In case the value is passed with trailing whitespace.
         filename = str(filename).strip()
         if anchor_text:
             anchor_text = str(anchor_text).strip()
         else:
             anchor_text = str(key).strip()
-
         # better to use a relative path in this file
         # convert any absolute paths into relative paths
         relative_filename = (
@@ -1657,62 +1674,22 @@ class PipelineManager(object):
         else:
             relative_anchor_image = "None"
 
-        message_raw = (
-            "{key}\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
-                key=key,
-                filename=relative_filename,
-                anchor_text=anchor_text,
-                anchor_image=relative_anchor_image,
-                annotation=annotation,
-            )
-        )
-
-        message_markdown = "> `{key}`\t{filename}\t{anchor_text}\t{anchor_image}\t{annotation}\t_OBJ_".format(
-            key=key,
+        message_raw = "{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
             filename=relative_filename,
             anchor_text=anchor_text,
             anchor_image=relative_anchor_image,
             annotation=annotation,
         )
 
-        self.warning(message_markdown)
+        val = {key: message_raw.replace("\t", " ")}
 
-        self._safe_write_to_file(self.pipeline_objects_file, message_raw)
-
-    def _safe_write_to_file(self, file, message):
-        """
-        Writes a string to a file safely (with file locks).
-        """
-        warnings.warn(
-            "This function may be removed in future release. "
-            "The recommended way to report pipeline results is using PipelineManager.pipestat.report().",
-            category=DeprecationWarning,
+        reported_result = self.pipestat.report(
+            values=val, sample_name=self.pipestat_sample_name, result_formatter=rf
         )
-        target = file
-        lock_name = make_lock_name(target, self.outfolder)
-        lock_file = self._make_lock_path(lock_name)
-
-        while True:
-            if os.path.isfile(lock_file):
-                self._wait_for_lock(lock_file)
-            else:
-                try:
-                    self.locks.append(lock_file)
-                    self._create_file_racefree(lock_file)
-                except OSError as e:
-                    if e.errno == errno.EEXIST:
-                        self.warning("Lock file created after test! Looping again.")
-                        continue  # Go back to start
-
-                # Proceed with file writing
-                with open(file, "a") as myfile:
-                    myfile.write(message + "\n")
-
-                os.remove(lock_file)
-                self.locks.remove(lock_file)
-
-                # If you make it to the end of the while loop, you're done
-                break
+        if not nolog:
+            for r in reported_result:
+                self.info(r)
+        return reported_result
 
     def _report_command(self, cmd, procs=None):
         """
@@ -1831,35 +1808,21 @@ class PipelineManager(object):
 
     def _refresh_stats(self):
         """
-        Loads up the stats sheet created for this pipeline run and reads
+        Loads up the stats yaml created for this pipeline run and reads
         those stats into memory
         """
 
-        # regex identifies all possible stats files.
-        # regex = self.outfolder +  "*_stats.tsv"
-        # stats_files = glob.glob(regex)
-        # stats_files.insert(self.pipeline_stats_file) # last one is the current pipeline
-        # for stats_file in stats_files:
-
-        stats_file = self.pipeline_stats_file
         if os.path.isfile(self.pipeline_stats_file):
-            with open(stats_file, "r") as stat_file:
-                for line in stat_file:
-                    try:
-                        # Someone may have put something that's not 3 columns in the stats file
-                        # if so, shame on him, but we can just ignore it.
-                        key, value, annotation = line.split("\t")
-                    except ValueError:
-                        self.warning(
-                            "WARNING: Each row in a stats file is expected to have 3 columns"
-                        )
-
-                    if (
-                        annotation.rstrip() == self.name
-                        or annotation.rstrip() == "shared"
-                    ):
-                        self.stats_dict[key] = value.strip()
-        # if os.path.isfile(self.pipeline_stats_file):
+            _, data = read_yaml_data(path=self.pipeline_stats_file, what="stats_file")
+            print(data)
+            pipeline_key = list(
+                data[self.pipestat["_pipeline_name"]][self.pipestat["_pipeline_type"]]
+            )[0]
+            if self.name == pipeline_key:
+                for key, value in data[self.pipestat["_pipeline_name"]][
+                    self.pipestat["_pipeline_type"]
+                ][pipeline_key].items():
+                    self.stats_dict[key] = value.strip()
 
     def get_stat(self, key):
         """
@@ -1868,7 +1831,7 @@ class PipelineManager(object):
         if you first use report_result to report (number of trimmed reads), and then in a later stage
         want to report alignment rate, then this second stat (alignment rate) will require knowing the
         first stat (number of trimmed reads); however, that may not have been calculated in the current
-        pipeline run, so we must retrieve it from the stats.tsv output file. This command will retrieve
+        pipeline run, so we must retrieve it from the stats.yaml output file. This command will retrieve
         such previously reported stats if they were not already calculated in the current pipeline run.
         :param key: key of stat to retrieve
         """
@@ -2027,7 +1990,10 @@ class PipelineManager(object):
             self.info("Total time: " + str(total_time))
             self.info("Failure reason: " + str(exc))
             # self._set_status_flag(FAIL_FLAG)
-            self.pipestat.set_status(status_identifier="failed")
+            self.pipestat.set_status(
+                sample_name=self._pipestat_manager.sample_name,
+                status_identifier="failed",
+            )
 
         if isinstance(exc, str):
             exc = RuntimeError(exc)
@@ -2085,7 +2051,9 @@ class PipelineManager(object):
         some time and memory statistics to the log file.
         """
         # self._set_status_flag(status)
-        self.pipestat.set_status(status_identifier=status)
+        self.pipestat.set_status(
+            sample_name=self._pipestat_manager.sample_name, status_identifier=status
+        )
         self._cleanup()
         elapsed_time_this_run = str(
             datetime.timedelta(seconds=self.time_elapsed(self.starttime))
@@ -2191,7 +2159,6 @@ class PipelineManager(object):
             self.tee.kill()
 
     def _terminate_running_subprocesses(self):
-
         # make a copy of the list to iterate over since we'll be removing items
         for pid in self.running_procs.copy():
             proc_dict = self.running_procs[pid]
@@ -2454,7 +2421,12 @@ class PipelineManager(object):
                 fn
                 for fn in glob.glob(self.outfolder + flag_name("*"))
                 if COMPLETE_FLAG not in os.path.basename(fn)
-                and not "{}_{}".format(self.name, run_flag) == os.path.basename(fn)
+                and not "{}_{}_{}".format(
+                    self._pipestat_manager["_pipeline_name"],
+                    self.pipestat_sample_name,
+                    run_flag,
+                )
+                == os.path.basename(fn)
             ]
             if len(flag_files) == 0 and not dry_run:
                 self.info("\nCleaning up conditional list. . .")
