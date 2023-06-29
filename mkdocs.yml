@@ -16,6 +16,7 @@ nav:
     - Automatic command-line arguments: cli.md
     - Configuring pipelines: configuration.md
     - Reporting statistics: report.md
+    - Reporting statistics with pipestat: pipestat.md
     - Cleaning up intermediate files: clean.md
     - Best practices: best-practices.md
   - Toolkits:

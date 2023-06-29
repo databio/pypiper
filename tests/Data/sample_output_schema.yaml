@@ -1,0 +1,24 @@
+pipeline_name: test_pipe
+samples:
+  number_of_things:
+    type: integer
+    description: "Number of things"
+  percentage_of_things:
+    type: number
+    description: "Percentage of things"
+  name_of_something:
+    type: string
+    description: "Name of something"
+  switch_value:
+    type: boolean
+    description: "Is the switch on or off"
+  output_file:
+    type: file
+    description: "This a path to the output file"
+  output_image:
+    type: image
+    description: "This a path to the output image"
+  md5sum:
+    type: string
+    description: "MD5SUM of an object"
+    highlight: true

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.13.0] -- 2023-06-29
+### Added
+
+- [pipestat](http://pipestat.databio.org/en/latest/) support 
 
 ## [0.12.3] -- 2022-01-25
 
@@ -10,7 +14,6 @@
 
 ### Fixed
 - Removed use2to3 for compatibility with setuptools 58
-
 
 ## [0.12.1] -- 2019-08-29
 

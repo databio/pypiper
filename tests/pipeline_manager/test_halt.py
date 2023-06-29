@@ -1,19 +1,19 @@
 """ Tests for effects of pipeline manager's halt() function. """
 
 import os
+
 import pytest
+
 from pypiper.exceptions import PipelineHalt
 from pypiper.flags import COMPLETE_FLAG, PAUSE_FLAG
 from tests.helpers import named_param
-
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-
 def test_halt_state(get_pipe_manager):
-    """ Requesting a halt alters manager state. """
+    """Requesting a halt alters manager state."""
     pm = get_pipe_manager(name="test-pipe")
     assert pm._active
     pm.halt(raise_error=False)
@@ -21,9 +21,8 @@ def test_halt_state(get_pipe_manager):
     assert not pm._active
 
 
-
 def test_halt_file(get_pipe_manager):
-    """ Requesting a halt produces a particular flag file. """
+    """Requesting a halt produces a particular flag file."""
     pm = get_pipe_manager(name="TestPM")
     path_halt_file = pm._flag_file_path(PAUSE_FLAG)
     assert not os.path.isfile(path_halt_file)
@@ -31,10 +30,9 @@ def test_halt_file(get_pipe_manager):
     assert os.path.isfile(path_halt_file)
 
 
-
 @named_param("raise_error", [False, True, None])
 def test_halt_exceptionality(get_pipe_manager, raise_error):
-    """ Halting is conditionally exceptional """
+    """Halting is conditionally exceptional"""
     pm = get_pipe_manager(name="halt-error")
     if raise_error is None:
         # Default is exceptional.
@@ -47,12 +45,10 @@ def test_halt_exceptionality(get_pipe_manager, raise_error):
         pm.halt(raise_error=False)
 
 
-
 @named_param("raise_error", [False, True])
 @named_param("test_type", argvalues=["halt_flag", "complete_flag"])
-def test_halt_status_supersedes_completed(
-        get_pipe_manager, raise_error, test_type):
-    """ Halting pipeline replaces completed flag with halt flag. """
+def test_halt_status_supersedes_completed(get_pipe_manager, raise_error, test_type):
+    """Halting pipeline replaces completed flag with halt flag."""
 
     # Create manager and completion flag.
     pm = get_pipe_manager(name="halt-status-flag")

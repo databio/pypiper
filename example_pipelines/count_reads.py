@@ -9,25 +9,32 @@ __email__ = "nathan@code.databio.org"
 __license__ = "GPL3"
 __version__ = "0.1"
 
-from argparse import ArgumentParser
-import os, re
-import sys
+import os
+import re
 import subprocess
+import sys
+from argparse import ArgumentParser
+
 import yaml
+
 import pypiper
 
 parser = ArgumentParser(
     description="A pipeline to count the number of reads and file size. Accepts"
-    " BAM, fastq, or fastq.gz files.")
+    " BAM, fastq, or fastq.gz files."
+)
 
 # First, add standard arguments from Pypiper.
 # groups="pypiper" will add all the arguments that pypiper uses,
 # and adding "common" adds arguments for --input and --sample--name
 # and "output_parent". You can read more about your options for standard
 # arguments in the pypiper docs (section "command-line arguments")
-parser = pypiper.add_pypiper_args(parser, groups=["pypiper", "common", "ngs"],
-                                    args=["output-parent", "config"],
-                                    required=['sample-name', 'output-parent'])
+parser = pypiper.add_pypiper_args(
+    parser,
+    groups=["pypiper", "common", "ngs"],
+    args=["output-parent", "config"],
+    required=["sample-name", "output-parent"],
+)
 
 # Add any pipeline-specific arguments if you like here.
 
@@ -42,16 +49,14 @@ if args.single_or_paired == "paired":
 else:
     args.paired_end = False
 
-# args for `output_parent` and `sample_name` were added by the standard 
-# `add_pypiper_args` function. 
+# args for `output_parent` and `sample_name` were added by the standard
+# `add_pypiper_args` function.
 # A good practice is to make an output folder for each sample, housed under
 # the parent output folder, like this:
 outfolder = os.path.abspath(os.path.join(args.output_parent, args.sample_name))
 
 # Create a PipelineManager object and start the pipeline
-pm = pypiper.PipelineManager(name="count",
-                             outfolder=outfolder, 
-                             args=args)
+pm = pypiper.PipelineManager(name="count", outfolder=outfolder, args=args)
 
 # NGSTk is a "toolkit" that comes with pypiper, providing some functions
 # for dealing with genome sequence data. You can read more about toolkits in the
@@ -75,15 +80,12 @@ pm.timestamp("### Merge/link and fastq conversion: ")
 # and convert these to fastq files.
 
 local_input_files = ngstk.merge_or_link(
-                        [args.input, args.input2],
-                        raw_folder,
-                        args.sample_name)
+    [args.input, args.input2], raw_folder, args.sample_name
+)
 
 cmd, out_fastq_pre, unaligned_fastq = ngstk.input_to_fastq(
-                                            local_input_files,
-                                            args.sample_name,
-                                            args.paired_end,
-                                            fastq_folder)
+    local_input_files, args.sample_name, args.paired_end, fastq_folder
+)
 
 
 # Now we'll use another NGSTk function to grab the file size from the input files
@@ -95,10 +97,17 @@ pm.report_result("File_mb", ngstk.get_file_size(local_input_files))
 
 n_input_files = len(list(filter(bool, local_input_files)))
 
-raw_reads = sum([int(ngstk.count_reads(input_file, args.paired_end)) 
-                for input_file in local_input_files]) / n_input_files
+raw_reads = (
+    sum(
+        [
+            int(ngstk.count_reads(input_file, args.paired_end))
+            for input_file in local_input_files
+        ]
+    )
+    / n_input_files
+)
 
-# Finally, we use the report_result() function to print the output and 
+# Finally, we use the report_result() function to print the output and
 # log the key-value pair in the standard stats.tsv file
 pm.report_result("Raw_reads", str(raw_reads))
 

@@ -1,7 +1,7 @@
 mock==2.0.0
-pytest>=4.2.1
-hypothesis
-coveralls>=1.1
-pytest-cov==2.6.1
+pytest>=4.6.9
+pytest-cov>=2.8.1
+hypothesis==4.38.0
+coveralls
 veracitools
 pytest-remotedata

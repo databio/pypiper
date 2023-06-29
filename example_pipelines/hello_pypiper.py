@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 import pypiper
-outfolder = "hello_pypiper_results" # Choose a folder for your results
+
+outfolder = "hello_pypiper_results"  # Choose a folder for your results
 
 # Create a PipelineManager, the workhorse of pypiper
 pm = pypiper.PipelineManager(name="hello_pypiper", outfolder=outfolder)

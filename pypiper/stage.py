@@ -11,16 +11,13 @@ __email__ = "vreuter@virginia.edu"
 __all__ = ["Stage"]
 
 
-
 class Stage(object):
     """
     Single stage/phase of a pipeline; a logical processing "unit". A stage is a
     collection of commands that is checkpointed.
     """
 
-
-    def __init__(self, func, f_args=None, f_kwargs=None,
-                 name=None, checkpoint=True):
+    def __init__(self, func, f_args=None, f_kwargs=None, name=None, checkpoint=True):
         """
         A function, perhaps with arguments, defines the stage.
 
@@ -39,7 +36,6 @@ class Stage(object):
         self.name = name or func.__name__
         self.checkpoint = checkpoint
 
-
     @property
     def checkpoint_name(self):
         """
@@ -50,37 +46,42 @@ class Stage(object):
         """
         return translate_stage_name(self.name) if self.checkpoint else None
 
-
     def run(self, *args, **kwargs):
-        """ Alternate form for direct call; execute stage. """
+        """Alternate form for direct call; execute stage."""
         self(*args, **kwargs)
 
-
     def __call__(self, *args, **update_kwargs):
-        """ Execute the stage, allowing updates to args/kwargs. """
+        """Execute the stage, allowing updates to args/kwargs."""
         kwargs = copy.deepcopy(self.f_kwargs)
         kwargs.update(update_kwargs)
         args = args or self.f_args
         self.f(*args, **kwargs)
 
-
     def __eq__(self, other):
-        return isinstance(other, Stage) and \
-               self.f.__name__ == other.f.__name__ and \
-               ({k: v for k, v in self.__dict__.items() if k != "f"} ==
-                {k: v for k, v in other.__dict__.items() if k != "f"})
-
+        return (
+            isinstance(other, Stage)
+            and self.f.__name__ == other.f.__name__
+            and (
+                {k: v for k, v in self.__dict__.items() if k != "f"}
+                == {k: v for k, v in other.__dict__.items() if k != "f"}
+            )
+        )
 
     def __ne__(self, other):
         return not (self == other)
 
-
     def __repr__(self):
-        return "{klass} '{n}': f={f}, args={pos}, kwargs={kwd}, " \
-               "checkpoint={check}".format(klass=self.__class__.__name__,
-                f=self.f, n=self.name, pos=self.f_args, kwd=self.f_kwargs,
-                check=self.checkpoint)
-
+        return (
+            "{klass} '{n}': f={f}, args={pos}, kwargs={kwd}, "
+            "checkpoint={check}".format(
+                klass=self.__class__.__name__,
+                f=self.f,
+                n=self.name,
+                pos=self.f_args,
+                kwd=self.f_kwargs,
+                check=self.checkpoint,
+            )
+        )
 
     def __str__(self):
         return "{}: '{}'".format(self.__class__.__name__, self.name)

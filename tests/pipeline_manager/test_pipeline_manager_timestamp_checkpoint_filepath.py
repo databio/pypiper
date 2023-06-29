@@ -9,14 +9,13 @@ from pypiper.const import CHECKPOINT_EXTENSION
 from pypiper.stage import Stage
 from tests.helpers import named_param
 
-
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-
 class DummyPM(PipelineManager):
-    """ Simple override of true PipelineManager, for __init__ simplicity """
+    """Simple override of true PipelineManager, for __init__ simplicity"""
+
     def __init__(self, name, outfolder):
         self.name = name
         self.outfolder = outfolder
@@ -29,17 +28,17 @@ class DummyPM(PipelineManager):
         self.curr_checkpoint = None
 
 
-
 class PipelineMangerTimestampCheckpointFilePathTests:
-    """ Tests for determination of checkpoint filepath. """
+    """Tests for determination of checkpoint filepath."""
 
-
-    @named_param(argnames=["name1", "name2"],
-                 argvalues=[("chipseq", "ATACseq"), ("rnaKallisto", "wgbs")])
-    @named_param(argnames="spec_type",
-                 argvalues=["stage_name", "stage", "function"])
+    @named_param(
+        argnames=["name1", "name2"],
+        argvalues=[("chipseq", "ATACseq"), ("rnaKallisto", "wgbs")],
+    )
+    @named_param(argnames="spec_type", argvalues=["stage_name", "stage", "function"])
     def test_distinguishes_pipelines_within_outfolder(
-            self, name1, name2, spec_type, tmpdir):
+        self, name1, name2, spec_type, tmpdir
+    ):
         """
         Checkpoint files within sample folder include pipeline name.
 
@@ -66,8 +65,9 @@ class PipelineMangerTimestampCheckpointFilePathTests:
             if spec_type == "function":
                 return trim_reads
             elif spec_type not in ["stage", "stage_name"]:
-                raise ValueError("Unrecognized stage specification type: {}".
-                                 format(spec_type))
+                raise ValueError(
+                    "Unrecognized stage specification type: {}".format(spec_type)
+                )
             else:
                 s = Stage(trim_reads)
                 return s.name if spec_type == "stage_name" else s
@@ -86,25 +86,29 @@ class PipelineMangerTimestampCheckpointFilePathTests:
 
         # Find the checkpoints; there should only be one.
         checkpoint_pattern = os.path.join(
-            outfolder, "{}_*{}".format(name1, CHECKPOINT_EXTENSION))
+            outfolder, "{}_*{}".format(name1, CHECKPOINT_EXTENSION)
+        )
         checkpoints = glob.glob(checkpoint_pattern)
         assert 1 == len(checkpoints)
         assert 1 == len(glob.glob(all_checkpoints_pattern))
         # Check that we have the expected checkpoint.
-        exp_chkpt_fpath = os.path.join(outfolder, "{}_{}".format(
-                name1, checkpoint_name + CHECKPOINT_EXTENSION))
+        exp_chkpt_fpath = os.path.join(
+            outfolder, "{}_{}".format(name1, checkpoint_name + CHECKPOINT_EXTENSION)
+        )
         assert exp_chkpt_fpath == checkpoints[0]
 
         # Create a second checkpoint with the same stage, but with a manager
         # of a different name.
         plm2.timestamp(checkpoint=stage_spec(), finished=True)
         checkpoint_pattern = os.path.join(
-            outfolder, "{}_*{}".format(name2, CHECKPOINT_EXTENSION))
+            outfolder, "{}_*{}".format(name2, CHECKPOINT_EXTENSION)
+        )
         checkpoints = glob.glob(checkpoint_pattern)
         assert 1 == len(checkpoints)
         all_checkpoints = glob.glob(all_checkpoints_pattern)
         assert 2 == len(all_checkpoints)
-        exp_chkpt_fpath_2 = os.path.join(outfolder, "{}_{}".format(
-            name2, checkpoint_name + CHECKPOINT_EXTENSION))
+        exp_chkpt_fpath_2 = os.path.join(
+            outfolder, "{}_{}".format(name2, checkpoint_name + CHECKPOINT_EXTENSION)
+        )
 
         assert {exp_chkpt_fpath, exp_chkpt_fpath_2} == set(all_checkpoints)

@@ -1,10 +1,15 @@
 # <img src="img/pypiper_logo.svg" class="img-header"> a developer's pipeline framework
 
 [![PEP compatible](http://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
+[![pypi-badge](https://img.shields.io/pypi/v/piper)](https://pypi.org/project/piper)
+[![Documentation Status](https://readthedocs.org/projects/pypiper/badge/?version=latest)](http://pypiper.readthedocs.org/en/latest/?badge=latest)
+[![Build Status](https://github.com/databio/pypiper/actions/workflows/run-pytest.yml/badge.svg)](https://github.com/databio/pypiper/actions/workflows/run-pytest.yml)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## What is pypiper?
 
 `Pypiper` is a **development-oriented** pipeline framework. It is a python package that helps you write robust pipelines directly in python, handling mundane tasks like restartability, monitoring for time and memory use, monitoring job status, copious log output, robust error handling, easy debugging tools, and guaranteed file output integrity.
+
 
 
 ## What makes pypiper better? 
