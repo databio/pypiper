@@ -440,7 +440,6 @@ class PipelineManager(object):
             self.pipestat.get_status(self._pipestat_manager.sample_name)
             == COMPLETE_FLAG
         )
-        # return self.status == COMPLETE_FLAG
 
     @property
     def _failed(self):
@@ -449,20 +448,17 @@ class PipelineManager(object):
 
         :return bool: Whether the managed pipeline is in a failed state.
         """
-        self.pipestat.get_status(self._pipestat_manager.sample_name) == FAIL_FLAG
-        # return self.status == FAIL_FLAG
+        return self.pipestat.get_status(self._pipestat_manager.sample_name) == FAIL_FLAG
 
     @property
     def halted(self):
         """
         Is the managed pipeline in a paused/halted state?
-
         :return bool: Whether the managed pipeline is in a paused/halted state.
         """
         return (
             self.pipestat.get_status(self._pipestat_manager.sample_name) == PAUSE_FLAG
         )
-        # return self.status == PAUSE_FLAG
 
     @property
     def _has_exit_status(self):
@@ -473,27 +469,6 @@ class PipelineManager(object):
             has been safely stopped.
         """
         return self._completed or self.halted or self._failed
-
-    # def setup_default_pipestat(self, schema_path):
-    #     """
-    #     A convenience method for ad hoc PipestatManager instantiation.
-    #
-    #     Requires only a pipestat-like schema to get a functional PipestatManager
-    #     for reporting to a YAML-formatted file.
-    #
-    #     :param str schema_path: path to the pipestat-like schema
-    #     """
-    #     if self.pipestat is not None:
-    #         raise PipestatError(
-    #             f"{PipestatManager.__name__} is already "
-    #             f"initialized:\n{str(self.pipestat)}"
-    #         )
-    #     self._pipestat_manager = PipestatManager(
-    #         schema_path=schema_path,
-    #         namespace=self.name,
-    #         record_identifier=self.name,
-    #         results_file_path=pipeline_filepath(self, suffix="_results_pipestat.yaml"),
-    #     )
 
     def _ignore_interrupts(self):
         """
