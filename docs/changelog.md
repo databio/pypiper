@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.13.1] -- 2023-07-14
+### Fixed
+- added _safe_write_to_file back into pypiper for Pepatac backwards compatibility
+
 ## [0.13.0] -- 2023-06-29
 ### Added
 
