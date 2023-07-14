@@ -1691,6 +1691,41 @@ class PipelineManager(object):
                 self.info(r)
         return reported_result
 
+    def _safe_write_to_file(self, file, message):
+        """
+        Writes a string to a file safely (with file locks).
+        """
+        warnings.warn(
+            "This function may be removed in future release. "
+            "The recommended way to report pipeline results is using PipelineManager.pipestat.report().",
+            category=DeprecationWarning,
+        )
+        target = file
+        lock_name = make_lock_name(target, self.outfolder)
+        lock_file = self._make_lock_path(lock_name)
+
+        while True:
+            if os.path.isfile(lock_file):
+                self._wait_for_lock(lock_file)
+            else:
+                try:
+                    self.locks.append(lock_file)
+                    self._create_file_racefree(lock_file)
+                except OSError as e:
+                    if e.errno == errno.EEXIST:
+                        self.warning("Lock file created after test! Looping again.")
+                        continue  # Go back to start
+
+                # Proceed with file writing
+                with open(file, "a") as myfile:
+                    myfile.write(message + "\n")
+
+                os.remove(lock_file)
+                self.locks.remove(lock_file)
+
+                # If you make it to the end of the while loop, you're done
+                break
+
     def _report_command(self, cmd, procs=None):
         """
         Writes a command to both stdout and to the commands log file
