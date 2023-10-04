@@ -344,7 +344,7 @@ class PipelineManager(object):
             return None if arg_name not in args_dict else args_dict[arg_name]
 
         self._pipestat_manager = PipestatManager(
-            sample_name=self.pipestat_sample_name
+            record_identifier=self.pipestat_sample_name
             or _get_arg(args_dict, "pipestat_sample_name")
             or DEFAULT_SAMPLE_NAME,
             pipeline_name=self.name,
@@ -724,7 +724,8 @@ class PipelineManager(object):
         self.info("\n----------------------------------------\n")
         self.status = "running"
         self.pipestat.set_status(
-            sample_name=self._pipestat_manager.sample_name, status_identifier="running"
+            record_identifier=self._pipestat_manager.sample_name,
+            status_identifier="running",
         )
 
         # Record the start in PIPE_profile and PIPE_commands output files so we
@@ -770,7 +771,8 @@ class PipelineManager(object):
         prev_status = self.status
         self.status = status
         self.pipestat.set_status(
-            sample_name=self._pipestat_manager.sample_name, status_identifier=status
+            record_identifier=self._pipestat_manager.sample_name,
+            status_identifier=status,
         )
         self.debug("\nChanged status from {} to {}.".format(prev_status, self.status))
 
@@ -1419,7 +1421,7 @@ class PipelineManager(object):
                 )
                 # self._set_status_flag(WAIT_FLAG)
                 self.pipestat.set_status(
-                    sample_name=self._pipestat_manager.sample_name,
+                    record_identifier=self._pipestat_manager.sample_name,
                     status_identifier="waiting",
                 )
                 first_message_flag = True
@@ -1443,7 +1445,7 @@ class PipelineManager(object):
             self.timestamp("File unlocked.")
             # self._set_status_flag(RUN_FLAG)
             self.pipestat.set_status(
-                sample_name=self._pipestat_manager.sample_name,
+                record_identifier=self._pipestat_manager.sample_name,
                 status_identifier="running",
             )
 
@@ -1602,7 +1604,7 @@ class PipelineManager(object):
 
         reported_result = self.pipestat.report(
             values={key: value},
-            sample_name=self.pipestat_sample_name,
+            record_identifier=self.pipestat_sample_name,
             result_formatter=rf,
         )
 
@@ -1684,7 +1686,7 @@ class PipelineManager(object):
         val = {key: message_raw.replace("\t", " ")}
 
         reported_result = self.pipestat.report(
-            values=val, sample_name=self.pipestat_sample_name, result_formatter=rf
+            values=val, record_identifier=self.pipestat_sample_name, result_formatter=rf
         )
         if not nolog:
             for r in reported_result:
@@ -2026,7 +2028,7 @@ class PipelineManager(object):
             self.info("Failure reason: " + str(exc))
             # self._set_status_flag(FAIL_FLAG)
             self.pipestat.set_status(
-                sample_name=self._pipestat_manager.sample_name,
+                record_identifier=self._pipestat_manager.sample_name,
                 status_identifier="failed",
             )
 
@@ -2087,7 +2089,8 @@ class PipelineManager(object):
         """
         # self._set_status_flag(status)
         self.pipestat.set_status(
-            sample_name=self._pipestat_manager.sample_name, status_identifier=status
+            record_identifier=self._pipestat_manager.sample_name,
+            status_identifier=status,
         )
         self._cleanup()
         elapsed_time_this_run = str(
