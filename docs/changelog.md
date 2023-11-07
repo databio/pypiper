@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.13.3a1] -- 2023-10-04
+### Fixed
+- refactor for pipestat 0.6.0a1
+
 ## [0.13.2] -- 2023-08-02
 ### Fixed
 - fixed self.new_start overriding checkpoints.

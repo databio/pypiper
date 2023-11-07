@@ -387,20 +387,20 @@ def split_by_pipes(cmd):
     cmdlist = []
     newcmd = str()
     for char in cmd:
-        if char is "{":
+        if char == "{":
             stack_brace.append("{")
-        elif char is "}":
+        elif char == "}":
             stack_brace.pop()
-        elif char is "(":
+        elif char == "(":
             stack_paren.append("(")
-        elif char is ")":
+        elif char == ")":
             stack_paren.pop()
 
         if len(stack_brace) > 0 or len(stack_paren) > 0:
             # We are inside a parenthetic of some kind; emit character
             # no matter what it is
             newcmd += char
-        elif char is "|":
+        elif char == "|":
             # if it's a pipe, finish the command and start a new one
             cmdlist.append(newcmd)
             newcmd = str()

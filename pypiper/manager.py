@@ -728,6 +728,7 @@ class PipelineManager(object):
         self.status = "running"
         self.pipestat.set_status(
             record_identifier=self._pipestat_manager.cfg["record_identifier"],
+
             status_identifier="running",
         )
 
@@ -1425,6 +1426,7 @@ class PipelineManager(object):
                 # self._set_status_flag(WAIT_FLAG)
                 self.pipestat.set_status(
                     record_identifier=self._pipestat_manager.cfg["record_identifier"],
+
                     status_identifier="waiting",
                 )
                 first_message_flag = True
