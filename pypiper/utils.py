@@ -1110,9 +1110,11 @@ def _add_args(parser, args, required):
     return parser
 
 
-def result_formatter_markdown(pipeline_name, sample_name, res_id, value) -> str:
+def result_formatter_markdown(pipeline_name, record_identifier, res_id, value) -> str:
     """
     Returns Markdown formatted value as string
+
+    # Pipeline_name and record_identifier should be kept because pipestat needs it
     """
 
     message_markdown = "\n> `{key}`\t{value}\t_RES_".format(key=res_id, value=value)
