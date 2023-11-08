@@ -330,7 +330,7 @@ class Pipeline(object):
             # between results from different stages.
             skip_mode = False
 
-            print(f"Running stage: {getattr(stage, "name", str(stage))}")
+            print(f"Running stage: {getattr(stage, 'name', str(stage))}")
 
             stage.run()
             self.executed.append(stage)
