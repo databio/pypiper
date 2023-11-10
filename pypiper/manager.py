@@ -329,8 +329,7 @@ class PipelineManager(object):
         signal.signal(signal.SIGTERM, self._signal_term_handler)
 
         # pipestat setup
-        self.pipestat_sample_name = pipestat_sample_name or DEFAULT_SAMPLE_NAME
-        # getattr(self, "sample_name", DEFAULT_SAMPLE_NAME)
+        self.pipestat_record_identifier = pipestat_sample_name or DEFAULT_SAMPLE_NAME
 
         # don't force default pipestat_results_file value unless
         # pipestat config not provided
@@ -344,7 +343,7 @@ class PipelineManager(object):
             return None if arg_name not in args_dict else args_dict[arg_name]
 
         self._pipestat_manager = PipestatManager(
-            record_identifier=self.pipestat_sample_name
+            record_identifier=self.pipestat_record_identifier
             or _get_arg(args_dict, "pipestat_sample_name")
             or DEFAULT_SAMPLE_NAME,
             pipeline_name=self.name,
@@ -437,7 +436,7 @@ class PipelineManager(object):
         :return bool: Whether the managed pipeline is in a completed state.
         """
         return (
-            self.pipestat.get_status(self._pipestat_manager.sample_name)
+            self.pipestat.get_status(self._pipestat_manager.record_identifier)
             == COMPLETE_FLAG
         )
 
@@ -448,7 +447,10 @@ class PipelineManager(object):
 
         :return bool: Whether the managed pipeline is in a failed state.
         """
-        return self.pipestat.get_status(self._pipestat_manager.sample_name) == FAIL_FLAG
+        return (
+            self.pipestat.get_status(self._pipestat_manager.record_identifier)
+            == FAIL_FLAG
+        )
 
     @property
     def halted(self):
@@ -457,7 +459,8 @@ class PipelineManager(object):
         :return bool: Whether the managed pipeline is in a paused/halted state.
         """
         return (
-            self.pipestat.get_status(self._pipestat_manager.sample_name) == PAUSE_FLAG
+            self.pipestat.get_status(self._pipestat_manager.record_identifier)
+            == PAUSE_FLAG
         )
 
     @property
@@ -720,11 +723,11 @@ class PipelineManager(object):
         results = self._pipestat_manager.__str__().split("\n")
         for i in results:
             self.info("* " + i)
-        self.info("* Sample name: " + self.pipestat_sample_name + "\n")
+        self.info("* Sample name: " + self.pipestat_record_identifier + "\n")
         self.info("\n----------------------------------------\n")
         self.status = "running"
         self.pipestat.set_status(
-            record_identifier=self._pipestat_manager.sample_name,
+            record_identifier=self._pipestat_manager.record_identifier,
             status_identifier="running",
         )
 
@@ -771,7 +774,7 @@ class PipelineManager(object):
         prev_status = self.status
         self.status = status
         self.pipestat.set_status(
-            record_identifier=self._pipestat_manager.sample_name,
+            record_identifier=self._pipestat_manager.record_identifier,
             status_identifier=status,
         )
         self.debug("\nChanged status from {} to {}.".format(prev_status, self.status))
@@ -788,8 +791,8 @@ class PipelineManager(object):
         """
 
         flag_file_name = "{}_{}_{}".format(
-            self._pipestat_manager["_pipeline_name"],
-            self.pipestat_sample_name,
+            self._pipestat_manager.pipeline_name,
+            self.pipestat_record_identifier,
             flag_name(status or self.status),
         )
         return pipeline_filepath(self, filename=flag_file_name)
@@ -1421,7 +1424,7 @@ class PipelineManager(object):
                 )
                 # self._set_status_flag(WAIT_FLAG)
                 self.pipestat.set_status(
-                    record_identifier=self._pipestat_manager.sample_name,
+                    record_identifier=self._pipestat_manager.record_identifier,
                     status_identifier="waiting",
                 )
                 first_message_flag = True
@@ -1445,7 +1448,7 @@ class PipelineManager(object):
             self.timestamp("File unlocked.")
             # self._set_status_flag(RUN_FLAG)
             self.pipestat.set_status(
-                record_identifier=self._pipestat_manager.sample_name,
+                record_identifier=self._pipestat_manager.record_identifier,
                 status_identifier="running",
             )
 
@@ -1604,7 +1607,7 @@ class PipelineManager(object):
 
         reported_result = self.pipestat.report(
             values={key: value},
-            record_identifier=self.pipestat_sample_name,
+            record_identifier=self.pipestat_record_identifier,
             result_formatter=rf,
         )
 
@@ -1686,7 +1689,9 @@ class PipelineManager(object):
         val = {key: message_raw.replace("\t", " ")}
 
         reported_result = self.pipestat.report(
-            values=val, record_identifier=self.pipestat_sample_name, result_formatter=rf
+            values=val,
+            record_identifier=self.pipestat_record_identifier,
+            result_formatter=rf,
         )
         if not nolog:
             for r in reported_result:
@@ -1853,10 +1858,12 @@ class PipelineManager(object):
             _, data = read_yaml_data(path=self.pipeline_stats_file, what="stats_file")
             print(data)
             pipeline_key = list(
-                data[self.pipestat["_pipeline_name"]][self.pipestat["_pipeline_type"]]
+                data[self._pipestat_manager.pipeline_name][
+                    self.pipestat["_pipeline_type"]
+                ]
             )[0]
             if self.name == pipeline_key:
-                for key, value in data[self.pipestat["_pipeline_name"]][
+                for key, value in data[self._pipestat_manager.pipeline_name][
                     self.pipestat["_pipeline_type"]
                 ][pipeline_key].items():
                     self.stats_dict[key] = value.strip()
@@ -1991,12 +1998,12 @@ class PipelineManager(object):
         """Stop a completely finished pipeline."""
         self.stop_pipeline(status=COMPLETE_FLAG)
 
-    def fail_pipeline(self, exc, dynamic_recover=False):
+    def fail_pipeline(self, exc: Exception, dynamic_recover: bool = False):
         """
         If the pipeline does not complete, this function will stop the pipeline gracefully.
         It sets the status flag to failed and skips the normal success completion procedure.
 
-        :param Exception e: Exception to raise.
+        :param Exception exc: Exception to raise.
         :param bool dynamic_recover: Whether to recover e.g. for job termination.
         """
         # Take care of any active running subprocess
@@ -2026,9 +2033,8 @@ class PipelineManager(object):
             total_time = datetime.timedelta(seconds=self.time_elapsed(self.starttime))
             self.info("Total time: " + str(total_time))
             self.info("Failure reason: " + str(exc))
-            # self._set_status_flag(FAIL_FLAG)
             self.pipestat.set_status(
-                record_identifier=self._pipestat_manager.sample_name,
+                record_identifier=self._pipestat_manager.record_identifier,
                 status_identifier="failed",
             )
 
@@ -2089,7 +2095,7 @@ class PipelineManager(object):
         """
         # self._set_status_flag(status)
         self.pipestat.set_status(
-            record_identifier=self._pipestat_manager.sample_name,
+            record_identifier=self._pipestat_manager.record_identifier,
             status_identifier=status,
         )
         self._cleanup()
@@ -2460,8 +2466,8 @@ class PipelineManager(object):
                 for fn in glob.glob(self.outfolder + flag_name("*"))
                 if COMPLETE_FLAG not in os.path.basename(fn)
                 and not "{}_{}_{}".format(
-                    self._pipestat_manager["_pipeline_name"],
-                    self.pipestat_sample_name,
+                    self._pipestat_manager.pipeline_name,
+                    self.pipestat_record_identifier,
                     run_flag,
                 )
                 == os.path.basename(fn)
