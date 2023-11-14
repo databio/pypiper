@@ -1856,17 +1856,18 @@ class PipelineManager(object):
 
         if os.path.isfile(self.pipeline_stats_file):
             _, data = read_yaml_data(path=self.pipeline_stats_file, what="stats_file")
-            print(data)
-            pipeline_key = list(
+            record_identifier = list(
                 data[self._pipestat_manager.pipeline_name][
-                    self.pipestat["_pipeline_type"]
+                    self._pipestat_manager.pipeline_type
                 ]
             )[0]
-            if self.name == pipeline_key:
+
+            # Confirm that the loaded stats file is the same namespace as the pipeline manager
+            if record_identifier == self._pipestat_manager.record_identifier:
                 for key, value in data[self._pipestat_manager.pipeline_name][
-                    self.pipestat["_pipeline_type"]
-                ][pipeline_key].items():
-                    self.stats_dict[key] = value.strip()
+                    self._pipestat_manager.pipeline_type
+                ][record_identifier].items():
+                    self.stats_dict[key] = value
 
     def get_stat(self, key):
         """

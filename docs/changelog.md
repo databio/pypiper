@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.13.3] -- 2023-11-xx
+## [0.14.0] -- 2023-11-xx
 ### Changed
 - refactor for pipestat v0.6.0 release
 - drop python 2.7
