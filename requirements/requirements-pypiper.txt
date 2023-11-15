@@ -3,4 +3,4 @@ psutil
 pandas
 ubiquerg>=0.4.5
 yacman
-pipestat>=0.6.0a5
+pipestat>=0.6.0a7
