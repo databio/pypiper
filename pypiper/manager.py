@@ -1587,7 +1587,9 @@ class PipelineManager(object):
         with open(self.pipeline_profile_file, "a") as myfile:
             myfile.write(message_raw + "\n")
 
-    def report_result(self, key, value, nolog=False, result_formatter=None):
+    def report_result(
+        self, key, value, nolog=False, result_formatter=None, force_overwrite=False
+    ):
         """
         Writes a key:value pair to self.pipeline_stats_file.
 
@@ -1597,6 +1599,7 @@ class PipelineManager(object):
             logfile. Use sparingly in case you will be printing the result in a
             different format.
         :param str result_formatter: function for formatting via pipestat backend
+        :param bool force_overwrite: overwrite results if they already exist?
         :return str reported_result: the reported result is returned as a list of formatted strings.
 
         """
@@ -1609,11 +1612,17 @@ class PipelineManager(object):
             values={key: value},
             record_identifier=self.pipestat_record_identifier,
             result_formatter=rf,
+            force_overwrite=force_overwrite,
         )
 
         if not nolog:
-            for r in reported_result:
-                self.info(r)
+            if isinstance(
+                reported_result, bool
+            ):  # Pipestat can return False if results are NOT reported.
+                self.info("Result successfully reported? " + str(reported_result))
+            else:
+                for r in reported_result:
+                    self.info(r)
 
         return reported_result
 
@@ -1626,6 +1635,7 @@ class PipelineManager(object):
         annotation=None,
         nolog=False,
         result_formatter=None,
+        force_overwrite=False,
     ):
         """
         Writes a key:value pair to self.pipeline_stats_file. Note: this function
@@ -1646,6 +1656,7 @@ class PipelineManager(object):
             logfile. Use sparingly in case you will be printing the result in a
             different format.
         :param str result_formatter: function for formatting via pipestat backend
+        :param bool force_overwrite: overwrite results if they already exist?
         :return str reported_result: the reported result is returned as a list of formatted strings.
         """
         warnings.warn(
@@ -1692,11 +1703,17 @@ class PipelineManager(object):
             values=val,
             record_identifier=self.pipestat_record_identifier,
             result_formatter=rf,
+            force_overwrite=force_overwrite,
         )
+
         if not nolog:
-            for r in reported_result:
-                self.info(r)
-        return reported_result
+            if isinstance(
+                reported_result, bool
+            ):  # Pipestat can return False if results are NOT reported.
+                self.info("Result successfully reported? " + str(reported_result))
+            else:
+                for r in reported_result:
+                    self.info(r)
 
     def _safe_write_to_file(self, file, message):
         """
