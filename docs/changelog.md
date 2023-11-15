@@ -7,6 +7,8 @@
 - updated requirements
 - ### Fixed
 - fixed #196 and #197
+- ### Added
+- added `force_overwrite` to `report_result` and `report_object`
 
 ## [0.13.2] -- 2023-08-02
 ### Fixed
