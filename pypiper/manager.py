@@ -1675,29 +1675,14 @@ class PipelineManager(object):
             anchor_text = str(key).strip()
         # better to use a relative path in this file
         # convert any absolute paths into relative paths
-        relative_filename = (
-            os.path.relpath(filename, self.outfolder)
-            if os.path.isabs(filename)
-            else filename
-        )
 
-        if anchor_image:
-            relative_anchor_image = (
-                os.path.relpath(anchor_image, self.outfolder)
-                if os.path.isabs(anchor_image)
-                else anchor_image
-            )
-        else:
-            relative_anchor_image = "None"
-
-        message_raw = "{filename}\t{anchor_text}\t{anchor_image}\t{annotation}".format(
-            filename=relative_filename,
-            anchor_text=anchor_text,
-            anchor_image=relative_anchor_image,
-            annotation=annotation,
-        )
-
-        val = {key: message_raw.replace("\t", " ")}
+        values = {
+            "path": filename,
+            "thumbnail_path": anchor_image,
+            "title": anchor_text,
+            "annotation": annotation,
+        }
+        val = {key: values}
 
         reported_result = self.pipestat.report(
             values=val,
