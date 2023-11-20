@@ -338,6 +338,9 @@ class PipelineManager(object):
                 self, filename="pipestat_results.yaml"
             )
 
+        if pipestat_results_file:
+            self.pipestat_results_file = pipestat_results_file
+
         def _get_arg(args_dict, arg_name):
             """safely get argument from arg dict -- return None if doesn't exist"""
             return None if arg_name not in args_dict else args_dict[arg_name]
@@ -350,8 +353,9 @@ class PipelineManager(object):
             schema_path=pipestat_schema
             or _get_arg(args_dict, "pipestat_schema")
             or default_pipestat_output_schema(sys.argv[0]),
-            results_file_path=self.pipeline_stats_file
-            or _get_arg(args_dict, "pipestat_results_file"),
+            results_file_path=self.pipestat_results_file
+            or _get_arg(args_dict, "pipestat_results_file")
+            or self.pipeline_stats_file,
             config_file=pipestat_config or _get_arg(args_dict, "pipestat_config"),
             multi_pipelines=multi,
         )
