@@ -334,11 +334,8 @@ class PipelineManager(object):
         # don't force default pipestat_results_file value unless
         # pipestat config not provided
         if pipestat_config is None and pipestat_results_file is None:
-            pipestat_results_file = pipeline_filepath(
-                self, filename="pipestat_results.yaml"
-            )
-
-        if pipestat_results_file:
+            self.pipestat_results_file = self.pipeline_stats_file
+        elif pipestat_results_file:
             self.pipestat_results_file = pipestat_results_file
 
         def _get_arg(args_dict, arg_name):
