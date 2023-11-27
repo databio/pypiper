@@ -337,6 +337,7 @@ class PipelineManager(object):
             self.pipestat_results_file = self.pipeline_stats_file
         elif pipestat_results_file:
             self.pipestat_results_file = pipestat_results_file
+            self.pipeline_stats_file = self.pipestat_results_file
 
         def _get_arg(args_dict, arg_name):
             """safely get argument from arg dict -- return None if doesn't exist"""
@@ -1859,18 +1860,11 @@ class PipelineManager(object):
 
         if os.path.isfile(self.pipeline_stats_file):
             _, data = read_yaml_data(path=self.pipeline_stats_file, what="stats_file")
-            record_identifier = list(
-                data[self._pipestat_manager.pipeline_name][
-                    self._pipestat_manager.pipeline_type
-                ]
-            )[0]
 
-            # Confirm that the loaded stats file is the same namespace as the pipeline manager
-            if record_identifier == self._pipestat_manager.record_identifier:
-                for key, value in data[self._pipestat_manager.pipeline_name][
-                    self._pipestat_manager.pipeline_type
-                ][record_identifier].items():
-                    self.stats_dict[key] = value
+            for key, value in data[self._pipestat_manager.pipeline_name][
+                self._pipestat_manager.pipeline_type
+            ][self._pipestat_manager.record_identifier].items():
+                self.stats_dict[key] = value
 
     def get_stat(self, key):
         """
