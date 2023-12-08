@@ -141,6 +141,7 @@ class PipelineManager(object):
         pipestat_schema=None,
         pipestat_results_file=None,
         pipestat_config=None,
+        pipestat_pipeline_type=None,
         pipestat_result_formatter=None,
         **kwargs,
     ):
@@ -330,6 +331,7 @@ class PipelineManager(object):
 
         # pipestat setup
         self.pipestat_record_identifier = pipestat_sample_name or DEFAULT_SAMPLE_NAME
+        self.pipestat_pipeline_type = pipestat_pipeline_type or "sample"
 
         # don't force default pipestat_results_file value unless
         # pipestat config not provided
@@ -356,6 +358,7 @@ class PipelineManager(object):
             or self.pipeline_stats_file,
             config_file=pipestat_config or _get_arg(args_dict, "pipestat_config"),
             multi_pipelines=multi,
+            pipeline_type=self.pipestat_pipeline_type,
         )
 
         self.start_pipeline(args, multi)
