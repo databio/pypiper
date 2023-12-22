@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.0] -- 2023-12-22
+### Changed
+- refactor for pipestat v0.6.0 release
+- drop python 2.7
+- updated requirements
+- changed message_raw to be a value_dict when reporting to conform to pipestat
+- ### Fixed
+- fixed #196 and #197
+- ### Added
+- added `force_overwrite` to `report_result` and `report_object`
+- added pipestat_pipeline_type, defaulting to sample-level
+
 ## [0.13.2] -- 2023-08-02
 ### Fixed
 - fixed self.new_start overriding checkpoints.

@@ -387,20 +387,20 @@ def split_by_pipes(cmd):
     cmdlist = []
     newcmd = str()
     for char in cmd:
-        if char is "{":
+        if char == "{":
             stack_brace.append("{")
-        elif char is "}":
+        elif char == "}":
             stack_brace.pop()
-        elif char is "(":
+        elif char == "(":
             stack_paren.append("(")
-        elif char is ")":
+        elif char == ")":
             stack_paren.pop()
 
         if len(stack_brace) > 0 or len(stack_paren) > 0:
             # We are inside a parenthetic of some kind; emit character
             # no matter what it is
             newcmd += char
-        elif char is "|":
+        elif char == "|":
             # if it's a pipe, finish the command and start a new one
             cmdlist.append(newcmd)
             newcmd = str()
@@ -1110,9 +1110,11 @@ def _add_args(parser, args, required):
     return parser
 
 
-def result_formatter_markdown(pipeline_name, sample_name, res_id, value) -> str:
+def result_formatter_markdown(pipeline_name, record_identifier, res_id, value) -> str:
     """
     Returns Markdown formatted value as string
+
+    # Pipeline_name and record_identifier should be kept because pipestat needs it
     """
 
     message_markdown = "\n> `{key}`\t{value}\t_RES_".format(key=res_id, value=value)

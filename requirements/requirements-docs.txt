@@ -2,5 +2,5 @@ mkdocs>=1.0
 markdown-include
 pydoc-markdown
 piper
-pipestat>=0.4.0
+pipestat>=0.6.0
 https://github.com/databio/mkdocs-databio/archive/master.zip
