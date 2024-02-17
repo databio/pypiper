@@ -86,3 +86,6 @@ piper.egg-info/
 
 *ipynb_checkpoints*
 *.egg-info*
+
+
+example_pipelines/pipeline_output

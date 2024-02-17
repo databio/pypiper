@@ -631,88 +631,41 @@ class PipelineManager(object):
         # Print out a header section in the pipeline log:
         # Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
         # print("----------------------------------------")
-        self.info("### Pipeline run code and environment:\n")
-        self.info(
-            "* " + "Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv)) + "`"
-        )
-        self.info("* " + "Compute host".rjust(20) + ":  " + platform.node())
-        self.info("* " + "Working dir".rjust(20) + ":  " + os.getcwd())
-        self.info("* " + "Outfolder".rjust(20) + ":  " + self.outfolder)
+        def logfmt(key, value=None, padding=16):
+            padded_key = key.rjust(padding)
+            formatted_val = f"`{value}`" if value else ""
+            return f"* {padded_key}: {formatted_val}"
 
-        self.timestamp("* " + "Pipeline started at".rjust(20) + ":  ")
+        self.info("### Pipeline run code and environment:\n")
+        self.info(logfmt("Command", str(" ".join(sys.argv))))
+        self.info(logfmt("Compute host", platform.node()))
+        self.info(logfmt("Working dir", os.getcwd()))
+        self.info(logfmt("Outfolder", self.outfolder))
+        self.info(logfmt("Log file", self.pipeline_log_file))
+        self.timestamp(logfmt("Start time"))
 
         self.info("\n### Version log:\n")
-        self.info("* " + "Python version".rjust(20) + ":  " + platform.python_version())
+        self.info(logfmt("Python version", platform.python_version()))
         try:
-            self.info(
-                "* "
-                + "Pypiper dir".rjust(20)
-                + ":  "
-                + "`"
-                + gitvars["pypiper_dir"].strip()
-                + "`"
-            )
-            self.info("* " + "Pypiper version".rjust(20) + ":  " + __version__)
-            self.info(
-                "* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars["pypiper_hash"])
-            )
-            self.info(
-                "* "
-                + "Pypiper branch".rjust(20)
-                + ":  "
-                + str(gitvars["pypiper_branch"])
-            )
-            self.info(
-                "* " + "Pypiper date".rjust(20) + ":  " + str(gitvars["pypiper_date"])
-            )
+            self.info(logfmt("Pypiper dir", gitvars["pypiper_dir"].strip()))
+            self.info(logfmt("Pypiper version", __version__))
+            self.info(logfmt("Pypiper hash", gitvars["pypiper_hash"]))
+            self.info(logfmt("Pypiper branch", gitvars["pypiper_branch"]))
+            self.info(logfmt("Pypiper date", gitvars["pypiper_date"]))
             if gitvars["pypiper_diff"]:
-                self.info(
-                    "* "
-                    + "Pypiper diff".rjust(20)
-                    + ":  "
-                    + str(gitvars["pypiper_diff"])
-                )
+                self.info(logfmt("Pypiper diff", gitvars["pypiper_diff"]))
         except KeyError:
             # It is ok if keys aren't set, it means pypiper isn't in a  git repo.
             pass
 
         try:
-            self.info(
-                "* "
-                + "Pipeline dir".rjust(20)
-                + ":  "
-                + "`"
-                + gitvars["pipe_dir"].strip()
-                + "`"
-            )
-            self.info(
-                "* " + "Pipeline version".rjust(20) + ":  " + str(self.pl_version)
-            )
-            self.info(
-                "* "
-                + "Pipeline hash".rjust(20)
-                + ":  "
-                + str(gitvars["pipe_hash"]).strip()
-            )
-            self.info(
-                "* "
-                + "Pipeline branch".rjust(20)
-                + ":  "
-                + str(gitvars["pipe_branch"]).strip()
-            )
-            self.info(
-                "* "
-                + "Pipeline date".rjust(20)
-                + ":  "
-                + str(gitvars["pipe_date"]).strip()
-            )
+            self.info(logfmt("Pipeline dir", gitvars["pipe_dir"].strip()))
+            self.info(logfmt("Pipeline version", self.pl_version))
+            self.info(logfmt("Pipeline hash", gitvars["pipe_hash"]).strip())
+            self.info(logfmt("Pipeline branch", gitvars["pipe_branch"]).strip())
+            self.info(logfmt("Pipeline date", gitvars["pipe_date"]).strip())
             if gitvars["pipe_diff"] != "":
-                self.info(
-                    "* "
-                    + "Pipeline diff".rjust(20)
-                    + ":  "
-                    + str(gitvars["pipe_diff"]).strip()
-                )
+                self.info(logfmt("Pipeline diff", gitvars["pipe_diff"]).strip())
         except KeyError:
             # It is ok if keys aren't set, it means the pipeline isn't a git repo.
             pass
