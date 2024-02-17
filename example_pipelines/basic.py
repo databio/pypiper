@@ -26,7 +26,7 @@ pm = pypiper.PipelineManager(name="BASIC", outfolder="pipeline_output/")
 tgt = "pipeline_output/test.out"
 
 # build the command
-cmd = "shuf -i 1-500000000 -n 10000000 > " + tgt
+cmd = f"shuf -i 1-500000000 -n 10000000 > {tgt}"
 
 # and run with run().
 pm.run(cmd, target=tgt)
@@ -34,7 +34,7 @@ pm.run(cmd, target=tgt)
 # Now copy the data into a new file.
 # first specify target file and build command:
 tgt = "pipeline_output/copied.out"
-cmd = "cp pipeline_output/test.out " + tgt
+cmd = f"cp pipeline_output/test.out {tgt}"
 pm.run(cmd, target=tgt)
 
 # You can also string multiple commands together, which will execute
