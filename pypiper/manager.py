@@ -8,7 +8,6 @@ The PipelineManager class can be used to create a procedural pipeline in python.
 """
 
 import atexit
-import copy
 import datetime
 import errno
 import glob
@@ -208,6 +207,11 @@ class PipelineManager(object):
         self.output_parent = params["output_parent"]
         self.testmode = params["testmode"]
 
+        # Establish the log file to check safety with logging keyword arguments.
+        # Establish the output folder since it's required for the log file.
+        self.outfolder = os.path.join(outfolder, "")  # trailing slash
+        self.pipeline_log_file = pipeline_filepath(self, suffix="_log.md")
+
         # Set up logger
         logger_kwargs = logger_kwargs or {}
         default_logname = ".".join([__name__, self.__class__.__name__, self.name])
@@ -276,10 +280,7 @@ class PipelineManager(object):
         #   self.output_parent = os.path.join(os.getcwd(), self.output_parent)
 
         # File paths:
-        self.outfolder = os.path.join(outfolder, "")  # trailing slash
         self.make_sure_path_exists(self.outfolder)
-        self.pipeline_log_file = pipeline_filepath(self, suffix="_log.md")
-
         self.pipeline_profile_file = pipeline_filepath(self, suffix="_profile.tsv")
 
         # Stats and figures are general and so lack the pipeline name.
