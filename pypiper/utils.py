@@ -788,7 +788,7 @@ def pipeline_filepath(pm, filename=None, suffix=None):
 
     if filename is None and suffix is None:
         raise TypeError(
-            "Provide filename and/or suffix to create " "path to a pipeline file."
+            "Provide filename and/or suffix to create path to a pipeline file."
         )
 
     filename = (filename or pm.name) + (suffix or "")
