@@ -209,28 +209,27 @@ class PipelineManager(object):
         self.testmode = params["testmode"]
 
         # Set up logger
-        logger_kwargs = copy.deepcopy(logger_kwargs) or {}
+        logger_kwargs = logger_kwargs or {}
         default_logname = ".".join([__name__, self.__class__.__name__, self.name])
-        if not args:
-            # strict is only for logger_via_cli.
-            kwds = {k: v for k, v in logger_kwargs.items() if k != "strict"}
+        self._logger = None
+        if args:
+            logger_builder_method = "logger_via_cli"
             try:
-                name = kwds.pop("name")
+                self._logger = logmuse.logger_via_cli(args, **logger_kwargs)
+            except logmuse.est.AbsentOptionException as e:
+                # Defer logger construction to init_logger.
+                self.debug(f"logger_via_cli failed: {e}")
+        if self._logger is None:
+            logger_builder_method = "init_logger"
+            # covers cases of bool(args) being False, or failure of logger_via_cli.
+            # strict is only for logger_via_cli.
+            logger_kwargs = {k: v for k, v in logger_kwargs.items() if k != "strict"}
+            try:
+                name = logger_kwargs.pop("name")
             except KeyError:
                 name = default_logname
-            self._logger = logmuse.init_logger(name, **kwds)
-            self.debug("Logger set with logmuse.init_logger")
-        else:
-            logger_kwargs.setdefault("name", default_logname)
-            try:
-                self._logger = logmuse.logger_via_cli(args)
-            except logmuse.est.AbsentOptionException as e:
-                self._logger = logmuse.init_logger("pypiper", level="DEBUG")
-                logger_builder_method = "init_logger"
-                self.debug(f"logger_via_cli failed: {e}")
-            else:
-                logger_builder_method = "logger_via_cli"
-            self.debug(f"Logger set with logmuse.{logger_builder_method}")
+            self._logger = logmuse.init_logger(name, **logger_kwargs)
+        self.debug(f"Logger set with logmuse.{logger_builder_method}")
 
         # Keep track of an ID for the number of processes attempted
         self.proc_count = 0
