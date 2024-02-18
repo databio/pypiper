@@ -193,10 +193,7 @@ class PipelineManager(object):
         # If no starting point was specified, assume that the pipeline's
         # execution is to begin right away and set the internal flag so that
         # run() is let loose to execute instructions given.
-        if not self.start_point:
-            self._active = True
-        else:
-            self._active = False
+        self._active = not self.start_point
 
         # Pipeline-level variables to track global state and pipeline stats
         # Pipeline settings
