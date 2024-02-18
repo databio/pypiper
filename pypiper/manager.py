@@ -224,11 +224,13 @@ class PipelineManager(object):
             logger_kwargs.setdefault("name", default_logname)
             try:
                 self._logger = logmuse.logger_via_cli(args)
-            except logmuse.est.AbsentOptionException:
+            except logmuse.est.AbsentOptionException as e:
                 self._logger = logmuse.init_logger("pypiper", level="DEBUG")
-                self.debug("logger_via_cli failed; Logger set with logmuse.init_logger")
+                logger_builder_method = "init_logger"
+                self.debug(f"logger_via_cli failed: {e}")
             else:
-                self.debug("Logger set with logmuse.logger_via_cli")
+                logger_builder_method = "logger_via_cli"
+            self.debug(f"Logger set with logmuse.{logger_builder_method}")
 
         # Keep track of an ID for the number of processes attempted
         self.proc_count = 0
