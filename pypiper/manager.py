@@ -214,6 +214,10 @@ class PipelineManager(object):
 
         # Set up logger
         logger_kwargs = logger_kwargs or {}
+        if logger_kwargs.get("logfile") == self.pipeline_log_file:
+            raise ValueError(
+                f"The logfile given for the pipeline manager's logger matches that which will be used by the manager itself: {self.pipeline_log_file}"
+            )
         default_logname = ".".join([__name__, self.__class__.__name__, self.name])
         self._logger = None
         if args:
