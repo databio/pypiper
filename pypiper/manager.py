@@ -8,6 +8,7 @@ The PipelineManager class can be used to create a procedural pipeline in python.
 """
 
 import atexit
+import copy
 import datetime
 import errno
 import glob
@@ -208,7 +209,7 @@ class PipelineManager(object):
         self.testmode = params["testmode"]
 
         # Set up logger
-        logger_kwargs = logger_kwargs or {}
+        logger_kwargs = copy.deepcopy(logger_kwargs) or {}
         default_logname = ".".join([__name__, self.__class__.__name__, self.name])
         if not args:
             # strict is only for logger_via_cli.
