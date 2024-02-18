@@ -58,6 +58,7 @@ __all__ = ["PipelineManager"]
 
 
 LOCK_PREFIX = "lock."
+LOGFILE_SUFFIX = "_log.md"
 
 
 class Unbuffered(object):
@@ -210,7 +211,7 @@ class PipelineManager(object):
         # Establish the log file to check safety with logging keyword arguments.
         # Establish the output folder since it's required for the log file.
         self.outfolder = os.path.join(outfolder, "")  # trailing slash
-        self.pipeline_log_file = pipeline_filepath(self, suffix="_log.md")
+        self.pipeline_log_file = pipeline_filepath(self, suffix=LOGFILE_SUFFIX)
 
         # Set up logger
         logger_kwargs = logger_kwargs or {}
