@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.15.0] -- 2024-xx-xx
+### Changed
+- remove pipestat_project_name from PipelineManager parameters
+- refactor pipestat_sample_name to pipestat_record_identifier in PipelineManager parameters
+
+
 ## [0.14.0] -- 2023-12-22
 ### Changed
 - refactor for pipestat v0.6.0 release

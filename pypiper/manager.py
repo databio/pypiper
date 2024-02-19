@@ -112,6 +112,12 @@ class PipelineManager(object):
         protect from a case in which a restart begins upstream of a stage
         for which a checkpoint file already exists, but that depends on the
         upstream stage and thus should be rerun if it's "parent" is rerun.
+    :param str pipestat_record_identifier: record_identifier to report results via pipestat
+    :param str pipestat_schema: output schema used by pipestat to report results
+    :param str pipestat_results_file: path to file backend for reporting results
+    :param str pipestat_config_file: path to pipestat configuration file
+    :param str pipestat_pipeline_type: Sample or Project level pipeline
+    :param pipestat_result_formatter: function used to style reported results, defaults to result_formatter_markdown
     :raise TypeError: if start or stop point(s) are provided both directly and
         via args namespace, or if both stopping types (exclusive/prospective
         and inclusive/retrospective) are provided.
@@ -136,8 +142,7 @@ class PipelineManager(object):
         output_parent=None,
         overwrite_checkpoints=False,
         logger_kwargs=None,
-        pipestat_project_name=None,
-        pipestat_sample_name=None,
+        pipestat_record_identifier=None,
         pipestat_schema=None,
         pipestat_results_file=None,
         pipestat_config=None,
@@ -330,7 +335,9 @@ class PipelineManager(object):
         signal.signal(signal.SIGTERM, self._signal_term_handler)
 
         # pipestat setup
-        self.pipestat_record_identifier = pipestat_sample_name or DEFAULT_SAMPLE_NAME
+        self.pipestat_record_identifier = (
+            pipestat_record_identifier or DEFAULT_SAMPLE_NAME
+        )
         self.pipestat_pipeline_type = pipestat_pipeline_type or "sample"
 
         # don't force default pipestat_results_file value unless
