@@ -58,6 +58,7 @@ __all__ = ["PipelineManager"]
 
 
 LOCK_PREFIX = "lock."
+LOGFILE_SUFFIX = "_log.md"
 
 
 class Unbuffered(object):
@@ -198,10 +199,7 @@ class PipelineManager(object):
         # If no starting point was specified, assume that the pipeline's
         # execution is to begin right away and set the internal flag so that
         # run() is let loose to execute instructions given.
-        if not self.start_point:
-            self._active = True
-        else:
-            self._active = False
+        self._active = not self.start_point
 
         # Pipeline-level variables to track global state and pipeline stats
         # Pipeline settings
@@ -215,26 +213,37 @@ class PipelineManager(object):
         self.output_parent = params["output_parent"]
         self.testmode = params["testmode"]
 
+        # Establish the log file to check safety with logging keyword arguments.
+        # Establish the output folder since it's required for the log file.
+        self.outfolder = os.path.join(outfolder, "")  # trailing slash
+        self.pipeline_log_file = pipeline_filepath(self, suffix=LOGFILE_SUFFIX)
+
         # Set up logger
         logger_kwargs = logger_kwargs or {}
+        if logger_kwargs.get("logfile") == self.pipeline_log_file:
+            raise ValueError(
+                f"The logfile given for the pipeline manager's logger matches that which will be used by the manager itself: {self.pipeline_log_file}"
+            )
         default_logname = ".".join([__name__, self.__class__.__name__, self.name])
-        if not args:
-            # strict is only for logger_via_cli.
-            kwds = {k: v for k, v in logger_kwargs.items() if k != "strict"}
+        self._logger = None
+        if args:
+            logger_builder_method = "logger_via_cli"
             try:
-                name = kwds.pop("name")
+                self._logger = logger_via_cli(args, **logger_kwargs)
+            except logmuse.est.AbsentOptionException as e:
+                # Defer logger construction to init_logger.
+                self.debug(f"logger_via_cli failed: {e}")
+        if self._logger is None:
+            logger_builder_method = "init_logger"
+            # covers cases of bool(args) being False, or failure of logger_via_cli.
+            # strict is only for logger_via_cli.
+            logger_kwargs = {k: v for k, v in logger_kwargs.items() if k != "strict"}
+            try:
+                name = logger_kwargs.pop("name")
             except KeyError:
                 name = default_logname
-            self._logger = logmuse.init_logger(name, **kwds)
-            self.debug("Logger set with logmuse.init_logger")
-        else:
-            logger_kwargs.setdefault("name", default_logname)
-            try:
-                self._logger = logmuse.logger_via_cli(args)
-                self.debug("Logger set with logmuse.logger_via_cli")
-            except logmuse.est.AbsentOptionException:
-                self._logger = logmuse.init_logger("pypiper", level="DEBUG")
-                self.debug("logger_via_cli failed; Logger set with logmuse.init_logger")
+            self._logger = logmuse.init_logger(name, **logger_kwargs)
+        self.debug(f"Logger set with {logger_builder_method}")
 
         # Keep track of an ID for the number of processes attempted
         self.proc_count = 0
@@ -281,10 +290,7 @@ class PipelineManager(object):
         #   self.output_parent = os.path.join(os.getcwd(), self.output_parent)
 
         # File paths:
-        self.outfolder = os.path.join(outfolder, "")  # trailing slash
         self.make_sure_path_exists(self.outfolder)
-        self.pipeline_log_file = pipeline_filepath(self, suffix="_log.md")
-
         self.pipeline_profile_file = pipeline_filepath(self, suffix="_profile.tsv")
 
         # Stats and figures are general and so lack the pipeline name.

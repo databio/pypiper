@@ -1,10 +1,11 @@
 """ Test effects of construction of a pipeline manager. """
 
 import argparse
+import os
 
 import pytest
 
-from pypiper.manager import CHECKPOINT_SPECIFICATIONS
+from pypiper.manager import CHECKPOINT_SPECIFICATIONS, LOGFILE_SUFFIX
 from tests.helpers import named_param
 
 __author__ = "Vince Reuter"
@@ -22,6 +23,22 @@ def test_manager_starts_in_null_checkpoint_state(get_pipe_manager, checkpoint_ty
     """A pipeline manager begins with null checkpoint states."""
     pm = get_pipe_manager(name="ctor-checkpoint-state")
     assert getattr(pm, checkpoint_type) is None
+
+
+def test_logger_logfile_collision_with_manager_logfile_is_expected_error__issue_212(
+    get_pipe_manager, tmpdir
+):
+    pipe_name = "test_issue212"
+    with pytest.raises(ValueError) as err_ctx:
+        get_pipe_manager(
+            name=pipe_name,
+            logger_kwargs={
+                "logfile": os.path.join(tmpdir.strpath, pipe_name + LOGFILE_SUFFIX)
+            },
+        )
+    assert str(err_ctx.value).startswith(
+        f"The logfile given for the pipeline manager's logger matches that which will be used by the manager itself"
+    )
 
 
 class ManagerConstructorCheckpointSpecificationTests:
