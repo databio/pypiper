@@ -1559,7 +1559,7 @@ class PipelineManager(object):
             myfile.write(message_raw + "\n")
 
     def report_result(
-        self, key, value, nolog=False, result_formatter=None, force_overwrite=False
+        self, key, value, nolog=False, result_formatter=None, force_overwrite=True
     ):
         """
         Writes a key:value pair to self.pipeline_stats_file.
@@ -1606,7 +1606,7 @@ class PipelineManager(object):
         annotation=None,
         nolog=False,
         result_formatter=None,
-        force_overwrite=False,
+        force_overwrite=True,
     ):
         """
         Writes a key:value pair to self.pipeline_stats_file. Note: this function
