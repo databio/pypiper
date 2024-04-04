@@ -52,7 +52,7 @@ from .utils import (
     default_pipestat_output_schema,
     result_formatter_markdown,
 )
-from pipestat.helpers import read_yaml_data
+from yacman import load_yaml
 
 __all__ = ["PipelineManager"]
 
@@ -1828,7 +1828,7 @@ class PipelineManager(object):
         """
 
         if os.path.isfile(self.pipeline_stats_file):
-            _, data = read_yaml_data(path=self.pipeline_stats_file, what="stats_file")
+            data = load_yaml(filepath=self.pipeline_stats_file)
 
             for key, value in data[self._pipestat_manager.pipeline_name][
                 self._pipestat_manager.pipeline_type

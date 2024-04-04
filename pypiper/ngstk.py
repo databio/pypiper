@@ -153,7 +153,8 @@ class NGSTk(AttMapEcho):
             return sum([self.get_file_size(filename) for filename in filenames])
 
         return round(
-            sum([float(os.stat(f).st_size) for f in filenames.split(" ")]) / (1024**2),
+            sum([float(os.stat(f).st_size) for f in filenames.split(" ")])
+            / (1024**2),
             4,
         )
 
