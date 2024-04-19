@@ -1,9 +1,11 @@
 # Changelog
 
-## [0.15.0] -- 2024-xx-xx
+## [0.14.1] -- 2024-04-19
 ### Changed
 - remove pipestat_project_name from PipelineManager parameters
 - refactor pipestat_sample_name to pipestat_record_identifier in PipelineManager parameters
+- update requirements for pipestat 0.9.0, ubiquerg 0.8.0, and yacman 0.9.3
+- set `force_overwrite` to default to true, Issue #209
 
 
 ## [0.14.0] -- 2023-12-22
