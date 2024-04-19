@@ -12,7 +12,7 @@ pm.timestamp("Hello!")
 
 # Now build a command-line command however you like, and pass it to pm.run()
 target_file = "hello_pypiper_results/output.txt"
-cmd = "echo 'Hello, Pypiper!' > " + target_file
+cmd = f"echo 'Hello, Pypiper!' > {target_file}"
 pm.run(cmd, target_file)
 
 pm.stop_pipeline()

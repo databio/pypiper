@@ -52,12 +52,13 @@ from .utils import (
     default_pipestat_output_schema,
     result_formatter_markdown,
 )
-from pipestat.helpers import read_yaml_data
+from yacman import load_yaml
 
 __all__ = ["PipelineManager"]
 
 
 LOCK_PREFIX = "lock."
+LOGFILE_SUFFIX = "_log.md"
 
 
 class Unbuffered(object):
@@ -112,6 +113,12 @@ class PipelineManager(object):
         protect from a case in which a restart begins upstream of a stage
         for which a checkpoint file already exists, but that depends on the
         upstream stage and thus should be rerun if it's "parent" is rerun.
+    :param str pipestat_record_identifier: record_identifier to report results via pipestat
+    :param str pipestat_schema: output schema used by pipestat to report results
+    :param str pipestat_results_file: path to file backend for reporting results
+    :param str pipestat_config_file: path to pipestat configuration file
+    :param str pipestat_pipeline_type: Sample or Project level pipeline
+    :param pipestat_result_formatter: function used to style reported results, defaults to result_formatter_markdown
     :raise TypeError: if start or stop point(s) are provided both directly and
         via args namespace, or if both stopping types (exclusive/prospective
         and inclusive/retrospective) are provided.
@@ -136,8 +143,7 @@ class PipelineManager(object):
         output_parent=None,
         overwrite_checkpoints=False,
         logger_kwargs=None,
-        pipestat_project_name=None,
-        pipestat_sample_name=None,
+        pipestat_record_identifier=None,
         pipestat_schema=None,
         pipestat_results_file=None,
         pipestat_config=None,
@@ -193,10 +199,7 @@ class PipelineManager(object):
         # If no starting point was specified, assume that the pipeline's
         # execution is to begin right away and set the internal flag so that
         # run() is let loose to execute instructions given.
-        if not self.start_point:
-            self._active = True
-        else:
-            self._active = False
+        self._active = not self.start_point
 
         # Pipeline-level variables to track global state and pipeline stats
         # Pipeline settings
@@ -210,26 +213,37 @@ class PipelineManager(object):
         self.output_parent = params["output_parent"]
         self.testmode = params["testmode"]
 
+        # Establish the log file to check safety with logging keyword arguments.
+        # Establish the output folder since it's required for the log file.
+        self.outfolder = os.path.join(outfolder, "")  # trailing slash
+        self.pipeline_log_file = pipeline_filepath(self, suffix=LOGFILE_SUFFIX)
+
         # Set up logger
         logger_kwargs = logger_kwargs or {}
+        if logger_kwargs.get("logfile") == self.pipeline_log_file:
+            raise ValueError(
+                f"The logfile given for the pipeline manager's logger matches that which will be used by the manager itself: {self.pipeline_log_file}"
+            )
         default_logname = ".".join([__name__, self.__class__.__name__, self.name])
-        if not args:
-            # strict is only for logger_via_cli.
-            kwds = {k: v for k, v in logger_kwargs.items() if k != "strict"}
+        self._logger = None
+        if args:
+            logger_builder_method = "logger_via_cli"
             try:
-                name = kwds.pop("name")
+                self._logger = logger_via_cli(args, **logger_kwargs)
+            except logmuse.est.AbsentOptionException as e:
+                # Defer logger construction to init_logger.
+                self.debug(f"logger_via_cli failed: {e}")
+        if self._logger is None:
+            logger_builder_method = "init_logger"
+            # covers cases of bool(args) being False, or failure of logger_via_cli.
+            # strict is only for logger_via_cli.
+            logger_kwargs = {k: v for k, v in logger_kwargs.items() if k != "strict"}
+            try:
+                name = logger_kwargs.pop("name")
             except KeyError:
                 name = default_logname
-            self._logger = logmuse.init_logger(name, **kwds)
-            self.debug("Logger set with logmuse.init_logger")
-        else:
-            logger_kwargs.setdefault("name", default_logname)
-            try:
-                self._logger = logmuse.logger_via_cli(args)
-                self.debug("Logger set with logmuse.logger_via_cli")
-            except logmuse.est.AbsentOptionException:
-                self._logger = logmuse.init_logger("pypiper", level="DEBUG")
-                self.debug("logger_via_cli failed; Logger set with logmuse.init_logger")
+            self._logger = logmuse.init_logger(name, **logger_kwargs)
+        self.debug(f"Logger set with {logger_builder_method}")
 
         # Keep track of an ID for the number of processes attempted
         self.proc_count = 0
@@ -276,10 +290,7 @@ class PipelineManager(object):
         #   self.output_parent = os.path.join(os.getcwd(), self.output_parent)
 
         # File paths:
-        self.outfolder = os.path.join(outfolder, "")  # trailing slash
         self.make_sure_path_exists(self.outfolder)
-        self.pipeline_log_file = pipeline_filepath(self, suffix="_log.md")
-
         self.pipeline_profile_file = pipeline_filepath(self, suffix="_profile.tsv")
 
         # Stats and figures are general and so lack the pipeline name.
@@ -330,7 +341,9 @@ class PipelineManager(object):
         signal.signal(signal.SIGTERM, self._signal_term_handler)
 
         # pipestat setup
-        self.pipestat_record_identifier = pipestat_sample_name or DEFAULT_SAMPLE_NAME
+        self.pipestat_record_identifier = (
+            pipestat_record_identifier or DEFAULT_SAMPLE_NAME
+        )
         self.pipestat_pipeline_type = pipestat_pipeline_type or "sample"
 
         # don't force default pipestat_results_file value unless
@@ -631,88 +644,41 @@ class PipelineManager(object):
         # Print out a header section in the pipeline log:
         # Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
         # print("----------------------------------------")
-        self.info("### Pipeline run code and environment:\n")
-        self.info(
-            "* " + "Command".rjust(20) + ":  " + "`" + str(" ".join(sys.argv)) + "`"
-        )
-        self.info("* " + "Compute host".rjust(20) + ":  " + platform.node())
-        self.info("* " + "Working dir".rjust(20) + ":  " + os.getcwd())
-        self.info("* " + "Outfolder".rjust(20) + ":  " + self.outfolder)
+        def logfmt(key, value=None, padding=16):
+            padded_key = key.rjust(padding)
+            formatted_val = f"`{value}`" if value else ""
+            return f"* {padded_key}: {formatted_val}"
 
-        self.timestamp("* " + "Pipeline started at".rjust(20) + ":  ")
+        self.info("### Pipeline run code and environment:\n")
+        self.info(logfmt("Command", str(" ".join(sys.argv))))
+        self.info(logfmt("Compute host", platform.node()))
+        self.info(logfmt("Working dir", os.getcwd()))
+        self.info(logfmt("Outfolder", self.outfolder))
+        self.info(logfmt("Log file", self.pipeline_log_file))
+        self.timestamp(logfmt("Start time"))
 
         self.info("\n### Version log:\n")
-        self.info("* " + "Python version".rjust(20) + ":  " + platform.python_version())
+        self.info(logfmt("Python version", platform.python_version()))
         try:
-            self.info(
-                "* "
-                + "Pypiper dir".rjust(20)
-                + ":  "
-                + "`"
-                + gitvars["pypiper_dir"].strip()
-                + "`"
-            )
-            self.info("* " + "Pypiper version".rjust(20) + ":  " + __version__)
-            self.info(
-                "* " + "Pypiper hash".rjust(20) + ":  " + str(gitvars["pypiper_hash"])
-            )
-            self.info(
-                "* "
-                + "Pypiper branch".rjust(20)
-                + ":  "
-                + str(gitvars["pypiper_branch"])
-            )
-            self.info(
-                "* " + "Pypiper date".rjust(20) + ":  " + str(gitvars["pypiper_date"])
-            )
+            self.info(logfmt("Pypiper dir", gitvars["pypiper_dir"].strip()))
+            self.info(logfmt("Pypiper version", __version__))
+            self.info(logfmt("Pypiper hash", gitvars["pypiper_hash"]))
+            self.info(logfmt("Pypiper branch", gitvars["pypiper_branch"]))
+            self.info(logfmt("Pypiper date", gitvars["pypiper_date"]))
             if gitvars["pypiper_diff"]:
-                self.info(
-                    "* "
-                    + "Pypiper diff".rjust(20)
-                    + ":  "
-                    + str(gitvars["pypiper_diff"])
-                )
+                self.info(logfmt("Pypiper diff", gitvars["pypiper_diff"]))
         except KeyError:
             # It is ok if keys aren't set, it means pypiper isn't in a  git repo.
             pass
 
         try:
-            self.info(
-                "* "
-                + "Pipeline dir".rjust(20)
-                + ":  "
-                + "`"
-                + gitvars["pipe_dir"].strip()
-                + "`"
-            )
-            self.info(
-                "* " + "Pipeline version".rjust(20) + ":  " + str(self.pl_version)
-            )
-            self.info(
-                "* "
-                + "Pipeline hash".rjust(20)
-                + ":  "
-                + str(gitvars["pipe_hash"]).strip()
-            )
-            self.info(
-                "* "
-                + "Pipeline branch".rjust(20)
-                + ":  "
-                + str(gitvars["pipe_branch"]).strip()
-            )
-            self.info(
-                "* "
-                + "Pipeline date".rjust(20)
-                + ":  "
-                + str(gitvars["pipe_date"]).strip()
-            )
+            self.info(logfmt("Pipeline dir", gitvars["pipe_dir"].strip()))
+            self.info(logfmt("Pipeline version", self.pl_version))
+            self.info(logfmt("Pipeline hash", gitvars["pipe_hash"]).strip())
+            self.info(logfmt("Pipeline branch", gitvars["pipe_branch"]).strip())
+            self.info(logfmt("Pipeline date", gitvars["pipe_date"]).strip())
             if gitvars["pipe_diff"] != "":
-                self.info(
-                    "* "
-                    + "Pipeline diff".rjust(20)
-                    + ":  "
-                    + str(gitvars["pipe_diff"]).strip()
-                )
+                self.info(logfmt("Pipeline diff", gitvars["pipe_diff"]).strip())
         except KeyError:
             # It is ok if keys aren't set, it means the pipeline isn't a git repo.
             pass
@@ -1593,7 +1559,7 @@ class PipelineManager(object):
             myfile.write(message_raw + "\n")
 
     def report_result(
-        self, key, value, nolog=False, result_formatter=None, force_overwrite=False
+        self, key, value, nolog=False, result_formatter=None, force_overwrite=True
     ):
         """
         Writes a key:value pair to self.pipeline_stats_file.
@@ -1640,7 +1606,7 @@ class PipelineManager(object):
         annotation=None,
         nolog=False,
         result_formatter=None,
-        force_overwrite=False,
+        force_overwrite=True,
     ):
         """
         Writes a key:value pair to self.pipeline_stats_file. Note: this function
@@ -1862,7 +1828,7 @@ class PipelineManager(object):
         """
 
         if os.path.isfile(self.pipeline_stats_file):
-            _, data = read_yaml_data(path=self.pipeline_stats_file, what="stats_file")
+            data = load_yaml(filepath=self.pipeline_stats_file)
 
             for key, value in data[self._pipestat_manager.pipeline_name][
                 self._pipestat_manager.pipeline_type
