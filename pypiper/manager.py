@@ -1290,7 +1290,6 @@ class PipelineManager(object):
             sleeptime = min((sleeptime + 0.25) * 3, 60 / len(processes))
 
         # All jobs are done, print a final closing and job info
-        stop_time = time.time()
         proc_message = "Command completed. {info}"
         info = (
             "Elapsed time: "
