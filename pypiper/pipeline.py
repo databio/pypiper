@@ -332,7 +332,10 @@ class Pipeline(object):
 
             print(f"Running stage: {getattr(stage, 'name', str(stage))}")
 
-            stage.run()
+            try:
+                stage.run()
+            except Exception as e:
+                self.manager._triage_error(e, nofail=stage.nofail)
             self.executed.append(stage)
             self.checkpoint(stage)
 
