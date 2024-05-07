@@ -17,7 +17,16 @@ class Stage(object):
     collection of commands that is checkpointed.
     """
 
-    def __init__(self, func, f_args=None, f_kwargs=None, name=None, checkpoint=True):
+    def __init__(
+        self,
+        func,
+        f_args=None,
+        f_kwargs=None,
+        name=None,
+        checkpoint=True,
+        *,
+        nofail=False
+    ):
         """
         A function, perhaps with arguments, defines the stage.
 
@@ -26,6 +35,8 @@ class Stage(object):
         :param dict f_kwargs: Keyword arguments for func
         :param str name: name for the phase/stage
         :param callable func: Object that defines how the stage will execute.
+        :param bool nofail: Allow a failure of this stage to not fail the pipeline
+            in which it's running
         """
         if isinstance(func, Stage):
             raise TypeError("Cannot create Stage from Stage")
@@ -35,6 +46,7 @@ class Stage(object):
         self.f_kwargs = f_kwargs or dict()
         self.name = name or func.__name__
         self.checkpoint = checkpoint
+        self.nofail = nofail
 
     @property
     def checkpoint_name(self):

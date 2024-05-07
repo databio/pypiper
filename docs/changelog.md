@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.14.2] -- 2024-05-07
+### Changed
+- Addresses [#218](https://github.com/databio/pypiper/issues/218)
+
 ## [0.14.1] -- 2024-04-19
 ### Changed
 - remove pipestat_project_name from PipelineManager parameters
