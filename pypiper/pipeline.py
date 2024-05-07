@@ -336,8 +336,9 @@ class Pipeline(object):
                 stage.run()
             except Exception as e:
                 self.manager._triage_error(e, nofail=stage.nofail)
+            else:
+                self.checkpoint(stage)
             self.executed.append(stage)
-            self.checkpoint(stage)
 
         # Add any unused stages to the collection of skips.
         self.skipped.extend(self._stages[stop_index:])
