@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.14.3] -- 2024-10-02
+### Changed
+- bump requirements to require pipestat>=0.11.0
+
 ## [0.14.2] -- 2024-05-07
 ### Changed
 - Addresses [#218](https://github.com/databio/pypiper/issues/218)
