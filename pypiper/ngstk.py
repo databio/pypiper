@@ -2057,7 +2057,7 @@ class NGSTk(AttMapEcho):
                     for i in range(len(content))
                     if "were unpaired; of these:" in content[i]
                 ][0]
-                stats["unpaired"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+                stats["unpaired"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
             else:
                 line = [
                     i
@@ -2065,24 +2065,24 @@ class NGSTk(AttMapEcho):
                     if "were paired; of these:" in content[i]
                 ][0]
                 stats["unpaired"] = stats["readCount"] - int(
-                    re.sub("\D", "", re.sub("\(.*", "", content[line]))
+                    re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
                 )
             line = [i for i in range(len(content)) if "aligned 0 times" in content[i]][
                 0
             ]
-            stats["unaligned"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+            stats["unaligned"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
             line = [
                 i for i in range(len(content)) if "aligned exactly 1 time" in content[i]
             ][0]
-            stats["unique"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+            stats["unique"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
             line = [i for i in range(len(content)) if "aligned >1 times" in content[i]][
                 0
             ]
-            stats["multiple"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+            stats["multiple"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
             line = [
                 i for i in range(len(content)) if "overall alignment rate" in content[i]
             ][0]
-            stats["alignmentRate"] = re.sub("\%.*", "", content[line]).strip()
+            stats["alignmentRate"] = re.sub(r"\%.*", "", content[line]).strip()
         except IndexError:
             pass
         return stats
@@ -2107,14 +2107,14 @@ class NGSTk(AttMapEcho):
                 for i in range(len(content))
                 if "single ends (among them " in content[i]
             ][0]
-            series["single-ends"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+            series["single-ends"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
             line = [
                 i
                 for i in range(len(content))
                 if " end pairs...   done in " in content[i]
             ][0]
             series["paired-ends"] = re.sub(
-                "\D", "", re.sub("\.\.\..*", "", content[line])
+                r"\D", "", re.sub(r"\.\.\..*", "", content[line])
             )
             line = [
                 i
@@ -2122,7 +2122,7 @@ class NGSTk(AttMapEcho):
                 if " duplicates, sorting the list...   done in " in content[i]
             ][0]
             series["duplicates"] = re.sub(
-                "\D", "", re.sub("\.\.\..*", "", content[line])
+                r"\D", "", re.sub(r"\.\.\..*", "", content[line])
             )
         except IndexError:
             pass
@@ -2158,7 +2158,7 @@ class NGSTk(AttMapEcho):
         """
         proc = subprocess.Popen(["wc", "-l", sample.peaks], stdout=subprocess.PIPE)
         out, err = proc.communicate()
-        sample["peakNumber"] = re.sub("\D.*", "", out)
+        sample["peakNumber"] = re.sub(r"\D.*", "", out)
         return sample
 
     def get_frip(self, sample):
@@ -2171,6 +2171,6 @@ class NGSTk(AttMapEcho):
 
         with open(sample.frip, "r") as handle:
             content = handle.readlines()
-        reads_in_peaks = int(re.sub("\D", "", content[0]))
+        reads_in_peaks = int(re.sub(r"\D", "", content[0]))
         mapped_reads = sample["readCount"] - sample["unaligned"]
         return pd.Series(reads_in_peaks / mapped_reads, index="FRiP")
