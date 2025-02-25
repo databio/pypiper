@@ -2057,7 +2057,9 @@ class NGSTk(AttMapEcho):
                     for i in range(len(content))
                     if "were unpaired; of these:" in content[i]
                 ][0]
-                stats["unpaired"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
+                stats["unpaired"] = re.sub(
+                    r"\D", "", re.sub(r"\(.*", "", content[line])
+                )
             else:
                 line = [
                     i
@@ -2107,7 +2109,9 @@ class NGSTk(AttMapEcho):
                 for i in range(len(content))
                 if "single ends (among them " in content[i]
             ][0]
-            series["single-ends"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
+            series["single-ends"] = re.sub(
+                r"\D", "", re.sub(r"\(.*", "", content[line])
+            )
             line = [
                 i
                 for i in range(len(content))
