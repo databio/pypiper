@@ -1333,8 +1333,8 @@ class NGSTk(AttMapEcho):
         return cmd
 
     def picard_mark_duplicates(self, input_bam, output_bam, metrics_file, temp_dir="."):
-        transient_file = re.sub("\.bam$", "", output_bam) + ".dups.nosort.bam"
-        output_bam = re.sub("\.bam$", "", output_bam)
+        transient_file = re.sub(r"\.bam$", "", output_bam) + ".dups.nosort.bam"
+        output_bam = re.sub(r"\.bam$", "", output_bam)
         cmd1 = self.tools.java + " -Xmx" + self.pm.javamem
         cmd1 += " -jar  `which MarkDuplicates.jar`"
         cmd1 += " INPUT={0}".format(input_bam)
@@ -1374,7 +1374,7 @@ class NGSTk(AttMapEcho):
         Remove duplicates, filter for >Q, remove multiple mapping reads.
         For paired-end reads, keep only proper pairs.
         """
-        nodups = re.sub("\.bam$", "", output_bam) + ".nodups.nofilter.bam"
+        nodups = re.sub(r"\.bam$", "", output_bam) + ".nodups.nofilter.bam"
         cmd1 = (
             self.tools.sambamba
             + " markdup -t {0} -r --compression-level=0 {1} {2} 2> {3}".format(
@@ -1406,7 +1406,7 @@ class NGSTk(AttMapEcho):
         return cmd
 
     def sort_index_bam(self, input_bam, output_bam):
-        tmp_bam = re.sub("\.bam", ".sorted", input_bam)
+        tmp_bam = re.sub(r"\.bam", ".sorted", input_bam)
         cmd1 = self.tools.samtools + " sort {0} {1}".format(input_bam, tmp_bam)
         cmd2 = "mv {0}.bam {1}".format(tmp_bam, output_bam)
         cmd3 = self.tools.samtools + " index {0}".format(output_bam)
@@ -1638,7 +1638,7 @@ class NGSTk(AttMapEcho):
         # addjust fragment length dependent on read size and real fragment size
         # (right now it asssumes 50bp reads with 180bp fragments)
         cmds = list()
-        transient_file = os.path.abspath(re.sub("\.bigWig", "", output_bigwig))
+        transient_file = os.path.abspath(re.sub(r"\.bigWig", "", output_bigwig))
         cmd1 = self.tools.bedtools + " bamtobed -i {0} |".format(input_bam)
         if not tagmented:
             cmd1 += (
@@ -2050,14 +2050,16 @@ class NGSTk(AttMapEcho):
             line = [
                 i for i in range(len(content)) if " reads; of these:" in content[i]
             ][0]
-            stats["readCount"] = re.sub("\D.*", "", content[line])
+            stats["readCount"] = re.sub(r"\D.*", "", content[line])
             if 7 > len(content) > 2:
                 line = [
                     i
                     for i in range(len(content))
                     if "were unpaired; of these:" in content[i]
                 ][0]
-                stats["unpaired"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+                stats["unpaired"] = re.sub(
+                    r"\D", "", re.sub(r"\(.*", "", content[line])
+                )
             else:
                 line = [
                     i
@@ -2065,24 +2067,24 @@ class NGSTk(AttMapEcho):
                     if "were paired; of these:" in content[i]
                 ][0]
                 stats["unpaired"] = stats["readCount"] - int(
-                    re.sub("\D", "", re.sub("\(.*", "", content[line]))
+                    re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
                 )
             line = [i for i in range(len(content)) if "aligned 0 times" in content[i]][
                 0
             ]
-            stats["unaligned"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+            stats["unaligned"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
             line = [
                 i for i in range(len(content)) if "aligned exactly 1 time" in content[i]
             ][0]
-            stats["unique"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+            stats["unique"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
             line = [i for i in range(len(content)) if "aligned >1 times" in content[i]][
                 0
             ]
-            stats["multiple"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+            stats["multiple"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
             line = [
                 i for i in range(len(content)) if "overall alignment rate" in content[i]
             ][0]
-            stats["alignmentRate"] = re.sub("\%.*", "", content[line]).strip()
+            stats["alignmentRate"] = re.sub(r"\%.*", "", content[line]).strip()
         except IndexError:
             pass
         return stats
@@ -2107,14 +2109,16 @@ class NGSTk(AttMapEcho):
                 for i in range(len(content))
                 if "single ends (among them " in content[i]
             ][0]
-            series["single-ends"] = re.sub("\D", "", re.sub("\(.*", "", content[line]))
+            series["single-ends"] = re.sub(
+                r"\D", "", re.sub(r"\(.*", "", content[line])
+            )
             line = [
                 i
                 for i in range(len(content))
                 if " end pairs...   done in " in content[i]
             ][0]
             series["paired-ends"] = re.sub(
-                "\D", "", re.sub("\.\.\..*", "", content[line])
+                r"\D", "", re.sub(r"\.\.\..*", "", content[line])
             )
             line = [
                 i
@@ -2122,7 +2126,7 @@ class NGSTk(AttMapEcho):
                 if " duplicates, sorting the list...   done in " in content[i]
             ][0]
             series["duplicates"] = re.sub(
-                "\D", "", re.sub("\.\.\..*", "", content[line])
+                r"\D", "", re.sub(r"\.\.\..*", "", content[line])
             )
         except IndexError:
             pass
@@ -2158,7 +2162,7 @@ class NGSTk(AttMapEcho):
         """
         proc = subprocess.Popen(["wc", "-l", sample.peaks], stdout=subprocess.PIPE)
         out, err = proc.communicate()
-        sample["peakNumber"] = re.sub("\D.*", "", out)
+        sample["peakNumber"] = re.sub(r"\D.*", "", out)
         return sample
 
     def get_frip(self, sample):
@@ -2171,6 +2175,6 @@ class NGSTk(AttMapEcho):
 
         with open(sample.frip, "r") as handle:
             content = handle.readlines()
-        reads_in_peaks = int(re.sub("\D", "", content[0]))
+        reads_in_peaks = int(re.sub(r"\D", "", content[0]))
         mapped_reads = sample["readCount"] - sample["unaligned"]
         return pd.Series(reads_in_peaks / mapped_reads, index="FRiP")

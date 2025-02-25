@@ -2495,8 +2495,8 @@ class PipelineManager(object):
             cmd = "docker stats " + container + " --format '{{.MemUsage}}' --no-stream"
             mem_use_str = subprocess.check_output(cmd, shell=True).decode()
 
-            mem_num = re.findall("[\d\.]+", mem_use_str.split("/")[0])[0]
-            mem_scale = re.findall("[A-Za-z]+", mem_use_str.split("/")[0])[0]
+            mem_num = re.findall(r"[\d\.]+", mem_use_str.split("/")[0])[0]
+            mem_scale = re.findall(r"[A-Za-z]+", mem_use_str.split("/")[0])[0]
 
             mem_num = float(mem_num)
             if mem_scale == "GiB":

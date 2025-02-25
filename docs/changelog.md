@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.14.4] -- 2025-02-25
+### Changed
+- Fixed warnings for Python >3.12
+- Updated version of Python to 3.13 in pytests
+
+
 ## [0.14.3] -- 2024-10-02
 ### Changed
 - bump requirements to require pipestat>=0.11.0
