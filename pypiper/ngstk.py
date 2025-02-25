@@ -1374,7 +1374,7 @@ class NGSTk(AttMapEcho):
         Remove duplicates, filter for >Q, remove multiple mapping reads.
         For paired-end reads, keep only proper pairs.
         """
-        nodups = re.sub("\.bam$", "", output_bam) + ".nodups.nofilter.bam"
+        nodups = re.sub(r"\.bam$", "", output_bam) + ".nodups.nofilter.bam"
         cmd1 = (
             self.tools.sambamba
             + " markdup -t {0} -r --compression-level=0 {1} {2} 2> {3}".format(
