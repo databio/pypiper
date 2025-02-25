@@ -1333,8 +1333,8 @@ class NGSTk(AttMapEcho):
         return cmd
 
     def picard_mark_duplicates(self, input_bam, output_bam, metrics_file, temp_dir="."):
-        transient_file = re.sub("\.bam$", "", output_bam) + ".dups.nosort.bam"
-        output_bam = re.sub("\.bam$", "", output_bam)
+        transient_file = re.sub(r"\.bam$", "", output_bam) + ".dups.nosort.bam"
+        output_bam = re.sub(r"\.bam$", "", output_bam)
         cmd1 = self.tools.java + " -Xmx" + self.pm.javamem
         cmd1 += " -jar  `which MarkDuplicates.jar`"
         cmd1 += " INPUT={0}".format(input_bam)
@@ -1406,7 +1406,7 @@ class NGSTk(AttMapEcho):
         return cmd
 
     def sort_index_bam(self, input_bam, output_bam):
-        tmp_bam = re.sub("\.bam", ".sorted", input_bam)
+        tmp_bam = re.sub(r"\.bam", ".sorted", input_bam)
         cmd1 = self.tools.samtools + " sort {0} {1}".format(input_bam, tmp_bam)
         cmd2 = "mv {0}.bam {1}".format(tmp_bam, output_bam)
         cmd3 = self.tools.samtools + " index {0}".format(output_bam)
@@ -1638,7 +1638,7 @@ class NGSTk(AttMapEcho):
         # addjust fragment length dependent on read size and real fragment size
         # (right now it asssumes 50bp reads with 180bp fragments)
         cmds = list()
-        transient_file = os.path.abspath(re.sub("\.bigWig", "", output_bigwig))
+        transient_file = os.path.abspath(re.sub(r"\.bigWig", "", output_bigwig))
         cmd1 = self.tools.bedtools + " bamtobed -i {0} |".format(input_bam)
         if not tagmented:
             cmd1 += (
@@ -2050,7 +2050,7 @@ class NGSTk(AttMapEcho):
             line = [
                 i for i in range(len(content)) if " reads; of these:" in content[i]
             ][0]
-            stats["readCount"] = re.sub("\D.*", "", content[line])
+            stats["readCount"] = re.sub(r"\D.*", "", content[line])
             if 7 > len(content) > 2:
                 line = [
                     i
