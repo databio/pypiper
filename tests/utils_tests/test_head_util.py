@@ -1,4 +1,4 @@
-""" Tests for the head() utility function """
+"""Tests for the head() utility function"""
 
 import random
 import string

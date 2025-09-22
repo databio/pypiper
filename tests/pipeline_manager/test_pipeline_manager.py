@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" PipelineManager tests. """
+"""PipelineManager tests."""
 
 import glob
 import os

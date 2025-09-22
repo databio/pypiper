@@ -1,4 +1,4 @@
-""" Tests for the timestamp functionality of a PipelineManager. """
+"""Tests for the timestamp functionality of a PipelineManager."""
 
 import os
 import sys

@@ -1,4 +1,4 @@
-""" Pipeline base class """
+"""Pipeline base class"""
 
 import abc
 import glob

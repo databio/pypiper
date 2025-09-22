@@ -1,4 +1,4 @@
-""" Helpers for tests """
+"""Helpers for tests"""
 
 import glob
 import os

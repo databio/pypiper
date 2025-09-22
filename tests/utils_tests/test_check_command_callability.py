@@ -1,4 +1,4 @@
-""" Tests for checking a collection of commands for callability """
+"""Tests for checking a collection of commands for callability"""
 
 import os
 

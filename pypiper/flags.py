@@ -1,4 +1,4 @@
-""" Status flags """
+"""Status flags"""
 
 # TODO: ultimately, these should migrate to pep.
 RUN_FLAG = "running"

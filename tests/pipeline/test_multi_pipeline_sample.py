@@ -1,4 +1,4 @@
-""" Tests for case in which multiple pipelines process a single sample. """
+"""Tests for case in which multiple pipelines process a single sample."""
 
 import os
 

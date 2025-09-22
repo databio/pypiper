@@ -1,4 +1,4 @@
-""" Context manager for temporarily changing folder. """
+"""Context manager for temporarily changing folder."""
 
 import os
 

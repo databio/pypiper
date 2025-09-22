@@ -1,4 +1,4 @@
-""" Tests for the Pipeline data type """
+"""Tests for the Pipeline data type"""
 
 import glob
 import os

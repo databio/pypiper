@@ -1,4 +1,4 @@
-""" Tests for a pipeline's ability to checkpoint its stages. """
+"""Tests for a pipeline's ability to checkpoint its stages."""
 
 import os
 import time

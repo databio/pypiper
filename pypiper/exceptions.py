@@ -1,4 +1,4 @@
-""" Custom pypiper exceptions """
+"""Custom pypiper exceptions"""
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"

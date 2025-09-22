@@ -1,4 +1,4 @@
-""" Broadly applicable NGS processing/analysis functionality """
+"""Broadly applicable NGS processing/analysis functionality"""
 
 import errno
 import os

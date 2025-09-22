@@ -1,4 +1,4 @@
-""" Tests for effects of pipeline manager's halt() function. """
+"""Tests for effects of pipeline manager's halt() function."""
 
 import os
 

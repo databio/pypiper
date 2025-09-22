@@ -1,4 +1,4 @@
-""" Pypiper constants. """
+"""Pypiper constants."""
 
 CHECKPOINT_EXTENSION = ".checkpoint"
 DEFAULT_SAMPLE_NAME = "DEFAULT_SAMPLE_NAME"

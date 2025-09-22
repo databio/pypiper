@@ -1,4 +1,4 @@
-""" Create dummy PipelineManager and NGSTk instance for interactive session. """
+"""Create dummy PipelineManager and NGSTk instance for interactive session."""
 
 import os
 

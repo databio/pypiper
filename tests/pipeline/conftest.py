@@ -1,4 +1,4 @@
-""" Test configuration for Pipeline tests. """
+"""Test configuration for Pipeline tests."""
 
 import os
 
