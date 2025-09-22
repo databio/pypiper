@@ -1,4 +1,4 @@
-""" Validate what's available directly on the top-level import. """
+"""Validate what's available directly on the top-level import."""
 
 from inspect import isfunction
 

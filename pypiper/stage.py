@@ -1,4 +1,4 @@
-""" Conceptualize a pipeline processing phase/stage. """
+"""Conceptualize a pipeline processing phase/stage."""
 
 import copy
 

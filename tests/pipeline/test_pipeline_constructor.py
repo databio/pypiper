@@ -1,4 +1,4 @@
-""" Tests for construction of a Pipeline """
+"""Tests for construction of a Pipeline"""
 
 import pytest
 

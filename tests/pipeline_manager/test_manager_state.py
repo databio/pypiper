@@ -1,4 +1,4 @@
-""" Tests related to pipeline manager state. """
+"""Tests related to pipeline manager state."""
 
 import os
 

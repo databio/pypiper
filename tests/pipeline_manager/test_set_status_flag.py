@@ -1,4 +1,4 @@
-""" Tests for changes to pipepline manager's status flag. """
+"""Tests for changes to pipepline manager's status flag."""
 
 import pytest
 

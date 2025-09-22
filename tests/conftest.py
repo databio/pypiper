@@ -1,4 +1,4 @@
-""" Fixtures and configuration visible to all tests """
+"""Fixtures and configuration visible to all tests"""
 
 import copy
 import os

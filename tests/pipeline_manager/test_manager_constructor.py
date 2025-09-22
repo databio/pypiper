@@ -1,4 +1,4 @@
-""" Test effects of construction of a pipeline manager. """
+"""Test effects of construction of a pipeline manager."""
 
 import argparse
 import os

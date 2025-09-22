@@ -1,4 +1,4 @@
-""" Tests for construction of checkpoint filepath """
+"""Tests for construction of checkpoint filepath"""
 
 import glob
 import os

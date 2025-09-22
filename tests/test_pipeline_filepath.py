@@ -1,4 +1,4 @@
-""" Tests for utility functions """
+"""Tests for utility functions"""
 
 import os
 

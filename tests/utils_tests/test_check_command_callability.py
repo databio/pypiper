@@ -1,11 +1,11 @@
-""" Tests for checking a collection of commands for callability """
+"""Tests for checking a collection of commands for callability"""
 
 import os
 
 import mock
 import pytest
 from ubiquerg import powerset
-from veracitools import ExpectContext
+from tests.helpers import ExpectContext
 
 from pypiper import utils as piper_utils
 
