@@ -68,9 +68,10 @@ class SafeTestPipeline(Pipeline):
         kwd_args.update(kwargs)
         super(SafeTestPipeline, self).__init__(*args, **kwd_args)
 
+
 # originally imported from veracitools v0.1.4 (now deprecated)
 class ExpectContext(object):
-    """ Pytest validation context, a framework for varied kinds of expectations. """
+    """Pytest validation context, a framework for varied kinds of expectations."""
 
     def __init__(self, expected, test_func):
         """
@@ -83,14 +84,14 @@ class ExpectContext(object):
         self._exp = expected
 
     def __enter__(self):
-        """ Return the instance for use as a callable. """
+        """Return the instance for use as a callable."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
     def __call__(self, *args, **kwargs):
-        """ Execute the instance's function, passing given args/kwargs. """
+        """Execute the instance's function, passing given args/kwargs."""
         if isinstance(self._exp, type) and issubclass(self._exp, Exception):
             with pytest.raises(self._exp):
                 self._f(*args, **kwargs)

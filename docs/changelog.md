@@ -1,5 +1,10 @@
 # Changelog
 
+
+## [0.14.5] -- 2025-09-22
+### Changed
+- Remove veracitools dependency [#233](https://github.com/databio/pypiper/issues/233)
+
 ## [0.14.4] -- 2025-02-25
 ### Changed
 - Fixed warnings for Python >3.12
