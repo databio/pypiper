@@ -45,11 +45,11 @@ class MissingCheckpointError(Exception):
 
 
 class UnknownPipelineStageError(Exception):
-    """
-    Triggered by use of unknown/undefined name for a pipeline stage.
+    """Triggered by use of unknown/undefined name for a pipeline stage.
 
-    :param str stage_name: Name of the stage triggering the exception.
-    :param pypiper.Pipeline pipeline: Pipeline for which the stage is unknown/undefined.
+    Args:
+        stage_name: Name of the stage triggering the exception.
+        pipeline: Pipeline for which the stage is unknown/undefined.
     """
 
     def __init__(self, stage_name, pipeline=None):

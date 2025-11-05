@@ -10,10 +10,10 @@ class FolderContext(object):
     """Context manager for temporarily changing directory."""
 
     def __init__(self, folder):
-        """
-        Store the previous working path to restore upon exit.
+        """Store the previous working path to restore upon exit.
 
-        :param str folder: Path to set as new working directory
+        Args:
+            folder: Path to set as new working directory.
         """
         if not os.path.isdir(folder):
             raise ValueError("Requested temp entry to non-folder: {}".format(folder))
