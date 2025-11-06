@@ -1205,7 +1205,7 @@ class PipelineManager(object):
                 o: object of any type, in our case it is a dict
 
             Returns:
-                str: hahsed string representation of the dict
+                str: hashed string representation of the dict
             """
             try:
                 hsh = md5(str(o).encode("utf-8")).hexdigest()[:10]
