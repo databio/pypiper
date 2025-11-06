@@ -84,7 +84,7 @@ class NGSTk(AttMapEcho):
         present and will fail if that assumption does not hold.
 
         Args:
-            *paths (Iterable[str]): Collection of path for which
+            *paths (Iterable[str]): Collection of paths for which to ensure folder existence.
         """
         for p in paths:
             # Only provide assurance for absolute paths.
