@@ -49,8 +49,7 @@ CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
 def add_pypiper_args(
     parser, groups=("pypiper",), args=None, required=None, all_args=False
 ):
-    """
-    Use this to add standardized pypiper arguments to your python pipeline.
+    """Use this to add standardized pypiper arguments to your python pipeline.
 
     There are two ways to use `add_pypiper_args`: by specifying argument groups,
     or by specifying individual arguments. Specifying argument groups will add
@@ -58,14 +57,16 @@ def add_pypiper_args(
     make it easy to add arguments to certain types of pipeline. For example,
     to make a looper-compatible pipeline, use `groups = ["pypiper", "looper"]`.
 
-    :param argparse.ArgumentParser parser: ArgumentParser object from a pipeline
-    :param str | Iterable[str] groups: Adds arguments belong to specified group
-        of args. Options: pypiper, config, looper, resources, common, ngs, all.
-    :param str | Iterable[str] args: You may specify a list of specific arguments one by one.
-    :param Iterable[str] required: Arguments to be flagged as 'required' by argparse.
-    :param bool all_args: Whether to include all of pypiper's arguments defined here.
-    :return argparse.ArgumentParser: A new ArgumentParser object, with selected
-        pypiper arguments added
+    Args:
+        parser: ArgumentParser object from a pipeline.
+        groups: Adds arguments belonging to specified group
+            of args. Options: pypiper, config, looper, resources, common, ngs, all.
+        args: You may specify a list of specific arguments one by one.
+        required: Arguments to be flagged as 'required' by argparse.
+        all_args: Whether to include all of pypiper's arguments defined here.
+
+    Returns:
+        A new ArgumentParser object, with selected pypiper arguments added.
     """
     args_to_add = _determine_args(
         argument_groups=groups, arguments=args, use_all_args=all_args
@@ -75,8 +76,7 @@ def add_pypiper_args(
 
 
 def build_command(chunks):
-    """
-    Create a command from various parts.
+    """Create a command from various parts.
 
     The parts provided may include a base, flags, option-bound arguments, and
     positional arguments. Each element must be either a string or a two-tuple.
@@ -85,11 +85,15 @@ def build_command(chunks):
     arguments, or a combination of those elements. The only modification they
     undergo is trimming of any space characters from each end.
 
-    :param Iterable[str | (str, str | NoneType)] chunks: the collection of the
-        command components to interpret, modify, and join to create a
-        single meaningful command
-    :return str: the single meaningful command built from the given components
-    :raise ValueError: if no command parts are provided
+    Args:
+        chunks: The collection of the command components to interpret, modify,
+            and join to create a single meaningful command.
+
+    Returns:
+        The single meaningful command built from the given components.
+
+    Raises:
+        ValueError: If no command parts are provided.
     """
 
     if not chunks:
@@ -119,12 +123,12 @@ def build_command(chunks):
 
 
 def build_sample_paths(sample):
-    """
-    Ensure existence of folders for a Sample.
+    """Ensure existence of folders for a Sample.
 
-    :param looper.models.Sample sample: Sample (or instance supporting get()
-        that stores folders paths in a 'paths' key, in which the value is a
-        mapping from path name to actual folder path)
+    Args:
+        sample: Sample (or instance supporting get() that stores folders paths
+            in a 'paths' key, in which the value is a mapping from path name to
+            actual folder path).
     """
     for path_name, path in sample.paths.items():
         print("{}: '{}'".format(path_name, path))
@@ -136,22 +140,23 @@ def build_sample_paths(sample):
 
 
 def checkpoint_filename(checkpoint, pipeline_name=None):
-    """
-    Translate a checkpoint to a filename.
+    """Translate a checkpoint to a filename.
 
     This not only adds the checkpoint file extension but also standardizes the
     way in which checkpoint names are mapped to filenames.
 
-    :param str | pypiper.Stage checkpoint: name of a pipeline phase/stage
-    :param str pipeline_name: name of pipeline to prepend to the checkpoint
-        filename; this differentiates checkpoint files, e.g. within the
-        same sample output folder but associated with different pipelines,
-        in case of the (somewhat probable) scenario of a stage name
-        collision between pipelines the processed the same sample and
-        wrote to the same output folder
-    :return str | NoneType: standardized checkpoint name for file, plus
-        extension; null if the input is a Stage that's designated as a
-        non-checkpoint
+    Args:
+        checkpoint: Name of a pipeline phase/stage.
+        pipeline_name: Name of pipeline to prepend to the checkpoint
+            filename; this differentiates checkpoint files, e.g. within the
+            same sample output folder but associated with different pipelines,
+            in case of the (somewhat probable) scenario of a stage name
+            collision between pipelines that processed the same sample and
+            wrote to the same output folder.
+
+    Returns:
+        Standardized checkpoint name for file, plus extension; null if the
+        input is a Stage that's designated as a non-checkpoint.
     """
     # Allow Stage as type for checkpoint parameter's argument without
     # needing to import here the Stage type from stage.py module.
@@ -165,15 +170,18 @@ def checkpoint_filename(checkpoint, pipeline_name=None):
 
 
 def checkpoint_filepath(checkpoint, pm):
-    """
-    Create filepath for indicated checkpoint.
+    """Create filepath for indicated checkpoint.
 
-    :param str | pypiper.Stage checkpoint: Pipeline phase/stage or one's name
-    :param pypiper.PipelineManager | pypiper.Pipeline pm: manager of a pipeline
-        instance, relevant for output folder path.
-    :return str: standardized checkpoint name for file, plus extension
-    :raise ValueError: if the checkpoint is given as absolute path that does
-        not point within pipeline output folder
+    Args:
+        checkpoint: Pipeline phase/stage or one's name.
+        pm: Manager of a pipeline instance, relevant for output folder path.
+
+    Returns:
+        Standardized checkpoint name for file, plus extension.
+
+    Raises:
+        ValueError: If the checkpoint is given as absolute path that does
+            not point within pipeline output folder.
     """
 
     # Handle case in which checkpoint is given not just as a string, but
@@ -213,13 +221,16 @@ def checkpoint_filepath(checkpoint, pm):
 
 
 def check_shell(cmd, shell=None):
-    """
-    Determine whether a command appears to involve shell process(es).
+    """Determine whether a command appears to involve shell process(es).
+
     The shell argument can be used to override the result of the check.
 
-    :param str cmd: Command to investigate.
-    :param bool shell: override the result of the check with this value.
-    :return bool: Whether the command appears to involve shell process(es).
+    Args:
+        cmd: Command to investigate.
+        shell: Override the result of the check with this value.
+
+    Returns:
+        Whether the command appears to involve shell process(es).
     """
     if isinstance(shell, bool):
         return shell
@@ -227,11 +238,13 @@ def check_shell(cmd, shell=None):
 
 
 def check_shell_asterisk(cmd):
-    """
-    Determine whether a command appears to involve shell stars.
+    """Determine whether a command appears to involve shell stars.
 
-    :param str cmd: Command to investigate.
-    :return bool: Whether the command appears to involve shell stars.
+    Args:
+        cmd: Command to investigate.
+
+    Returns:
+        Whether the command appears to involve shell stars.
     """
     return r"*" in cmd
 
@@ -243,18 +256,19 @@ def check_all_commands(
     ),
     handle=None,
 ):
-    """
-    Determine whether all commands are callable
+    """Determine whether all commands are callable.
 
-    :param Iterable[str] | str cmds: collection of commands to check for
-        callability
-    :param function(Iterable[(str, str)]) -> object get_bad_result: how to
-        create result when at least one command is uncallable
-    :param function(object) -> object handle: how to handle with result of
-        failed check
-    :return bool: whether all commands given appear callable
-    :raise TypeError: if error handler is provided but isn't callable or
-        isn't a single-argument function
+    Args:
+        cmds: Collection of commands to check for callability.
+        get_bad_result: How to create result when at least one command is uncallable.
+        handle: How to handle with result of failed check.
+
+    Returns:
+        Whether all commands given appear callable.
+
+    Raises:
+        TypeError: If error handler is provided but isn't callable or
+            isn't a single-argument function.
     """
     bads = determine_uncallable(cmds)
     if not bads:
@@ -284,22 +298,25 @@ def determine_uncallable(
     ),
     accumulate=False,
 ):
-    """
-    Determine which commands are not callable.
+    """Determine which commands are not callable.
 
-    :param Iterable[str] | str commands: commands to check for callability
-    :param Iterable[(function(str) -> bool, function(str) -> str)] transformations:
-        pairs in which first element is a predicate and second is a transformation
-        to apply to the input if the predicate is satisfied
-    :param bool accumulate: whether to accumulate transformations (more than
-        one possible per command)
-    :return list[(str, str)]: collection of commands that appear uncallable;
-        each element is a pair in which the first element is the original
-        'command' and the second is what was actually assessed for callability.
-    :raise TypeError: if transformations are provided but are argument is a
-        string or is non-Iterable
-    :raise Exception: if accumulation of transformation is False but the
-        collection of transformations is unordered
+    Args:
+        commands: Commands to check for callability.
+        transformations: Pairs in which first element is a predicate and second is a
+            transformation to apply to the input if the predicate is satisfied.
+        accumulate: Whether to accumulate transformations (more than one possible
+            per command).
+
+    Returns:
+        Collection of commands that appear uncallable; each element is a pair in
+        which the first element is the original 'command' and the second is what
+        was actually assessed for callability.
+
+    Raises:
+        TypeError: If transformations are provided but argument is a string or is
+            non-Iterable.
+        Exception: If accumulation of transformation is False but the collection of
+            transformations is unordered.
     """
     commands = [commands] if isinstance(commands, str) else commands
     if transformations:
@@ -355,12 +372,13 @@ def determine_uncallable(
 
 
 def split_by_pipes_nonnested(cmd):
-    """
-    Split the command by shell pipes, but preserve contents in
-    parentheses and braces.
+    """Split the command by shell pipes, but preserve contents in parentheses and braces.
 
-    :param str cmd: Command to investigate.
-    :return list: List of sub commands to be linked
+    Args:
+        cmd: Command to investigate.
+
+    Returns:
+        List of sub commands to be linked.
     """
     # for posterity, this one will do parens only: re.compile(r'(?:[^|(]|\([^)]*\))+')
     # r = re.compile(r'(?:[^|({]|[\({][^)}]*[\)}])+')
@@ -372,12 +390,15 @@ def split_by_pipes_nonnested(cmd):
 
 
 def split_by_pipes(cmd):
-    """
-    Split the command by shell pipes, but preserve contents in
-    parentheses and braces. Also handles nested parens and braces.
+    """Split the command by shell pipes, but preserve contents in parentheses and braces.
 
-    :param str cmd: Command to investigate.
-    :return list: List of sub commands to be linked
+    Also handles nested parens and braces.
+
+    Args:
+        cmd: Command to investigate.
+
+    Returns:
+        List of sub commands to be linked.
     """
 
     # Build a simple finite state machine to split on pipes, while
@@ -415,11 +436,13 @@ def split_by_pipes(cmd):
 
 
 def check_shell_pipes(cmd):
-    """
-    Determine whether a command appears to contain shell pipes.
+    """Determine whether a command appears to contain shell pipes.
 
-    :param str cmd: Command to investigate.
-    :return bool: Whether the command appears to contain shell pipes.
+    Args:
+        cmd: Command to investigate.
+
+    Returns:
+        Whether the command appears to contain shell pipes.
     """
     return "|" in strip_braced_txt(cmd)
 
@@ -439,24 +462,28 @@ def strip_braced_txt(cmd):
 
 
 def check_shell_redirection(cmd):
-    """
-    Determine whether a command appears to contain shell redirection symbol outside of curly brackets
+    """Determine whether a command appears to contain shell redirection symbol outside of curly brackets.
 
-    :param str cmd: Command to investigate.
-    :return bool: Whether the command appears to contain shell redirection.
+    Args:
+        cmd: Command to investigate.
+
+    Returns:
+        Whether the command appears to contain shell redirection.
     """
 
     return ">" in strip_braced_txt(cmd)
 
 
 def clear_flags(pm, flag_names=None):
-    """
+    """Clear pipeline flags.
 
-    :param pypiper.PipelineManager | pypiper.Pipeline pm: Pipeline or
-        PipelineManager for which to remove flags
-    :param Iterable[str] flag_names: Names of flags to remove, optional; if
-        unspecified, all known flag names will be used.
-    :return: Collection of names of flags removed
+    Args:
+        pm: Pipeline or PipelineManager for which to remove flags.
+        flag_names: Names of flags to remove, optional; if unspecified, all
+            known flag names will be used.
+
+    Returns:
+        Collection of names of flags removed.
     """
 
     # Accept Pipeline as type of pm without needing to import Pipeline.
@@ -482,21 +509,25 @@ def clear_flags(pm, flag_names=None):
 
 
 def flag_name(status):
-    """
-    Determine the name for a flag file of the status indicated.
+    """Determine the name for a flag file of the status indicated.
 
-    :param str status: Name of status for which to create flag file name.
-    :return str: Name of flag file corresponding to given status.
+    Args:
+        status: Name of status for which to create flag file name.
+
+    Returns:
+        Name of flag file corresponding to given status.
     """
     return status + ".flag"
 
 
 def get_proc_name(cmd):
-    """
-    Get the representative process name from complex command
+    """Get the representative process name from complex command.
 
-    :param str | list[str] cmd: a command to be processed
-    :return str: the basename representative command
+    Args:
+        cmd: A command to be processed.
+
+    Returns:
+        The basename representative command.
     """
     if isinstance(cmd, Iterable) and not isinstance(cmd, str):
         cmd = " ".join(cmd)
@@ -505,28 +536,27 @@ def get_proc_name(cmd):
 
 
 def get_first_value(param, param_pools, on_missing=None, error=True):
-    """
-    Get the value for a particular parameter from the first pool in the provided
-    priority list of parameter pools.
+    """Get the value for a particular parameter from the first pool in the provided priority list.
 
-    :param str param: Name of parameter for which to determine/fetch value.
-    :param Sequence[Mapping[str, object]] param_pools: Ordered (priority)
-        collection of mapping from parameter name to value; this should be
-        ordered according to descending priority.
-    :param object | function(str) -> object on_missing: default value or
-        action to take if the requested parameter is missing from all of the
-        pools. If a callable, it should return a value when passed the
-        requested parameter as the one and only argument.
-    :param bool error: Whether to raise an error if the requested parameter
-        is not mapped to a value AND there's no value or strategy provided
-        with 'on_missing' with which to handle the case of a request for an
-        unmapped parameter.
-    :return object: Value to which the requested parameter first mapped in
-        the (descending) priority collection of parameter 'pools,' or
-        a value explicitly defined or derived with 'on_missing.'
-    :raise KeyError: If the requested parameter is unmapped in all of the
-        provided pools, and the argument to the 'error' parameter evaluates
-        to True.
+    Args:
+        param: Name of parameter for which to determine/fetch value.
+        param_pools: Ordered (priority) collection of mapping from parameter name
+            to value; this should be ordered according to descending priority.
+        on_missing: Default value or action to take if the requested parameter is
+            missing from all of the pools. If a callable, it should return a value
+            when passed the requested parameter as the one and only argument.
+        error: Whether to raise an error if the requested parameter is not mapped
+            to a value AND there's no value or strategy provided with 'on_missing'
+            with which to handle the case of a request for an unmapped parameter.
+
+    Returns:
+        Value to which the requested parameter first mapped in the (descending)
+        priority collection of parameter 'pools,' or a value explicitly defined
+        or derived with 'on_missing.'
+
+    Raises:
+        KeyError: If the requested parameter is unmapped in all of the provided
+            pools, and the argument to the 'error' parameter evaluates to True.
     """
 
     # Search for the requested parameter.
@@ -553,13 +583,16 @@ def get_first_value(param, param_pools, on_missing=None, error=True):
 
 
 def head(obj):
-    """
-    Facilitate syntactic uniformity for notion of "object-or-first-item."
+    """Facilitate syntactic uniformity for notion of "object-or-first-item."
 
-    :param object | Iterable[object] obj: single item or collection of items.
-    :return obj: object itself if non-Iterable, otherwise the first element
-        if one exists
-    :raise ValueError: if the given object is an empty Iterable
+    Args:
+        obj: Single item or collection of items.
+
+    Returns:
+        Object itself if non-Iterable, otherwise the first element if one exists.
+
+    Raises:
+        ValueError: If the given object is an empty Iterable.
     """
     if isinstance(obj, CHECK_TEXT_TYPES):
         return obj
@@ -572,12 +605,14 @@ def head(obj):
 
 
 def is_in_file_tree(fpath, folder):
-    """
-    Determine whether a file is in a folder.
+    """Determine whether a file is in a folder.
 
-    :param str fpath: filepath to investigate
-    :param folder: path to folder to query
-    :return bool: whether the path indicated is in the folder indicated
+    Args:
+        fpath: Filepath to investigate.
+        folder: Path to folder to query.
+
+    Returns:
+        Whether the path indicated is in the folder indicated.
     """
     file_folder, _ = os.path.split(fpath)
     other_folder = os.path.join(folder, "")
@@ -585,56 +620,65 @@ def is_in_file_tree(fpath, folder):
 
 
 def is_fastq(file_name):
-    """
-    Determine whether indicated file appears to be in FASTQ format.
+    """Determine whether indicated file appears to be in FASTQ format.
 
-    :param str file_name: Name/path of file to check as FASTQ.
-    :return bool: Whether indicated file appears to be in FASTQ format, zipped
-        or unzipped.
+    Args:
+        file_name: Name/path of file to check as FASTQ.
+
+    Returns:
+        Whether indicated file appears to be in FASTQ format, zipped or unzipped.
     """
     return is_unzipped_fastq(file_name) or is_gzipped_fastq(file_name)
 
 
 def is_gzipped_fastq(file_name):
-    """
-    Determine whether indicated file appears to be a gzipped FASTQ.
+    """Determine whether indicated file appears to be a gzipped FASTQ.
 
-    :param str file_name: Name/path of file to check as gzipped FASTQ.
-    :return bool: Whether indicated file appears to be in gzipped FASTQ format.
+    Args:
+        file_name: Name/path of file to check as gzipped FASTQ.
+
+    Returns:
+        Whether indicated file appears to be in gzipped FASTQ format.
     """
     _, ext = os.path.splitext(file_name)
     return file_name.endswith(".fastq.gz") or file_name.endswith(".fq.gz")
 
 
 def is_unzipped_fastq(file_name):
-    """
-    Determine whether indicated file appears to be an unzipped FASTQ.
+    """Determine whether indicated file appears to be an unzipped FASTQ.
 
-    :param str file_name: Name/path of file to check as unzipped FASTQ.
-    :return bool: Whether indicated file appears to be in unzipped FASTQ format.
+    Args:
+        file_name: Name/path of file to check as unzipped FASTQ.
+
+    Returns:
+        Whether indicated file appears to be in unzipped FASTQ format.
     """
     _, ext = os.path.splitext(file_name)
     return ext in [".fastq", ".fq"]
 
 
 def is_sam_or_bam(file_name):
-    """
-    Determine whether a file appears to be in a SAM format.
+    """Determine whether a file appears to be in a SAM format.
 
-    :param str file_name: Name/path of file to check as SAM-formatted.
-    :return bool: Whether file appears to be SAM-formatted
+    Args:
+        file_name: Name/path of file to check as SAM-formatted.
+
+    Returns:
+        Whether file appears to be SAM-formatted.
     """
     _, ext = os.path.splitext(file_name)
     return ext in [".bam", ".sam"]
 
 
 def logger_via_cli(opts, **kwargs):
-    """
-    Build and initialize logger from CLI specification.
+    """Build and initialize logger from CLI specification.
 
-    :param argparse.Namespace opts: parse of command-line interface
-    :param kwargs: keyword arguments to pass along to underlying logmuse function
-    :return logging.Logger: newly created and configured logger
+    Args:
+        opts: Parse of command-line interface.
+        **kwargs: Keyword arguments to pass along to underlying logmuse function.
+
+    Returns:
+        Newly created and configured logger.
     """
     from copy import deepcopy
 
@@ -647,8 +691,7 @@ def logger_via_cli(opts, **kwargs):
 
 
 def make_lock_name(original_path, path_base_folder):
-    """
-    Create name for lock file from an absolute path.
+    """Create name for lock file from an absolute path.
 
     The original path must be absolute, and it should point to a location
     within the location indicated by the base folder path provided. This is
@@ -656,10 +699,12 @@ def make_lock_name(original_path, path_base_folder):
     within the path of a target file to generate a lock file corresponding
     to the original target.
 
-    :param str original_path: Full original filepath.
-    :param str path_base_folder: Portion of original path to delete
-    :return str: Name or perhaps relative (to the base folder path indicated)
-        path to lock file
+    Args:
+        original_path: Full original filepath.
+        path_base_folder: Portion of original path to delete.
+
+    Returns:
+        Name or perhaps relative (to the base folder path indicated) path to lock file.
     """
 
     def make_name(p):
@@ -681,12 +726,16 @@ def make_lock_name(original_path, path_base_folder):
 
 
 def is_multi_target(target):
-    """
-    Determine if pipeline manager's run target is multiple.
+    """Determine if pipeline manager's run target is multiple.
 
-    :param None or str or Sequence of str target: 0, 1, or multiple targets
-    :return bool: Whether there are multiple targets
-    :raise TypeError: if the argument is neither None nor string nor Sequence
+    Args:
+        target: 0, 1, or multiple targets.
+
+    Returns:
+        Whether there are multiple targets.
+
+    Raises:
+        TypeError: If the argument is neither None nor string nor Sequence.
     """
     if target is None or isinstance(target, str):
         return False
@@ -701,12 +750,16 @@ def is_multi_target(target):
 
 
 def parse_cmd(cmd, shell):
-    """
-    Create a list of Popen-distable dicts of commands. The commands are split by pipes, if possible
+    """Create a list of Popen-distable dicts of commands.
 
-    :param str cmd: the command
-    :param bool shell: if the command should be run in the shell rather that in a subprocess
-    :return list[dict]: list of dicts of commands
+    The commands are split by pipes, if possible.
+
+    Args:
+        cmd: The command.
+        shell: If the command should be run in the shell rather that in a subprocess.
+
+    Returns:
+        List of dicts of commands.
     """
 
     def _make_dict(command):
@@ -723,8 +776,7 @@ def parse_cmd(cmd, shell):
 
 
 def parse_cores(cores, pm, default):
-    """
-    Framework to finalize number of cores for an operation.
+    """Framework to finalize number of cores for an operation.
 
     Some calls to a function may directly provide a desired number of cores,
     others may not. Similarly, some pipeline managers may define a cores count
@@ -736,26 +788,30 @@ def parse_cores(cores, pm, default):
     module, class, etc. to standardize the way in which this value is
     determined within a scope.)
 
-    :param int | str cores: direct specification of cores count
-    :param pypiper.PipelineManager pm: pipeline manager perhaps defining cores
-    :param int | str default: default number of cores, used if a value isn't
-        directly given and the pipeline manager doesn't define core count.
-    :return int: number of cores
+    Args:
+        cores: Direct specification of cores count.
+        pm: Pipeline manager perhaps defining cores.
+        default: Default number of cores, used if a value isn't directly given
+            and the pipeline manager doesn't define core count.
+
+    Returns:
+        Number of cores.
     """
     cores = cores or getattr(pm, "cores", default)
     return int(cores)
 
 
 def parse_stage_name(stage):
-    """
-    Determine the name of a stage.
+    """Determine the name of a stage.
 
     The stage may be provided already as a name, as a Stage object, or as a
     callable with __name__ (e.g., function).
 
-    :param str | pypiper.Stage | function stage: Object representing a stage,
-        from which to obtain name.
-    :return str: Name of putative pipeline Stage.
+    Args:
+        stage: Object representing a stage, from which to obtain name.
+
+    Returns:
+        Name of putative pipeline Stage.
     """
     if isinstance(stage, str):
         return stage
@@ -769,21 +825,22 @@ def parse_stage_name(stage):
 
 
 def pipeline_filepath(pm, filename=None, suffix=None):
-    """
-    Derive path to file for managed pipeline.
+    """Derive path to file for managed pipeline.
 
-    :param pypiper.PipelineManager | pypiper.Pipeline pm: Manager of a
-        particular pipeline instance.
-    :param str filename: Name of file for which to create full path based
-        on pipeline's output folder.
-    :param str suffix: Suffix for the file; this can be added to the filename
-        if provided or added to the pipeline name if there's no filename.
-    :raises TypeError: If neither filename nor suffix is provided, raise a
-        TypeError, as in that case there's no substance from which to create
-        a filepath.
-    :return str: Path to file within managed pipeline's output folder, with
-        filename as given or determined by the pipeline name, and suffix
-        appended if given.
+    Args:
+        pm: Manager of a particular pipeline instance.
+        filename: Name of file for which to create full path based on pipeline's
+            output folder.
+        suffix: Suffix for the file; this can be added to the filename if provided
+            or added to the pipeline name if there's no filename.
+
+    Returns:
+        Path to file within managed pipeline's output folder, with filename as
+        given or determined by the pipeline name, and suffix appended if given.
+
+    Raises:
+        TypeError: If neither filename nor suffix is provided, raise a TypeError,
+            as in that case there's no substance from which to create a filepath.
     """
     if filename is None and suffix is None:
         raise TypeError(
@@ -798,16 +855,17 @@ def pipeline_filepath(pm, filename=None, suffix=None):
 
 
 def translate_stage_name(stage):
-    """
-    Account for potential variability in stage/phase name definition.
+    """Account for potential variability in stage/phase name definition.
 
     Since a pipeline author is free to name his/her processing phases/stages
     as desired, but these choices influence file names, enforce some
     standardization. Specifically, prohibit potentially problematic spaces.
 
-    :param str | pypiper.Stage | function stage: Pipeline stage, its name, or a
-        representative function.
-    :return str: Standardized pipeline phase/stage name.
+    Args:
+        stage: Pipeline stage, its name, or a representative function.
+
+    Returns:
+        Standardized pipeline phase/stage name.
     """
     # First ensure that we have text.
     name = parse_stage_name(stage)
@@ -843,15 +901,16 @@ def uniqify(seq):  # Dave Kirby
 
 
 def _determine_args(argument_groups, arguments, use_all_args=False):
-    """
-    Determine the arguments to add to a parser (for a pipeline).
+    """Determine the arguments to add to a parser (for a pipeline).
 
-    :param Iterable[str] | str argument_groups: Collection of names of groups
-        of arguments to add to an argument parser.
-    :param Iterable[str] | str arguments: Collection of specific arguments to
-        add to the parser.
-    :param bool use_all_args: Whether to use all arguments defined here.
-    :return set[str]: Collection of (unique) argument names to add to a parser.
+    Args:
+        argument_groups: Collection of names of groups of arguments to add to an
+            argument parser.
+        arguments: Collection of specific arguments to add to the parser.
+        use_all_args: Whether to use all arguments defined here.
+
+    Returns:
+        Collection of (unique) argument names to add to a parser.
     """
 
     from collections.abc import Iterable
@@ -914,21 +973,25 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
 
 
 def default_pipeline_config(pipeline_filepath):
-    """
-    Determine the default filepath for a pipeline's config file.
+    """Determine the default filepath for a pipeline's config file.
 
-    :param str pipeline_filepath: path to a pipeline
-    :return str: default filepath for pipeline's config file
+    Args:
+        pipeline_filepath: Path to a pipeline.
+
+    Returns:
+        Default filepath for pipeline's config file.
     """
     return os.path.splitext(os.path.basename(pipeline_filepath))[0] + ".yaml"
 
 
 def default_pipestat_output_schema(pipeline_filepath):
-    """
-    Determine the default filepath for a pipeline's pipestat output schema.
+    """Determine the default filepath for a pipeline's pipestat output schema.
 
-    :param str pipeline_filepath: path to a pipeline
-    :return str: default filepath for a pipeline's pipestat output schema.
+    Args:
+        pipeline_filepath: Path to a pipeline.
+
+    Returns:
+        Default filepath for a pipeline's pipestat output schema.
     """
     pipestat_results_schema = os.path.join(
         os.path.dirname(pipeline_filepath), "pipestat_output_schema.yaml"
@@ -938,13 +1001,15 @@ def default_pipestat_output_schema(pipeline_filepath):
 
 
 def _add_args(parser, args, required):
-    """
-    Add new arguments to an ArgumentParser.
+    """Add new arguments to an ArgumentParser.
 
-    :param argparse.ArgumentParser parser: instance to update with new arguments
-    :param Iterable[str] args: Collection of names of arguments to add.
-    :param Iterable[str] required: Collection of arguments to designate as required
-    :return argparse.ArgumentParser: Updated ArgumentParser
+    Args:
+        parser: Instance to update with new arguments.
+        args: Collection of names of arguments to add.
+        required: Collection of arguments to designate as required.
+
+    Returns:
+        Updated ArgumentParser.
     """
 
     import copy
@@ -1109,10 +1174,18 @@ def _add_args(parser, args, required):
 
 
 def result_formatter_markdown(pipeline_name, record_identifier, res_id, value) -> str:
-    """
-    Returns Markdown formatted value as string
+    """Returns Markdown formatted value as string.
 
-    # Pipeline_name and record_identifier should be kept because pipestat needs it
+    Note: Pipeline_name and record_identifier should be kept because pipestat needs it.
+
+    Args:
+        pipeline_name: Name of the pipeline.
+        record_identifier: Identifier for the record.
+        res_id: Result identifier.
+        value: Value to format.
+
+    Returns:
+        Markdown formatted value as string.
     """
 
     message_markdown = "\n> `{key}`\t{value}\t_RES_".format(key=res_id, value=value)

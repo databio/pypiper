@@ -12,9 +12,9 @@ __all__ = ["Stage"]
 
 
 class Stage(object):
-    """
-    Single stage/phase of a pipeline; a logical processing "unit". A stage is a
-    collection of commands that is checkpointed.
+    """Single stage/phase of a pipeline; a logical processing "unit".
+
+    A stage is a collection of commands that is checkpointed.
     """
 
     def __init__(
@@ -27,16 +27,16 @@ class Stage(object):
         *,
         nofail=False
     ):
-        """
-        A function, perhaps with arguments, defines the stage.
+        """A function, perhaps with arguments, defines the stage.
 
-        :param callable func: The processing logic that defines the stage
-        :param tuple f_args: Positional arguments for func
-        :param dict f_kwargs: Keyword arguments for func
-        :param str name: name for the phase/stage
-        :param callable func: Object that defines how the stage will execute.
-        :param bool nofail: Allow a failure of this stage to not fail the pipeline
-            in which it's running
+        Args:
+            func: The processing logic that defines the stage.
+            f_args: Positional arguments for func.
+            f_kwargs: Keyword arguments for func.
+            name: Name for the phase/stage.
+            checkpoint: Whether to checkpoint this stage.
+            nofail: Allow a failure of this stage to not fail the pipeline
+                in which it's running.
         """
         if isinstance(func, Stage):
             raise TypeError("Cannot create Stage from Stage")
@@ -50,11 +50,11 @@ class Stage(object):
 
     @property
     def checkpoint_name(self):
-        """
-        Determine the checkpoint name for this Stage.
+        """Determine the checkpoint name for this Stage.
 
-        :return str | NoneType: Checkpoint name for this stage; null if this
-            Stage is designated as a non-checkpoint.
+        Returns:
+            Checkpoint name for this stage; null if this Stage is designated
+            as a non-checkpoint.
         """
         return translate_stage_name(self.name) if self.checkpoint else None
 
