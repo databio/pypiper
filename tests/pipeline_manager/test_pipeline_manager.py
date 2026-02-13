@@ -363,6 +363,33 @@ class TestCleanup:
 
         assert lines[2] == "rm tgt3.temp\n"
 
+    def test_clean_add_none_is_noop(self, single_pipeline_manager):
+        """Test that clean_add(None) silently does nothing."""
+        pp = single_pipeline_manager
+        pp.clean_add(None)
+        pp.clean_add(None, conditional=True)
+        pp.clean_add(None, manual=True)
+        assert len(pp.cleanup_list) == 0
+        assert len(pp.cleanup_list_conditional) == 0
+
+    def test_clean_add_none_among_real_files(self, single_pipeline_manager):
+        """Test that None values mixed with real paths work correctly."""
+        pp = single_pipeline_manager
+        tgt = pipeline_filepath(pp, filename="real_file.txt")
+        pp.run("touch " + tgt, lock_name="test")
+        pp.clean_add(None)
+        pp.clean_add(tgt)
+        pp.clean_add(None, conditional=True)
+        assert len(pp.cleanup_list) == 1
+        assert pp.cleanup_list[0] == tgt
+        assert len(pp.cleanup_list_conditional) == 0
+
+    def test_clean_add_none_no_cleanup_file_created(self, single_pipeline_manager):
+        """Test that clean_add(None, manual=True) does not create a cleanup script."""
+        pp = single_pipeline_manager
+        pp.clean_add(None, manual=True)
+        assert not os.path.exists(pp.cleanup_file)
+
 
 class TestFailureHandling:
     """Tests for failure and nofail options."""

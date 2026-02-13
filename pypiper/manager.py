@@ -36,6 +36,7 @@ import __main__
 from .const import DEFAULT_SAMPLE_NAME, PROFILE_COLNAMES
 
 __version__ = version("piper")
+__pipestat_version__ = version("pipestat")
 from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import (
@@ -668,6 +669,8 @@ class PipelineManager(object):
         except KeyError:
             # It is ok if keys aren't set, it means pypiper isn't in a  git repo.
             pass
+
+        self.info(logfmt("Pipestat version", __pipestat_version__))
 
         try:
             self.info(logfmt("Pipeline dir", gitvars["pipe_dir"].strip()))
@@ -2316,19 +2319,28 @@ class PipelineManager(object):
 
     def clean_add(self, regex, conditional=False, manual=False):
         """
-        Add files (or regexs) to a cleanup list, to delete when this pipeline completes successfully.
-        When making a call with run that produces intermediate files that should be
-        deleted after the pipeline completes, you flag these files for deletion with this command.
-        Files added with clean_add will only be deleted upon success of the pipeline.
+        Add files (or regexs) to a cleanup list, to delete when this pipeline
+        completes successfully. When making a call with run that produces
+        intermediate files that should be deleted after the pipeline completes,
+        you flag these files for deletion with this command. Files added with
+        clean_add will only be deleted upon success of the pipeline.
+
+        Passing None is a no-op, which allows pipelines to call clean_add on
+        variables that may not have been assigned in conditional branches.
 
         Args:
-            regex (str): A unix-style regular expression that matches files to delete
-                (can also be a file name).
-            conditional (bool): True means the files will only be deleted if no other
-                pipelines are currently running; otherwise they are added to a manual cleanup script
-                called {pipeline_name}_cleanup.sh
-            manual (bool): True means the files will just be added to a manual cleanup script.
+            regex (str | None): A unix-style regular expression that matches
+                files to delete (can also be a file name). If None, this call
+                is silently skipped.
+            conditional (bool): True means the files will only be deleted if
+                no other pipelines are currently running; otherwise they are
+                added to a manual cleanup script called
+                {pipeline_name}_cleanup.sh
+            manual (bool): True means the files will just be added to a
+                manual cleanup script.
         """
+        if regex is None:
+            return
 
         # TODO: print this message (and several below) in debug
         # print("Adding regex to cleanup: {}".format(regex))
