@@ -3,8 +3,6 @@
 import abc
 import glob
 import os
-import sys
-
 from collections.abc import Iterable, Mapping
 
 from .exceptions import (
@@ -20,10 +18,6 @@ from .utils import (
     parse_stage_name,
     translate_stage_name,
 )
-
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
 
 __all__ = ["Pipeline", "UnknownPipelineStageError"]
 
@@ -54,22 +48,22 @@ class Pipeline(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(
-        self, name=None, manager=None, outfolder=None, args=None, **pl_mgr_kwargs
-    ):
+    def __init__(self, name=None, manager=None, outfolder=None, args=None, **pl_mgr_kwargs):
         super(Pipeline, self).__init__()
         try:
             self.name = name or manager.name
         except AttributeError:
             raise TypeError(
-                "If a pipeline manager isn't provided to create "
-                "{}, a name is required.".format(Pipeline.__name__)
+                "If a pipeline manager isn't provided to create {}, a name is required.".format(
+                    Pipeline.__name__
+                )
             )
         else:
             if not self.name:
                 raise ValueError(
-                    "Invalid name, possible inferred from pipeline manager: "
-                    "{} ({})".format(self.name, type(self.name))
+                    "Invalid name, possible inferred from pipeline manager: {} ({})".format(
+                        self.name, type(self.name)
+                    )
                 )
 
         # Determine the PipelineManager.
@@ -91,13 +85,12 @@ class Pipeline(object):
             # instance to a non-null if we reach this point, and thus we're
             # protected from passing a null name argument to the pipeline
             # manager's constructor.
-            self.manager = PipelineManager(
-                self.name, outfolder, args=args, **pl_mgr_kwargs
-            )
+            self.manager = PipelineManager(self.name, outfolder, args=args, **pl_mgr_kwargs)
         else:
             raise TypeError(
-                "To create a {} instance, 'manager' or 'outfolder' "
-                "is required".format(self.__class__.__name__)
+                "To create a {} instance, 'manager' or 'outfolder' is required".format(
+                    self.__class__.__name__
+                )
             )
 
         # Require that checkpoints be overwritten.
@@ -108,19 +101,12 @@ class Pipeline(object):
         # stage names are handled, parsed, and translated.
         self._unordered = _is_unordered(self.stages())
         if self._unordered:
-            print(
-                "NOTICE: Unordered definition of stages for "
-                "pipeline {}".format(self.name)
-            )
+            print("NOTICE: Unordered definition of stages for pipeline {}".format(self.name))
 
         # Get to a sequence of pairs of key (possibly in need of translation)
         # and actual callable. Key is stage name and value is either stage
         # callable or an already-made stage object.
-        stages = (
-            self.stages().items()
-            if isinstance(self.stages(), Mapping)
-            else self.stages()
-        )
+        stages = self.stages().items() if isinstance(self.stages(), Mapping) else self.stages()
         # Stage spec. parser handles callable validation.
         name_stage_pairs = [_parse_stage_spec(s) for s in stages]
 
@@ -206,9 +192,7 @@ class Pipeline(object):
         # checkpoint when a conceptual unit or group of operations of a
         # pipeline completes, so fix the 'finished' parameter to the manager's
         # timestamp method to be True.
-        return self.manager.timestamp(
-            message=msg, checkpoint=stage.checkpoint_name, finished=True
-        )
+        return self.manager.timestamp(message=msg, checkpoint=stage.checkpoint_name, finished=True)
 
     def completed_stage(self, stage):
         """Determine whether the pipeline's completed the stage indicated.
@@ -307,9 +291,7 @@ class Pipeline(object):
         stop_index = self._stop_index(stop, inclusive=inclusive_stop)
         assert stop_index <= len(self._stages)
         if start_index >= stop_index:
-            raise IllegalPipelineExecutionError(
-                "Cannot start pipeline at or after stopping point"
-            )
+            raise IllegalPipelineExecutionError("Cannot start pipeline at or after stopping point")
 
         # TODO: consider storing just stage name rather than entire stage.
         # TODO (cont.): the bad case for whole-Stage is if associated data

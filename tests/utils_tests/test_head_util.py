@@ -17,11 +17,9 @@ NUMBERS_AND_LETTERS = list(string.ascii_letters) + list(range(-9, 10))
 
 # Strategy for generating a pretty arbitrary atomic
 ATOMICS = st.deferred(
-    lambda: st.booleans()
-    | st.characters()
-    | st.integers()
-    | st.floats(allow_nan=False)
-    | st.text()
+    lambda: (
+        st.booleans() | st.characters() | st.integers() | st.floats(allow_nan=False) | st.text()
+    )
 )
 
 
@@ -37,10 +35,7 @@ def pytest_generate_tests(metafunc):
             [
                 (
                     random.choice(NUMBERS_AND_LETTERS),
-                    [
-                        random.choice(NUMBERS_AND_LETTERS)
-                        for _ in range(random.randint(5, 10))
-                    ],
+                    [random.choice(NUMBERS_AND_LETTERS) for _ in range(random.randint(5, 10))],
                 )
                 for _ in range(10)
             ],
@@ -72,10 +67,12 @@ def test_head_nonempty_sequential_collection(h, xs, seqtype, iter_cast):
 
 
 def test_head_nonempty_set():
-    """Verify that head of nonempty set is non-exceptional."""
-    head({-1, 0, 1})
+    """Verify that head of nonempty set returns an element."""
+    result = head({-1, 0, 1})
+    assert result in {-1, 0, 1}
 
 
 def test_head_nonempty_dict():
-    """Verify that head of nonempty dictionary is non-exceptional."""
-    head({"a": 1, "b": 2})
+    """Verify that head of nonempty dictionary returns a key."""
+    result = head({"a": 1, "b": 2})
+    assert result in {"a", "b"}

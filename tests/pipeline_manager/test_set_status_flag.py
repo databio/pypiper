@@ -3,7 +3,6 @@
 import pytest
 
 from pypiper.flags import *
-from pypiper.flags import __all__ as ALL_FLAGS
 from tests.helpers import named_param
 
 __author__ = "Vince Reuter"

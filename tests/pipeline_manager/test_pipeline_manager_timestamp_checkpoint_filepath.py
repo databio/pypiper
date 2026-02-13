@@ -36,9 +36,7 @@ class PipelineMangerTimestampCheckpointFilePathTests:
         argvalues=[("chipseq", "ATACseq"), ("rnaKallisto", "wgbs")],
     )
     @named_param(argnames="spec_type", argvalues=["stage_name", "stage", "function"])
-    def test_distinguishes_pipelines_within_outfolder(
-        self, name1, name2, spec_type, tmpdir
-    ):
+    def test_distinguishes_pipelines_within_outfolder(self, name1, name2, spec_type, tmpdir):
         """
         Checkpoint files within sample folder include pipeline name.
 
@@ -65,9 +63,7 @@ class PipelineMangerTimestampCheckpointFilePathTests:
             if spec_type == "function":
                 return trim_reads
             elif spec_type not in ["stage", "stage_name"]:
-                raise ValueError(
-                    "Unrecognized stage specification type: {}".format(spec_type)
-                )
+                raise ValueError("Unrecognized stage specification type: {}".format(spec_type))
             else:
                 s = Stage(trim_reads)
                 return s.name if spec_type == "stage_name" else s
@@ -85,9 +81,7 @@ class PipelineMangerTimestampCheckpointFilePathTests:
         plm1.timestamp(checkpoint=stage_spec(), finished=True)
 
         # Find the checkpoints; there should only be one.
-        checkpoint_pattern = os.path.join(
-            outfolder, "{}_*{}".format(name1, CHECKPOINT_EXTENSION)
-        )
+        checkpoint_pattern = os.path.join(outfolder, "{}_*{}".format(name1, CHECKPOINT_EXTENSION))
         checkpoints = glob.glob(checkpoint_pattern)
         assert 1 == len(checkpoints)
         assert 1 == len(glob.glob(all_checkpoints_pattern))
@@ -100,9 +94,7 @@ class PipelineMangerTimestampCheckpointFilePathTests:
         # Create a second checkpoint with the same stage, but with a manager
         # of a different name.
         plm2.timestamp(checkpoint=stage_spec(), finished=True)
-        checkpoint_pattern = os.path.join(
-            outfolder, "{}_*{}".format(name2, CHECKPOINT_EXTENSION)
-        )
+        checkpoint_pattern = os.path.join(outfolder, "{}_*{}".format(name2, CHECKPOINT_EXTENSION))
         checkpoints = glob.glob(checkpoint_pattern)
         assert 1 == len(checkpoints)
         all_checkpoints = glob.glob(all_checkpoints_pattern)

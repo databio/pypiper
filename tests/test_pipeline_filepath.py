@@ -49,9 +49,7 @@ def test_requires_filename_or_suffix(pl_mgr):
 @pytest.mark.parametrize(
     argnames="test_type", argvalues=["has_pipe_name", "has_suffix", "full_path"]
 )
-def test_uses_pipeline_name_if_no_filename(
-    pipe_name, suffix, test_type, pl_mgr, tmpdir
-):
+def test_uses_pipeline_name_if_no_filename(pipe_name, suffix, test_type, pl_mgr, tmpdir):
     """Pipeline name is proxy for filename if just suffix is given."""
 
     observed = pipeline_filepath(pl_mgr, suffix=suffix)

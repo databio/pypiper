@@ -1,7 +1,6 @@
 """Tests for the timestamp functionality of a PipelineManager."""
 
 import os
-import sys
 
 import pytest
 
@@ -31,31 +30,6 @@ def test_timestamp_requires_no_arguments(get_pipe_manager):
     """A call to timestamp() requires no arguments."""
     pm = get_pipe_manager(name="TestPM")
     pm.timestamp()
-
-
-@pytest.mark.skip
-def test_timestamp_message(get_pipe_manager, capsys):
-    """Tests for the message component of a timestamp() call."""
-    name = "TestPM"
-    pm = get_pipe_manager(name=name)
-    logfile = pm.pipeline_log_file
-    assert not os.path.exists(logfile)
-    message_content = "Just testing"
-    message = "### {}".format(message_content)
-    pm.timestamp(message)
-
-    # Capture output but also write it so it's there.
-    # Since we're in interactive mode for the testing session, we don't have
-    # the luxury of a logfile for the pipeline manager.
-    out, err = capsys.readouterr()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-
-    # The stdout capture with capsys comes through as a single unicode block.
-    # With the move to logger, this test is no longer capturing the output
-    assert message_content in str(
-        out
-    ), "Missing timestamp message ('{}') in message(s)".format(message_content)
 
 
 class TimestampHaltingTests:

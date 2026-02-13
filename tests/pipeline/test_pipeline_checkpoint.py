@@ -12,9 +12,7 @@ __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
 
 
-def test_pipeline_checkpoint_respect_sensitivity_checkpoint_perspective(
-    pl_name, tmpdir
-):
+def test_pipeline_checkpoint_respect_sensitivity_checkpoint_perspective(pl_name, tmpdir):
     """Pipeline can skip past its stage(s) for which checkpoint exists."""
 
     # Create the pipeline.
@@ -27,9 +25,7 @@ def test_pipeline_checkpoint_respect_sensitivity_checkpoint_perspective(
     pipeline.run()
 
     # Verify that we created each of the checkpoints.
-    expected = [
-        checkpoint_filepath(f.__name__, pipeline.manager) for f in pipeline.functions
-    ]
+    expected = [checkpoint_filepath(f.__name__, pipeline.manager) for f in pipeline.functions]
     observed = fetch_checkpoint_files(pipeline.manager)
     assert set(expected) == set(observed)
 
@@ -59,10 +55,10 @@ def test_pipeline_checkpoint_respect_sensitivity_checkpoint_perspective(
     observed = fetch_checkpoint_files(pipeline.manager)
     exp = set(expected)
     obs = set(observed)
-    assert set(expected) == set(
-        observed
-    ), "Expected only:\n{}\nExpected and observed:\n{}\nObserved only:\n{}".format(
-        exp - obs, exp & obs, obs - exp
+    assert set(expected) == set(observed), (
+        "Expected only:\n{}\nExpected and observed:\n{}\nObserved only:\n{}".format(
+            exp - obs, exp & obs, obs - exp
+        )
     )
 
     # Verify the we didn't recreate the checkpoint file for each skipped stage.
@@ -73,10 +69,10 @@ def test_pipeline_checkpoint_respect_sensitivity_checkpoint_perspective(
 
     # Verify the we did in fact recreate the checkpoint file for the stage
     # that was rerun.
-    assert (
-        os.path.getmtime(last_aligner_checkfile) > timestamps[last_aligner_checkfile]
-    ), "Recreated checkpoint file ('{}') should be newer than original".format(
-        last_aligner_checkfile
+    assert os.path.getmtime(last_aligner_checkfile) > timestamps[last_aligner_checkfile], (
+        "Recreated checkpoint file ('{}') should be newer than original".format(
+            last_aligner_checkfile
+        )
     )
 
 
@@ -98,9 +94,7 @@ def test_pipeline_checkpoint_sensitivity_effect_perspective(pl_name, tmpdir):
     # Verify presence of checkpoint files to support our expectation about
     # which stages should be skipped and which should be run during the second
     # time through the pipeline's execution.
-    exp_cp_fpaths = set(
-        checkpoint_filepath(s.name, pipeline.manager) for s in pipeline.stages()
-    )
+    exp_cp_fpaths = set(checkpoint_filepath(s.name, pipeline.manager) for s in pipeline.stages())
     assert exp_cp_fpaths == set(fetch_checkpoint_files(pipeline.manager))
     final_stage = pipeline.stages()[-1]
     final_stage_fpath = checkpoint_filepath(final_stage.name, pipeline.manager)
@@ -123,9 +117,7 @@ def test_pipeline_reruns_downstream_stages_according_to_parameterization(
 
     # Create checkpoint file for each stage.
     stage_names = [s.name for s in pl.stages()]
-    assert 1 < len(
-        stage_names
-    ), "Need pipeline with at least two stages to run this test."
+    assert 1 < len(stage_names), "Need pipeline with at least two stages to run this test."
     for s_name in stage_names:
         open(checkpoint_filepath(s_name, pl.manager), "w").close()
 

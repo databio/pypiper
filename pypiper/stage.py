@@ -4,10 +4,6 @@ import copy
 
 from .utils import translate_stage_name
 
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
-
 __all__ = ["Stage"]
 
 
@@ -18,14 +14,7 @@ class Stage(object):
     """
 
     def __init__(
-        self,
-        func,
-        f_args=None,
-        f_kwargs=None,
-        name=None,
-        checkpoint=True,
-        *,
-        nofail=False
+        self, func, f_args=None, f_kwargs=None, name=None, checkpoint=True, *, nofail=False
     ):
         """A function, perhaps with arguments, defines the stage.
 
@@ -83,16 +72,13 @@ class Stage(object):
         return not (self == other)
 
     def __repr__(self):
-        return (
-            "{klass} '{n}': f={f}, args={pos}, kwargs={kwd}, "
-            "checkpoint={check}".format(
-                klass=self.__class__.__name__,
-                f=self.f,
-                n=self.name,
-                pos=self.f_args,
-                kwd=self.f_kwargs,
-                check=self.checkpoint,
-            )
+        return "{klass} '{n}': f={f}, args={pos}, kwargs={kwd}, checkpoint={check}".format(
+            klass=self.__class__.__name__,
+            f=self.f,
+            n=self.name,
+            pos=self.f_args,
+            kwd=self.f_kwargs,
+            check=self.checkpoint,
         )
 
     def __str__(self):

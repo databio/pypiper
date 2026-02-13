@@ -44,9 +44,7 @@ class NGSTk(AttMapEcho):
     def __init__(self, config_file=None, pm=None):
         # parse yaml into the project's attributes
         # self.add_entries(**config)
-        super(NGSTk, self).__init__(
-            None if config_file is None else load_yaml(config_file)
-        )
+        super(NGSTk, self).__init__(None if config_file is None else load_yaml(config_file))
 
         # Keep a link to the pipeline manager, if one is provided.
         # if None is provided, instantiate "tools" and "parameters" with empty AttMaps
@@ -66,11 +64,7 @@ class NGSTk(AttMapEcho):
             self.parameters = AttMapEcho()
 
         # If pigz is available, use that. Otherwise, default to gzip.
-        if (
-            hasattr(self.pm, "cores")
-            and self.pm.cores > 1
-            and self.check_command("pigz")
-        ):
+        if hasattr(self.pm, "cores") and self.pm.cores > 1 and self.check_command("pigz"):
             self.ziptool_cmd = "pigz -f -p {}".format(self.pm.cores)
         else:
             self.ziptool_cmd = "gzip -f"
@@ -131,9 +125,7 @@ class NGSTk(AttMapEcho):
         """
 
         # Use `command` to see if command is callable, store exit code
-        code = os.system(
-            "command -v {0} >/dev/null 2>&1 || {{ exit 1; }}".format(command)
-        )
+        code = os.system("command -v {0} >/dev/null 2>&1 || {{ exit 1; }}".format(command))
 
         # If exit code is not 0, report which command failed and return False, else return True
         if code != 0:
@@ -161,9 +153,7 @@ class NGSTk(AttMapEcho):
             4,
         )
 
-    def mark_duplicates(
-        self, aligned_file, out_file, metrics_file, remove_duplicates="True"
-    ):
+    def mark_duplicates(self, aligned_file, out_file, metrics_file, remove_duplicates="True"):
         cmd = self.tools.java
         if self.pm.javamem:  # If a memory restriction exists.
             cmd += " -Xmx" + self.pm.javamem
@@ -174,9 +164,7 @@ class NGSTk(AttMapEcho):
         cmd += " REMOVE_DUPLICATES=" + remove_duplicates
         return cmd
 
-    def bam2fastq(
-        self, input_bam, output_fastq, output_fastq2=None, unpaired_fastq=None
-    ):
+    def bam2fastq(self, input_bam, output_fastq, output_fastq2=None, unpaired_fastq=None):
         """
         Create command to convert BAM(s) to FASTQ(s).
 
@@ -267,14 +255,7 @@ class NGSTk(AttMapEcho):
         self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
         fq1 = out_fastq_pre + "_R1.fastq"
         fq2 = None
-        cmd = (
-            self.tools.bedtools
-            + " bamtofastq -i "
-            + bam_file
-            + " -fq "
-            + fq1
-            + ".fastq"
-        )
+        cmd = self.tools.bedtools + " bamtofastq -i " + bam_file + " -fq " + fq1 + ".fastq"
         if paired_end:
             fq2 = out_fastq_pre + "_R2.fastq"
             cmd += " -fq2 " + fq2
@@ -294,8 +275,9 @@ class NGSTk(AttMapEcho):
             input_ext = ".fastq"
         else:
             errmsg = (
-                "'{}'; this pipeline can only deal with .bam, .fastq, "
-                "or .fastq.gz files".format(input_file)
+                "'{}'; this pipeline can only deal with .bam, .fastq, or .fastq.gz files".format(
+                    input_file
+                )
             )
             raise UnsupportedFiletypeException(errmsg)
         return input_ext
@@ -406,8 +388,7 @@ class NGSTk(AttMapEcho):
                 # At this point, we don't recognize the input file types or they
                 # do not match.
                 raise NotImplementedError(
-                    "Input files must be of the same type, and can only "
-                    "merge bam or fastq."
+                    "Input files must be of the same type, and can only merge bam or fastq."
                 )
 
     def input_to_fastq(
@@ -495,9 +476,7 @@ class NGSTk(AttMapEcho):
                 print("Found .fastq.gz file")
                 if paired_end and not multiclass:
                     if zipmode:
-                        raise NotImplementedError(
-                            "Can't use zipmode on interleaved fastq data."
-                        )
+                        raise NotImplementedError("Can't use zipmode on interleaved fastq data.")
                     # For paired-end reads in one fastq file, we must split the
                     # file into 2. The pipeline author will need to include this
                     # python script in the scripts directory.
@@ -521,9 +500,7 @@ class NGSTk(AttMapEcho):
                     else:
                         # For single-end reads, we just unzip the fastq.gz file.
                         # or, paired-end reads that were already split.
-                        cmd = (
-                            self.ziptool + " -d -c " + input_file + " > " + output_file
-                        )
+                        cmd = self.ziptool + " -d -c " + input_file + " > " + output_file
                         # a non-shell version
                         # cmd1 = "gunzip --force " + input_file
                         # cmd2 = "mv " + os.path.splitext(input_file)[0] + " " + output_file
@@ -555,9 +532,7 @@ class NGSTk(AttMapEcho):
         # This is AFTER merge, so if there are multiple files it means the
         # files were split into read1/read2; therefore I must divide by number
         # of files for final reads.
-        def temp_func(
-            input_files=input_files, output_files=output_files, paired_end=paired_end
-        ):
+        def temp_func(input_files=input_files, output_files=output_files, paired_end=paired_end):
             if type(input_files) != list:
                 input_files = [input_files]
             if type(output_files) != list:
@@ -567,19 +542,13 @@ class NGSTk(AttMapEcho):
             n_output_files = len(list(filter(bool, output_files)))
 
             total_reads = sum(
-                [
-                    int(self.count_reads(input_file, paired_end))
-                    for input_file in input_files
-                ]
+                [int(self.count_reads(input_file, paired_end)) for input_file in input_files]
             )
             raw_reads = int(total_reads / n_input_files)
             self.pm.pipestat.report(values={"Raw_reads": str(raw_reads)})
 
             total_fastq_reads = sum(
-                [
-                    int(self.count_reads(output_file, paired_end))
-                    for output_file in output_files
-                ]
+                [int(self.count_reads(output_file, paired_end)) for output_file in output_files]
             )
             fastq_reads = int(total_fastq_reads / n_output_files)
 
@@ -594,17 +563,14 @@ class NGSTk(AttMapEcho):
                 self.pm.pipestat.report(values={"PF_reads": str(pf_reads)})
             if fastq_reads != int(raw_reads):
                 raise Exception(
-                    "Fastq conversion error? Number of input reads "
-                    "doesn't number of output reads."
+                    "Fastq conversion error? Number of input reads doesn't number of output reads."
                 )
 
             return fastq_reads
 
         return temp_func
 
-    def check_trim(
-        self, trimmed_fastq, paired_end, trimmed_fastq_R2=None, fastqc_folder=None
-    ):
+    def check_trim(self, trimmed_fastq, paired_end, trimmed_fastq_R2=None, fastqc_folder=None):
         """
         Build function to evaluate read trimming, and optionally run fastqc.
 
@@ -637,9 +603,7 @@ class NGSTk(AttMapEcho):
             except:
                 print("Can't calculate trim loss rate without raw read result.")
             else:
-                self.pm.report_result(
-                    "Trim_loss_rate", round((rr - n_trim) * 100 / rr, 2)
-                )
+                self.pm.report_result("Trim_loss_rate", round((rr - n_trim) * 100 / rr, 2))
 
             # Also run a fastqc (if installed/requested)
             if fastqc_folder:
@@ -1059,12 +1023,7 @@ class NGSTk(AttMapEcho):
             + sam_file.replace(".sam", "_sorted.bam")
             + "\n"
         )
-        cmd += (
-            self.tools.samtools
-            + " index "
-            + sam_file.replace(".sam", "_sorted.bam")
-            + "\n"
-        )
+        cmd += self.tools.samtools + " index " + sam_file.replace(".sam", "_sorted.bam") + "\n"
         if depth:
             cmd += (
                 self.tools.samtools
@@ -1099,12 +1058,7 @@ class NGSTk(AttMapEcho):
             + bam_file.replace(".bam", "_sorted.bam")
             + "\n"
         )
-        cmd += (
-            self.tools.samtools
-            + " index "
-            + bam_file.replace(".bam", "_sorted.bam")
-            + "\n"
-        )
+        cmd += self.tools.samtools + " index " + bam_file.replace(".bam", "_sorted.bam") + "\n"
         if depth:
             cmd += (
                 self.tools.samtools
@@ -1137,9 +1091,7 @@ class NGSTk(AttMapEcho):
             if not os.path.isabs(output_dir) and pm is not None:
                 output_dir = os.path.join(pm.outfolder, output_dir)
         self.make_sure_path_exists(output_dir)
-        return "{} --noextract --outdir {} {}".format(
-            self.tools.fastqc, output_dir, file
-        )
+        return "{} --noextract --outdir {} {}".format(self.tools.fastqc, output_dir, file)
 
     def fastqc_rename(self, input_bam, output_dir, sample_name):
         """
@@ -1237,23 +1189,17 @@ class NGSTk(AttMapEcho):
     def preseq_curve(self, bam_file, output_prefix):
         return """
         preseq c_curve -B -P -o {0}.yield.txt {1}
-        """.format(
-            output_prefix, bam_file
-        )
+        """.format(output_prefix, bam_file)
 
     def preseq_extrapolate(self, bam_file, output_prefix):
         return """
         preseq lc_extrap -v -B -P -e 1e+9 -o {0}.future_yield.txt {1}
-        """.format(
-            output_prefix, bam_file
-        )
+        """.format(output_prefix, bam_file)
 
     def preseq_coverage(self, bam_file, output_prefix):
         return """
         preseq gc_extrap -o {0}.future_coverage.txt {1}
-        """.format(
-            output_prefix, bam_file
-        )
+        """.format(output_prefix, bam_file)
 
     def trimmomatic(
         self,
@@ -1333,13 +1279,9 @@ class NGSTk(AttMapEcho):
             cmd2 = "mv {0} {1}".format(output_prefix + "-trimmed.fastq", output_fastq1)
             cmds.append(cmd2)
         else:
-            cmd2 = "mv {0} {1}".format(
-                output_prefix + "-trimmed-pair1.fastq", output_fastq1
-            )
+            cmd2 = "mv {0} {1}".format(output_prefix + "-trimmed-pair1.fastq", output_fastq1)
             cmds.append(cmd2)
-            cmd3 = "mv {0} {1}".format(
-                output_prefix + "-trimmed-pair2.fastq", output_fastq2
-            )
+            cmd3 = "mv {0} {1}".format(output_prefix + "-trimmed-pair2.fastq", output_fastq2)
             cmds.append(cmd3)
         cmd4 = "mv {0} {1}".format(output_prefix + "-trimmed.log", log)
         cmds.append(cmd4)
@@ -1357,9 +1299,7 @@ class NGSTk(AttMapEcho):
         input_fastq2=None,
     ):
         # Admits 2000bp-long fragments (--maxins option)
-        cmd = self.tools.bowtie2 + " --very-sensitive --no-discordant -p {0}".format(
-            cpus
-        )
+        cmd = self.tools.bowtie2 + " --very-sensitive --no-discordant -p {0}".format(cpus)
         cmd += " -x {0}".format(genome_index)
         cmd += " --met-file {0}".format(metrics)
         if input_fastq2 is None:
@@ -1368,9 +1308,7 @@ class NGSTk(AttMapEcho):
             cmd += " --maxins {0}".format(max_insert)
             cmd += " -1 {0}".format(input_fastq1)
             cmd += " -2 {0}".format(input_fastq2)
-        cmd += " 2> {0} | samtools view -S -b - | samtools sort -o {1} -".format(
-            log, output_bam
-        )
+        cmd += " 2> {0} | samtools view -S -b - | samtools sort -o {1} -".format(log, output_bam)
         return cmd
 
     def topHat_map(self, input_fastq, output_dir, genome, transcriptome, cpus):
@@ -1423,9 +1361,7 @@ class NGSTk(AttMapEcho):
         cmd3 = "rm {}".format(tmp_bam)
         return [cmd1, cmd2, cmd3]
 
-    def filter_reads(
-        self, input_bam, output_bam, metrics_file, paired=False, cpus=16, Q=30
-    ):
+    def filter_reads(self, input_bam, output_bam, metrics_file, paired=False, cpus=16, Q=30):
         """
         Remove duplicates, filter for >Q, remove multiple mapping reads.
         For paired-end reads, keep only proper pairs.
@@ -1442,13 +1378,11 @@ class NGSTk(AttMapEcho):
             cmd2 += ' -F "not (unmapped or mate_is_unmapped) and proper_pair'
         else:
             cmd2 += ' -F "not unmapped'
-        cmd2 += ' and not (secondary_alignment or supplementary) and mapping_quality >= {0}"'.format(
-            Q
+        cmd2 += (
+            ' and not (secondary_alignment or supplementary) and mapping_quality >= {0}"'.format(Q)
         )
         cmd2 += " {0} |".format(nodups)
-        cmd2 += self.tools.sambamba + " sort -t {0} /dev/stdin -o {1}".format(
-            cpus, output_bam
-        )
+        cmd2 += self.tools.sambamba + " sort -t {0} /dev/stdin -o {1}".format(cpus, output_bam)
         cmd3 = "if [[ -s {0} ]]; then rm {0}; fi".format(nodups)
         cmd4 = "if [[ -s {0} ]]; then rm {0}; fi".format(nodups + ".bai")
         return [cmd1, cmd2, cmd3, cmd4]
@@ -1743,13 +1677,9 @@ class NGSTk(AttMapEcho):
         cmds.append("chmod 755 {0}".format(output_bigwig))
         return cmds
 
-    def add_track_to_hub(
-        self, sample_name, track_url, track_hub, colour, five_prime=""
-    ):
-        cmd1 = (
-            """echo "track type=bigWig name='{0} {1}' description='{0} {1}'""".format(
-                sample_name, five_prime
-            )
+    def add_track_to_hub(self, sample_name, track_url, track_hub, colour, five_prime=""):
+        cmd1 = """echo "track type=bigWig name='{0} {1}' description='{0} {1}'""".format(
+            sample_name, five_prime
         )
         cmd1 += """ height=32 visibility=full maxHeightPixels=32:32:25 bigDataUrl={0} color={1}" >> {2}""".format(
             track_url, colour, track_hub
@@ -1769,19 +1699,15 @@ class NGSTk(AttMapEcho):
         html += """{db}={genome}&hgt.customText={track_hub_url}" />
             </head>
         </html>
-        """.format(
-            track_hub_url=track_hub_url, genome=genome, db=db
-        )
+        """.format(track_hub_url=track_hub_url, genome=genome, db=db)
         with open(file_name, "w") as handle:
             handle.write(textwrap.dedent(html))
 
     def htseq_count(self, input_bam, gtf, output):
         sam = input_bam.replace("bam", "sam")
         cmd1 = "samtools view {0} > {1}".format(input_bam, sam)
-        cmd2 = (
-            "htseq-count -f sam -t exon -i transcript_id -m union {0} {1} > {2}".format(
-                sam, gtf, output
-            )
+        cmd2 = "htseq-count -f sam -t exon -i transcript_id -m union {0} {1} > {2}".format(
+            sam, gtf, output
         )
         cmd3 = "rm {0}".format(sam)
         return [cmd1, cmd2, cmd3]
@@ -1808,9 +1734,7 @@ class NGSTk(AttMapEcho):
         else:
             cmd1 += " {0} {1}".format(input_fastq, input_fastq2)
         cmd1 += " | " + self.tools.samtools + " view -Sb - > {0}".format(output_bam)
-        cmd2 = self.tools.kallisto + " h5dump -o {0} {0}/abundance.h5".format(
-            output_dir
-        )
+        cmd2 = self.tools.kallisto + " h5dump -o {0} {0}/abundance.h5".format(output_dir)
         return [cmd1, cmd2]
 
     def genome_wide_coverage(self, input_bam, genome_windows, output):
@@ -1935,9 +1859,7 @@ class NGSTk(AttMapEcho):
                 cmd += " --qvalue {}".format(qvalue)
             else:
                 cmd += " --pvalue {}".format(pvalue or 0.00001)
-        cmd += " -g {0} -n {1} --outdir {2}".format(
-            sizes[genome], sample_name, output_dir
-        )
+        cmd += " -g {0} -n {1} --outdir {2}".format(sizes[genome], sample_name, output_dir)
 
         return cmd
 
@@ -2009,9 +1931,7 @@ class NGSTk(AttMapEcho):
         return cmd
 
     def bam_to_bed(self, input_bam, output_bed):
-        cmd = self.tools.bedtools + " bamtobed -i {0} > {1}".format(
-            input_bam, output_bed
-        )
+        cmd = self.tools.bedtools + " bamtobed -i {0} > {1}".format(input_bam, output_bed)
         return cmd
 
     def zinba_call_peaks(self, treatment_bed, control_bed, cpus, tagmented=False):
@@ -2043,20 +1963,18 @@ class NGSTk(AttMapEcho):
         cmd = "annotatePeaks.pl {0} {1} -mask -mscore -m {2} |".format(
             peak_file, genome, motif_file
         )
-        cmd += "tail -n +2 | cut -f 1,5,22 > {3}".format(output_bed)
+        cmd += "tail -n +2 | cut -f 1,5,22 > {3}"
         return cmd
 
-    def center_peaks_on_motifs(
-        self, peak_file, genome, window_width, motif_file, output_bed
-    ):
+    def center_peaks_on_motifs(self, peak_file, genome, window_width, motif_file, output_bed):
         cmd = "annotatePeaks.pl {0} {1} -size {2} -center {3} |".format(
             peak_file, genome, window_width, motif_file
         )
         cmd += " awk -v OFS='\t' '{print $2, $3, $4, $1, $6, $5}' |"
-        cmd += """ awk -v OFS='\t' -F '\t' '{ gsub("0", "+", $6) ; gsub("1", "-", $6) ; print }' |"""
-        cmd += " fix_bedfile_genome_boundaries.py {0} | sortBed > {1}".format(
-            genome, output_bed
+        cmd += (
+            """ awk -v OFS='\t' -F '\t' '{ gsub("0", "+", $6) ; gsub("1", "-", $6) ; print }' |"""
         )
+        cmd += " fix_bedfile_genome_boundaries.py {0} | sortBed > {1}".format(genome, output_bed)
         return cmd
 
     def get_read_type(self, bam_file, n=10):
@@ -2074,9 +1992,7 @@ class NGSTk(AttMapEcho):
         from collections.abc import Counter
 
         try:
-            p = subprocess.Popen(
-                [self.tools.samtools, "view", bam_file], stdout=subprocess.PIPE
-            )
+            p = subprocess.Popen([self.tools.samtools, "view", bam_file], stdout=subprocess.PIPE)
             # Count paired alignments
             paired = 0
             read_length = Counter()
@@ -2124,43 +2040,27 @@ class NGSTk(AttMapEcho):
             return stats
         # total reads
         try:
-            line = [
-                i for i in range(len(content)) if " reads; of these:" in content[i]
-            ][0]
+            line = [i for i in range(len(content)) if " reads; of these:" in content[i]][0]
             stats["readCount"] = re.sub(r"\D.*", "", content[line])
             if 7 > len(content) > 2:
                 line = [
-                    i
-                    for i in range(len(content))
-                    if "were unpaired; of these:" in content[i]
+                    i for i in range(len(content)) if "were unpaired; of these:" in content[i]
                 ][0]
-                stats["unpaired"] = re.sub(
-                    r"\D", "", re.sub(r"\(.*", "", content[line])
-                )
+                stats["unpaired"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
             else:
-                line = [
-                    i
-                    for i in range(len(content))
-                    if "were paired; of these:" in content[i]
-                ][0]
+                line = [i for i in range(len(content)) if "were paired; of these:" in content[i]][
+                    0
+                ]
                 stats["unpaired"] = stats["readCount"] - int(
                     re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
                 )
-            line = [i for i in range(len(content)) if "aligned 0 times" in content[i]][
-                0
-            ]
+            line = [i for i in range(len(content)) if "aligned 0 times" in content[i]][0]
             stats["unaligned"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
-            line = [
-                i for i in range(len(content)) if "aligned exactly 1 time" in content[i]
-            ][0]
+            line = [i for i in range(len(content)) if "aligned exactly 1 time" in content[i]][0]
             stats["unique"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
-            line = [i for i in range(len(content)) if "aligned >1 times" in content[i]][
-                0
-            ]
+            line = [i for i in range(len(content)) if "aligned >1 times" in content[i]][0]
             stats["multiple"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
-            line = [
-                i for i in range(len(content)) if "overall alignment rate" in content[i]
-            ][0]
+            line = [i for i in range(len(content)) if "overall alignment rate" in content[i]][0]
             stats["alignmentRate"] = re.sub(r"\%.*", "", content[line]).strip()
         except IndexError:
             pass
@@ -2182,30 +2082,16 @@ class NGSTk(AttMapEcho):
         except:
             return series
         try:
-            line = [
-                i
-                for i in range(len(content))
-                if "single ends (among them " in content[i]
-            ][0]
-            series["single-ends"] = re.sub(
-                r"\D", "", re.sub(r"\(.*", "", content[line])
-            )
-            line = [
-                i
-                for i in range(len(content))
-                if " end pairs...   done in " in content[i]
-            ][0]
-            series["paired-ends"] = re.sub(
-                r"\D", "", re.sub(r"\.\.\..*", "", content[line])
-            )
+            line = [i for i in range(len(content)) if "single ends (among them " in content[i]][0]
+            series["single-ends"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
+            line = [i for i in range(len(content)) if " end pairs...   done in " in content[i]][0]
+            series["paired-ends"] = re.sub(r"\D", "", re.sub(r"\.\.\..*", "", content[line]))
             line = [
                 i
                 for i in range(len(content))
                 if " duplicates, sorting the list...   done in " in content[i]
             ][0]
-            series["duplicates"] = re.sub(
-                r"\D", "", re.sub(r"\.\.\..*", "", content[line])
-            )
+            series["duplicates"] = re.sub(r"\D", "", re.sub(r"\.\.\..*", "", content[line]))
         except IndexError:
             pass
         return series
@@ -2223,9 +2109,7 @@ class NGSTk(AttMapEcho):
         series = pd.Series()
         try:
             with open(qc_file) as handle:
-                line = (
-                    handle.readlines()[0].strip().split("\t")
-                )  # list of strings per line
+                line = handle.readlines()[0].strip().split("\t")  # list of strings per line
             series["NSC"] = line[-3]
             series["RSC"] = line[-2]
             series["qualityTag"] = line[-1]

@@ -32,12 +32,10 @@ def test_logger_logfile_collision_with_manager_logfile_is_expected_error__issue_
     with pytest.raises(ValueError) as err_ctx:
         get_pipe_manager(
             name=pipe_name,
-            logger_kwargs={
-                "logfile": os.path.join(tmpdir.strpath, pipe_name + LOGFILE_SUFFIX)
-            },
+            logger_kwargs={"logfile": os.path.join(tmpdir.strpath, pipe_name + LOGFILE_SUFFIX)},
         )
     assert str(err_ctx.value).startswith(
-        f"The logfile given for the pipeline manager's logger matches that which will be used by the manager itself"
+        "The logfile given for the pipeline manager's logger matches that which will be used by the manager itself"
     )
 
 
@@ -75,9 +73,7 @@ class ManagerConstructorCheckpointSpecificationTests:
     @named_param("start_point", ["merge_input", "filter_reads"])
     @named_param("stop_point", ["align_reads", "calc_stats"])
     @named_param("stop_type", ["stop_before", "stop_after"])
-    def test_start_and_stop(
-        self, get_pipe_manager, spec_type, stop_type, start_point, stop_point
-    ):
+    def test_start_and_stop(self, get_pipe_manager, spec_type, stop_type, start_point, stop_point):
         """Specifying both start and stop works just fine."""
         spec_data = {"start_point": start_point, stop_type: stop_point}
         if spec_type == "cmdl":
@@ -151,9 +147,7 @@ class ManagerConstructorCheckpointSpecificationTests:
             ["start_point", "stop_after"],
         ],
     )
-    def test_command_line_beats_constructor_keyword(
-        self, get_pipe_manager, check_specs
-    ):
+    def test_command_line_beats_constructor_keyword(self, get_pipe_manager, check_specs):
         """Command-line specification is favored over constructor keyword."""
 
         # Declare values to use for respective specification modes.

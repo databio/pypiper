@@ -3,17 +3,12 @@
 import os
 import re
 import sys
-
 from collections.abc import Iterable, Mapping, Sequence
 from shlex import split
 from subprocess import PIPE
 
-if sys.version_info < (3,):
-    CHECK_TEXT_TYPES = (str, unicode)
-    from inspect import getargspec as get_fun_sig
-else:
-    CHECK_TEXT_TYPES = (str,)
-    from inspect import getfullargspec as get_fun_sig
+CHECK_TEXT_TYPES = (str,)
+from inspect import getfullargspec as get_fun_sig
 
 from ubiquerg import expandpath, is_command_callable
 
@@ -23,10 +18,6 @@ from .const import (
     STAGE_NAME_SPACE_REPLACEMENT,
 )
 from .flags import FLAGS
-
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
 
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
@@ -46,9 +37,7 @@ __all__ = [
 CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
 
 
-def add_pypiper_args(
-    parser, groups=("pypiper",), args=None, required=None, all_args=False
-):
+def add_pypiper_args(parser, groups=("pypiper",), args=None, required=None, all_args=False):
     """Use this to add standardized pypiper arguments to your python pipeline.
 
     There are two ways to use `add_pypiper_args`: by specifying argument groups,
@@ -68,9 +57,7 @@ def add_pypiper_args(
     Returns:
         A new ArgumentParser object, with selected pypiper arguments added.
     """
-    args_to_add = _determine_args(
-        argument_groups=groups, arguments=args, use_all_args=all_args
-    )
+    args_to_add = _determine_args(argument_groups=groups, arguments=args, use_all_args=all_args)
     parser = _add_args(parser, args_to_add, required)
     return parser
 
@@ -195,8 +182,9 @@ def checkpoint_filepath(checkpoint, pm):
                 return checkpoint
             else:
                 raise ValueError(
-                    "Absolute checkpoint path '{}' is not in pipeline output "
-                    "folder '{}'".format(checkpoint, pm.outfolder)
+                    "Absolute checkpoint path '{}' is not in pipeline output folder '{}'".format(
+                        checkpoint, pm.outfolder
+                    )
                 )
         _, ext = os.path.splitext(checkpoint)
         if ext == CHECKPOINT_EXTENSION:
@@ -251,9 +239,7 @@ def check_shell_asterisk(cmd):
 
 def check_all_commands(
     cmds,
-    get_bad_result=lambda bads: Exception(
-        "{} uncallable commands: {}".format(len(bads), bads)
-    ),
+    get_bad_result=lambda bads: Exception("{} uncallable commands: {}".format(len(bads), bads)),
     handle=None,
 ):
     """Determine whether all commands are callable.
@@ -290,9 +276,11 @@ def determine_uncallable(
     commands,
     transformations=(
         (
-            lambda f: isinstance(f, str)
-            and os.path.isfile(expandpath(f))
-            and expandpath(f).endswith(".jar"),
+            lambda f: (
+                isinstance(f, str)
+                and os.path.isfile(expandpath(f))
+                and expandpath(f).endswith(".jar")
+            ),
             lambda f: "java -jar {}".format(expandpath(f)),
         ),
     ),
@@ -321,24 +309,22 @@ def determine_uncallable(
     commands = [commands] if isinstance(commands, str) else commands
     if transformations:
         trans = (
-            transformations.values()
-            if isinstance(transformations, Mapping)
-            else transformations
+            transformations.values() if isinstance(transformations, Mapping) else transformations
         )
         if (
             not isinstance(transformations, Iterable)
             or isinstance(transformations, str)
             or not all(
                 map(
-                    lambda func_pair: isinstance(func_pair, tuple)
-                    and len(func_pair) == 2,
+                    lambda func_pair: isinstance(func_pair, tuple) and len(func_pair) == 2,
                     trans,
                 )
             )
         ):
             raise TypeError(
-                "Transformations argument should be a collection of pairs; got "
-                "{} ({})".format(transformations, type(transformations).__name__)
+                "Transformations argument should be a collection of pairs; got {} ({})".format(
+                    transformations, type(transformations).__name__
+                )
             )
         if accumulate:
 
@@ -451,7 +437,7 @@ def strip_braced_txt(cmd):
     curly_braces = True
     while curly_braces:
         SRE_match_obj = re.search(r"\{(.*?)}", cmd)
-        if not SRE_match_obj is None:
+        if SRE_match_obj is not None:
             cmd = cmd[: SRE_match_obj.start()] + cmd[(SRE_match_obj.end() + 1) :]
             if re.search(r"\{(.*?)}", cmd) is None:
                 curly_braces = False
@@ -743,9 +729,7 @@ def is_multi_target(target):
         return len(target) > 1
     else:
         raise TypeError(
-            "Could not interpret argument as a target: {} ({})".format(
-                target, type(target)
-            )
+            "Could not interpret argument as a target: {} ({})".format(target, type(target))
         )
 
 
@@ -763,9 +747,7 @@ def parse_cmd(cmd, shell):
     """
 
     def _make_dict(command):
-        a, s = (
-            (command, True) if check_shell(command, shell) else (split(command), False)
-        )
+        a, s = (command, True) if check_shell(command, shell) else (split(command), False)
         return dict(args=a, stdout=PIPE, shell=s)
 
     return (
@@ -843,9 +825,7 @@ def pipeline_filepath(pm, filename=None, suffix=None):
             as in that case there's no substance from which to create a filepath.
     """
     if filename is None and suffix is None:
-        raise TypeError(
-            "Provide filename and/or suffix to create path to a pipeline file."
-        )
+        raise TypeError("Provide filename and/or suffix to create path to a pipeline file.")
     filename = (filename or pm.name) + (suffix or "")
 
     # Note that Pipeline and PipelineManager define the same outfolder.
@@ -984,22 +964,6 @@ def default_pipeline_config(pipeline_filepath):
     return os.path.splitext(os.path.basename(pipeline_filepath))[0] + ".yaml"
 
 
-def default_pipestat_output_schema(pipeline_filepath):
-    """Determine the default filepath for a pipeline's pipestat output schema.
-
-    Args:
-        pipeline_filepath: Path to a pipeline.
-
-    Returns:
-        Default filepath for a pipeline's pipestat output schema.
-    """
-    pipestat_results_schema = os.path.join(
-        os.path.dirname(pipeline_filepath), "pipestat_output_schema.yaml"
-    )
-    print(f"Using default schema: {pipestat_results_schema}")
-    return pipestat_results_schema if os.path.exists(pipestat_results_schema) else None
-
-
 def _add_args(parser, args, required):
     """Add new arguments to an ArgumentParser.
 
@@ -1048,12 +1012,9 @@ def _add_args(parser, args, required):
         ),
         "start-point": {"help": "Name of pipeline stage at which to begin"},
         "stop-before": {
-            "help": "Name of pipeline stage at which to stop "
-            "(exclusive, i.e. not run)"
+            "help": "Name of pipeline stage at which to stop (exclusive, i.e. not run)"
         },
-        "stop-after": {
-            "help": "Name of pipeline stage at which to stop " "(inclusive, i.e. run)"
-        },
+        "stop-after": {"help": "Name of pipeline stage at which to stop (inclusive, i.e. run)"},
         "config": (
             "-C",
             {
@@ -1126,12 +1087,11 @@ def _add_args(parser, args, required):
         },
         "pipestat-record-id": {"help": "Record identifier to report for"},
         "pipestat-schema": {
-            "help": "Path to the output schema that formalizes the " "results structure"
+            "help": "Path to the output schema that formalizes the results structure"
         },
         "pipestat-config": {"help": "Path to the configuration file"},
         "pipestat-results-file": {
-            "help": "YAML file to report into, if file is used as "
-            "the object back-end"
+            "help": "YAML file to report into, if file is used as the object back-end"
         },
     }
 

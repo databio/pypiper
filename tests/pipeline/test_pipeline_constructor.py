@@ -2,7 +2,7 @@
 
 import pytest
 
-from pypiper import Pipeline, PipelineManager, Stage
+from pypiper import Pipeline, PipelineManager
 from tests.helpers import SafeTestPipeline, assert_equal_dirpath, named_param
 
 __author__ = "Vince Reuter"
@@ -129,9 +129,7 @@ def test_pipeline_requires_either_manager_or_outfolder():
         _MinimalPipeline()
 
 
-def test_empty_pipeline_manager_name_and_no_explicit_pipeline_name(
-    tmpdir, get_pipe_manager
-):
+def test_empty_pipeline_manager_name_and_no_explicit_pipeline_name(tmpdir, get_pipe_manager):
     """If no name's passed to pipeline, the manager must have valid name."""
     pm = get_pipe_manager(name="", outfolder=tmpdir.strpath)
     with pytest.raises(ValueError):
@@ -144,9 +142,7 @@ class AnonymousFunctionStageTests:
     def test_anonymous_stage_without_name_is_prohibited(self, tmpdir):
         """Anonymous function as Stage must be paired with name."""
         with pytest.raises(TypeError):
-            _AnonymousStageWithoutNamePipeline(
-                name="test-pipe", outfolder=tmpdir.strpath
-            )
+            _AnonymousStageWithoutNamePipeline(name="test-pipe", outfolder=tmpdir.strpath)
 
     def test_anonymous_stage_with_name_is_permitted(self, tmpdir):
         """Anonymous function as Stage must be paired with name."""

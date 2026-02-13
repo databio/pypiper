@@ -89,3 +89,7 @@ piper.egg-info/
 
 
 example_pipelines/pipeline_output
+
+# Test output folders
+tests/Data/pipeline_output/
+tests/Data/pipeline_output3/

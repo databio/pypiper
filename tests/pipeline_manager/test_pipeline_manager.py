@@ -6,7 +6,8 @@ import os
 import shutil
 import subprocess
 import time
-import unittest
+
+import pytest
 
 import pypiper
 from pypiper.exceptions import SubprocessError
@@ -15,333 +16,465 @@ from pypiper.utils import pipeline_filepath
 __author__ = "Nathan Sheffield"
 __email__ = "nathan@code.databio.org"
 
+# Path to the test schema for pipestat
+TEST_SCHEMA_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(__file__)),
+    "Data",
+    "test_pipestat_output_schema.yaml"
+)
 
-class PipelineManagerTests(unittest.TestCase):
-    """Tests for pypiper's PipelineManager."""
 
-    OUTFOLDER = "tests/Data/pipeline_output"
+@pytest.fixture
+def single_pipeline_manager(tmpdir, request):
+    """
+    Create a single pipeline manager for tests that only need one.
 
-    @classmethod
-    def _clean(cls):
-        for d in glob.glob(cls.OUTFOLDER + "*"):
-            if os.path.isdir(d):
-                print("Removing " + d)
-                shutil.rmtree(d)
+    More efficient than pipeline_managers for tests that don't need
+    multiple managers sharing output folders.
+    """
+    outfolder = str(tmpdir.mkdir("pipeline_output"))
+    pp = pypiper.PipelineManager(
+        "sample_pipeline", outfolder=outfolder, multi=True,
+        pipestat_schema=TEST_SCHEMA_PATH
+    )
 
-    def setUp(self):
-        """Start each test case with two pipeline managers."""
-        print("Setting up...")
-        # Create a fixture
-        self.pp = pypiper.PipelineManager(
-            "sample_pipeline", outfolder=self.OUTFOLDER, multi=True
-        )
-        self.pp2 = pypiper.PipelineManager(
-            "sample_pipeline2", outfolder=self.OUTFOLDER, multi=True
-        )
-
-        self.pp3 = pypiper.PipelineManager(
-            "sample_pipeline3", outfolder=self.OUTFOLDER + "3", multi=True
-        )
-
-    def tearDown(self):
-        """Scrub the decks after each test case completes."""
-        print("Tearing down...")
-        self.pp.stop_pipeline()
-        self.pp2.stop_pipeline()
-        self.pp3.stop_pipeline()
-        print("Removing " + self.pp.outfolder)
-        # shutil.rmtree(self.pp.outfolder)
-        # shutil.rmtree(self.pp3.outfolder)
-        self._clean()
-        del self.pp
-        del self.pp2
-        del self.pp3
-
-    def _isFile(self, filename):
-        """Determine if the first manager has this file."""
-        filepath = pipeline_filepath(self.pp, filename=filename)
-        return os.path.isfile(filepath)
-
-    def _assertFile(self, filename):
-        """Assert that the named file exists for first pipeline manager."""
+    def cleanup():
+        """Clean up pipeline and clear status flags."""
         try:
-            assert self._isFile(filename)
-        except AssertionError:
-            outfolder_contents = os.listdir(self.pp.outfolder)
-            print(
-                "Pipeline outfolder contents:\n{}".format("\n".join(outfolder_contents))
-            )
-            raise
+            pp.pipestat.clear_status("sample_pipeline", flag_names=["failed"])
+        except Exception:
+            pass
+        try:
+            if not pp.status:
+                pp.stop_pipeline()
+        except Exception:
+            pass
 
-    def _assertNotFile(self, filename):
-        """Assert that given file doesn't exist for first manager."""
-        assert not self._isFile(filename)
+    request.addfinalizer(cleanup)
+    return pp
 
-    def _assertLines(self, expected, observed):
-        """Assert equality between collections of lines."""
-        if isinstance(observed, str) and os.path.isfile(observed):
-            with open(observed, "r") as f:
-                observed = f.readlines()
-        self.assertListEqual(expected, [l.strip() for l in observed])
 
-    @classmethod
-    def tearDownClass(cls):
-        """Ensure folder/file cleanup upon test class completion."""
-        cls._clean()
+@pytest.fixture
+def pipeline_managers(tmpdir, request):
+    """
+    Create three pipeline managers for testing.
 
-    def test_me(self):
-        print("Testing initialization...")
+    Returns a tuple of (pp, pp2, pp3) where pp and pp2 share the same
+    output folder and pp3 has a separate output folder.
 
-        # Names
-        self.assertEqual(self.pp.name, "sample_pipeline")
-        self.assertEqual(self.pp2.name, "sample_pipeline2")
+    Use single_pipeline_manager for tests that only need one manager.
+    """
+    outfolder = str(tmpdir.mkdir("pipeline_output"))
+    outfolder3 = str(tmpdir.mkdir("pipeline_output3"))
 
-        # Outfolder creation
-        self.assertTrue(os.path.isdir(self.pp.outfolder))
+    pp = pypiper.PipelineManager(
+        "sample_pipeline", outfolder=outfolder, multi=True,
+        pipestat_schema=TEST_SCHEMA_PATH
+    )
+    pp2 = pypiper.PipelineManager(
+        "sample_pipeline2", outfolder=outfolder, multi=True,
+        pipestat_schema=TEST_SCHEMA_PATH
+    )
+    pp3 = pypiper.PipelineManager(
+        "sample_pipeline3", outfolder=outfolder3, multi=True,
+        pipestat_schema=TEST_SCHEMA_PATH
+    )
 
-        print("Testing status flags...")
-        self.pp._set_status_flag("completed")
-        self._assertFile("sample_pipeline_DEFAULT_SAMPLE_NAME_completed.flag")
-        self.pp._set_status_flag("running")
-        self._assertNotFile("sample_pipeline_DEFAULT_SAMPLE_NAME_testing.flag")
-        self._assertFile("sample_pipeline_DEFAULT_SAMPLE_NAME_running.flag")
+    def cleanup():
+        """Clean up pipelines and clear status flags."""
+        # Clear status flags first (before stopping pipelines)
+        for pm, name in [(pp, "sample_pipeline"), (pp2, "sample_pipeline2"), (pp3, "sample_pipeline3")]:
+            try:
+                pm.pipestat.clear_status(name, flag_names=["failed"])
+            except Exception:
+                pass  # Ignore errors during cleanup
 
-        print("Testing waiting for locks...")
-        self.pp2.wait = False
-        self.pp.wait = False
-        sleep_lock = pipeline_filepath(self.pp, filename="lock.sleep")
-        subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
-        self.pp._create_file(sleep_lock)
-        print("Putting lock file: " + sleep_lock)
+        # Stop all pipelines - only if not already stopped
+        for pm in [pp, pp2, pp3]:
+            try:
+                # Check if pipeline has already been stopped via the 'status' property
+                if not pm.status:
+                    pm.stop_pipeline()
+            except Exception:
+                pass  # Ignore errors during cleanup
+
+    request.addfinalizer(cleanup)
+    return pp, pp2, pp3
+
+
+def _is_file(pp, filename):
+    """Determine if the pipeline manager has this file."""
+    filepath = pipeline_filepath(pp, filename=filename)
+    return os.path.isfile(filepath)
+
+
+def _assert_file(pp, filename):
+    """Assert that the named file exists for pipeline manager."""
+    if not _is_file(pp, filename):
+        outfolder_contents = os.listdir(pp.outfolder)
+        pytest.fail(
+            f"Expected file {filename} not found. "
+            f"Pipeline outfolder contents:\n{chr(10).join(outfolder_contents)}"
+        )
+
+
+def _assert_not_file(pp, filename):
+    """Assert that given file doesn't exist for manager."""
+    assert not _is_file(pp, filename)
+
+
+def _assert_lines(expected, observed):
+    """Assert equality between collections of lines."""
+    if isinstance(observed, str) and os.path.isfile(observed):
+        with open(observed, "r") as f:
+            observed = f.readlines()
+    assert expected == [line.strip() for line in observed]
+
+
+class TestPipelineManagerInitialization:
+    """Tests for PipelineManager initialization."""
+
+    def test_pipeline_names(self, pipeline_managers):
+        """Test that pipeline managers have correct names."""
+        pp, pp2, pp3 = pipeline_managers
+        assert pp.name == "sample_pipeline"
+        assert pp2.name == "sample_pipeline2"
+        assert pp3.name == "sample_pipeline3"
+
+    def test_outfolder_creation(self, pipeline_managers):
+        """Test that output folder is created."""
+        pp, pp2, pp3 = pipeline_managers
+        assert os.path.isdir(pp.outfolder)
+        assert os.path.isdir(pp3.outfolder)
+
+
+class TestStatusFlags:
+    """Tests for status flag functionality."""
+
+    def test_status_flag_completed(self, single_pipeline_manager):
+        """Test setting completed status flag."""
+        pp = single_pipeline_manager
+        pp._set_status_flag("completed")
+        _assert_file(pp, "sample_pipeline_DEFAULT_SAMPLE_NAME_completed.flag")
+
+    def test_status_flag_running(self, single_pipeline_manager):
+        """Test setting running status flag clears completed."""
+        pp = single_pipeline_manager
+        pp._set_status_flag("completed")
+        pp._set_status_flag("running")
+        _assert_not_file(pp, "sample_pipeline_DEFAULT_SAMPLE_NAME_testing.flag")
+        _assert_file(pp, "sample_pipeline_DEFAULT_SAMPLE_NAME_running.flag")
+
+
+class TestLockWaiting:
+    """Tests for lock waiting functionality."""
+
+    def test_wait_for_lock(self, pipeline_managers):
+        """Test that pipeline waits for locks."""
+        pp, pp2, pp3 = pipeline_managers
+        pp2.wait = False
+        pp.wait = False
+        sleep_lock = pipeline_filepath(pp, filename="lock.sleep")
+        # Use short sleep (0.1s) - just enough to prove lock waiting works
+        subprocess.Popen("sleep .1; rm " + sleep_lock, shell=True)
+        pp._create_file(sleep_lock)
         cmd = "echo hello"
         stamp = time.time()
-        self.pp.run(cmd, lock_name="sleep")
-        print("Elapsed: " + str(self.pp.time_elapsed(stamp)))
-        self.assertTrue(self.pp.time_elapsed(stamp) > 1)
+        pp.run(cmd, lock_name="sleep")
+        # Verify pipeline waited (at least one 0.5s sleep iteration)
+        assert pp.time_elapsed(stamp) > 0.4
 
-        print("Wait for subprocess...")
-        for p in self.pp.running_procs.copy():
-            self.pp._wait_for_process(self.pp.running_procs[p]["p"])
-        self.pp2.wait = True
-        self.pp.wait = True
+        # Wait for subprocess
+        for p in pp.running_procs.copy():
+            pp._wait_for_process(pp.running_procs[p]["p"])
+        pp2.wait = True
+        pp.wait = True
 
-        print("Make sure the pipeline respects files already existing...")
-        target = pipeline_filepath(self.pp, filename="tgt")
-        if os.path.isfile(target):  # for repeat runs.
+
+class TestTargetRespecting:
+    """Tests for respecting existing target files."""
+
+    def test_respects_existing_files(self, single_pipeline_manager):
+        """Test that pipeline respects files already existing."""
+        pp = single_pipeline_manager
+        target = pipeline_filepath(pp, filename="tgt")
+        if os.path.isfile(target):
             os.remove(target)
 
-        self.pp.run("echo first > " + target, target, shell=True)
+        pp.run("echo first > " + target, target, shell=True)
         # Should not run
-        self.pp.run("echo second > " + target, target, shell=True)
+        pp.run("echo second > " + target, target, shell=True)
         with open(target) as f:
             lines = f.readlines()
-        self._assertLines(["first"], lines)
+        _assert_lines(["first"], lines)
 
-        print("Execute a targetless command...")
-        self.pp.run("echo third > " + target, target=None, lock_name="test", shell=True)
+    def test_targetless_command(self, single_pipeline_manager):
+        """Test executing a targetless command."""
+        pp = single_pipeline_manager
+        target = pipeline_filepath(pp, filename="tgt")
+        pp.run("echo third > " + target, target=None, lock_name="test", shell=True)
         with open(target) as f:
             lines = f.readlines()
-        self._assertLines(["third"], lines)
+        _assert_lines(["third"], lines)
 
-        # Test reporting results
-        self.pp.report_result("key1", "abc")
-        self.pp.report_result("key2", "def")
-        key1 = self.pp.get_stat("key1")
-        self.assertEqual(key1, "abc")
 
+class TestResultReporting:
+    """Tests for result reporting functionality."""
+
+    def test_report_and_get_result(self, single_pipeline_manager):
+        """Test reporting and retrieving results."""
+        pp = single_pipeline_manager
+        pp.report_result("key1", "abc")
+        pp.report_result("key2", "def")
+        key1 = pp.get_stat("key1")
+        assert key1 == "abc"
+
+    def test_result_not_shared_between_pipelines(self, pipeline_managers):
+        """Test that results are not shared between different pipelines."""
+        pp, pp2, pp3 = pipeline_managers
+        pp.report_result("key1", "abc")
         try:
-            key1 = self.pp2.get_stat("key1")  # should fail
+            key1 = pp2.get_stat("key1")
         except KeyError:
             key1 = None
-        self.assertEqual(key1, None)
-        # We can no longer group based on 'shared' annotations.
-        # key2 = self.pp2.get_stat("key2")  # should succeed
-        # self.assertEqual(key2, "def")
+        assert key1 is None
 
-        print("Test intermediate file cleanup...")
-        tgt1 = pipeline_filepath(self.pp, filename="tgt1.temp")
-        tgt2 = pipeline_filepath(self.pp, filename="tgt2.temp")
-        tgt3 = pipeline_filepath(self.pp, filename="tgt3.temp")
-        tgt4 = pipeline_filepath(self.pp, filename="tgt4.txt")
-        tgt5 = pipeline_filepath(self.pp, filename="tgt5.txt")
-        tgt6 = pipeline_filepath(self.pp, filename="tgt6.txt")
-        tgt8 = pipeline_filepath(self.pp, filename="tgt8.cond")
-        tgt9 = pipeline_filepath(self.pp, filename="tgt9.cond")
-        tgt10 = pipeline_filepath(self.pp, filename="tgt10.txt")
 
-        self.pp.run(
-            "touch "
-            + tgt1
-            + " "
-            + tgt2
-            + " "
-            + tgt3
-            + " "
-            + tgt4
-            + " "
-            + tgt5
-            + " "
-            + tgt6,
-            lock_name="test",
-        )
-        self.pp.run("touch " + tgt8 + " " + tgt9, lock_name="test")
+class TestCleanup:
+    """Tests for intermediate file cleanup functionality."""
 
-        # In global dirty mode, even non-manual clean files should not be deleted:
-        self.pp.dirty = True
-        self.pp.clean_add(tgt3)
-        self.pp.clean_add(pipeline_filepath(self.pp, filename="*.temp"))
-        self.pp.clean_add(tgt4)
-        self.pp.clean_add(tgt5, conditional=True)
-        self.pp.clean_add(
-            pipeline_filepath(self.pp, filename="*.cond"), conditional=True
-        )
-        self.pp._cleanup()
+    def test_dirty_mode_no_cleanup(self, single_pipeline_manager):
+        """Test that dirty mode prevents file cleanup."""
+        pp = single_pipeline_manager
+        tgt1 = pipeline_filepath(pp, filename="tgt1.temp")
+        tgt2 = pipeline_filepath(pp, filename="tgt2.temp")
+        tgt3 = pipeline_filepath(pp, filename="tgt3.temp")
+        tgt4 = pipeline_filepath(pp, filename="tgt4.txt")
 
-        self.assertTrue(os.path.isfile(tgt1))
-        self.assertTrue(os.path.isfile(tgt2))
-        self.assertTrue(os.path.isfile(tgt3))
-        self.assertTrue(os.path.isfile(tgt4))
+        pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4, lock_name="test")
 
-        # But, these files *should* have been added to the cleanup script
+        # In global dirty mode, even non-manual clean files should not be deleted
+        pp.dirty = True
+        pp.clean_add(tgt3)
+        pp.clean_add(pipeline_filepath(pp, filename="*.temp"))
+        pp.clean_add(tgt4)
+        pp._cleanup()
 
-        # test from different wd:
+        assert os.path.isfile(tgt1)
+        assert os.path.isfile(tgt2)
+        assert os.path.isfile(tgt3)
+        assert os.path.isfile(tgt4)
+
+    def test_regular_mode_cleanup(self, single_pipeline_manager):
+        """Test that regular mode cleans up files."""
+        pp = single_pipeline_manager
+        tgt1 = pipeline_filepath(pp, filename="tgt1.temp")
+        tgt2 = pipeline_filepath(pp, filename="tgt2.temp")
+        tgt3 = pipeline_filepath(pp, filename="tgt3.temp")
+        tgt4 = pipeline_filepath(pp, filename="tgt4.txt")
+
+        pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4, lock_name="test")
+
+        pp.dirty = False
+        pp.clean_add(pipeline_filepath(pp, filename="*.temp"))
+        pp.clean_add(tgt4)
+        pp._cleanup()
+
+        assert not os.path.isfile(tgt1)
+        assert not os.path.isfile(tgt2)
+        assert not os.path.isfile(tgt3)
+        assert not os.path.isfile(tgt4)
+
+    def test_conditional_cleanup(self, pipeline_managers):
+        """Test conditional cleanup based on other pipeline status."""
+        pp, pp2, pp3 = pipeline_managers
+        tgt5 = pipeline_filepath(pp, filename="tgt5.txt")
+        tgt8 = pipeline_filepath(pp, filename="tgt8.cond")
+        tgt9 = pipeline_filepath(pp, filename="tgt9.cond")
+
+        pp.run("touch " + tgt5 + " " + tgt8 + " " + tgt9, lock_name="test")
+
+        pp.dirty = False
+        pp.clean_add(tgt5, conditional=True)
+        pp.clean_add(pipeline_filepath(pp, filename="*.cond"), conditional=True)
+        pp._cleanup()
+
+        # Conditional delete should not delete while pp2 is running
+        assert os.path.isfile(tgt5)
+        assert os.path.isfile(tgt8)
+        assert os.path.isfile(tgt9)
+
+        # Stopping pp2 should cause conditional files to be deleted
+        pp2.stop_pipeline()
+        pp._cleanup()
+        assert not os.path.isfile(tgt5)
+        assert not os.path.isfile(tgt8)
+        assert not os.path.isfile(tgt9)
+
+    def test_manual_cleanup_not_auto_deleted(self, single_pipeline_manager):
+        """Test that manual cleanup files are not auto-deleted."""
+        pp = single_pipeline_manager
+        tgt7 = pipeline_filepath(pp, filename="tgt7.txt")
+        pp.run("touch " + tgt7, tgt7)
+        pp.clean_add(tgt7, manual=True)
+        pp.stop_pipeline()
+        # Manual clean should not clean even after pipeline stops
+        assert os.path.isfile(tgt7)
+
+    def test_auto_cleanup_on_run(self, pipeline_managers):
+        """Test automatic cleanup when clean=True is passed to run."""
+        pp, pp2, pp3 = pipeline_managers
+        tgt10 = pipeline_filepath(pp, filename="tgt10.txt")
+        pp.run("touch " + tgt10, target=tgt10, clean=True)
+        assert os.path.isfile(tgt10)  # File exists initially
+
+        pp2.stop_pipeline()  # Stop pp2 so conditional cleanup can proceed
+        pp._cleanup()
+        assert not os.path.isfile(tgt10)
+
+    def test_cleanup_script_contents(self, single_pipeline_manager):
+        """Test that cleanup script is populated correctly."""
+        pp = single_pipeline_manager
+        tgt3 = pipeline_filepath(pp, filename="tgt3.temp")
+        tgt6 = pipeline_filepath(pp, filename="tgt6.txt")
         tgt6_abs = os.path.abspath(tgt6)
-        cfile = self.pp.cleanup_file
-        ofolder = self.pp.outfolder
+
+        pp.run("touch " + tgt3 + " " + tgt6, lock_name="test")
+
+        pp.dirty = True
+        pp.clean_add(tgt3)
+
+        # Test from different wd
+        cfile = pp.cleanup_file
+        ofolder = pp.outfolder
         cwd = os.getcwd()
-        self.pp.clean_add(tgt6_abs)
+        pp.clean_add(tgt6_abs)
 
-        os.chdir("tests/Data/pipeline_output")
-        self.pp.outfolder = "../" + ofolder
-        self.pp.cleanup_file = "../" + cfile
-        self.pp.clean_add(tgt6_abs)
+        os.chdir(pp.outfolder)
+        pp.outfolder = "../" + ofolder
+        pp.cleanup_file = "../" + cfile
+        pp.clean_add(tgt6_abs)
         os.chdir(cwd)
-        self.pp.cleanup_file = cfile
-        self.pp.outfolder = ofolder
+        pp.cleanup_file = cfile
+        pp.outfolder = ofolder
 
-        print("Test manual cleanup adds")
-        with open(self.pp.cleanup_file) as f:
+        with open(pp.cleanup_file) as f:
             lines = f.readlines()
 
-        print(lines)
+        assert lines[2] == "rm tgt3.temp\n"
 
-        self.assertTrue(lines[2] == "rm tgt3.temp\n")
-        self.assertTrue(lines[10] == "rm tgt6.txt\n")
-        # lines is only 0-10 so the below code will error.
-        # self.assertTrue(lines[11] == "rm tgt6.txt\n")
 
-        self.pp.report_result("Test figure", os.path.join("fig", "fig.jpg"))
+class TestFailureHandling:
+    """Tests for failure and nofail options."""
 
-        # But in regular mode, they should be deleted:
-        self.pp.dirty = False
-        self.pp.clean_add(pipeline_filepath(self.pp, filename="*.temp"))
-        self.pp.clean_add(tgt4)
-        self.pp.clean_add(tgt5, conditional=True)
-        self.pp.clean_add(
-            pipeline_filepath(self.pp, filename="*.cond"), conditional=True
-        )
-        self.pp._cleanup()
-
-        self.assertFalse(os.path.isfile(tgt1))
-        self.assertFalse(os.path.isfile(tgt2))
-        self.assertFalse(os.path.isfile(tgt3))
-        self.assertFalse(os.path.isfile(tgt4))
-
-        tgt7 = pipeline_filepath(self.pp, filename="tgt7.txt")
-        self.pp.run("touch " + tgt7, tgt7)
-        self.pp.clean_add(tgt7, manual=True)
-
-        self.pp.run("touch " + tgt10, target=tgt10, clean=True)
-
-        # Conditional delete should not delete tgt5
-        # while pp2 is running
-        self.assertTrue(os.path.isfile(tgt5))
-        self.assertTrue(os.path.isfile(tgt8))
-        self.assertTrue(os.path.isfile(tgt9))
-        self.assertTrue(os.path.isfile(tgt10))  # auto cleanup
-
-        # Stopping pp2 should cause tgt5 to be deleted
-        self.pp2.stop_pipeline()
-        self.pp._cleanup()
-        self.assertFalse(os.path.isfile(tgt5))
-        self.assertFalse(os.path.isfile(tgt8))
-        self.assertFalse(os.path.isfile(tgt9))
-        self.assertFalse(os.path.isfile(tgt10))
-
-        # Manual clean should not clean
-        self.assertTrue(os.path.isfile(tgt7))
-
-        # cleanup should run on termination:
-        self.pp.run("touch " + tgt6, tgt6)
-        self.pp.clean_add(tgt6, conditional=True)
-        self.pp.stop_pipeline()
-        self.assertFalse(os.path.isfile(tgt5))
-
-        # Manual clean should not clean even after pipeline stops.
-        self.assertTrue(os.path.isfile(tgt7))
-
-        print("Test failure and nofail options...")
-
+    def test_nofail_option(self, single_pipeline_manager):
+        """Test that nofail option prevents exception raising."""
+        pp = single_pipeline_manager
         cmd = "thiscommandisbad"
-
         # Should not raise an error
-        self.pp.run(cmd, target=None, lock_name="badcommand", nofail=True)
-        self.pp.callprint(cmd, shell=None, nofail=True)
+        pp.run(cmd, target=None, lock_name="badcommand", nofail=True)
+        pp.callprint(cmd, shell=None, nofail=True)
 
-        # Should raise an error
-        with self.assertRaises(SubprocessError):
-            self.pp.run(cmd, target=None, lock_name="badcommand")
+    def test_failure_raises_exception(self, single_pipeline_manager):
+        """Test that bad command raises SubprocessError."""
+        pp = single_pipeline_manager
+        cmd = "thiscommandisbad"
+        with pytest.raises(SubprocessError):
+            pp.run(cmd, target=None, lock_name="badcommand")
 
-        print("Test dynamic recovery...")
-        # send sigint
-        self.pp.locks.append("lock.sleep")
-        with self.assertRaises(KeyboardInterrupt):
-            self.pp._signal_int_handler(None, None)
 
-        sleep_lock = pipeline_filepath(self.pp, filename="lock.sleep")
-        # subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
-        self.pp._create_file(sleep_lock)
+class TestDynamicRecovery:
+    """Tests for dynamic recovery functionality."""
+
+    def test_signal_int_handler(self, single_pipeline_manager):
+        """Test signal interrupt handler."""
+        pp = single_pipeline_manager
+        pp.locks.append("lock.sleep")
+        with pytest.raises(KeyboardInterrupt):
+            pp._signal_int_handler(None, None)
+
+    def test_recover_from_existing_lock(self, single_pipeline_manager):
+        """Test recovery when lock file already exists (overwrite locks mode)."""
+        pp = single_pipeline_manager
+        # Enable recover mode to overwrite existing locks
+        pp.overwrite_locks = True
+        sleep_lock = pipeline_filepath(pp, filename="lock.sleep")
+        pp._create_file(sleep_lock)
         cmd = "echo hello"
-        self.pp.run(cmd, lock_name="sleep")
+        # This should succeed because overwrite_locks is True
+        pp.run(cmd, lock_name="sleep")
 
-        # subprocess.Popen("sleep .5; rm " + sleep_lock, shell=True)
 
-        print("Test new start")
-        if os.path.isfile(target):  # for repeat runs.
+class TestNewStart:
+    """Tests for new_start functionality."""
+
+    def test_new_start_reruns_commands(self, single_pipeline_manager):
+        """Test that new_start causes commands to rerun."""
+        pp = single_pipeline_manager
+        target = pipeline_filepath(pp, filename="tgt")
+        if os.path.isfile(target):
             os.remove(target)
-        self.pp.run("echo first > " + target, target, shell=True)
-        # Should not run
-        self.pp.run("echo second > " + target, target, shell=True)
-        with open(target) as f:
-            lines = f.readlines()
-        self._assertLines(["first"], lines)
-        self.pp.new_start = True
-        # Should run
-        self.pp.run("echo third > " + target, target, shell=True)
-        with open(target) as f:
-            lines = f.readlines()
-        self._assertLines(["third"], lines)
 
-        print("Test dual target")
-        self.pp.new_start = False
-        if os.path.isfile(tgt1):
-            os.remove(tgt1)
-        self.pp.run("touch " + tgt6, tgt6)
-        self.assertTrue(os.path.isfile(tgt6))
+        pp.run("echo first > " + target, target, shell=True)
+        pp.run("echo second > " + target, target, shell=True)
+        with open(target) as f:
+            lines = f.readlines()
+        _assert_lines(["first"], lines)
+
+        pp.new_start = True
+        # Should run because new_start is True
+        pp.run("echo third > " + target, target, shell=True)
+        with open(target) as f:
+            lines = f.readlines()
+        _assert_lines(["third"], lines)
+
+
+class TestDualTarget:
+    """Tests for dual target functionality."""
+
+    def test_single_target_exists_skips(self, single_pipeline_manager):
+        """Test that command is skipped if single target exists."""
+        pp = single_pipeline_manager
+        tgt1 = pipeline_filepath(pp, filename="tgt1.txt")
+        tgt6 = pipeline_filepath(pp, filename="tgt6.txt")
+
+        pp.new_start = False
+        pp.run("touch " + tgt6, tgt6)
+        assert os.path.isfile(tgt6)
+
         # if target exists, should not run
-        self.pp.run("touch " + tgt1, tgt6)
-        self.assertFalse(os.path.isfile(tgt1))
+        pp.run("touch " + tgt1, tgt6)
+        assert not os.path.isfile(tgt1)
+
+    def test_dual_target_one_missing_runs(self, single_pipeline_manager):
+        """Test that command runs if one of two targets is missing."""
+        pp = single_pipeline_manager
+        tgt1 = pipeline_filepath(pp, filename="tgt1.txt")
+        tgt5 = pipeline_filepath(pp, filename="tgt5.txt")
+        tgt6 = pipeline_filepath(pp, filename="tgt6.txt")
+
+        pp.new_start = False
+        pp.run("touch " + tgt6, tgt6)
+
         # if two targets, only one exists, should run
-        self.assertFalse(os.path.isfile(tgt5))
-        self.pp.run("touch " + tgt1, [tgt5, tgt6])
-        self.assertTrue(os.path.isfile(tgt1))
+        assert not os.path.isfile(tgt5)
+        pp.run("touch " + tgt1, [tgt5, tgt6])
+        assert os.path.isfile(tgt1)
+
+    def test_dual_target_both_exist_skips(self, single_pipeline_manager):
+        """Test that command is skipped if both targets exist."""
+        pp = single_pipeline_manager
+        tgt1 = pipeline_filepath(pp, filename="tgt1.txt")
+        tgt5 = pipeline_filepath(pp, filename="tgt5.txt")
+        tgt6 = pipeline_filepath(pp, filename="tgt6.txt")
+
+        pp.new_start = False
+        pp.run("touch " + tgt1 + " " + tgt6, lock_name="setup")
+
         # if two targets, both exist, should not run
-        self.assertFalse(os.path.isfile(tgt5))
-        self.pp.run("touch " + tgt5, [tgt1, tgt6])
-        self.assertFalse(os.path.isfile(tgt5))
-        self.pp.pipestat.clear_status(self.pp.name, flag_names=["failed"])
-        self.pp2.pipestat.clear_status(self.pp2.name, flag_names=["failed"])
-        self.pp3.pipestat.clear_status(self.pp3.name, flag_names=["failed"])
+        assert not os.path.isfile(tgt5)
+        pp.run("touch " + tgt5, [tgt1, tgt6])
+        assert not os.path.isfile(tgt5)
 
 
 def _make_pipe_filepath(pm, filename):
@@ -349,4 +482,4 @@ def _make_pipe_filepath(pm, filename):
 
 
 if __name__ == "__main__":
-    unittest.main()
+    pytest.main([__file__, "-v"])

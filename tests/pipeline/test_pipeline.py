@@ -118,9 +118,7 @@ class RunPipelineCornerCaseTests:
     @named_param(argnames="point", argvalues=BASIC_ACTIONS)
     @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
     @named_param(argnames="inclusive", argvalues=[False, True])
-    def test_start_point_equals_stop(
-        self, dummy_pipe, point, spec_type, stage, inclusive
-    ):
+    def test_start_point_equals_stop(self, dummy_pipe, point, spec_type, stage, inclusive):
         """Start=stop is only permitted if stop should be run."""
 
         _assert_pipeline_initialization(dummy_pipe)
@@ -144,12 +142,8 @@ class RunPipelineCornerCaseTests:
         ],
     )
     @pytest.mark.parametrize(argnames="spec_type", argvalues=STAGE_SPECS)
-    @pytest.mark.parametrize(
-        argnames="stop_type", argvalues=["stop_before", "stop_after"]
-    )
-    def test_start_point_after_stop(
-        self, dummy_pipe, start_point, stop, stop_type, spec_type
-    ):
+    @pytest.mark.parametrize(argnames="stop_type", argvalues=["stop_before", "stop_after"])
+    def test_start_point_after_stop(self, dummy_pipe, start_point, stop, stop_type, spec_type):
         """Regardless of specification type, start > stop is prohibited."""
         start_point = _parse_stage(start_point, spec_type)
         stop = _parse_stage(stop, spec_type)
@@ -160,9 +154,7 @@ class RunPipelineCornerCaseTests:
         argnames="undefined_stage",
         argvalues=["unsupported-pipeline-stage", "unknown_phase"],
     )
-    @named_param(
-        argnames="stage_point", argvalues=["start_point", "stop_before", "stop_after"]
-    )
+    @named_param(argnames="stage_point", argvalues=["start_point", "stop_before", "stop_after"])
     def test_unknown_stage(self, dummy_pipe, undefined_stage, stage_point):
         """Start specification must be of known stage name."""
         with pytest.raises(UnknownPipelineStageError):
@@ -171,9 +163,7 @@ class RunPipelineCornerCaseTests:
     @named_param(argnames="stop_before", argvalues=BASIC_ACTIONS)
     @named_param(argnames="stop_after", argvalues=BASIC_ACTIONS)
     @named_param(argnames="spec_type", argvalues=STAGE_SPECS)
-    def test_stop_before_and_stop_after(
-        self, dummy_pipe, stop_before, stop_after, spec_type
-    ):
+    def test_stop_before_and_stop_after(self, dummy_pipe, stop_before, stop_after, spec_type):
         """Inclusive and exclusive stop cannot both be provided."""
         inclusive_stop = _parse_stage(stop_after, spec_type)
         exclusive_stop = _parse_stage(stop_before, spec_type)
@@ -222,11 +212,7 @@ class MostBasicPipelineTests:
                 try:
                     assert os.path.isfile(chkpt_fpath)
                 except AssertionError:
-                    print(
-                        "Stage '{}' file doesn't exist: '{}'".format(
-                            stage.name, chkpt_fpath
-                        )
-                    )
+                    print("Stage '{}' file doesn't exist: '{}'".format(stage.name, chkpt_fpath))
                     raise
 
         elif test_type == "stage_labels":
@@ -295,9 +281,7 @@ class MostBasicPipelineTests:
         if test_type == "effects":
             exp_files = FILENAMES[start_index:]
             _assert_output(dummy_pipe, exp_files)
-            fpaths = [
-                pipeline_filepath(dummy_pipe.manager, filename=fn) for fn in exp_files
-            ]
+            fpaths = [pipeline_filepath(dummy_pipe.manager, filename=fn) for fn in exp_files]
             for fp, content in zip(fpaths, CONTENTS[start_index:]):
                 _assert_expected_content(fp, content)
         elif test_type == "checkpoints":
@@ -314,9 +298,7 @@ class MostBasicPipelineTests:
         else:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
-    def test_all_checkpoints_after_first_executed_are_overwritten(
-        self, dummy_pipe, test_type
-    ):
+    def test_all_checkpoints_after_first_executed_are_overwritten(self, dummy_pipe, test_type):
         """Potential for dependent results means execution is contiguous."""
 
         # Start fresh.
@@ -343,9 +325,7 @@ class MostBasicPipelineTests:
         elif test_type == "checkpoints":
             _assert_checkpoints(dummy_pipe, BASIC_ACTIONS)
         elif test_type == "stage_labels":
-            _assert_stage_states(
-                dummy_pipe, expected_skipped=[], expected_executed=BASIC_ACTIONS
-            )
+            _assert_stage_states(dummy_pipe, expected_skipped=[], expected_executed=BASIC_ACTIONS)
         elif test_type == "pipe_flag":
             _assert_pipeline_completed(dummy_pipe)
         else:
@@ -375,9 +355,7 @@ class MostBasicPipelineTests:
         if test_type == "effects":
             exp_files = FILENAMES[:stop_index]
             _assert_output(dummy_pipe, exp_files)
-            fpaths = [
-                pipeline_filepath(dummy_pipe.manager, filename=fn) for fn in exp_files
-            ]
+            fpaths = [pipeline_filepath(dummy_pipe.manager, filename=fn) for fn in exp_files]
             for fp, content in zip(fpaths, CONTENTS[:stop_index]):
                 _assert_expected_content(fp, content)
 
@@ -398,9 +376,7 @@ class MostBasicPipelineTests:
             raise ValueError("Unknown test type: '{}'".format(test_type))
 
 
-@named_param(
-    argnames="spec_type", argvalues=["filename", "filepath", "stage", "stage_name"]
-)
+@named_param(argnames="spec_type", argvalues=["filename", "filepath", "stage", "stage_name"])
 @named_param(argnames="completed", argvalues=[False, True])
 def test_stage_completion_determination(dummy_pipe, spec_type, completed):
     """Pipeline responds to variety of request forms of checkpoint status."""
@@ -409,9 +385,7 @@ def test_stage_completion_determination(dummy_pipe, spec_type, completed):
     def dummy_test_func():
         pass
 
-    chkpt_name = checkpoint_filename(
-        dummy_test_func.__name__, pipeline_name=dummy_pipe.name
-    )
+    chkpt_name = checkpoint_filename(dummy_test_func.__name__, pipeline_name=dummy_pipe.name)
     chkpt_fpath = checkpoint_filepath(chkpt_name, dummy_pipe.manager)
 
     # Determine how to request the checkpoint completion status.
@@ -491,11 +465,7 @@ def _assert_output(pl, expected_filenames):
     assert len(expected_filenames) == len(obs_outfiles)
     expected_filepaths = []
     for fname in expected_filenames:
-        fpath = (
-            fname
-            if os.path.isabs(fname)
-            else pipeline_filepath(pl.manager, filename=fname)
-        )
+        fpath = fname if os.path.isabs(fname) else pipeline_filepath(pl.manager, filename=fname)
         expected_filepaths.append(fpath)
     assert set(expected_filepaths) == set(obs_outfiles)
 

@@ -1,9 +1,5 @@
 """Custom pypiper exceptions"""
 
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
-
 __all__ = [
     "PipelineError",
     "PipelineHalt",
@@ -61,9 +57,7 @@ class UnknownPipelineStageError(Exception):
                 # Just don't contextualize the error with known stages.
                 pass
             else:
-                message = "{}; defined stages: {}".format(
-                    message, ", ".join(map(str, stages))
-                )
+                message = "{}; defined stages: {}".format(message, ", ".join(map(str, stages)))
         super(UnknownPipelineStageError, self).__init__(message)
 
 

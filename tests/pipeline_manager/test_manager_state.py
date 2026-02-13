@@ -2,9 +2,7 @@
 
 import os
 
-import pytest
-
-from pypiper.utils import checkpoint_filepath, pipeline_filepath
+from pypiper.utils import pipeline_filepath
 from tests.helpers import named_param
 
 __author__ = "Vince Reuter"

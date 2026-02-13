@@ -7,8 +7,6 @@
 
 # First, make sure you can import the pypiper package
 
-import os
-
 import pypiper
 
 # Create a PipelineManager instance (don't forget to name it!)

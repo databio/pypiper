@@ -3,9 +3,9 @@
 import os
 
 from pypiper.utils import checkpoint_filepath
-from tests.helpers import fetch_checkpoint_files, named_param
+from tests.helpers import fetch_checkpoint_files
 
-from .conftest import get_peak_caller, get_pipeline, get_read_aligner
+from .conftest import get_peak_caller, get_read_aligner
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -38,12 +38,8 @@ def test_checkpoints_are_pipeline_unique(tmpdir):
     call_peaks.run()
 
     # We expect a different checkpoint file for each stage of each pipeline.
-    align_reads_expected = {
-        checkpoint_filepath(s.name, align_reads) for s in align_reads.stages()
-    }
-    call_peaks_expected = {
-        checkpoint_filepath(s.name, call_peaks) for s in call_peaks.stages()
-    }
+    align_reads_expected = {checkpoint_filepath(s.name, align_reads) for s in align_reads.stages()}
+    call_peaks_expected = {checkpoint_filepath(s.name, call_peaks) for s in call_peaks.stages()}
 
     # Pipeline names are unique here, and each checkpoint name includes
     # pipeline name for disambiguation, so even a pair of pipelines with a

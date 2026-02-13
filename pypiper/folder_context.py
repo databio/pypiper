@@ -2,9 +2,6 @@
 
 import os
 
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
 
 class FolderContext(object):
     """Context manager for temporarily changing directory."""
@@ -27,7 +24,5 @@ class FolderContext(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Switch back to the previous working directory."""
         if not os.path.isdir(self._prevdir):
-            raise RuntimeError(
-                "Return path is no longer a directory: {}".format(self._prevdir)
-            )
+            raise RuntimeError("Return path is no longer a directory: {}".format(self._prevdir))
         os.chdir(self._prevdir)
