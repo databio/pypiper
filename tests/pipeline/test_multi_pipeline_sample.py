@@ -2,7 +2,7 @@
 
 import os
 
-from pypiper.utils import checkpoint_filepath
+from pypiper.utils import _checkpoint_filepath
 from tests.helpers import fetch_checkpoint_files
 
 from .conftest import get_peak_caller, get_read_aligner
@@ -38,8 +38,8 @@ def test_checkpoints_are_pipeline_unique(tmpdir):
     call_peaks.run()
 
     # We expect a different checkpoint file for each stage of each pipeline.
-    align_reads_expected = {checkpoint_filepath(s.name, align_reads) for s in align_reads.stages()}
-    call_peaks_expected = {checkpoint_filepath(s.name, call_peaks) for s in call_peaks.stages()}
+    align_reads_expected = {_checkpoint_filepath(s.name, align_reads) for s in align_reads.stages()}
+    call_peaks_expected = {_checkpoint_filepath(s.name, call_peaks) for s in call_peaks.stages()}
 
     # Pipeline names are unique here, and each checkpoint name includes
     # pipeline name for disambiguation, so even a pair of pipelines with a
@@ -83,8 +83,8 @@ def test_pipeline_checkpoint_respect_sensitivity_and_specificity(tmpdir):
     # Set up the checkpoints for the read alignment pipeline by allowing it
     # to execute once.
     align_reads.run()
-    assert os.path.isfile(checkpoint_filepath("align_reads", align_reads.manager))
-    peaks_align_check_fpath = checkpoint_filepath("align_reads", call_peaks.manager)
+    assert os.path.isfile(_checkpoint_filepath("align_reads", align_reads.manager))
+    peaks_align_check_fpath = _checkpoint_filepath("align_reads", call_peaks.manager)
     assert not os.path.isfile(peaks_align_check_fpath)
 
     call_peaks.run()

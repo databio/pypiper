@@ -2,7 +2,7 @@
 
 import copy
 
-from .utils import translate_stage_name
+from .utils import _translate_stage_name
 
 __all__ = ["Stage"]
 
@@ -45,7 +45,7 @@ class Stage(object):
             Checkpoint name for this stage; null if this Stage is designated
             as a non-checkpoint.
         """
-        return translate_stage_name(self.name) if self.checkpoint else None
+        return _translate_stage_name(self.name) if self.checkpoint else None
 
     def run(self, *args, **kwargs):
         """Alternate form for direct call; execute stage."""

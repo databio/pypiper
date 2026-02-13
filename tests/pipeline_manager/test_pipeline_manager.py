@@ -11,7 +11,7 @@ import pytest
 
 import pypiper
 from pypiper.exceptions import SubprocessError
-from pypiper.utils import pipeline_filepath
+from pypiper.utils import _pipeline_filepath
 
 __author__ = "Nathan Sheffield"
 __email__ = "nathan@code.databio.org"
@@ -104,7 +104,7 @@ def pipeline_managers(tmpdir, request):
 
 def _is_file(pp, filename):
     """Determine if the pipeline manager has this file."""
-    filepath = pipeline_filepath(pp, filename=filename)
+    filepath = _pipeline_filepath(pp, filename=filename)
     return os.path.isfile(filepath)
 
 
@@ -174,7 +174,7 @@ class TestLockWaiting:
         pp, pp2, pp3 = pipeline_managers
         pp2.wait = False
         pp.wait = False
-        sleep_lock = pipeline_filepath(pp, filename="lock.sleep")
+        sleep_lock = _pipeline_filepath(pp, filename="lock.sleep")
         # Use short sleep (0.1s) - just enough to prove lock waiting works
         subprocess.Popen("sleep .1; rm " + sleep_lock, shell=True)
         pp._create_file(sleep_lock)
@@ -197,7 +197,7 @@ class TestTargetRespecting:
     def test_respects_existing_files(self, single_pipeline_manager):
         """Test that pipeline respects files already existing."""
         pp = single_pipeline_manager
-        target = pipeline_filepath(pp, filename="tgt")
+        target = _pipeline_filepath(pp, filename="tgt")
         if os.path.isfile(target):
             os.remove(target)
 
@@ -211,7 +211,7 @@ class TestTargetRespecting:
     def test_targetless_command(self, single_pipeline_manager):
         """Test executing a targetless command."""
         pp = single_pipeline_manager
-        target = pipeline_filepath(pp, filename="tgt")
+        target = _pipeline_filepath(pp, filename="tgt")
         pp.run("echo third > " + target, target=None, lock_name="test", shell=True)
         with open(target) as f:
             lines = f.readlines()
@@ -246,17 +246,17 @@ class TestCleanup:
     def test_dirty_mode_no_cleanup(self, single_pipeline_manager):
         """Test that dirty mode prevents file cleanup."""
         pp = single_pipeline_manager
-        tgt1 = pipeline_filepath(pp, filename="tgt1.temp")
-        tgt2 = pipeline_filepath(pp, filename="tgt2.temp")
-        tgt3 = pipeline_filepath(pp, filename="tgt3.temp")
-        tgt4 = pipeline_filepath(pp, filename="tgt4.txt")
+        tgt1 = _pipeline_filepath(pp, filename="tgt1.temp")
+        tgt2 = _pipeline_filepath(pp, filename="tgt2.temp")
+        tgt3 = _pipeline_filepath(pp, filename="tgt3.temp")
+        tgt4 = _pipeline_filepath(pp, filename="tgt4.txt")
 
         pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4, lock_name="test")
 
         # In global dirty mode, even non-manual clean files should not be deleted
         pp.dirty = True
         pp.clean_add(tgt3)
-        pp.clean_add(pipeline_filepath(pp, filename="*.temp"))
+        pp.clean_add(_pipeline_filepath(pp, filename="*.temp"))
         pp.clean_add(tgt4)
         pp._cleanup()
 
@@ -268,15 +268,15 @@ class TestCleanup:
     def test_regular_mode_cleanup(self, single_pipeline_manager):
         """Test that regular mode cleans up files."""
         pp = single_pipeline_manager
-        tgt1 = pipeline_filepath(pp, filename="tgt1.temp")
-        tgt2 = pipeline_filepath(pp, filename="tgt2.temp")
-        tgt3 = pipeline_filepath(pp, filename="tgt3.temp")
-        tgt4 = pipeline_filepath(pp, filename="tgt4.txt")
+        tgt1 = _pipeline_filepath(pp, filename="tgt1.temp")
+        tgt2 = _pipeline_filepath(pp, filename="tgt2.temp")
+        tgt3 = _pipeline_filepath(pp, filename="tgt3.temp")
+        tgt4 = _pipeline_filepath(pp, filename="tgt4.txt")
 
         pp.run("touch " + tgt1 + " " + tgt2 + " " + tgt3 + " " + tgt4, lock_name="test")
 
         pp.dirty = False
-        pp.clean_add(pipeline_filepath(pp, filename="*.temp"))
+        pp.clean_add(_pipeline_filepath(pp, filename="*.temp"))
         pp.clean_add(tgt4)
         pp._cleanup()
 
@@ -288,15 +288,15 @@ class TestCleanup:
     def test_conditional_cleanup(self, pipeline_managers):
         """Test conditional cleanup based on other pipeline status."""
         pp, pp2, pp3 = pipeline_managers
-        tgt5 = pipeline_filepath(pp, filename="tgt5.txt")
-        tgt8 = pipeline_filepath(pp, filename="tgt8.cond")
-        tgt9 = pipeline_filepath(pp, filename="tgt9.cond")
+        tgt5 = _pipeline_filepath(pp, filename="tgt5.txt")
+        tgt8 = _pipeline_filepath(pp, filename="tgt8.cond")
+        tgt9 = _pipeline_filepath(pp, filename="tgt9.cond")
 
         pp.run("touch " + tgt5 + " " + tgt8 + " " + tgt9, lock_name="test")
 
         pp.dirty = False
         pp.clean_add(tgt5, conditional=True)
-        pp.clean_add(pipeline_filepath(pp, filename="*.cond"), conditional=True)
+        pp.clean_add(_pipeline_filepath(pp, filename="*.cond"), conditional=True)
         pp._cleanup()
 
         # Conditional delete should not delete while pp2 is running
@@ -314,7 +314,7 @@ class TestCleanup:
     def test_manual_cleanup_not_auto_deleted(self, single_pipeline_manager):
         """Test that manual cleanup files are not auto-deleted."""
         pp = single_pipeline_manager
-        tgt7 = pipeline_filepath(pp, filename="tgt7.txt")
+        tgt7 = _pipeline_filepath(pp, filename="tgt7.txt")
         pp.run("touch " + tgt7, tgt7)
         pp.clean_add(tgt7, manual=True)
         pp.stop_pipeline()
@@ -324,7 +324,7 @@ class TestCleanup:
     def test_auto_cleanup_on_run(self, pipeline_managers):
         """Test automatic cleanup when clean=True is passed to run."""
         pp, pp2, pp3 = pipeline_managers
-        tgt10 = pipeline_filepath(pp, filename="tgt10.txt")
+        tgt10 = _pipeline_filepath(pp, filename="tgt10.txt")
         pp.run("touch " + tgt10, target=tgt10, clean=True)
         assert os.path.isfile(tgt10)  # File exists initially
 
@@ -335,8 +335,8 @@ class TestCleanup:
     def test_cleanup_script_contents(self, single_pipeline_manager):
         """Test that cleanup script is populated correctly."""
         pp = single_pipeline_manager
-        tgt3 = pipeline_filepath(pp, filename="tgt3.temp")
-        tgt6 = pipeline_filepath(pp, filename="tgt6.txt")
+        tgt3 = _pipeline_filepath(pp, filename="tgt3.temp")
+        tgt6 = _pipeline_filepath(pp, filename="tgt6.txt")
         tgt6_abs = os.path.abspath(tgt6)
 
         pp.run("touch " + tgt3 + " " + tgt6, lock_name="test")
@@ -375,7 +375,7 @@ class TestCleanup:
     def test_clean_add_none_among_real_files(self, single_pipeline_manager):
         """Test that None values mixed with real paths work correctly."""
         pp = single_pipeline_manager
-        tgt = pipeline_filepath(pp, filename="real_file.txt")
+        tgt = _pipeline_filepath(pp, filename="real_file.txt")
         pp.run("touch " + tgt, lock_name="test")
         pp.clean_add(None)
         pp.clean_add(tgt)
@@ -425,7 +425,7 @@ class TestDynamicRecovery:
         pp = single_pipeline_manager
         # Enable recover mode to overwrite existing locks
         pp.overwrite_locks = True
-        sleep_lock = pipeline_filepath(pp, filename="lock.sleep")
+        sleep_lock = _pipeline_filepath(pp, filename="lock.sleep")
         pp._create_file(sleep_lock)
         cmd = "echo hello"
         # This should succeed because overwrite_locks is True
@@ -438,7 +438,7 @@ class TestNewStart:
     def test_new_start_reruns_commands(self, single_pipeline_manager):
         """Test that new_start causes commands to rerun."""
         pp = single_pipeline_manager
-        target = pipeline_filepath(pp, filename="tgt")
+        target = _pipeline_filepath(pp, filename="tgt")
         if os.path.isfile(target):
             os.remove(target)
 
@@ -462,8 +462,8 @@ class TestDualTarget:
     def test_single_target_exists_skips(self, single_pipeline_manager):
         """Test that command is skipped if single target exists."""
         pp = single_pipeline_manager
-        tgt1 = pipeline_filepath(pp, filename="tgt1.txt")
-        tgt6 = pipeline_filepath(pp, filename="tgt6.txt")
+        tgt1 = _pipeline_filepath(pp, filename="tgt1.txt")
+        tgt6 = _pipeline_filepath(pp, filename="tgt6.txt")
 
         pp.new_start = False
         pp.run("touch " + tgt6, tgt6)
@@ -476,9 +476,9 @@ class TestDualTarget:
     def test_dual_target_one_missing_runs(self, single_pipeline_manager):
         """Test that command runs if one of two targets is missing."""
         pp = single_pipeline_manager
-        tgt1 = pipeline_filepath(pp, filename="tgt1.txt")
-        tgt5 = pipeline_filepath(pp, filename="tgt5.txt")
-        tgt6 = pipeline_filepath(pp, filename="tgt6.txt")
+        tgt1 = _pipeline_filepath(pp, filename="tgt1.txt")
+        tgt5 = _pipeline_filepath(pp, filename="tgt5.txt")
+        tgt6 = _pipeline_filepath(pp, filename="tgt6.txt")
 
         pp.new_start = False
         pp.run("touch " + tgt6, tgt6)
@@ -491,9 +491,9 @@ class TestDualTarget:
     def test_dual_target_both_exist_skips(self, single_pipeline_manager):
         """Test that command is skipped if both targets exist."""
         pp = single_pipeline_manager
-        tgt1 = pipeline_filepath(pp, filename="tgt1.txt")
-        tgt5 = pipeline_filepath(pp, filename="tgt5.txt")
-        tgt6 = pipeline_filepath(pp, filename="tgt6.txt")
+        tgt1 = _pipeline_filepath(pp, filename="tgt1.txt")
+        tgt5 = _pipeline_filepath(pp, filename="tgt5.txt")
+        tgt6 = _pipeline_filepath(pp, filename="tgt6.txt")
 
         pp.new_start = False
         pp.run("touch " + tgt1 + " " + tgt6, lock_name="setup")

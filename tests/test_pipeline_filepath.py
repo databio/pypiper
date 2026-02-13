@@ -5,7 +5,7 @@ import os
 import mock
 import pytest
 
-from pypiper.utils import pipeline_filepath
+from pypiper.utils import _pipeline_filepath
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -41,7 +41,7 @@ def pl_mgr(request, tmpdir):
 def test_requires_filename_or_suffix(pl_mgr):
     """Either filename or suffix is required to build a path."""
     with pytest.raises(TypeError):
-        pipeline_filepath(pl_mgr)
+        _pipeline_filepath(pl_mgr)
 
 
 @pytest.mark.parametrize(argnames="pipe_name", argvalues=PIPELINE_NAMES)
@@ -52,7 +52,7 @@ def test_requires_filename_or_suffix(pl_mgr):
 def test_uses_pipeline_name_if_no_filename(pipe_name, suffix, test_type, pl_mgr, tmpdir):
     """Pipeline name is proxy for filename if just suffix is given."""
 
-    observed = pipeline_filepath(pl_mgr, suffix=suffix)
+    observed = _pipeline_filepath(pl_mgr, suffix=suffix)
 
     # Allow test type to determine assertion.
     if test_type == "has_pipe_name":
@@ -76,7 +76,7 @@ def test_uses_pipeline_name_if_no_filename(pipe_name, suffix, test_type, pl_mgr,
 @pytest.mark.parametrize(argnames="test_type", argvalues=["filename", "filepath"])
 def test_direct_filename(tmpdir, filename, pl_mgr, test_type):
     """When given, filename is used instead of pipeline name."""
-    fullpath = pipeline_filepath(pl_mgr, filename=filename)
+    fullpath = _pipeline_filepath(pl_mgr, filename=filename)
     if test_type == "filename":
         _, observed = os.path.split(fullpath)
         assert filename == observed
@@ -92,6 +92,6 @@ def test_direct_filename(tmpdir, filename, pl_mgr, test_type):
 def test_suffix_is_appended_to_filename_if_both_are_provided(pl_mgr, filename, suffix):
     """Suffix is appended to filename if both are provided."""
     expected = filename + suffix
-    fullpath = pipeline_filepath(pl_mgr, filename=filename, suffix=suffix)
+    fullpath = _pipeline_filepath(pl_mgr, filename=filename, suffix=suffix)
     _, observed = os.path.split(fullpath)
     assert expected == observed

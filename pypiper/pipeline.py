@@ -13,13 +13,13 @@ from .exceptions import (
 from .manager import PipelineManager
 from .stage import Stage
 from .utils import (
-    checkpoint_filepath,
-    flag_name,
-    parse_stage_name,
-    translate_stage_name,
+    _checkpoint_filepath,
+    _flag_name,
+    _parse_stage_name,
+    _translate_stage_name,
 )
 
-__all__ = ["Pipeline", "UnknownPipelineStageError"]
+__all__ = ["Pipeline"]
 
 
 class Pipeline(object):
@@ -128,7 +128,7 @@ class Pipeline(object):
 
         for name, stage in name_stage_pairs:
             # Use external translator to further confound redefinition.
-            internal_name = translate_stage_name(name)
+            internal_name = _translate_stage_name(name)
 
             # Check that there's not a checkpoint name collision.
             if internal_name in _internal_to_external:
@@ -175,7 +175,7 @@ class Pipeline(object):
         Returns:
             Sequence of names of this pipeline's defined stages.
         """
-        return [parse_stage_name(s) for s in self._stages]
+        return [_parse_stage_name(s) for s in self._stages]
 
     def checkpoint(self, stage, msg=""):
         """Touch checkpoint file for given stage and provide timestamp message.
@@ -206,7 +206,7 @@ class Pipeline(object):
         Raises:
             UnknownStageException: If the stage name given is undefined for the pipeline.
         """
-        check_path = checkpoint_filepath(stage, self.manager)
+        check_path = _checkpoint_filepath(stage, self.manager)
         return os.path.exists(check_path)
 
     def halt(self, **kwargs):
@@ -223,7 +223,7 @@ class Pipeline(object):
         Returns:
             Flag files associated with this pipeline.
         """
-        paths = glob.glob(os.path.join(self.outfolder, flag_name("*")))
+        paths = glob.glob(os.path.join(self.outfolder, _flag_name("*")))
         if only_name:
             return [os.path.split(p)[1] for p in paths]
         else:
@@ -272,7 +272,7 @@ class Pipeline(object):
         for s in [start_point, stop]:
             if s is None:
                 continue
-            name = parse_stage_name(s)
+            name = _parse_stage_name(s)
             if name not in self.stage_names:
                 raise UnknownPipelineStageError(name, self)
 
@@ -352,8 +352,8 @@ class Pipeline(object):
         """Seek to the first stage to run."""
         if start is None:
             return 0
-        start_stage = translate_stage_name(start)
-        internal_names = [translate_stage_name(s.name) for s in self._stages]
+        start_stage = _translate_stage_name(start)
+        internal_names = [_translate_stage_name(s.name) for s in self._stages]
         try:
             return internal_names.index(start_stage)
         except ValueError:
@@ -378,7 +378,7 @@ class Pipeline(object):
         if not stop_point:
             # Null case, no stopping point
             return len(self._stages)
-        stop_name = parse_stage_name(stop_point)
+        stop_name = _parse_stage_name(stop_point)
         try:
             stop_index = self.stage_names.index(stop_name)
         except ValueError:

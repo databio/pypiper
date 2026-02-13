@@ -5,27 +5,70 @@ import os
 import re
 import subprocess
 
-from attmap import AttMapEcho
 from yacman import load_yaml
 
 from .exceptions import UnsupportedFiletypeException
 from .utils import is_fastq, is_gzipped_fastq, is_sam_or_bam
 
+__all__ = ["NGSTk", "NGSTools"]
 
-class NGSTk(AttMapEcho):
+
+class NGSTools:
+    """Container for NGS tool paths/commands used by NGSTk.
+
+    Each attribute represents a command-line tool. If a tool path is not
+    provided in the config, it defaults to the tool's own name (i.e., assumes
+    the tool is on $PATH).
+
+    Example:
+        tools = NGSTools({"samtools": "/usr/local/bin/samtools"})
+        tools.samtools  # "/usr/local/bin/samtools"
+        tools.java      # "java" (not configured, echoes name)
+    """
+
+    samtools: str
+    java: str
+    picard: str
+    bedtools: str
+    bowtie2: str
+    tophat: str
+    sambamba: str
+    kallisto: str
+    macs2: str
+    Rscript: str
+    spp: str
+    fastqc: str
+    skewer: str
+    trimmomatic: str
+    genomeCoverageBed: str
+    bedGraphToBigWig: str
+    python: str
+    scripts_dir: str
+
+    def __init__(self, config: dict = None):
+        """Initialize tools from config dict.
+
+        Args:
+            config: Dict mapping tool names to paths. Missing tools default
+                to their own name (echo behavior).
+        """
+        config = config or {}
+        for attr in self.__annotations__:
+            setattr(self, attr, config.get(attr, attr))
+
+
+class NGSTk:
     """
     Class to hold functions to build command strings used during pipeline runs.
-    Object can be instantiated with a string of a path to a yaml `pipeline config file`.
-    Since NGSTk inherits from `AttMapEcho`, the passed config file and its elements
-    will be accessible through the NGSTk object as attributes under `config` (e.g.
-    `NGSTk.tools.java`). In case no `config_file` argument is passed, all commands will
-    be returned assuming the tool is in the user's $PATH.
+
+    NGSTk can be instantiated standalone or with a PipelineManager. Tool paths
+    come from the config's "tools" section; unconfigured tools default to their
+    name (assuming they're on $PATH).
 
     Args:
         config_file (str): Path to pipeline yaml config file (optional).
-        pm (pypiper.PipelineManager): A PipelineManager with which to associate this toolkit instance;
-            that is, essentially a source from which to grab paths to tools,
-            resources, etc.
+        pm (pypiper.PipelineManager): A PipelineManager with which to associate
+            this toolkit instance.
 
     Example:
         from pypiper.ngstk import NGSTk as tk
@@ -38,33 +81,48 @@ class NGSTk(AttMapEcho):
         tk = NGSTk("pipeline_config_file.yaml")
         tk.samtools_index("sample.bam")
         # returns: /home/.local/samtools/bin/samtools index sample.bam
-
     """
 
     def __init__(self, config_file=None, pm=None):
-        # parse yaml into the project's attributes
-        # self.add_entries(**config)
-        super(NGSTk, self).__init__(None if config_file is None else load_yaml(config_file))
+        self.pm = pm
 
-        # Keep a link to the pipeline manager, if one is provided.
-        # if None is provided, instantiate "tools" and "parameters" with empty AttMaps
-        # this allows the usage of the same code for a command with and without using a pipeline manager
-        if pm is not None:
-            self.pm = pm
+        # Determine tools config from pm, config_file, or empty
+        if pm is not None and pm.config is not None:
+            # pm.config may be EchoDict or dict - handle both
             if hasattr(pm.config, "tools"):
-                self.tools = self.pm.config.tools
+                tools_cfg = pm.config.tools
+                tools_config = dict(tools_cfg) if tools_cfg else {}
+            elif isinstance(pm.config, dict):
+                tools_config = pm.config.get("tools", {})
             else:
-                self.tools = AttMapEcho()
-            if hasattr(pm.config, "parameters"):
-                self.parameters = self.pm.config.parameters
-            else:
-                self.parameters = AttMapEcho()
+                tools_config = {}
+        elif config_file is not None:
+            loaded = load_yaml(config_file)
+            tools_config = loaded.get("tools", {}) if loaded else {}
         else:
-            self.tools = AttMapEcho()
-            self.parameters = AttMapEcho()
+            tools_config = {}
+
+        self.tools = NGSTools(tools_config)
+
+        # Load parameters as a plain dict (no echo needed)
+        if pm is not None and pm.config is not None:
+            if hasattr(pm.config, "parameters"):
+                params = pm.config.parameters
+                self.parameters = dict(params) if params else {}
+            elif isinstance(pm.config, dict):
+                self.parameters = pm.config.get("parameters", {})
+            else:
+                self.parameters = {}
+        else:
+            self.parameters = {}
 
         # If pigz is available, use that. Otherwise, default to gzip.
-        if hasattr(self.pm, "cores") and self.pm.cores > 1 and self.check_command("pigz"):
+        if (
+            self.pm is not None
+            and hasattr(self.pm, "cores")
+            and self.pm.cores > 1
+            and self.check_command("pigz")
+        ):
             self.ziptool_cmd = "pigz -f -p {}".format(self.pm.cores)
         else:
             self.ziptool_cmd = "gzip -f"
