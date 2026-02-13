@@ -19,7 +19,7 @@ __email__ = "nathan@code.databio.org"
 # Path to the test schema for pipestat
 TEST_SCHEMA_PATH = os.path.join(
     os.path.dirname(os.path.dirname(__file__)),
-    "Data",
+    "data",
     "test_pipestat_output_schema.yaml"
 )
 
@@ -502,6 +502,98 @@ class TestDualTarget:
         assert not os.path.isfile(tgt5)
         pp.run("touch " + tgt5, [tgt1, tgt6])
         assert not os.path.isfile(tgt5)
+
+
+class TestPipestatValidationParameters:
+    """Tests for pipestat validation parameter handling."""
+
+    def test_pipestat_validate_results_default_with_schema(self, tmpdir):
+        """Create PM with schema, verify validate_results auto-detects to True."""
+        outfolder = str(tmpdir.mkdir("output"))
+        pp = pypiper.PipelineManager(
+            "test_pipeline",
+            outfolder=outfolder,
+            multi=True,
+            pipestat_schema=TEST_SCHEMA_PATH,
+        )
+        assert pp.pipestat.cfg["validate_results"] is True
+        pp.stop_pipeline()
+
+    def test_pipestat_validate_results_default_without_schema(self, tmpdir):
+        """Create PM without schema, verify validate_results auto-detects to False."""
+        outfolder = str(tmpdir.mkdir("output"))
+        pp = pypiper.PipelineManager(
+            "test_pipeline",
+            outfolder=outfolder,
+            multi=True,
+        )
+        assert pp.pipestat.cfg["validate_results"] is False
+        pp.stop_pipeline()
+
+    def test_pipestat_validate_results_explicit_false(self, tmpdir):
+        """Create PM with schema and explicit validate_results=False."""
+        outfolder = str(tmpdir.mkdir("output"))
+        pp = pypiper.PipelineManager(
+            "test_pipeline",
+            outfolder=outfolder,
+            multi=True,
+            pipestat_schema=TEST_SCHEMA_PATH,
+            pipestat_validate_results=False,
+        )
+        assert pp.pipestat.cfg["validate_results"] is False
+        pp.stop_pipeline()
+
+    def test_pipestat_validate_results_explicit_true(self, tmpdir):
+        """Create PM with schema and explicit validate_results=True."""
+        outfolder = str(tmpdir.mkdir("output"))
+        pp = pypiper.PipelineManager(
+            "test_pipeline",
+            outfolder=outfolder,
+            multi=True,
+            pipestat_schema=TEST_SCHEMA_PATH,
+            pipestat_validate_results=True,
+        )
+        assert pp.pipestat.cfg["validate_results"] is True
+        pp.stop_pipeline()
+
+    def test_pipestat_additional_properties_default(self, tmpdir):
+        """Create PM with schema, verify additional_properties reflects schema default."""
+        outfolder = str(tmpdir.mkdir("output"))
+        pp = pypiper.PipelineManager(
+            "test_pipeline",
+            outfolder=outfolder,
+            multi=True,
+            pipestat_schema=TEST_SCHEMA_PATH,
+        )
+        # Default per JSON Schema spec should be True
+        assert pp.pipestat.cfg["additional_properties"] is True
+        pp.stop_pipeline()
+
+    def test_pipestat_additional_properties_explicit_false(self, tmpdir):
+        """Create PM with schema and explicit additional_properties=False."""
+        outfolder = str(tmpdir.mkdir("output"))
+        pp = pypiper.PipelineManager(
+            "test_pipeline",
+            outfolder=outfolder,
+            multi=True,
+            pipestat_schema=TEST_SCHEMA_PATH,
+            pipestat_additional_properties=False,
+        )
+        assert pp.pipestat.cfg["additional_properties"] is False
+        pp.stop_pipeline()
+
+    def test_pipestat_additional_properties_explicit_true(self, tmpdir):
+        """Create PM with schema and explicit additional_properties=True."""
+        outfolder = str(tmpdir.mkdir("output"))
+        pp = pypiper.PipelineManager(
+            "test_pipeline",
+            outfolder=outfolder,
+            multi=True,
+            pipestat_schema=TEST_SCHEMA_PATH,
+            pipestat_additional_properties=True,
+        )
+        assert pp.pipestat.cfg["additional_properties"] is True
+        pp.stop_pipeline()
 
 
 def _make_pipe_filepath(pm, filename):

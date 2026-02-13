@@ -120,6 +120,14 @@ class PipelineManager(object):
         pipestat_results_file (str): path to file backend for reporting results
         pipestat_config_file (str): path to pipestat configuration file
         pipestat_pipeline_type (str): Sample or Project level pipeline
+        pipestat_validate_results (bool | None): Whether to validate results against the pipestat
+            output schema. If None (default), validation is enabled when a schema is provided
+            and disabled when no schema is provided. Set to False to provide a schema for
+            structure without enforcing validation.
+        pipestat_additional_properties (bool | None): Whether to allow reporting results not
+            defined in the pipestat output schema. If None (default), uses the schema's own
+            additionalProperties setting (True per JSON Schema spec when not specified).
+            Set to False to reject undeclared results.
         pipestat_result_formatter: function used to style reported results, defaults to result_formatter_markdown
 
     Raises:
@@ -127,8 +135,6 @@ class PipelineManager(object):
             via args namespace, or if both stopping types (exclusive/prospective
             and inclusive/retrospective) are provided.
     """
-
-    # TODO: add pipestat-related args docstrings
 
     def __init__(
         self,
@@ -152,6 +158,8 @@ class PipelineManager(object):
         pipestat_results_file=None,
         pipestat_config=None,
         pipestat_pipeline_type=None,
+        pipestat_validate_results=None,
+        pipestat_additional_properties=None,
         pipestat_result_formatter=None,
         **kwargs,
     ):
@@ -362,6 +370,25 @@ class PipelineManager(object):
         # Resolve the schema path from explicit arg or CLI
         resolved_schema = pipestat_schema or _get_arg(args_dict, "pipestat_schema")
 
+        # Resolve pipestat_validate_results from constructor arg or CLI
+        if pipestat_validate_results is None:
+            cli_val = _get_arg(args_dict, "pipestat_validate_results")
+            if cli_val is not None:
+                pipestat_validate_results = cli_val.lower() == "true"
+
+        # Resolve pipestat_additional_properties from constructor arg or CLI
+        if pipestat_additional_properties is None:
+            cli_val = _get_arg(args_dict, "pipestat_additional_properties")
+            if cli_val is not None:
+                pipestat_additional_properties = cli_val.lower() == "true"
+
+        # Resolve validate_results: if explicitly provided, use that value.
+        # Otherwise, auto-detect: validate when schema is present.
+        if pipestat_validate_results is not None:
+            resolved_validate = pipestat_validate_results
+        else:
+            resolved_validate = resolved_schema is not None
+
         self._pipestat_manager = PipestatManager(
             record_identifier=self.pipestat_record_identifier
             or _get_arg(args_dict, "pipestat_sample_name")
@@ -374,8 +401,8 @@ class PipelineManager(object):
             config_file=pipestat_config or _get_arg(args_dict, "pipestat_config"),
             multi_pipelines=multi,
             pipeline_type=self.pipestat_pipeline_type,
-            # Disable validation when no schema is provided
-            validate_results=resolved_schema is not None,
+            validate_results=resolved_validate,
+            additional_properties=pipestat_additional_properties,
         )
 
         self.start_pipeline(args, multi)

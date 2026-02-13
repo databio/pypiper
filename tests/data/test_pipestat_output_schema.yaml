@@ -11,6 +11,9 @@ samples:
   Time:
     type: string
     description: "Pipeline elapsed time"
+  Success:
+    type: string
+    description: "Pipeline completion time"
   Test figure:
     type: object
     properties:

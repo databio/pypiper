@@ -25,9 +25,9 @@ dependencies = [
     "logmuse>=0.2.4",
     "psutil",
     "pandas",
-    "ubiquerg>=0.8.0",
-    "yacman>=0.9.3",
-    "pipestat>=0.11.0",
+    "ubiquerg>=0.9.0",
+    "yacman>=0.9.5",
+    "pipestat>=0.13.0",
     "attmap",
 ]
 

@@ -19,8 +19,8 @@ OUTPUT_SUFFIX = ".testout"
 
 # Legacy output folders that may contain stray files
 LEGACY_OUTPUT_PATTERNS = [
-    "tests/Data/pipeline_output",
-    "tests/Data/pipeline_output3",
+    "tests/data/pipeline_output",
+    "tests/data/pipeline_output3",
 ]
 
 

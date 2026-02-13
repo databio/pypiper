@@ -914,6 +914,8 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
             "pipestat-schema",
             "pipestat-results-file",
             "pipestat-config",
+            "pipestat-validate-results",
+            "pipestat-additional-properties",
         ],
     }
 
@@ -1092,6 +1094,20 @@ def _add_args(parser, args, required):
         "pipestat-config": {"help": "Path to the configuration file"},
         "pipestat-results-file": {
             "help": "YAML file to report into, if file is used as the object back-end"
+        },
+        "pipestat-validate-results": {
+            "help": "Whether to validate results against the pipestat output schema. "
+            "Omit to auto-detect based on schema presence.",
+            "type": str,
+            "choices": ["true", "false"],
+            "default": None,
+        },
+        "pipestat-additional-properties": {
+            "help": "Whether to allow results not defined in the pipestat output schema. "
+            "Omit to use the schema's own additionalProperties setting.",
+            "type": str,
+            "choices": ["true", "false"],
+            "default": None,
         },
     }
 
