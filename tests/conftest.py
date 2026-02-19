@@ -47,6 +47,7 @@ def cleanup_legacy_output_folders(request):
     # Clean after all tests complete
     request.addfinalizer(_clean_legacy_output_folders)
 
+
 TEST_PIPE_NAME = "test-pipe"
 
 FILE1_TEXT = "hello there"

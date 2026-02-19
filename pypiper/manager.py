@@ -2210,6 +2210,7 @@ class PipelineManager(object):
         if not self._has_exit_status:
             # Disable logging to avoid "I/O operation on closed file" errors
             import logging
+
             logging.disable(logging.CRITICAL)
             try:
                 self.fail_pipeline(Exception("Pipeline failure. See details above."))

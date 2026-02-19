@@ -38,7 +38,9 @@ def test_checkpoints_are_pipeline_unique(tmpdir):
     call_peaks.run()
 
     # We expect a different checkpoint file for each stage of each pipeline.
-    align_reads_expected = {_checkpoint_filepath(s.name, align_reads) for s in align_reads.stages()}
+    align_reads_expected = {
+        _checkpoint_filepath(s.name, align_reads) for s in align_reads.stages()
+    }
     call_peaks_expected = {_checkpoint_filepath(s.name, call_peaks) for s in call_peaks.stages()}
 
     # Pipeline names are unique here, and each checkpoint name includes

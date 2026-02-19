@@ -18,9 +18,7 @@ __email__ = "nathan@code.databio.org"
 
 # Path to the test schema for pipestat
 TEST_SCHEMA_PATH = os.path.join(
-    os.path.dirname(os.path.dirname(__file__)),
-    "data",
-    "test_pipestat_output_schema.yaml"
+    os.path.dirname(os.path.dirname(__file__)), "data", "test_pipestat_output_schema.yaml"
 )
 
 
@@ -34,8 +32,7 @@ def single_pipeline_manager(tmpdir, request):
     """
     outfolder = str(tmpdir.mkdir("pipeline_output"))
     pp = pypiper.PipelineManager(
-        "sample_pipeline", outfolder=outfolder, multi=True,
-        pipestat_schema=TEST_SCHEMA_PATH
+        "sample_pipeline", outfolder=outfolder, multi=True, pipestat_schema=TEST_SCHEMA_PATH
     )
 
     def cleanup():
@@ -68,22 +65,23 @@ def pipeline_managers(tmpdir, request):
     outfolder3 = str(tmpdir.mkdir("pipeline_output3"))
 
     pp = pypiper.PipelineManager(
-        "sample_pipeline", outfolder=outfolder, multi=True,
-        pipestat_schema=TEST_SCHEMA_PATH
+        "sample_pipeline", outfolder=outfolder, multi=True, pipestat_schema=TEST_SCHEMA_PATH
     )
     pp2 = pypiper.PipelineManager(
-        "sample_pipeline2", outfolder=outfolder, multi=True,
-        pipestat_schema=TEST_SCHEMA_PATH
+        "sample_pipeline2", outfolder=outfolder, multi=True, pipestat_schema=TEST_SCHEMA_PATH
     )
     pp3 = pypiper.PipelineManager(
-        "sample_pipeline3", outfolder=outfolder3, multi=True,
-        pipestat_schema=TEST_SCHEMA_PATH
+        "sample_pipeline3", outfolder=outfolder3, multi=True, pipestat_schema=TEST_SCHEMA_PATH
     )
 
     def cleanup():
         """Clean up pipelines and clear status flags."""
         # Clear status flags first (before stopping pipelines)
-        for pm, name in [(pp, "sample_pipeline"), (pp2, "sample_pipeline2"), (pp3, "sample_pipeline3")]:
+        for pm, name in [
+            (pp, "sample_pipeline"),
+            (pp2, "sample_pipeline2"),
+            (pp3, "sample_pipeline3"),
+        ]:
             try:
                 pm.pipestat.clear_status(name, flag_names=["failed"])
             except Exception:
