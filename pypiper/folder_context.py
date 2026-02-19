@@ -2,6 +2,8 @@
 
 import os
 
+__all__ = []  # Internal, not part of public API
+
 
 class FolderContext(object):
     """Context manager for temporarily changing directory."""

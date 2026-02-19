@@ -4,6 +4,7 @@ from importlib.metadata import version
 from logmuse import add_logging_options  # noqa: F401
 
 from .exceptions import *
+from .flags import *
 from .manager import *
 from .ngstk import *
 from .pipeline import *

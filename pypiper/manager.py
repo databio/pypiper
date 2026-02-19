@@ -27,7 +27,7 @@ from importlib.metadata import version
 import logmuse
 import pandas as _pd
 import psutil
-from attmap import AttMapEcho
+from .echo_dict import EchoDict
 from pipestat import PipestatError, PipestatManager
 from yacman import load_yaml
 
@@ -41,17 +41,17 @@ from .exceptions import PipelineHalt, SubprocessError
 from .flags import *
 from .utils import (
     CHECKPOINT_SPECIFICATIONS,
-    check_shell,
-    checkpoint_filepath,
-    clear_flags,
-    default_pipeline_config,
-    flag_name,
-    get_proc_name,
-    is_multi_target,
+    _check_shell,
+    _checkpoint_filepath,
+    _clear_flags,
+    _default_pipeline_config,
+    _flag_name,
+    _get_proc_name,
+    _is_multi_target,
     logger_via_cli,
-    make_lock_name,
-    parse_cmd,
-    pipeline_filepath,
+    _make_lock_name,
+    _parse_cmd,
+    _pipeline_filepath,
     result_formatter_markdown,
 )
 
@@ -229,7 +229,7 @@ class PipelineManager(object):
         # Establish the log file to check safety with logging keyword arguments.
         # Establish the output folder since it's required for the log file.
         self.outfolder = os.path.join(outfolder, "")  # trailing slash
-        self.pipeline_log_file = pipeline_filepath(self, suffix=LOGFILE_SUFFIX)
+        self.pipeline_log_file = _pipeline_filepath(self, suffix=LOGFILE_SUFFIX)
 
         # Set up logger
         logger_kwargs = logger_kwargs or {}
@@ -304,14 +304,14 @@ class PipelineManager(object):
 
         # File paths:
         self.make_sure_path_exists(self.outfolder)
-        self.pipeline_profile_file = pipeline_filepath(self, suffix="_profile.tsv")
+        self.pipeline_profile_file = _pipeline_filepath(self, suffix="_profile.tsv")
 
         # Stats and figures are general and so lack the pipeline name.
-        self.pipeline_stats_file = pipeline_filepath(self, filename="stats.yaml")
+        self.pipeline_stats_file = _pipeline_filepath(self, filename="stats.yaml")
 
         # Record commands used and provide manual cleanup script.
-        self.pipeline_commands_file = pipeline_filepath(self, suffix="_commands.sh")
-        self.cleanup_file = pipeline_filepath(self, suffix="_cleanup.sh")
+        self.pipeline_commands_file = _pipeline_filepath(self, suffix="_commands.sh")
+        self.cleanup_file = _pipeline_filepath(self, suffix="_cleanup.sh")
 
         # Pipeline status variables
         self.peak_memory = 0  # memory high water mark
@@ -328,7 +328,7 @@ class PipelineManager(object):
         self.status = "initializing"
         # as part of the beginning of the pipeline, clear any flags set by
         # previous runs of this pipeline
-        clear_flags(self)
+        _clear_flags(self)
 
         # In-memory holder for report_result
         self.stats_dict = {}
@@ -442,7 +442,7 @@ class PipelineManager(object):
                     self.debug("\nUsing custom config file: {}".format(config_to_load))
             else:
                 # No custom config file specified. Check for default
-                default_config = default_pipeline_config(sys.argv[0])
+                default_config = _default_pipeline_config(sys.argv[0])
                 if os.path.isfile(default_config):
                     config_to_load = default_config
                     self.debug("Using default pipeline config file: {}".format(config_to_load))
@@ -450,7 +450,12 @@ class PipelineManager(object):
         # Finally load the config we found.
         if config_to_load is not None:
             self.debug("\nLoading config file: {}\n".format(config_to_load))
-            self.config = AttMapEcho(load_yaml(config_to_load))
+            self.config = EchoDict(load_yaml(config_to_load))
+            # Ensure standard sections exist for nested attribute access
+            # (EchoDict returns strings for missing keys, which breaks setting)
+            self.config.setdefault("tools", {})
+            self.config.setdefault("parameters", {})
+            self.config.setdefault("resources", {})
         else:
             self.debug("No config file")
             self.config = None
@@ -796,9 +801,9 @@ class PipelineManager(object):
         flag_file_name = "{}_{}_{}".format(
             self._pipestat_manager.pipeline_name,
             self.pipestat_record_identifier,
-            flag_name(status or self.status),
+            _flag_name(status or self.status),
         )
-        return pipeline_filepath(self, filename=flag_file_name)
+        return _pipeline_filepath(self, filename=flag_file_name)
 
     ###################################
     # Process calling functions
@@ -889,7 +894,7 @@ class PipelineManager(object):
         # Short-circuit if the checkpoint file exists and the manager's not
         # been configured to overwrite such files.
         if self.curr_checkpoint is not None:
-            check_fpath = checkpoint_filepath(self.curr_checkpoint, self)
+            check_fpath = _checkpoint_filepath(self.curr_checkpoint, self)
             if os.path.isfile(check_fpath) and not self.overwrite_checkpoints:
                 self.info(
                     "Checkpoint file exists for '{}' ('{}'), and the {} has "
@@ -911,7 +916,7 @@ class PipelineManager(object):
 
         # Downstream code requires target to be a list, so convert if only
         # a single item was given
-        if not is_multi_target(target) and target is not None:
+        if not _is_multi_target(target) and target is not None:
             target = [target]
 
         # Downstream code requires a list of locks; convert
@@ -923,7 +928,7 @@ class PipelineManager(object):
         self.debug(
             "Lock_name {}; target '{}', outfolder '{}'".format(lock_name, target, self.outfolder)
         )
-        lock_name = lock_name or make_lock_name(target, self.outfolder)
+        lock_name = lock_name or _make_lock_name(target, self.outfolder)
         lock_files = [self._make_lock_path(ln) for ln in lock_name]
 
         process_return_code = default_return_code
@@ -990,11 +995,11 @@ class PipelineManager(object):
                 )
                 if isinstance(cmd, list):
                     for c in cmd:
-                        count = len(parse_cmd(c, shell))
+                        count = len(_parse_cmd(c, shell))
                         self.proc_count += count
                         self.debug(increment_info_pattern.format(str(c), count, self.proc_count))
                 else:
-                    count = len(parse_cmd(cmd, shell))
+                    count = len(_parse_cmd(cmd, shell))
                     self.proc_count += count
                     self.debug(increment_info_pattern.format(str(cmd), count, self.proc_count))
                 break  # Do not run command
@@ -1114,7 +1119,7 @@ class PipelineManager(object):
         if self.testmode:
             return ""
 
-        likely_shell = check_shell(cmd, shell)
+        likely_shell = _check_shell(cmd, shell)
 
         if shell is None:
             shell = likely_shell
@@ -1226,7 +1231,7 @@ class PipelineManager(object):
             return 0, 0
 
         self.debug("Command: {}".format(cmd))
-        param_list = parse_cmd(cmd, shell)
+        param_list = _parse_cmd(cmd, shell)
         # cast all commands to str and concatenate for hashing
         conc_cmd = "".join([str(x["args"]) for x in param_list])
         self.debug("Hashed command '{}': {}".format(conc_cmd, make_hash(conc_cmd)))
@@ -1242,7 +1247,7 @@ class PipelineManager(object):
                 param_list[i]["stdin"] = processes[i - 1].stdout
                 processes.append(psutil.Popen(preexec_fn=os.setsid, **param_list[i]))
             self.running_procs[processes[-1].pid] = {
-                "proc_name": get_proc_name(param_list[i]["args"]),
+                "proc_name": _get_proc_name(param_list[i]["args"]),
                 "start_time": start_time,
                 "container": container,
                 "p": processes[-1],
@@ -1706,7 +1711,7 @@ class PipelineManager(object):
             category=DeprecationWarning,
         )
         target = file
-        lock_name = make_lock_name(target, self.outfolder)
+        lock_name = _make_lock_name(target, self.outfolder)
         lock_file = self._make_lock_path(lock_name)
 
         while True:
@@ -1817,7 +1822,7 @@ class PipelineManager(object):
         lock_name = self._ensure_lock_prefix(name)
         if base:
             lock_name = os.path.join(base, lock_name)
-        return pipeline_filepath(self, filename=lock_name)
+        return _pipeline_filepath(self, filename=lock_name)
 
     def _recoverfile_from_lockfile(self, lockfile):
         """
@@ -1962,7 +1967,7 @@ class PipelineManager(object):
         if os.path.isabs(stage):
             check_fpath = stage
         else:
-            check_fpath = checkpoint_filepath(stage, pm=self)
+            check_fpath = _checkpoint_filepath(stage, pm=self)
         return self._touch_checkpoint(check_fpath)
 
     def _touch_checkpoint(self, check_file):
@@ -1995,7 +2000,7 @@ class PipelineManager(object):
                 raise ValueError(errmsg)
             fpath = check_file
         else:
-            fpath = pipeline_filepath(self, filename=check_file)
+            fpath = _pipeline_filepath(self, filename=check_file)
 
         # Create/update timestamp for checkpoint, but base return value on
         # whether the action was a simple update or a novel creation.
@@ -2205,6 +2210,7 @@ class PipelineManager(object):
         if not self._has_exit_status:
             # Disable logging to avoid "I/O operation on closed file" errors
             import logging
+
             logging.disable(logging.CRITICAL)
             try:
                 self.fail_pipeline(Exception("Pipeline failure. See details above."))
@@ -2475,10 +2481,10 @@ class PipelineManager(object):
                     pass
 
         if n_to_clean_cond > 0:
-            run_flag = flag_name(RUN_FLAG)
+            run_flag = _flag_name(RUN_FLAG)
             flag_files = [
                 fn
-                for fn in glob.glob(self.outfolder + flag_name("*"))
+                for fn in glob.glob(self.outfolder + _flag_name("*"))
                 if COMPLETE_FLAG not in os.path.basename(fn)
                 and not "{}_{}_{}".format(
                     self._pipestat_manager.pipeline_name,
