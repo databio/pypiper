@@ -742,7 +742,8 @@ class NGSTk:
         cmd += " -jar " + self.tools.picard + " MergeSamFiles"
         cmd += input_string
         cmd += " OUTPUT=" + merged_bam
-        cmd += " ASSUME_SORTED=" + str(in_sorted)
+        sort_order = "coordinate" if str(in_sorted).upper() == "TRUE" else "unsorted"
+        cmd += " ASSUME_SORT_ORDER=" + sort_order
         cmd += " CREATE_INDEX=TRUE"
         cmd += " VALIDATION_STRINGENCY=SILENT"
         if tmp_dir:
