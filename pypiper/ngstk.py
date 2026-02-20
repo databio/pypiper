@@ -4,6 +4,8 @@ import errno
 import os
 import re
 import subprocess
+from collections.abc import Callable, Iterable
+from typing import Any
 
 from yacman import load_yaml
 
@@ -45,7 +47,7 @@ class NGSTools:
     python: str
     scripts_dir: str
 
-    def __init__(self, config: dict = None):
+    def __init__(self, config: dict[str, str] | None = None) -> None:
         """Initialize tools from config dict.
 
         Args:
@@ -83,7 +85,7 @@ class NGSTk:
         # returns: /home/.local/samtools/bin/samtools index sample.bam
     """
 
-    def __init__(self, config_file=None, pm=None):
+    def __init__(self, config_file: str | None = None, pm: Any = None) -> None:
         self.pm = pm
 
         # Determine tools config from pm, config_file, or empty
@@ -127,7 +129,7 @@ class NGSTk:
         else:
             self.ziptool_cmd = "gzip -f"
 
-    def _ensure_folders(self, *paths):
+    def _ensure_folders(self, *paths: str) -> None:
         """
         Ensure that paths to folder(s) exist.
 
@@ -150,7 +152,7 @@ class NGSTk:
             self.make_dir(fpath if ext else p)
 
     @property
-    def ziptool(self):
+    def ziptool(self) -> str:
         """
         Returns the command to use for compressing/decompressing.
 
@@ -159,7 +161,7 @@ class NGSTk:
         """
         return self.ziptool_cmd
 
-    def make_dir(self, path):
+    def make_dir(self, path: str) -> None:
         """
         Forge path to directory, creating intermediates as needed.
 
@@ -172,12 +174,12 @@ class NGSTk:
             if exception.errno != errno.EEXIST:
                 raise
 
-    def make_sure_path_exists(self, path):
+    def make_sure_path_exists(self, path: str) -> None:
         """Alias for make_dir"""
         self.make_dir(path)
 
     # Borrowed from looper
-    def check_command(self, command):
+    def check_command(self, command: str) -> bool:
         """
         Check if command can be called.
         """
@@ -192,7 +194,7 @@ class NGSTk:
         else:
             return True
 
-    def get_file_size(self, filenames):
+    def get_file_size(self, filenames: str | list[str]) -> float:
         """
         Get size of all files in string (space-separated) in megabytes (Mb).
 
@@ -211,7 +213,9 @@ class NGSTk:
             4,
         )
 
-    def mark_duplicates(self, aligned_file, out_file, metrics_file, remove_duplicates="True"):
+    def mark_duplicates(
+        self, aligned_file: str, out_file: str, metrics_file: str, remove_duplicates: str = "True"
+    ) -> str:
         cmd = self.tools.java
         if self.pm.javamem:  # If a memory restriction exists.
             cmd += " -Xmx" + self.pm.javamem
@@ -222,7 +226,13 @@ class NGSTk:
         cmd += " REMOVE_DUPLICATES=" + remove_duplicates
         return cmd
 
-    def bam2fastq(self, input_bam, output_fastq, output_fastq2=None, unpaired_fastq=None):
+    def bam2fastq(
+        self,
+        input_bam: str,
+        output_fastq: str,
+        output_fastq2: str | None = None,
+        unpaired_fastq: str | None = None,
+    ) -> str:
         """
         Create command to convert BAM(s) to FASTQ(s).
 
@@ -245,7 +255,7 @@ class NGSTk:
             cmd += " UNPAIRED_FASTQ={0}".format(unpaired_fastq)
         return cmd
 
-    def bam_to_fastq(self, bam_file, out_fastq_pre, paired_end):
+    def bam_to_fastq(self, bam_file: str, out_fastq_pre: str, paired_end: bool) -> str:
         """
         Build command to convert BAM file to FASTQ file(s) (R1/R2).
 
@@ -271,7 +281,9 @@ class NGSTk:
         cmd += " VALIDATION_STRINGENCY=SILENT"
         return cmd
 
-    def bam_to_fastq_awk(self, bam_file, out_fastq_pre, paired_end, zipmode=False):
+    def bam_to_fastq_awk(
+        self, bam_file: str, out_fastq_pre: str, paired_end: bool, zipmode: bool = False
+    ) -> tuple[str, str, str | None]:
         """
         This converts bam file to fastq files, but using awk. As of 2016, this is much faster
         than the standard way of doing this using Picard, and also much faster than the
@@ -306,7 +318,9 @@ class NGSTk:
             cmd += "'"
         return cmd, fq1, fq2
 
-    def bam_to_fastq_bedtools(self, bam_file, out_fastq_pre, paired_end):
+    def bam_to_fastq_bedtools(
+        self, bam_file: str, out_fastq_pre: str, paired_end: bool
+    ) -> tuple[str, str, str | None]:
         """
         Converts bam to fastq; A version using bedtools
         """
@@ -320,7 +334,7 @@ class NGSTk:
 
         return cmd, fq1, fq2
 
-    def get_input_ext(self, input_file):
+    def get_input_ext(self, input_file: str) -> str:
         """
         Get the extension of the input_file. Assumes you're using either
         .bam or .fastq/.fq or .fastq.gz/.fq.gz.
@@ -340,7 +354,9 @@ class NGSTk:
             raise UnsupportedFiletypeException(errmsg)
         return input_ext
 
-    def merge_or_link(self, input_args, raw_folder, local_base="sample"):
+    def merge_or_link(
+        self, input_args: list, raw_folder: str, local_base: str = "sample"
+    ) -> str | list[str]:
         """
         Standardizes various input possibilities by converting either .bam,
         .fastq, or .fastq.gz files into a local file; merging those if multiple
@@ -451,14 +467,14 @@ class NGSTk:
 
     def input_to_fastq(
         self,
-        input_file,
-        sample_name,
-        paired_end,
-        fastq_folder,
-        output_file=None,
-        multiclass=False,
-        zipmode=False,
-    ):
+        input_file: str | list[str],
+        sample_name: str,
+        paired_end: bool,
+        fastq_folder: str,
+        output_file: str | None = None,
+        multiclass: bool = False,
+        zipmode: bool = False,
+    ) -> list:
         """
         Builds a command to convert input file to fastq, for various inputs.
 
@@ -572,7 +588,9 @@ class NGSTk:
 
         return [cmd, fastq_prefix, output_file]
 
-    def check_fastq(self, input_files, output_files, paired_end):
+    def check_fastq(
+        self, input_files: str | list[str], output_files: str | list[str], paired_end: bool
+    ) -> Callable:
         """
         Returns a follow sanity-check function to be run after a fastq conversion.
         Run following a command that will produce the fastq files.
@@ -628,7 +646,13 @@ class NGSTk:
 
         return temp_func
 
-    def check_trim(self, trimmed_fastq, paired_end, trimmed_fastq_R2=None, fastqc_folder=None):
+    def check_trim(
+        self,
+        trimmed_fastq: str,
+        paired_end: bool,
+        trimmed_fastq_R2: str | None = None,
+        fastqc_folder: str | None = None,
+    ) -> Callable:
         """
         Build function to evaluate read trimming, and optionally run fastqc.
 
@@ -696,7 +720,7 @@ class NGSTk:
 
         return temp_func
 
-    def validate_bam(self, input_bam):
+    def validate_bam(self, input_bam: str) -> str:
         """
         Wrapper for Picard's ValidateSamFile.
 
@@ -711,7 +735,13 @@ class NGSTk:
         cmd += " INPUT=" + input_bam
         return cmd
 
-    def merge_bams(self, input_bams, merged_bam, in_sorted="TRUE", tmp_dir=None):
+    def merge_bams(
+        self,
+        input_bams: list[str],
+        merged_bam: str,
+        in_sorted: bool | str = "TRUE",
+        tmp_dir: str | None = None,
+    ) -> str | int:
         """
         Combine multiple files into one.
 
@@ -751,14 +781,16 @@ class NGSTk:
 
         return cmd
 
-    def merge_bams_samtools(self, input_bams, merged_bam):
+    def merge_bams_samtools(self, input_bams: list[str], merged_bam: str) -> str:
         cmd = self.tools.samtools + " merge -f "
         cmd += " -@ " + str(self.pm.cores)
         cmd += " " + merged_bam + " "
         cmd += " ".join(input_bams)
         return cmd
 
-    def merge_fastq(self, inputs, output, run=False, remove_inputs=False):
+    def merge_fastq(
+        self, inputs: list[str], output: str, run: bool = False, remove_inputs: bool = False
+    ) -> str | None:
         """
         Merge FASTQ files (zipped or not) into one.
 
@@ -787,7 +819,7 @@ class NGSTk:
         else:
             return cmd
 
-    def count_lines(self, file_name):
+    def count_lines(self, file_name: str) -> str:
         """
         Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
 
@@ -800,7 +832,7 @@ class NGSTk:
         )
         return x.decode().strip()
 
-    def count_lines_zip(self, file_name):
+    def count_lines_zip(self, file_name: str) -> str:
         """
         Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
         For compressed files.
@@ -817,7 +849,7 @@ class NGSTk:
         )
         return x.decode().strip()
 
-    def get_chrs_from_bam(self, file_name):
+    def get_chrs_from_bam(self, file_name: str) -> list[str]:
         """
         Uses samtools to grab the chromosomes from the header that are contained
         in this bam file.
@@ -837,7 +869,7 @@ class NGSTk:
     ###################################
     # In these functions, A paired-end read, with 2 sequences, counts as a two reads
 
-    def count_unique_reads(self, file_name, paired_end):
+    def count_unique_reads(self, file_name: str, paired_end: bool) -> int:
         """
         Sometimes alignment software puts multiple locations for a single read; if you just count
         those reads, you will get an inaccurate count. This is _not_ the same as multimapping reads,
@@ -871,7 +903,7 @@ class NGSTk:
             r2 = 0
         return int(r1) + int(r2)
 
-    def count_unique_mapped_reads(self, file_name, paired_end):
+    def count_unique_mapped_reads(self, file_name: str, paired_end: bool) -> int:
         """
         For a bam or sam file with paired or or single-end reads, returns the
         number of mapped reads, counting each read only once, even if it appears
@@ -916,7 +948,7 @@ class NGSTk:
 
         return int(r1) + int(r2)
 
-    def count_flag_reads(self, file_name, flag, paired_end):
+    def count_flag_reads(self, file_name: str, flag: int | str, paired_end: bool) -> str:
         """
         Counts the number of reads with the specified flag.
 
@@ -934,7 +966,7 @@ class NGSTk:
             param += " -S"
         return self.samtools_view(file_name, param=param)
 
-    def count_multimapping_reads(self, file_name, paired_end):
+    def count_multimapping_reads(self, file_name: str, paired_end: bool) -> int:
         """
         Counts the number of reads that mapped to multiple locations. Warning:
         currently, if the alignment software includes the reads at multiple locations, this function
@@ -950,7 +982,7 @@ class NGSTk:
         """
         return int(self.count_flag_reads(file_name, 256, paired_end))
 
-    def count_uniquelymapping_reads(self, file_name, paired_end):
+    def count_uniquelymapping_reads(self, file_name: str, paired_end: bool) -> str:
         """
         Counts the number of reads that mapped to a unique position.
 
@@ -963,7 +995,7 @@ class NGSTk:
             param += " -S"
         return self.samtools_view(file_name, param=param)
 
-    def count_fail_reads(self, file_name, paired_end):
+    def count_fail_reads(self, file_name: str, paired_end: bool) -> int:
         """
         Counts the number of reads that failed platform/vendor quality checks.
 
@@ -975,7 +1007,7 @@ class NGSTk:
         """
         return int(self.count_flag_reads(file_name, 512, paired_end))
 
-    def samtools_view(self, file_name, param, postpend=""):
+    def samtools_view(self, file_name: str, param: str, postpend: str = "") -> str:
         """
         Run samtools view, with flexible parameters and post-processing.
 
@@ -992,7 +1024,7 @@ class NGSTk:
         # with python 3.6 we could use argument: "encoding='UTF-8'""
         return subprocess.check_output(cmd, shell=True).decode().strip()
 
-    def count_reads(self, file_name, paired_end):
+    def count_reads(self, file_name: str, paired_end: bool) -> str | int | float:
         """
         Count reads in a file.
 
@@ -1025,7 +1057,7 @@ class NGSTk:
             divisor = 2 if paired_end else 4
             return int(num_lines) / divisor
 
-    def count_concordant(self, aligned_bam):
+    def count_concordant(self, aligned_bam: str) -> str:
         """
         Count only reads that "aligned concordantly exactly 1 time."
 
@@ -1037,7 +1069,7 @@ class NGSTk:
 
         return subprocess.check_output(cmd, shell=True).decode().strip()
 
-    def count_mapped_reads(self, file_name, paired_end):
+    def count_mapped_reads(self, file_name: str, paired_end: bool) -> str | int:
         """
         Mapped_reads are not in fastq format, so this one doesn't need to accommodate fastq,
         and therefore, doesn't require a paired-end parameter because it only uses samtools view.
@@ -1059,7 +1091,7 @@ class NGSTk:
             return self.samtools_view(file_name, param="-c -F4 -S")
         return -1
 
-    def sam_conversions(self, sam_file, depth=True):
+    def sam_conversions(self, sam_file: str, depth: bool = True) -> str:
         """
         Convert sam files to bam files, then sort and index them for later use.
 
@@ -1094,7 +1126,7 @@ class NGSTk:
             )
         return cmd
 
-    def bam_conversions(self, bam_file, depth=True):
+    def bam_conversions(self, bam_file: str, depth: bool = True) -> str:
         """
         Sort and index bam files for later use.
 
@@ -1129,7 +1161,7 @@ class NGSTk:
             )
         return cmd
 
-    def fastqc(self, file, output_dir):
+    def fastqc(self, file: str, output_dir: str) -> str:
         """
         Create command to run fastqc on a FASTQ file
 
@@ -1152,7 +1184,7 @@ class NGSTk:
         self.make_sure_path_exists(output_dir)
         return "{} --noextract --outdir {} {}".format(self.tools.fastqc, output_dir, file)
 
-    def fastqc_rename(self, input_bam, output_dir, sample_name):
+    def fastqc_rename(self, input_bam: str, output_dir: str, sample_name: str) -> list[str]:
         """
         Create pair of commands to run fastqc and organize files.
 
@@ -1181,24 +1213,24 @@ class NGSTk:
         cmds.append(cmd2)
         return cmds
 
-    def samtools_index(self, bam_file):
+    def samtools_index(self, bam_file: str) -> str:
         """Index a bam file."""
         cmd = self.tools.samtools + " index {0}".format(bam_file)
         return cmd
 
     def slurm_header(
         self,
-        job_name,
-        output,
-        queue="shortq",
-        n_tasks=1,
-        time="10:00:00",
-        cpus_per_task=8,
-        mem_per_cpu=2000,
-        nodes=1,
-        user_mail="",
-        mail_type="end",
-    ):
+        job_name: str,
+        output: str,
+        queue: str = "shortq",
+        n_tasks: int = 1,
+        time: str = "10:00:00",
+        cpus_per_task: int = 8,
+        mem_per_cpu: int = 2000,
+        nodes: int = 1,
+        user_mail: str = "",
+        mail_type: str = "end",
+    ) -> str:
         cmd = """       #!/bin/bash
         #SBATCH --partition={0}
         #SBATCH --ntasks={1}
@@ -1233,45 +1265,45 @@ class NGSTk:
 
         return cmd
 
-    def slurm_footer(self):
+    def slurm_footer(self) -> str:
         return "     date"
 
-    def slurm_submit_job(self, job_file):
+    def slurm_submit_job(self, job_file: str) -> int:
         return os.system("sbatch %s" % job_file)
 
-    def remove_file(self, file_name):
+    def remove_file(self, file_name: str) -> str:
         return "rm {0}".format(file_name)
 
-    def move_file(self, old, new):
+    def move_file(self, old: str, new: str) -> str:
         return "mv {0} {1}".format(old, new)
 
-    def preseq_curve(self, bam_file, output_prefix):
+    def preseq_curve(self, bam_file: str, output_prefix: str) -> str:
         return """
         preseq c_curve -B -P -o {0}.yield.txt {1}
         """.format(output_prefix, bam_file)
 
-    def preseq_extrapolate(self, bam_file, output_prefix):
+    def preseq_extrapolate(self, bam_file: str, output_prefix: str) -> str:
         return """
         preseq lc_extrap -v -B -P -e 1e+9 -o {0}.future_yield.txt {1}
         """.format(output_prefix, bam_file)
 
-    def preseq_coverage(self, bam_file, output_prefix):
+    def preseq_coverage(self, bam_file: str, output_prefix: str) -> str:
         return """
         preseq gc_extrap -o {0}.future_coverage.txt {1}
         """.format(output_prefix, bam_file)
 
     def trimmomatic(
         self,
-        input_fastq1,
-        output_fastq1,
-        cpus,
-        adapters,
-        log,
-        input_fastq2=None,
-        output_fastq1_unpaired=None,
-        output_fastq2=None,
-        output_fastq2_unpaired=None,
-    ):
+        input_fastq1: str,
+        output_fastq1: str,
+        cpus: int | str,
+        adapters: str,
+        log: str,
+        input_fastq2: str | None = None,
+        output_fastq1_unpaired: str | None = None,
+        output_fastq2: str | None = None,
+        output_fastq2_unpaired: str | None = None,
+    ) -> str:
         PE = False if input_fastq2 is None else True
         pe = "PE" if PE else "SE"
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
@@ -1292,15 +1324,15 @@ class NGSTk:
 
     def skewer(
         self,
-        input_fastq1,
-        output_prefix,
-        output_fastq1,
-        log,
-        cpus,
-        adapters,
-        input_fastq2=None,
-        output_fastq2=None,
-    ):
+        input_fastq1: str,
+        output_prefix: str,
+        output_fastq1: str,
+        log: str,
+        cpus: int | str,
+        adapters: str,
+        input_fastq2: str | None = None,
+        output_fastq2: str | None = None,
+    ) -> list[str]:
         """
         Create commands with which to run skewer.
 
@@ -1348,15 +1380,15 @@ class NGSTk:
 
     def bowtie2_map(
         self,
-        input_fastq1,
-        output_bam,
-        log,
-        metrics,
-        genome_index,
-        max_insert,
-        cpus,
-        input_fastq2=None,
-    ):
+        input_fastq1: str,
+        output_bam: str,
+        log: str,
+        metrics: str,
+        genome_index: str,
+        max_insert: int | str,
+        cpus: int | str,
+        input_fastq2: str | None = None,
+    ) -> str:
         # Admits 2000bp-long fragments (--maxins option)
         cmd = self.tools.bowtie2 + " --very-sensitive --no-discordant -p {0}".format(cpus)
         cmd += " -x {0}".format(genome_index)
@@ -1370,7 +1402,9 @@ class NGSTk:
         cmd += " 2> {0} | samtools view -S -b - | samtools sort -o {1} -".format(log, output_bam)
         return cmd
 
-    def topHat_map(self, input_fastq, output_dir, genome, transcriptome, cpus):
+    def topHat_map(
+        self, input_fastq: str, output_dir: str, genome: str, transcriptome: str, cpus: int | str
+    ) -> str:
         # TODO:
         # Allow paired input
         cmd = (
@@ -1385,7 +1419,9 @@ class NGSTk:
         )
         return cmd
 
-    def picard_mark_duplicates(self, input_bam, output_bam, metrics_file, temp_dir="."):
+    def picard_mark_duplicates(
+        self, input_bam: str, output_bam: str, metrics_file: str, temp_dir: str = "."
+    ) -> list[str]:
         transient_file = re.sub(r"\.bam$", "", output_bam) + ".dups.nosort.bam"
         output_bam = re.sub(r"\.bam$", "", output_bam)
         cmd1 = self.tools.java + " -Xmx" + self.pm.javamem
@@ -1401,13 +1437,13 @@ class NGSTk:
         cmd3 = "if [[ -s {0} ]]; then rm {0}; fi".format(transient_file)
         return [cmd1, cmd2, cmd3]
 
-    def sambamba_remove_duplicates(self, input_bam, output_bam, cpus=16):
+    def sambamba_remove_duplicates(self, input_bam: str, output_bam: str, cpus: int = 16) -> str:
         cmd = self.tools.sambamba + " markdup -t {0} -r {1} {2}".format(
             cpus, input_bam, output_bam
         )
         return cmd
 
-    def get_mitochondrial_reads(self, bam_file, output, cpus=4):
+    def get_mitochondrial_reads(self, bam_file: str, output: str, cpus: int = 4) -> list[str]:
         """ """
         tmp_bam = bam_file + "tmp_rmMe"
         cmd1 = self.tools.sambamba + " index -t {0} {1}".format(cpus, bam_file)
@@ -1420,7 +1456,7 @@ class NGSTk:
         cmd3 = "rm {}".format(tmp_bam)
         return [cmd1, cmd2, cmd3]
 
-    def filter_reads(self, input_bam, output_bam, metrics_file, paired=False, cpus=16, Q=30):
+    def filter_reads(self, input_bam: str, output_bam: str, metrics_file: str, paired: bool = False, cpus: int = 16, Q: int = 30) -> list[str]:
         """
         Remove duplicates, filter for >Q, remove multiple mapping reads.
         For paired-end reads, keep only proper pairs.
@@ -1446,7 +1482,7 @@ class NGSTk:
         cmd4 = "if [[ -s {0} ]]; then rm {0}; fi".format(nodups + ".bai")
         return [cmd1, cmd2, cmd3, cmd4]
 
-    def shift_reads(self, input_bam, genome, output_bam):
+    def shift_reads(self, input_bam: str, genome: str, output_bam: str) -> str:
         # output_bam = re.sub("\.bam$", "", output_bam)
         cmd = self.tools.samtools + " view -h {0} |".format(input_bam)
         cmd += " shift_reads.py {0} |".format(genome)
@@ -1454,18 +1490,18 @@ class NGSTk:
         cmd += " " + self.tools.samtools + " sort -o {0} -".format(output_bam)
         return cmd
 
-    def sort_index_bam(self, input_bam, output_bam):
+    def sort_index_bam(self, input_bam: str, output_bam: str) -> list[str]:
         tmp_bam = re.sub(r"\.bam", ".sorted", input_bam)
         cmd1 = self.tools.samtools + " sort {0} {1}".format(input_bam, tmp_bam)
         cmd2 = "mv {0}.bam {1}".format(tmp_bam, output_bam)
         cmd3 = self.tools.samtools + " index {0}".format(output_bam)
         return [cmd1, cmd2, cmd3]
 
-    def index_bam(self, input_bam):
+    def index_bam(self, input_bam: str) -> str:
         cmd = self.tools.samtools + " index {0}".format(input_bam)
         return cmd
 
-    def run_spp(self, input_bam, output, plot, cpus):
+    def run_spp(self, input_bam: str, output: str, plot: str, cpus: int) -> str:
         """
         Run the SPP read peak analysis tool.
 
@@ -1484,7 +1520,7 @@ class NGSTk:
         )
         return cmd
 
-    def get_fragment_sizes(self, bam_file):
+    def get_fragment_sizes(self, bam_file: str) -> Any:
         try:
             import numpy as np
             import pysam
@@ -1499,8 +1535,8 @@ class NGSTk:
         return np.array(frag_sizes)
 
     def plot_atacseq_insert_sizes(
-        self, bam, plot, output_csv, max_insert=1500, smallest_insert=30
-    ):
+        self, bam: str, plot: str, output_csv: str, max_insert: int = 1500, smallest_insert: int = 30
+    ) -> None:
         """
         Heavy inspiration from here:
         https://github.com/dbrg77/ATAC/blob/master/ATAC_seq_read_length_curve_fitting.ipynb
@@ -1666,14 +1702,14 @@ class NGSTk:
     # TODO: parameterize in terms of normalization factor.
     def bam_to_bigwig(
         self,
-        input_bam,
-        output_bigwig,
-        genome_sizes,
-        genome,
-        tagmented=False,
-        normalize=False,
-        norm_factor=1000,
-    ):
+        input_bam: str,
+        output_bigwig: str,
+        genome_sizes: str,
+        genome: str,
+        tagmented: bool = False,
+        normalize: bool = False,
+        norm_factor: int = 1000,
+    ) -> list[str]:
         """
         Convert a BAM file to a bigWig file.
 
@@ -1736,7 +1772,7 @@ class NGSTk:
         cmds.append("chmod 755 {0}".format(output_bigwig))
         return cmds
 
-    def add_track_to_hub(self, sample_name, track_url, track_hub, colour, five_prime=""):
+    def add_track_to_hub(self, sample_name: str, track_url: str, track_hub: str, colour: str, five_prime: str = "") -> list[str]:
         cmd1 = """echo "track type=bigWig name='{0} {1}' description='{0} {1}'""".format(
             sample_name, five_prime
         )
@@ -1746,7 +1782,7 @@ class NGSTk:
         cmd2 = "chmod 755 {0}".format(track_hub)
         return [cmd1, cmd2]
 
-    def link_to_track_hub(self, track_hub_url, file_name, genome):
+    def link_to_track_hub(self, track_hub_url: str, file_name: str, genome: str) -> None:
         import textwrap
 
         db = "org" if genome == "hg19" else "db"  # different database call for human
@@ -1762,7 +1798,7 @@ class NGSTk:
         with open(file_name, "w") as handle:
             handle.write(textwrap.dedent(html))
 
-    def htseq_count(self, input_bam, gtf, output):
+    def htseq_count(self, input_bam: str, gtf: str, output: str) -> list[str]:
         sam = input_bam.replace("bam", "sam")
         cmd1 = "samtools view {0} > {1}".format(input_bam, sam)
         cmd2 = "htseq-count -f sam -t exon -i transcript_id -m union {0} {1} > {2}".format(
@@ -1773,15 +1809,15 @@ class NGSTk:
 
     def kallisto(
         self,
-        input_fastq,
-        output_dir,
-        output_bam,
-        transcriptome_index,
-        cpus,
-        input_fastq2=None,
-        size=180,
-        b=200,
-    ):
+        input_fastq: str,
+        output_dir: str,
+        output_bam: str,
+        transcriptome_index: str,
+        cpus: int,
+        input_fastq2: str | None = None,
+        size: int = 180,
+        b: int = 200,
+    ) -> list[str]:
         cmd1 = (
             self.tools.kallisto
             + " quant --bias --pseudobam -b {0} -l {1} -i {2} -o {3} -t {4}".format(
@@ -1796,13 +1832,13 @@ class NGSTk:
         cmd2 = self.tools.kallisto + " h5dump -o {0} {0}/abundance.h5".format(output_dir)
         return [cmd1, cmd2]
 
-    def genome_wide_coverage(self, input_bam, genome_windows, output):
+    def genome_wide_coverage(self, input_bam: str, genome_windows: str, output: str) -> str:
         cmd = self.tools.bedtools + " coverage -counts -abam {0} -b {1} > {2}".format(
             input_bam, genome_windows, output
         )
         return cmd
 
-    def calc_frip(self, input_bam, input_bed, threads=4):
+    def calc_frip(self, input_bam: str, input_bed: str, threads: int = 4) -> str:
         """
         Calculate fraction of reads in peaks.
 
@@ -1821,13 +1857,13 @@ class NGSTk:
         cmd = self.simple_frip(input_bam, input_bed, threads)
         return subprocess.check_output(cmd.split(" "), shell=True).decode().strip()
 
-    def simple_frip(self, input_bam, input_bed, threads=4):
+    def simple_frip(self, input_bam: str, input_bed: str, threads: int = 4) -> str:
         cmd = "{} view".format(self.tools.samtools)
         cmd += " -@ {} -c -L {}".format(threads, input_bed)
         cmd += " " + input_bam
         return cmd
 
-    def calculate_frip(self, input_bam, input_bed, output, cpus=4):
+    def calculate_frip(self, input_bam: str, input_bed: str, output: str, cpus: int = 4) -> str:
         cmd = self.tools.sambamba + " depth region -t {0}".format(cpus)
         cmd += " -L {0}".format(input_bed)
         cmd += " {0}".format(input_bam)
@@ -1836,17 +1872,17 @@ class NGSTk:
 
     def macs2_call_peaks(
         self,
-        treatment_bams,
-        output_dir,
-        sample_name,
-        genome,
-        control_bams=None,
-        broad=False,
-        paired=False,
-        pvalue=None,
-        qvalue=None,
-        include_significance=None,
-    ):
+        treatment_bams: str | Iterable[str],
+        output_dir: str,
+        sample_name: str,
+        genome: str,
+        control_bams: str | Iterable[str] | None = None,
+        broad: bool = False,
+        paired: bool = False,
+        pvalue: float | None = None,
+        qvalue: float | None = None,
+        include_significance: bool | None = None,
+    ) -> str:
         """
         Use MACS2 to call peaks.
 
@@ -1922,7 +1958,7 @@ class NGSTk:
 
         return cmd
 
-    def macs2_call_peaks_atacseq(self, treatment_bam, output_dir, sample_name, genome):
+    def macs2_call_peaks_atacseq(self, treatment_bam: str, output_dir: str, sample_name: str, genome: str) -> str:
         genome_sizes = {
             "hg38": 2.7e9,
             "hg19": 2.7e9,
@@ -1936,7 +1972,7 @@ class NGSTk:
         )
         return cmd
 
-    def macs2_plot_model(self, r_peak_model_file, sample_name, output_dir):
+    def macs2_plot_model(self, r_peak_model_file: str, sample_name: str, output_dir: str) -> list[str]:
         # run macs r script
         cmd1 = "{} {}".format(self.tools.Rscript, r_peak_model_file)
         # move output plot to sample dir
@@ -1947,15 +1983,15 @@ class NGSTk:
 
     def spp_call_peaks(
         self,
-        treatment_bam,
-        control_bam,
-        treatment_name,
-        control_name,
-        output_dir,
-        broad,
-        cpus,
-        qvalue=None,
-    ):
+        treatment_bam: str,
+        control_bam: str,
+        treatment_name: str,
+        control_name: str,
+        output_dir: str,
+        broad: str | bool,
+        cpus: int,
+        qvalue: float | None = None,
+    ) -> str:
         """
         Build command for R script to call peaks with SPP.
 
@@ -1989,43 +2025,43 @@ class NGSTk:
             cmd += " {}".format(qvalue)
         return cmd
 
-    def bam_to_bed(self, input_bam, output_bed):
+    def bam_to_bed(self, input_bam: str, output_bed: str) -> str:
         cmd = self.tools.bedtools + " bamtobed -i {0} > {1}".format(input_bam, output_bed)
         return cmd
 
-    def zinba_call_peaks(self, treatment_bed, control_bed, cpus, tagmented=False):
+    def zinba_call_peaks(self, treatment_bed: str, control_bed: str, cpus: int, tagmented: bool = False) -> str:
         fragmentLength = 80 if tagmented else 180
         cmd = self.tools.Rscript + " `which zinba.R` -l {0} -t {1} -c {2}".format(
             fragmentLength, treatment_bed, control_bed
         )
         return cmd
 
-    def filter_peaks_mappability(self, peaks, alignability, filtered_peaks):
+    def filter_peaks_mappability(self, peaks: str, alignability: str, filtered_peaks: str) -> str:
         cmd = self.tools.bedtools + " intersect -wa -u -f 1"
         cmd += " -a {0} -b {1} > {2} ".format(peaks, alignability, filtered_peaks)
         return cmd
 
     def homer_find_motifs(
         self,
-        peak_file,
-        genome,
-        output_dir,
-        size=150,
-        length="8,10,12,14,16",
-        n_motifs=12,
-    ):
+        peak_file: str,
+        genome: str,
+        output_dir: str,
+        size: int = 150,
+        length: str = "8,10,12,14,16",
+        n_motifs: int = 12,
+    ) -> str:
         cmd = "findMotifsGenome.pl {0} {1} {2}".format(peak_file, genome, output_dir)
         cmd += " -mask -size {0} -len {1} -S {2}".format(size, length, n_motifs)
         return cmd
 
-    def homer_annotate_pPeaks(self, peak_file, genome, motif_file, output_bed):
+    def homer_annotate_pPeaks(self, peak_file: str, genome: str, motif_file: str, output_bed: str) -> str:
         cmd = "annotatePeaks.pl {0} {1} -mask -mscore -m {2} |".format(
             peak_file, genome, motif_file
         )
         cmd += "tail -n +2 | cut -f 1,5,22 > {3}"
         return cmd
 
-    def center_peaks_on_motifs(self, peak_file, genome, window_width, motif_file, output_bed):
+    def center_peaks_on_motifs(self, peak_file: str, genome: str, window_width: int, motif_file: str, output_bed: str) -> str:
         cmd = "annotatePeaks.pl {0} {1} -size {2} -center {3} |".format(
             peak_file, genome, window_width, motif_file
         )
@@ -2036,7 +2072,7 @@ class NGSTk:
         cmd += " fix_bedfile_genome_boundaries.py {0} | sortBed > {1}".format(genome, output_bed)
         return cmd
 
-    def get_read_type(self, bam_file, n=10):
+    def get_read_type(self, bam_file: str, n: int = 10) -> tuple[str, int]:
         """
         Gets the read type (single, paired) and length of bam file.
 
@@ -2073,7 +2109,7 @@ class NGSTk:
         else:
             return "SE", read_length
 
-    def parse_bowtie_stats(self, stats_file):
+    def parse_bowtie_stats(self, stats_file: str) -> Any:
         """
         Parses Bowtie2 stats file, returns series with values.
 
@@ -2125,7 +2161,7 @@ class NGSTk:
             pass
         return stats
 
-    def parse_duplicate_stats(self, stats_file):
+    def parse_duplicate_stats(self, stats_file: str) -> Any:
         """
         Parses sambamba markdup output, returns series with values.
 
@@ -2155,7 +2191,7 @@ class NGSTk:
             pass
         return series
 
-    def parse_qc(self, qc_file):
+    def parse_qc(self, qc_file: str) -> Any:
         """
         Parse phantompeakqualtools (spp) QC table and return quality metrics.
 
@@ -2176,7 +2212,7 @@ class NGSTk:
             pass
         return series
 
-    def get_peak_number(self, sample):
+    def get_peak_number(self, sample: Any) -> Any:
         """
         Counts number of peaks from a sample's peak file.
 
@@ -2188,7 +2224,7 @@ class NGSTk:
         sample["peakNumber"] = re.sub(r"\D.*", "", out)
         return sample
 
-    def get_frip(self, sample):
+    def get_frip(self, sample: Any) -> Any:
         """
         Calculates the fraction of reads in peaks for a given sample.
 

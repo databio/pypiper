@@ -3,7 +3,8 @@
 import abc
 import glob
 import os
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
+from typing import Any
 
 from .exceptions import (
     IllegalPipelineDefinitionError,
@@ -48,7 +49,14 @@ class Pipeline(object):
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name=None, manager=None, outfolder=None, args=None, **pl_mgr_kwargs):
+    def __init__(
+        self,
+        name: str | None = None,
+        manager: PipelineManager | None = None,
+        outfolder: str | None = None,
+        args: Any = None,
+        **pl_mgr_kwargs: Any,
+    ) -> None:
         super(Pipeline, self).__init__()
         try:
             self.name = name or manager.name
@@ -122,9 +130,9 @@ class Pipeline(object):
         # to determine checkpoint name/path from stage/stage name.
         # We just use this internal-to-external mapping here, ephemerally,
         # to pretest whether there'd be a checkpoint name resolution collision.
-        _internal_to_external = dict()
-        self._external_to_internal = dict()
-        self._stages = []
+        _internal_to_external: dict[str, str] = dict()
+        self._external_to_internal: dict[str, str] = dict()
+        self._stages: list[Stage] = []
 
         for name, stage in name_stage_pairs:
             # Use external translator to further confound redefinition.
@@ -149,7 +157,7 @@ class Pipeline(object):
         self.skipped, self.executed = None, None
 
     @property
-    def outfolder(self):
+    def outfolder(self) -> str:
         """Determine the path to the output folder for this pipeline instance.
 
         Returns:
@@ -158,7 +166,7 @@ class Pipeline(object):
         return self.manager.outfolder
 
     @abc.abstractmethod
-    def stages(self):
+    def stages(self) -> Mapping | list:
         """Define the names of pipeline processing stages.
 
         Returns:
@@ -167,7 +175,7 @@ class Pipeline(object):
         pass
 
     @property
-    def stage_names(self):
+    def stage_names(self) -> list[str]:
         """Fetch the pipeline's stage names as specified by the pipeline class author.
 
         I.e., not necessarily those that are used for the checkpoint files.
@@ -177,7 +185,7 @@ class Pipeline(object):
         """
         return [_parse_stage_name(s) for s in self._stages]
 
-    def checkpoint(self, stage, msg=""):
+    def checkpoint(self, stage: Stage, msg: str = "") -> bool:
         """Touch checkpoint file for given stage and provide timestamp message.
 
         Args:
@@ -194,7 +202,7 @@ class Pipeline(object):
         # timestamp method to be True.
         return self.manager.timestamp(message=msg, checkpoint=stage.checkpoint_name, finished=True)
 
-    def completed_stage(self, stage):
+    def completed_stage(self, stage: Stage) -> bool:
         """Determine whether the pipeline's completed the stage indicated.
 
         Args:
@@ -209,11 +217,11 @@ class Pipeline(object):
         check_path = _checkpoint_filepath(stage, self.manager)
         return os.path.exists(check_path)
 
-    def halt(self, **kwargs):
+    def halt(self, **kwargs: Any) -> None:
         """Halt the pipeline"""
         self.manager.halt(**kwargs)
 
-    def list_flags(self, only_name=False):
+    def list_flags(self, only_name: bool = False) -> list[str]:
         """Determine the flag files associated with this pipeline.
 
         Args:
@@ -229,7 +237,12 @@ class Pipeline(object):
         else:
             return paths
 
-    def run(self, start_point=None, stop_before=None, stop_after=None):
+    def run(
+        self,
+        start_point: str | None = None,
+        stop_before: str | None = None,
+        stop_after: str | None = None,
+    ) -> None:
         """Run the pipeline, optionally specifying start and/or stop points.
 
         Args:
@@ -340,15 +353,15 @@ class Pipeline(object):
         else:
             self.halt(raise_error=False)
 
-    def wrapup(self):
+    def wrapup(self) -> None:
         """Final mock stage to run after final one finishes."""
         self.manager.complete()
 
-    def _reset(self):
+    def _reset(self) -> None:
         """Scrub decks with respect to Stage status/label tracking."""
         self.skipped, self.executed = [], []
 
-    def _start_index(self, start=None):
+    def _start_index(self, start: str | None = None) -> int:
         """Seek to the first stage to run."""
         if start is None:
             return 0
@@ -359,7 +372,7 @@ class Pipeline(object):
         except ValueError:
             raise UnknownPipelineStageError(start, self)
 
-    def _stop_index(self, stop_point, inclusive):
+    def _stop_index(self, stop_point: str | None, inclusive: bool | None) -> int:
         """Determine index of stage of stopping point for run().
 
         Args:
@@ -386,7 +399,7 @@ class Pipeline(object):
         return stop_index + 1 if inclusive else stop_index
 
 
-def _is_unordered(collection):
+def _is_unordered(collection: Iterable) -> bool:
     """Determine whether a collection appears to be unordered.
 
     This is a conservative implementation, allowing for the possibility that
@@ -410,7 +423,7 @@ def _is_unordered(collection):
     return isinstance(collection, set) or isinstance(collection, dict)
 
 
-def _parse_stage_spec(stage_spec):
+def _parse_stage_spec(stage_spec: Any) -> tuple[str, Stage]:
     """Handle alternate Stage specifications, returning name and Stage.
 
     Isolate this parsing logic from any iteration. TypeError as single

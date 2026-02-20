@@ -1,5 +1,7 @@
 """Custom pypiper exceptions"""
 
+from typing import Any
+
 __all__ = [
     "PipelineError",
     "PipelineHalt",
@@ -35,7 +37,7 @@ class IllegalPipelineExecutionError(PipelineError):
 class MissingCheckpointError(Exception):
     """Represent case of expected but absent checkpoint file."""
 
-    def __init__(self, checkpoint, filepath):
+    def __init__(self, checkpoint: str, filepath: str) -> None:
         msg = "{}: '{}'".format(checkpoint, filepath)
         super(MissingCheckpointError, self).__init__(msg)
 
@@ -48,7 +50,7 @@ class UnknownPipelineStageError(Exception):
         pipeline: Pipeline for which the stage is unknown/undefined.
     """
 
-    def __init__(self, stage_name, pipeline=None):
+    def __init__(self, stage_name: str, pipeline: Any = None) -> None:
         message = stage_name
         if pipeline is not None:
             try:
@@ -73,7 +75,7 @@ class PipelineHalt(Exception):
 
     """
 
-    def __init__(self, checkpoint=None, finished=None):
+    def __init__(self, checkpoint: str | None = None, finished: bool | None = None) -> None:
         if checkpoint is None:
             super(PipelineHalt, self).__init__()
         else:

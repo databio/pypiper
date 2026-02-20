@@ -3,9 +3,10 @@
 import os
 import re
 import sys
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from shlex import split
 from subprocess import PIPE
+from typing import Any
 
 CHECK_TEXT_TYPES = (str,)
 from inspect import getfullargspec as get_fun_sig
@@ -41,7 +42,13 @@ __all__ = [
 CHECKPOINT_SPECIFICATIONS = ["start_point", "stop_before", "stop_after"]
 
 
-def add_pypiper_args(parser, groups=("pypiper",), args=None, required=None, all_args=False):
+def add_pypiper_args(
+    parser: Any,
+    groups: tuple[str, ...] | list[str] = ("pypiper",),
+    args: str | list[str] | None = None,
+    required: list[str] | None = None,
+    all_args: bool = False,
+) -> Any:
     """Use this to add standardized pypiper arguments to your python pipeline.
 
     There are two ways to use `add_pypiper_args`: by specifying argument groups,
@@ -66,7 +73,7 @@ def add_pypiper_args(parser, groups=("pypiper",), args=None, required=None, all_
     return parser
 
 
-def build_command(chunks):
+def build_command(chunks: str | list[str | tuple[str, str | None] | None]) -> str:
     """Create a command from various parts.
 
     The parts provided may include a base, flags, option-bound arguments, and
@@ -113,7 +120,7 @@ def build_command(chunks):
     return " ".join(parsed_pieces)
 
 
-def build_sample_paths(sample):
+def build_sample_paths(sample: Any) -> None:
     """Ensure existence of folders for a Sample.
 
     Args:
@@ -130,7 +137,7 @@ def build_sample_paths(sample):
             os.makedirs(base)
 
 
-def _checkpoint_filename(checkpoint, pipeline_name=None):
+def _checkpoint_filename(checkpoint: str | Any, pipeline_name: str | None = None) -> str:
     """Translate a checkpoint to a filename.
 
     This not only adds the checkpoint file extension but also standardizes the
@@ -160,7 +167,7 @@ def _checkpoint_filename(checkpoint, pipeline_name=None):
     return base + CHECKPOINT_EXTENSION
 
 
-def _checkpoint_filepath(checkpoint, pm):
+def _checkpoint_filepath(checkpoint: str | Any, pm: Any) -> str:
     """Create filepath for indicated checkpoint.
 
     Args:
@@ -212,7 +219,7 @@ def _checkpoint_filepath(checkpoint, pm):
     return _pipeline_filepath(pm, filename=chkpt_name)
 
 
-def _check_shell(cmd, shell=None):
+def _check_shell(cmd: str, shell: bool | None = None) -> bool:
     """Determine whether a command appears to involve shell process(es).
 
     The shell argument can be used to override the result of the check.
@@ -229,7 +236,7 @@ def _check_shell(cmd, shell=None):
     return "|" in cmd or ">" in cmd or r"*" in cmd
 
 
-def _check_shell_asterisk(cmd):
+def _check_shell_asterisk(cmd: str) -> bool:
     """Determine whether a command appears to involve shell stars.
 
     Args:
@@ -242,10 +249,12 @@ def _check_shell_asterisk(cmd):
 
 
 def check_all_commands(
-    cmds,
-    get_bad_result=lambda bads: Exception("{} uncallable commands: {}".format(len(bads), bads)),
-    handle=None,
-):
+    cmds: str | list[str],
+    get_bad_result: Callable = lambda bads: Exception(
+        "{} uncallable commands: {}".format(len(bads), bads)
+    ),
+    handle: Callable | None = None,
+) -> bool:
     """Determine whether all commands are callable.
 
     Args:
@@ -277,8 +286,8 @@ def check_all_commands(
 
 
 def determine_uncallable(
-    commands,
-    transformations=(
+    commands: str | list[str],
+    transformations: tuple[tuple[Callable, Callable], ...] | None = (
         (
             lambda f: (
                 isinstance(f, str)
@@ -288,8 +297,8 @@ def determine_uncallable(
             lambda f: "java -jar {}".format(expandpath(f)),
         ),
     ),
-    accumulate=False,
-):
+    accumulate: bool = False,
+) -> list[tuple[str, str]]:
     """Determine which commands are not callable.
 
     Args:
@@ -361,7 +370,7 @@ def determine_uncallable(
     ]
 
 
-def _split_by_pipes(cmd):
+def _split_by_pipes(cmd: str) -> list[str]:
     """Split the command by shell pipes, but preserve contents in parentheses and braces.
 
     Also handles nested parens and braces.
@@ -375,9 +384,9 @@ def _split_by_pipes(cmd):
 
     # Build a simple finite state machine to split on pipes, while
     # handling nested braces or parentheses.
-    stack_brace = []
-    stack_paren = []
-    cmdlist = []
+    stack_brace: list[str] = []
+    stack_paren: list[str] = []
+    cmdlist: list[str] = []
     newcmd = str()
     for char in cmd:
         if char == "{":
@@ -407,7 +416,7 @@ def _split_by_pipes(cmd):
     return cmdlist
 
 
-def _check_shell_pipes(cmd):
+def _check_shell_pipes(cmd: str) -> bool:
     """Determine whether a command appears to contain shell pipes.
 
     Args:
@@ -419,7 +428,7 @@ def _check_shell_pipes(cmd):
     return "|" in _strip_braced_txt(cmd)
 
 
-def _strip_braced_txt(cmd):
+def _strip_braced_txt(cmd: str) -> str:
     curly_braces = True
     while curly_braces:
         SRE_match_obj = re.search(r"\{(.*?)}", cmd)
@@ -433,7 +442,7 @@ def _strip_braced_txt(cmd):
     return cmd
 
 
-def _check_shell_redirection(cmd):
+def _check_shell_redirection(cmd: str) -> bool:
     """Determine whether a command appears to contain shell redirection symbol outside of curly brackets.
 
     Args:
@@ -446,7 +455,7 @@ def _check_shell_redirection(cmd):
     return ">" in _strip_braced_txt(cmd)
 
 
-def _clear_flags(pm, flag_names=None):
+def _clear_flags(pm: Any, flag_names: str | list[str] | None = None) -> list[str]:
     """Clear pipeline flags.
 
     Args:
@@ -480,7 +489,7 @@ def _clear_flags(pm, flag_names=None):
     return removed
 
 
-def _flag_name(status):
+def _flag_name(status: str) -> str:
     """Determine the name for a flag file of the status indicated.
 
     Args:
@@ -492,7 +501,7 @@ def _flag_name(status):
     return status + ".flag"
 
 
-def _get_proc_name(cmd):
+def _get_proc_name(cmd: str | Iterable[str]) -> str:
     """Get the representative process name from complex command.
 
     Args:
@@ -507,7 +516,12 @@ def _get_proc_name(cmd):
     return cmd.split()[0].replace("(", "").replace(")", "")
 
 
-def get_first_value(param, param_pools, on_missing=None, error=True):
+def get_first_value(
+    param: str,
+    param_pools: Sequence[Mapping],
+    on_missing: Any = None,
+    error: bool = True,
+) -> Any:
     """Get the value for a particular parameter from the first pool in the provided priority list.
 
     Args:
@@ -554,7 +568,7 @@ def get_first_value(param, param_pools, on_missing=None, error=True):
         return on_missing
 
 
-def head(obj):
+def head(obj: Any) -> Any:
     """Facilitate syntactic uniformity for notion of "object-or-first-item."
 
     Args:
@@ -576,7 +590,7 @@ def head(obj):
         raise ValueError("Requested head of empty iterable")
 
 
-def _is_in_file_tree(fpath, folder):
+def _is_in_file_tree(fpath: str, folder: str) -> bool:
     """Determine whether a file is in a folder.
 
     Args:
@@ -591,7 +605,7 @@ def _is_in_file_tree(fpath, folder):
     return other_folder.startswith(file_folder)
 
 
-def is_fastq(file_name):
+def is_fastq(file_name: str) -> bool:
     """Determine whether indicated file appears to be in FASTQ format.
 
     Args:
@@ -603,7 +617,7 @@ def is_fastq(file_name):
     return is_unzipped_fastq(file_name) or is_gzipped_fastq(file_name)
 
 
-def is_gzipped_fastq(file_name):
+def is_gzipped_fastq(file_name: str) -> bool:
     """Determine whether indicated file appears to be a gzipped FASTQ.
 
     Args:
@@ -616,7 +630,7 @@ def is_gzipped_fastq(file_name):
     return file_name.endswith(".fastq.gz") or file_name.endswith(".fq.gz")
 
 
-def is_unzipped_fastq(file_name):
+def is_unzipped_fastq(file_name: str) -> bool:
     """Determine whether indicated file appears to be an unzipped FASTQ.
 
     Args:
@@ -629,7 +643,7 @@ def is_unzipped_fastq(file_name):
     return ext in [".fastq", ".fq"]
 
 
-def is_sam_or_bam(file_name):
+def is_sam_or_bam(file_name: str) -> bool:
     """Determine whether a file appears to be in a SAM format.
 
     Args:
@@ -642,7 +656,7 @@ def is_sam_or_bam(file_name):
     return ext in [".bam", ".sam"]
 
 
-def logger_via_cli(opts, **kwargs):
+def logger_via_cli(opts: Any, **kwargs: Any) -> Any:
     """Build and initialize logger from CLI specification.
 
     Args:
@@ -662,7 +676,7 @@ def logger_via_cli(opts, **kwargs):
     return logmuse.logger_via_cli(opts, **kwds)
 
 
-def _make_lock_name(original_path, path_base_folder):
+def _make_lock_name(original_path: str | Sequence[str], path_base_folder: str) -> str | list[str]:
     """Create name for lock file from an absolute path.
 
     The original path must be absolute, and it should point to a location
@@ -679,7 +693,7 @@ def _make_lock_name(original_path, path_base_folder):
         Name or perhaps relative (to the base folder path indicated) path to lock file.
     """
 
-    def make_name(p):
+    def make_name(p: str | None) -> str | None:
         if p:
             return p.replace(path_base_folder, "").replace(os.sep, "__")
         else:
@@ -697,7 +711,7 @@ def _make_lock_name(original_path, path_base_folder):
     )
 
 
-def _is_multi_target(target):
+def _is_multi_target(target: str | Sequence[str] | None) -> bool:
     """Determine if pipeline manager's run target is multiple.
 
     Args:
@@ -719,7 +733,7 @@ def _is_multi_target(target):
         )
 
 
-def _parse_cmd(cmd, shell):
+def _parse_cmd(cmd: str, shell: bool | None) -> list[dict[str, Any]]:
     """Create a list of Popen-distable dicts of commands.
 
     The commands are split by pipes, if possible.
@@ -732,7 +746,7 @@ def _parse_cmd(cmd, shell):
         List of dicts of commands.
     """
 
-    def _make_dict(command):
+    def _make_dict(command: str) -> dict[str, Any]:
         a, s = (command, True) if _check_shell(command, shell) else (split(command), False)
         return dict(args=a, stdout=PIPE, shell=s)
 
@@ -743,7 +757,7 @@ def _parse_cmd(cmd, shell):
     )
 
 
-def _parse_cores(cores, pm, default):
+def _parse_cores(cores: int | None, pm: Any, default: int) -> int:
     """Framework to finalize number of cores for an operation.
 
     Some calls to a function may directly provide a desired number of cores,
@@ -769,7 +783,7 @@ def _parse_cores(cores, pm, default):
     return int(cores)
 
 
-def _parse_stage_name(stage):
+def _parse_stage_name(stage: str | Any) -> str:
     """Determine the name of a stage.
 
     The stage may be provided already as a name, as a Stage object, or as a
@@ -792,7 +806,11 @@ def _parse_stage_name(stage):
             raise TypeError("Unsupported stage type: {}".format(type(stage)))
 
 
-def _pipeline_filepath(pm, filename=None, suffix=None):
+def _pipeline_filepath(
+    pm: Any,
+    filename: str | None = None,
+    suffix: str | None = None,
+) -> str:
     """Derive path to file for managed pipeline.
 
     Args:
@@ -820,7 +838,7 @@ def _pipeline_filepath(pm, filename=None, suffix=None):
     return filename if os.path.isabs(filename) else os.path.join(pm.outfolder, filename)
 
 
-def _translate_stage_name(stage):
+def _translate_stage_name(stage: str | Any) -> str:
     """Account for potential variability in stage/phase name definition.
 
     Since a pipeline author is free to name his/her processing phases/stages
@@ -839,13 +857,17 @@ def _translate_stage_name(stage):
     return str(name).lower().replace(" ", STAGE_NAME_SPACE_REPLACEMENT)
 
 
-def _uniqify(seq):  # Dave Kirby
+def _uniqify(seq: list) -> list:  # Dave Kirby
     # Order preserving
     seen = set()
     return [x for x in seq if x not in seen and not seen.add(x)]
 
 
-def _determine_args(argument_groups, arguments, use_all_args=False):
+def _determine_args(
+    argument_groups: str | Iterable[str] | None,
+    arguments: str | Iterable[str] | None,
+    use_all_args: bool = False,
+) -> list[str]:
     """Determine the arguments to add to a parser (for a pipeline).
 
     Args:
@@ -919,7 +941,7 @@ def _determine_args(argument_groups, arguments, use_all_args=False):
     return _uniqify(final_args)
 
 
-def _default_pipeline_config(pipeline_filepath):
+def _default_pipeline_config(pipeline_filepath: str) -> str:
     """Determine the default filepath for a pipeline's config file.
 
     Args:
@@ -931,7 +953,7 @@ def _default_pipeline_config(pipeline_filepath):
     return os.path.splitext(os.path.basename(pipeline_filepath))[0] + ".yaml"
 
 
-def _add_args(parser, args, required):
+def _add_args(parser: Any, args: list[str], required: list[str] | None) -> Any:
     """Add new arguments to an ArgumentParser.
 
     Args:
@@ -1114,7 +1136,12 @@ def _add_args(parser, args, required):
     return parser
 
 
-def result_formatter_markdown(pipeline_name, record_identifier, res_id, value) -> str:
+def result_formatter_markdown(
+    pipeline_name: str,
+    record_identifier: str,
+    res_id: str,
+    value: Any,
+) -> str:
     """Returns Markdown formatted value as string.
 
     Note: Pipeline_name and record_identifier should be kept because pipestat needs it.

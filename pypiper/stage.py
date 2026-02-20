@@ -1,6 +1,8 @@
 """Conceptualize a pipeline processing phase/stage."""
 
 import copy
+from collections.abc import Callable
+from typing import Any
 
 from .utils import _translate_stage_name
 
@@ -14,8 +16,15 @@ class Stage(object):
     """
 
     def __init__(
-        self, func, f_args=None, f_kwargs=None, name=None, checkpoint=True, *, nofail=False
-    ):
+        self,
+        func: Callable,
+        f_args: tuple | None = None,
+        f_kwargs: dict | None = None,
+        name: str | None = None,
+        checkpoint: bool = True,
+        *,
+        nofail: bool = False,
+    ) -> None:
         """A function, perhaps with arguments, defines the stage.
 
         Args:
@@ -38,7 +47,7 @@ class Stage(object):
         self.nofail = nofail
 
     @property
-    def checkpoint_name(self):
+    def checkpoint_name(self) -> str | None:
         """Determine the checkpoint name for this Stage.
 
         Returns:
@@ -47,18 +56,18 @@ class Stage(object):
         """
         return _translate_stage_name(self.name) if self.checkpoint else None
 
-    def run(self, *args, **kwargs):
+    def run(self, *args: Any, **kwargs: Any) -> None:
         """Alternate form for direct call; execute stage."""
         self(*args, **kwargs)
 
-    def __call__(self, *args, **update_kwargs):
+    def __call__(self, *args: Any, **update_kwargs: Any) -> None:
         """Execute the stage, allowing updates to args/kwargs."""
         kwargs = copy.deepcopy(self.f_kwargs)
         kwargs.update(update_kwargs)
         args = args or self.f_args
         self.f(*args, **kwargs)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, Stage)
             and self.f.__name__ == other.f.__name__
@@ -68,10 +77,10 @@ class Stage(object):
             )
         )
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         return not (self == other)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{klass} '{n}': f={f}, args={pos}, kwargs={kwd}, checkpoint={check}".format(
             klass=self.__class__.__name__,
             f=self.f,
@@ -81,5 +90,5 @@ class Stage(object):
             check=self.checkpoint,
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{}: '{}'".format(self.__class__.__name__, self.name)
