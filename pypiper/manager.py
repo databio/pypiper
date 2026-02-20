@@ -20,6 +20,7 @@ import shlex  # for splitting commands like a shell does
 import signal
 import subprocess
 import sys
+import threading
 import time
 import warnings
 from collections.abc import Callable, Iterable
@@ -339,8 +340,11 @@ class PipelineManager(object):
 
         # Register handler functions to deal with interrupt and termination signals;
         # If received, we would then clean up properly (set pipeline status to FAIL, etc).
-        signal.signal(signal.SIGINT, self._signal_int_handler)
-        signal.signal(signal.SIGTERM, self._signal_term_handler)
+        # signal.signal() only works in the main thread; skip if called from a
+        # worker thread (e.g. AI agent tool calls, web servers, thread pools).
+        if threading.current_thread() is threading.main_thread():
+            signal.signal(signal.SIGINT, self._signal_int_handler)
+            signal.signal(signal.SIGTERM, self._signal_term_handler)
 
         # pipestat setup
         self.pipestat_record_identifier = pipestat_record_identifier or DEFAULT_SAMPLE_NAME
@@ -2031,6 +2035,31 @@ class PipelineManager(object):
         self.info("{} checkpoint file: '{}'".format(action, fpath))
 
         return already_exists
+
+    def __enter__(self):
+        """Support use as a context manager.
+
+        Example:
+            with PipelineManager("test", "output/") as pm:
+                pm.run("echo hello", target="output/hello.txt")
+            # stop_pipeline() called automatically on clean exit
+            # fail_pipeline() called automatically on exception
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Clean up pipeline on context manager exit.
+
+        Calls stop_pipeline() on clean exit, fail_pipeline() on exception.
+        """
+        if exc_type is None:
+            self.stop_pipeline()
+        else:
+            try:
+                self.fail_pipeline(exc_val)
+            except BaseException:
+                pass  # fail_pipeline re-raises; suppress to let original propagate
+        return False  # Never swallow the exception
 
     def complete(self) -> None:
         """Mark the pipeline as successfully completed and finalize.

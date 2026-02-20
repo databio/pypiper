@@ -5,6 +5,8 @@
 # This is a runnable example. You can run it to see what the output
 # looks like.
 
+# For shorter scripts, you can use: with pypiper.PipelineManager(...) as pm:
+
 # First, make sure you can import the pypiper package
 
 import pypiper
