@@ -10,9 +10,19 @@ __all__ = ["Stage"]
 
 
 class Stage(object):
-    """Single stage/phase of a pipeline; a logical processing "unit".
+    """A single checkpointable unit of pipeline processing.
 
-    A stage is a collection of commands that is checkpointed.
+    Example:
+        stage = Stage(my_function, name="alignment", nofail=True)
+        stage()  # executes my_function
+
+    Args:
+        func: Callable that implements the stage's logic.
+        f_args: Positional arguments for func.
+        f_kwargs: Keyword arguments for func.
+        name: Stage name. Defaults to func.__name__.
+        checkpoint: Whether to create a checkpoint file. Default: True.
+        nofail: Allow stage failure without failing the pipeline.
     """
 
     def __init__(
@@ -25,17 +35,7 @@ class Stage(object):
         *,
         nofail: bool = False,
     ) -> None:
-        """A function, perhaps with arguments, defines the stage.
-
-        Args:
-            func: The processing logic that defines the stage.
-            f_args: Positional arguments for func.
-            f_kwargs: Keyword arguments for func.
-            name: Name for the phase/stage.
-            checkpoint: Whether to checkpoint this stage.
-            nofail: Allow a failure of this stage to not fail the pipeline
-                in which it's running.
-        """
+        """Create a Stage from a callable."""
         if isinstance(func, Stage):
             raise TypeError("Cannot create Stage from Stage")
         super(Stage, self).__init__()
@@ -48,16 +48,11 @@ class Stage(object):
 
     @property
     def checkpoint_name(self) -> str | None:
-        """Determine the checkpoint name for this Stage.
-
-        Returns:
-            Checkpoint name for this stage; null if this Stage is designated
-            as a non-checkpoint.
-        """
+        """Checkpoint file name for this stage, or None if not a checkpoint."""
         return _translate_stage_name(self.name) if self.checkpoint else None
 
     def run(self, *args: Any, **kwargs: Any) -> None:
-        """Alternate form for direct call; execute stage."""
+        """Execute the stage (alias for direct call)."""
         self(*args, **kwargs)
 
     def __call__(self, *args: Any, **update_kwargs: Any) -> None:

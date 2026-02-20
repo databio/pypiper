@@ -24,27 +24,31 @@ __all__ = ["Pipeline"]
 
 
 class Pipeline(object):
-    """Generic pipeline framework.
+    """Base class for defining a multi-stage pipeline with checkpointing.
 
-    Note that either a PipelineManager or an output folder path is required
-    to create the Pipeline. If both are provided, the output folder path is
-    ignored and that of the PipelineManager that's passed is used instead.
+    Example:
+        class MyPipeline(Pipeline):
+            def stages(self):
+                return [("trim", self.trim), ("align", self.align)]
+
+            def trim(self):
+                self.manager.run("trimmomatic ...", target="trimmed.fq")
+
+            def align(self):
+                self.manager.run("bowtie2 ...", target="aligned.bam")
+
+        p = MyPipeline(name="rnaseq", outfolder="output/")
+        p.run(start_point="trim", stop_after="align")
+
+    Requires either a PipelineManager or (name + outfolder) to construct.
+    Subclasses must implement stages() returning an ordered collection.
 
     Args:
-        name: Name for the pipeline; arbitrary, just used for messaging;
-            this is required if and only if a manager is not provided.
-        manager: The pipeline manager to use for this pipeline; this is required
-            if and only if name or output folder is not provided.
-        outfolder: Path to main output folder for this pipeline.
-        args: Command-line options and arguments for PipelineManager.
-        **pl_mgr_kwargs: Additional keyword arguments for pipeline manager.
-
-    Raises:
-        TypeError: Either pipeline manager or output folder path must be
-            provided, and either pipeline manager or name must be provided.
-        ValueError: Name of pipeline manager cannot be empty.
-        pypiper.IllegalPipelineDefinitionError: Definition of collection of
-            stages must be non-empty.
+        name: Pipeline name. Required if manager is not provided.
+        manager: Existing PipelineManager to use.
+        outfolder: Output directory. Required if manager is not provided.
+        args: argparse.Namespace for PipelineManager construction.
+        **pl_mgr_kwargs: Additional PipelineManager keyword arguments.
     """
 
     __metaclass__ = abc.ABCMeta
@@ -158,39 +162,30 @@ class Pipeline(object):
 
     @property
     def outfolder(self) -> str:
-        """Determine the path to the output folder for this pipeline instance.
-
-        Returns:
-            Path to output folder for this pipeline instance.
-        """
+        """Path to the pipeline's output folder."""
         return self.manager.outfolder
 
     @abc.abstractmethod
     def stages(self) -> Mapping | list:
-        """Define the names of pipeline processing stages.
+        """Define the pipeline's processing stages. Must be overridden.
 
         Returns:
-            Collection of pipeline stage names.
+            Ordered collection of stages: list of (name, callable) tuples,
+            list of Stage objects, or OrderedDict mapping names to callables.
         """
         pass
 
     @property
     def stage_names(self) -> list[str]:
-        """Fetch the pipeline's stage names as specified by the pipeline class author.
-
-        I.e., not necessarily those that are used for the checkpoint files.
-
-        Returns:
-            Sequence of names of this pipeline's defined stages.
-        """
+        """List of stage names as defined by the pipeline author."""
         return [_parse_stage_name(s) for s in self._stages]
 
     def checkpoint(self, stage: Stage, msg: str = "") -> bool:
-        """Touch checkpoint file for given stage and provide timestamp message.
+        """Write a checkpoint file for the given stage.
 
         Args:
-            stage: Stage for which to mark checkpoint.
-            msg: Message to embed in timestamp.
+            stage: Stage object to checkpoint.
+            msg: Optional message for the timestamp.
 
         Returns:
             Whether a checkpoint file was written.
@@ -203,33 +198,29 @@ class Pipeline(object):
         return self.manager.timestamp(message=msg, checkpoint=stage.checkpoint_name, finished=True)
 
     def completed_stage(self, stage: Stage) -> bool:
-        """Determine whether the pipeline's completed the stage indicated.
+        """Check whether a stage has a checkpoint file indicating completion.
 
         Args:
-            stage: Stage to check for completion status.
+            stage: Stage to check.
 
         Returns:
-            Whether this pipeline's completed the indicated stage.
-
-        Raises:
-            UnknownStageException: If the stage name given is undefined for the pipeline.
+            True if the checkpoint file exists.
         """
         check_path = _checkpoint_filepath(stage, self.manager)
         return os.path.exists(check_path)
 
     def halt(self, **kwargs: Any) -> None:
-        """Halt the pipeline"""
+        """Halt the pipeline via the underlying PipelineManager."""
         self.manager.halt(**kwargs)
 
     def list_flags(self, only_name: bool = False) -> list[str]:
-        """Determine the flag files associated with this pipeline.
+        """List flag files associated with this pipeline.
 
         Args:
-            only_name: Whether to return only flag file name(s) (True),
-                or full flag file paths (False); default False (paths).
+            only_name: Return only filenames (True) or full paths (False).
 
         Returns:
-            Flag files associated with this pipeline.
+            List of flag file paths or names.
         """
         paths = glob.glob(os.path.join(self.outfolder, _flag_name("*")))
         if only_name:
@@ -243,19 +234,26 @@ class Pipeline(object):
         stop_before: str | None = None,
         stop_after: str | None = None,
     ) -> None:
-        """Run the pipeline, optionally specifying start and/or stop points.
+        """Execute pipeline stages, optionally specifying start and stop points.
+
+        Example:
+            p.run()                           # run all stages
+            p.run(start_point="align")        # skip to alignment
+            p.run(stop_after="trim")          # stop after trimming
+
+        Stages with existing checkpoint files from previous runs are skipped.
+        When execution resumes (e.g. after a crash), stages before start_point
+        are skipped entirely, and stages between start_point and the first
+        uncheckpointed stage are also skipped. Cannot specify both stop_before
+        and stop_after.
 
         Args:
-            start_point: Name of stage at which to begin execution.
-            stop_before: Name of stage at which to cease execution;
-                exclusive, i.e. this stage is not run.
-            stop_after: Name of stage at which to cease execution;
-                inclusive, i.e. this stage is the last one run.
-
-        Raises:
-            IllegalPipelineExecutionError: If both inclusive (stop_after)
-                and exclusive (stop_before) halting points are provided, or if
-                the start stage is the same as or after the stop stage.
+            start_point: Stage name to begin execution at. Stages before this
+                are skipped without checking checkpoint files.
+            stop_before: Stage name to stop before (exclusive -- this stage
+                does NOT run).
+            stop_after: Stage name to stop after (inclusive -- this stage
+                DOES run, then pipeline halts).
         """
 
         # Start the run with a clean slate of Stage status/label tracking.

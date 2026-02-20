@@ -10,7 +10,7 @@ authors = [
     { name = "Johanna Klughammer" },
     { name = "Andre Rendeiro" },
 ]
-keywords = ["pipeline", "bioinformatics", "workflow", "restartable"]
+keywords = ["pipeline", "workflow", "restartable", "shell", "command-runner"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: BSD License",
@@ -19,6 +19,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dependencies = [

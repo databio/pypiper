@@ -49,24 +49,25 @@ def add_pypiper_args(
     required: list[str] | None = None,
     all_args: bool = False,
 ) -> Any:
-    """Use this to add standardized pypiper arguments to your python pipeline.
+    """Add standard pypiper arguments to an argparse parser.
 
-    There are two ways to use `add_pypiper_args`: by specifying argument groups,
-    or by specifying individual arguments. Specifying argument groups will add
-    multiple arguments to your parser; these convenient argument groupings
-    make it easy to add arguments to certain types of pipeline. For example,
-    to make a looper-compatible pipeline, use `groups = ["pypiper", "looper"]`.
+    Example:
+        parser = argparse.ArgumentParser()
+        parser = add_pypiper_args(parser, groups=["pypiper", "looper"])
+        parser = add_pypiper_args(parser, args=["genome", "input"])
+
+    Groups: pypiper, config, checkpoint, resource, looper, common, ngs,
+    logmuse, pipestat, all.
 
     Args:
-        parser: ArgumentParser object from a pipeline.
-        groups: Adds arguments belonging to specified group
-            of args. Options: pypiper, config, looper, resources, common, ngs, all.
-        args: You may specify a list of specific arguments one by one.
-        required: Arguments to be flagged as 'required' by argparse.
-        all_args: Whether to include all of pypiper's arguments defined here.
+        parser: ArgumentParser to extend.
+        groups: Argument group names to add.
+        args: Specific individual argument names to add.
+        required: Arguments to mark as required.
+        all_args: Add all defined arguments.
 
     Returns:
-        A new ArgumentParser object, with selected pypiper arguments added.
+        Updated ArgumentParser.
     """
     args_to_add = _determine_args(argument_groups=groups, arguments=args, use_all_args=all_args)
     parser = _add_args(parser, args_to_add, required)
@@ -74,24 +75,20 @@ def add_pypiper_args(
 
 
 def build_command(chunks: str | list[str | tuple[str, str | None] | None]) -> str:
-    """Create a command from various parts.
+    """Assemble a shell command from string and tuple parts.
 
-    The parts provided may include a base, flags, option-bound arguments, and
-    positional arguments. Each element must be either a string or a two-tuple.
-    Raw strings are interpreted as either the command base, a pre-joined
-    pair (or multiple pairs) of option and argument, a series of positional
-    arguments, or a combination of those elements. The only modification they
-    undergo is trimming of any space characters from each end.
+    Example:
+        cmd = build_command(["samtools", "sort", ("-o", "out.bam"), "in.bam"])
+        # => "samtools sort -o out.bam in.bam"
+
+    String parts are joined as-is. Two-tuples are joined as "flag value"
+    (skipped if value is None or empty).
 
     Args:
-        chunks: The collection of the command components to interpret, modify,
-            and join to create a single meaningful command.
+        chunks: List of strings and/or (flag, value) tuples.
 
     Returns:
-        The single meaningful command built from the given components.
-
-    Raises:
-        ValueError: If no command parts are provided.
+        Assembled command string.
     """
 
     if not chunks:
@@ -255,19 +252,18 @@ def check_all_commands(
     ),
     handle: Callable | None = None,
 ) -> bool:
-    """Determine whether all commands are callable.
+    """Verify that all commands are callable (exist on PATH).
+
+    Example:
+        check_all_commands(["samtools", "bowtie2", "picard"])
 
     Args:
-        cmds: Collection of commands to check for callability.
-        get_bad_result: How to create result when at least one command is uncallable.
-        handle: How to handle with result of failed check.
+        cmds: Collection of command names to check.
+        get_bad_result: Factory for error when commands are uncallable.
+        handle: Error handler callable (receives bad_result).
 
     Returns:
-        Whether all commands given appear callable.
-
-    Raises:
-        TypeError: If error handler is provided but isn't callable or
-            isn't a single-argument function.
+        True if all commands are callable, False otherwise.
     """
     bads = determine_uncallable(cmds)
     if not bads:
@@ -299,25 +295,20 @@ def determine_uncallable(
     ),
     accumulate: bool = False,
 ) -> list[tuple[str, str]]:
-    """Determine which commands are not callable.
+    """Find which commands are not callable on the system.
+
+    Example:
+        bads = determine_uncallable(["samtools", "nonexistent_tool"])
+        # => [("nonexistent_tool", "nonexistent_tool")]
 
     Args:
-        commands: Commands to check for callability.
-        transformations: Pairs in which first element is a predicate and second is a
-            transformation to apply to the input if the predicate is satisfied.
-        accumulate: Whether to accumulate transformations (more than one possible
-            per command).
+        commands: Command names to check.
+        transformations: Predicate/transform pairs for command preprocessing
+            (e.g., converting .jar paths to "java -jar" commands).
+        accumulate: Apply multiple matching transformations per command.
 
     Returns:
-        Collection of commands that appear uncallable; each element is a pair in
-        which the first element is the original 'command' and the second is what
-        was actually assessed for callability.
-
-    Raises:
-        TypeError: If transformations are provided but argument is a string or is
-            non-Iterable.
-        Exception: If accumulation of transformation is False but the collection of
-            transformations is unordered.
+        List of (original_cmd, tested_cmd) pairs for uncallable commands.
     """
     commands = [commands] if isinstance(commands, str) else commands
     if transformations:
@@ -522,27 +513,19 @@ def get_first_value(
     on_missing: Any = None,
     error: bool = True,
 ) -> Any:
-    """Get the value for a particular parameter from the first pool in the provided priority list.
+    """Get a parameter's value from the first pool that contains it.
+
+    Example:
+        val = get_first_value("genome", [cli_args, config, defaults])
 
     Args:
-        param: Name of parameter for which to determine/fetch value.
-        param_pools: Ordered (priority) collection of mapping from parameter name
-            to value; this should be ordered according to descending priority.
-        on_missing: Default value or action to take if the requested parameter is
-            missing from all of the pools. If a callable, it should return a value
-            when passed the requested parameter as the one and only argument.
-        error: Whether to raise an error if the requested parameter is not mapped
-            to a value AND there's no value or strategy provided with 'on_missing'
-            with which to handle the case of a request for an unmapped parameter.
+        param: Parameter name to look up.
+        param_pools: Ordered list of dicts to search (highest priority first).
+        on_missing: Default value or callable(param) for missing params.
+        error: Raise KeyError if param not found and no on_missing.
 
     Returns:
-        Value to which the requested parameter first mapped in the (descending)
-        priority collection of parameter 'pools,' or a value explicitly defined
-        or derived with 'on_missing.'
-
-    Raises:
-        KeyError: If the requested parameter is unmapped in all of the provided
-            pools, and the argument to the 'error' parameter evaluates to True.
+        First matching value, or on_missing result.
     """
 
     # Search for the requested parameter.
@@ -569,16 +552,19 @@ def get_first_value(
 
 
 def head(obj: Any) -> Any:
-    """Facilitate syntactic uniformity for notion of "object-or-first-item."
+    """Return the object itself, or the first element if iterable.
+
+    Example:
+        head("file.txt")      # => "file.txt"
+        head(["a", "b"])      # => "a"
+
+    Strings are returned as-is (not iterated).
 
     Args:
-        obj: Single item or collection of items.
+        obj: Single item or iterable.
 
     Returns:
-        Object itself if non-Iterable, otherwise the first element if one exists.
-
-    Raises:
-        ValueError: If the given object is an empty Iterable.
+        The object or its first element.
     """
     if isinstance(obj, CHECK_TEXT_TYPES):
         return obj
@@ -606,65 +592,40 @@ def _is_in_file_tree(fpath: str, folder: str) -> bool:
 
 
 def is_fastq(file_name: str) -> bool:
-    """Determine whether indicated file appears to be in FASTQ format.
-
-    Args:
-        file_name: Name/path of file to check as FASTQ.
-
-    Returns:
-        Whether indicated file appears to be in FASTQ format, zipped or unzipped.
-    """
+    """Check if a filename has a FASTQ extension (.fastq, .fq, .fastq.gz, .fq.gz)."""
     return is_unzipped_fastq(file_name) or is_gzipped_fastq(file_name)
 
 
 def is_gzipped_fastq(file_name: str) -> bool:
-    """Determine whether indicated file appears to be a gzipped FASTQ.
-
-    Args:
-        file_name: Name/path of file to check as gzipped FASTQ.
-
-    Returns:
-        Whether indicated file appears to be in gzipped FASTQ format.
-    """
+    """Check if a filename has a gzipped FASTQ extension (.fastq.gz, .fq.gz)."""
     _, ext = os.path.splitext(file_name)
     return file_name.endswith(".fastq.gz") or file_name.endswith(".fq.gz")
 
 
 def is_unzipped_fastq(file_name: str) -> bool:
-    """Determine whether indicated file appears to be an unzipped FASTQ.
-
-    Args:
-        file_name: Name/path of file to check as unzipped FASTQ.
-
-    Returns:
-        Whether indicated file appears to be in unzipped FASTQ format.
-    """
+    """Check if a filename has an unzipped FASTQ extension (.fastq, .fq)."""
     _, ext = os.path.splitext(file_name)
     return ext in [".fastq", ".fq"]
 
 
 def is_sam_or_bam(file_name: str) -> bool:
-    """Determine whether a file appears to be in a SAM format.
-
-    Args:
-        file_name: Name/path of file to check as SAM-formatted.
-
-    Returns:
-        Whether file appears to be SAM-formatted.
-    """
+    """Check if a filename has a SAM/BAM extension (.sam, .bam)."""
     _, ext = os.path.splitext(file_name)
     return ext in [".bam", ".sam"]
 
 
 def logger_via_cli(opts: Any, **kwargs: Any) -> Any:
-    """Build and initialize logger from CLI specification.
+    """Create a logger from parsed CLI options.
+
+    Example:
+        logger = logger_via_cli(parsed_args)
 
     Args:
-        opts: Parse of command-line interface.
-        **kwargs: Keyword arguments to pass along to underlying logmuse function.
+        opts: Parsed argparse namespace.
+        **kwargs: Passed to logmuse.logger_via_cli (strict defaults to False).
 
     Returns:
-        Newly created and configured logger.
+        Configured logger instance.
     """
     from copy import deepcopy
 
@@ -1142,18 +1103,20 @@ def result_formatter_markdown(
     res_id: str,
     value: Any,
 ) -> str:
-    """Returns Markdown formatted value as string.
+    """Format a result as a Markdown log line.
 
-    Note: Pipeline_name and record_identifier should be kept because pipestat needs it.
+    Example:
+        msg = result_formatter_markdown("pipe", "sample1", "reads", 1000)
+        # => '\\n> `reads`\\t1000\\t_RES_'
 
     Args:
-        pipeline_name: Name of the pipeline.
-        record_identifier: Identifier for the record.
-        res_id: Result identifier.
-        value: Value to format.
+        pipeline_name: Pipeline name (required by pipestat interface, unused).
+        record_identifier: Record ID (required by pipestat interface, unused).
+        res_id: Result key name.
+        value: Result value.
 
     Returns:
-        Markdown formatted value as string.
+        Markdown-formatted string.
     """
 
     message_markdown = "\n> `{key}`\t{value}\t_RES_".format(key=res_id, value=value)

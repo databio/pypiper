@@ -1,10 +1,12 @@
 #!/usr/env python
 
 """
-Pypiper is a python module with two components:
-1) the PipelineManager class, and
-2) other toolkits (currently just NGSTk) with functions for more specific pipeline use-cases.
-The PipelineManager class can be used to create a procedural pipeline in python.
+Pypiper is a Python module for building restartable, robust shell pipelines.
+
+The core component is the PipelineManager class, which wraps shell command
+execution with automatic checkpointing, file integrity protection, elapsed time
+tracking, and resource monitoring. Domain-specific toolkits (e.g. NGSTk for
+genomics) provide optional higher-level convenience functions.
 """
 
 import atexit
@@ -80,61 +82,48 @@ class Unbuffered(object):
 
 
 class PipelineManager(object):
-    """
-    Base class for instantiating a PipelineManager object,
-    the main class of Pypiper.
+    """Manage a pipeline: run commands, track files, and report results.
+
+    Example:
+        pm = PipelineManager(name="my_pipeline", outfolder="output/")
+        pm.run("samtools sort in.bam > out.bam", target="out.bam")
+        pm.report_result("read_count", 1000000)
+        pm.complete()
+
+    PipelineManager handles command execution with file locking, target-based
+    skipping for restartability, intermediate file cleanup, and result reporting
+    via pipestat. Each command can declare a target file; if the target exists,
+    the command is skipped. Lock files prevent parallel pipelines from colliding
+    on the same target. Checkpoints (via timestamp()) enable start/stop control
+    for partial reruns.
 
     Args:
-        name (str): Choose a name for your pipeline;
-            it's used to name the output files, flags, etc.
-        outfolder (str): Folder in which to store the results.
-        args (argparse.Namespace): Optional args object from ArgumentParser;
-            Pypiper will simply record these arguments from your script
-        multi (bool): Enables running multiple pipelines in one script
-            or for interactive use. It simply disables the tee of the output,
-            so you won't get output logged to a file.
-        dirty (bool): Overrides the pipeline's clean_add()
-            manual parameters, to *never* clean up intermediate files automatically.
-            Useful for debugging; all cleanup files are added to manual cleanup script.
-        recover (bool): Specify recover mode, to overwrite lock files.
-            If pypiper encounters a locked target, it will ignore the lock and
-            recompute this step. Useful to restart a failed pipeline.
-        new_start (bool): start over and run every command even if output exists
-        force_follow (bool): Force run all follow functions
-            even if  the preceding command is not run. By default,
-            following functions  are only run if the preceding command is run.
-        cores (int): number of processors to use, default 1
-        mem (str): amount of memory to use. Default units are megabytes unless
-            specified using the suffix [K|M|G|T]."
-        config_file (str): path to pipeline configuration file, optional
-        output_parent (str): path to folder in which output folder will live
-        overwrite_checkpoints (bool): Whether to override the stage-skipping
-            logic provided by the checkpointing system. This is useful if the
-            calls to this manager's run() method will be coming from a class
-            that implements pypiper.Pipeline, as such a class will handle
-            checkpointing logic automatically, and will set this to True to
-            protect from a case in which a restart begins upstream of a stage
-            for which a checkpoint file already exists, but that depends on the
-            upstream stage and thus should be rerun if it's "parent" is rerun.
-        pipestat_record_identifier (str): record_identifier to report results via pipestat
-        pipestat_schema (str): output schema used by pipestat to report results
-        pipestat_results_file (str): path to file backend for reporting results
-        pipestat_config_file (str): path to pipestat configuration file
-        pipestat_pipeline_type (str): Sample or Project level pipeline
-        pipestat_validate_results (bool | None): Whether to validate results against the pipestat
-            output schema. If None (default), validation is enabled when a schema is provided
-            and disabled when no schema is provided. Set to False to provide a schema for
-            structure without enforcing validation.
-        pipestat_additional_properties (bool | None): Whether to allow reporting results not
-            defined in the pipestat output schema. If None (default), uses the schema's own
-            additionalProperties setting (True per JSON Schema spec when not specified).
-            Set to False to reject undeclared results.
-        pipestat_result_formatter: function used to style reported results, defaults to result_formatter_markdown
-
-    Raises:
-        TypeError: if start or stop point(s) are provided both directly and
-            via args namespace, or if both stopping types (exclusive/prospective
-            and inclusive/retrospective) are provided.
+        name: Pipeline name, used for output files, flags, and logging.
+        outfolder: Directory for pipeline results.
+        version: Pipeline version string.
+        args: Parsed argparse.Namespace; pypiper records these and extracts
+            relevant options (recover, new_start, etc.).
+        multi: Enable multiple pipelines in one script (disables log tee).
+        dirty: Never auto-delete intermediate files.
+        recover: Overwrite lock files to restart a failed pipeline.
+        new_start: Rerun every command even if output exists.
+        force_follow: Always run follow functions even if command was skipped.
+        cores: Number of processors. Default: 1.
+        mem: Memory limit with unit suffix [K|M|G|T]. Default: "1000M".
+        config_file: Path to pipeline YAML configuration file.
+        output_parent: Parent directory for the output folder.
+        overwrite_checkpoints: Ignore checkpoint files (used by Pipeline class).
+        logger_kwargs: Keyword arguments for logmuse logger setup.
+        pipestat_record_identifier: Record ID for pipestat reporting.
+        pipestat_schema: Path to pipestat output schema.
+        pipestat_results_file: Path to YAML file backend for results.
+        pipestat_config: Path to pipestat configuration file.
+        pipestat_pipeline_type: "sample" or "project".
+        pipestat_validate_results: Validate results against schema.
+            None (default) auto-detects based on schema presence.
+        pipestat_additional_properties: Allow results not in schema.
+            None (default) uses schema's own setting.
+        pipestat_result_formatter: Callable for formatting reported results.
     """
 
     def __init__(
@@ -463,15 +452,17 @@ class PipelineManager(object):
 
     @property
     def pipestat(self) -> PipestatManager:
-        """
-        `pipestat.PipestatManager` object to use for pipeline results reporting and status management
+        """Access the PipestatManager for reporting results and managing status.
 
-        Depending on the object configuration it can report to
-        a YAML-formatted file or PostgreSQL database. Please refer to pipestat
-        documentation for more details: http://pipestat.databio.org/
+        Example:
+            pm.pipestat.report(values={"reads": 1000}, record_identifier="sample1")
+            status = pm.pipestat.get_status("sample1")
 
         Returns:
-            pipestat.PipestatManager: object to use for results reporting
+            Configured PipestatManager instance.
+
+        Raises:
+            PipestatError: If pipestat was not initialized (no schema provided).
         """
         try:
             return getattr(self, "_pipestat_manager")
@@ -484,58 +475,39 @@ class PipelineManager(object):
 
     @property
     def _completed(self) -> bool:
-        """
-        Is the managed pipeline in a completed state?
-
-        Returns:
-            bool: Whether the managed pipeline is in a completed state.
-        """
+        """Whether the managed pipeline is in a completed state."""
         return self.pipestat.get_status(self._pipestat_manager.record_identifier) == COMPLETE_FLAG
 
     @property
     def _failed(self) -> bool:
-        """
-        Is the managed pipeline in a failed state?
-
-        Returns:
-            bool: Whether the managed pipeline is in a failed state.
-        """
+        """Whether the managed pipeline is in a failed state."""
         return self.pipestat.get_status(self._pipestat_manager.record_identifier) == FAIL_FLAG
 
     @property
     def halted(self) -> bool:
-        """
-        Is the managed pipeline in a paused/halted state?
-
-        Returns:
-            bool: Whether the managed pipeline is in a paused/halted state.
-        """
+        """Whether the managed pipeline is in a paused/halted state."""
         return self.pipestat.get_status(self._pipestat_manager.record_identifier) == PAUSE_FLAG
 
     @property
     def _has_exit_status(self) -> bool:
-        """
-        Has the managed pipeline been safely stopped?
-
-        Returns:
-            bool: Whether the managed pipeline's status indicates that it
-                has been safely stopped.
-        """
+        """Whether the managed pipeline has been safely stopped."""
         return self._completed or self.halted or self._failed
 
     def _ignore_interrupts(self) -> None:
-        """
-        Ignore interrupt and termination signals. Used as a pre-execution
-        function (preexec_fn) for subprocess.Popen calls that pypiper will
-        control over (i.e., manually clean up).
-        """
+        """Ignore interrupt and termination signals for subprocess preexec_fn."""
         signal.signal(signal.SIGINT, signal.SIG_IGN)
         signal.signal(signal.SIGTERM, signal.SIG_IGN)
 
     def start_pipeline(self, args: Any = None, multi: bool = False) -> None:
-        """
-        Initialize setup. Do some setup, like tee output, print some diagnostics, create temp files.
-        You provide only the output directory (used for pipeline stats, log, and status flag files).
+        """Initialize pipeline logging, diagnostics, and status tracking.
+
+        Called automatically by __init__; rarely called directly.
+
+        Sets up log file tee (mirroring stdout to a log file), prints
+        version/environment info, records git state, creates output folder,
+        and sets pipeline status to 'running'. In interactive/multi mode,
+        the log tee is disabled to avoid interfering with notebook or
+        multi-pipeline output.
         """
         # Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
         # self.make_sure_path_exists(self.outfolder)
@@ -821,42 +793,43 @@ class PipelineManager(object):
         container: str | None = None,
         default_return_code: int | None = 0,
     ) -> int | None:
-        """
-        The primary workhorse function of PipelineManager, this runs a command.
+        """Run a shell command with file-locking and target-based skipping.
 
-        This is the command  execution function, which enforces
-        race-free file-locking, enables restartability, and multiple pipelines
-        can produce/use the same files. The function will wait for the file
-        lock if it exists, and not produce new output (by default) if the
-        target output file already exists. If the output is to be created,
-        it will first create a lock file to prevent other calls to run
-        (for example, in parallel pipelines) from touching the file while it
-        is being created. It also records the memory of the process and
-        provides some logging output.
+        Example:
+            pm.run("sort input.txt > output.txt", target="output.txt")
+            pm.run(["cmd1", "cmd2"], target="final.out")
+            pm.run("samtools index in.bam", target="in.bam.bai", clean=True)
+
+        If target exists, the command is skipped (restartability). If another
+        process holds the lock, waits for it to finish. Creates lock files
+        during execution to prevent parallel conflicts.
+
+        Follow functions run only when the command actually executes (target
+        didn't exist), unless force_follow=True was set on the manager.
 
         Args:
-            cmd (str | list[str]): Shell command(s) to be run.
-            target (str | Sequence[str]): Output file(s) to produce, optional.
-                If all target files exist, the command will not be run. If no target
-                is given, a lock_name must be provided.
-            lock_name (str): Name of lock file. Optional.
-            shell (bool): If command requires should be run in its own shell.
-                Optional. Default: None --will try to determine whether the
-                command requires a shell.
-            nofail (bool): Whether the pipeline proceed past a nonzero return from
-                a process, default False; nofail can be used to implement
-                non-essential parts of the pipeline; if a 'nofail' command fails,
-                the pipeline is free to continue execution.
-            clean (bool): True means the target file will be automatically added
-                to an auto cleanup list. Optional.
-            follow (callable): Function to call after executing (each) command.
-            container (str): Name for Docker container in which to run commands.
-            default_return_code (Any): Return code to use, might be used to discriminate
-                between runs that did not execute any commands and runs that did.
+            cmd: Shell command string, or list of commands to run in sequence.
+                A list of commands runs each sequentially, returning the max
+                return code.
+            target: Output file(s). If all exist, command is skipped.
+                If None, lock_name is required. Multiple targets can be
+                provided as a list; all must exist to skip.
+            lock_name: Explicit lock file name. Defaults to target-based name.
+                Required if target is None (for commands with no output file).
+            shell: Force shell mode. None (default) auto-detects based on
+                the presence of pipes (|) or redirects (>).
+            nofail: If True, pipeline continues past nonzero return codes.
+                The failure is logged but does not halt the pipeline.
+            clean: If True, adds target to auto-cleanup list (deleted on
+                pipeline success, kept with --dirty).
+            follow: Callable to run after command execution. Skipped if the
+                command was skipped (target existed), unless force_follow=True.
+            container: Docker container name for execution.
+            default_return_code: Return code when command is skipped (target
+                existed). Default: 0.
 
         Returns:
-            int: Return code of process. If a list of commands is passed,
-                this is the maximum of all return codes for all commands.
+            Return code (int). For command lists, the maximum return code.
         """
 
         def _max_ret_code(codes_list):
@@ -1096,24 +1069,23 @@ class PipelineManager(object):
         return process_return_code
 
     def checkprint(self, cmd: str, shell: bool | None = None, nofail: bool = False) -> str:
-        """
-        Just like callprint, but checks output -- so you can get a variable
-        in python corresponding to the return value of the command you call.
-        This is equivalent to running subprocess.check_output()
-        instead of subprocess.call().
+        """Run a command and return its stdout as a string.
+
+        Example:
+            genome_size = pm.checkprint("wc -l genome.fa")
+            version = pm.checkprint("samtools --version")
+
+        Like callprint, but captures and returns stdout (uses
+        subprocess.check_output instead of subprocess.call). Use this when
+        you need a command's output as a Python variable.
 
         Args:
-            cmd (str | Iterable[str]): Bash command(s) to be run.
-            shell (bool | str): If command requires should be run in its own shell. Optional.
-                Default: "guess" -- `run()` will try to guess if the command should be run in a
-                shell (based on the presence of a pipe (|) or redirect (>), To force a process to
-                run as a direct subprocess, set `shell` to False; to force a shell, set True.
-            nofail (bool): Should the pipeline bail on a nonzero return from a process? Default: False
-                Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
-                they will not cause the pipeline to bail out.
+            cmd: Shell command string.
+            shell: Force shell mode. None auto-detects based on pipes/redirects.
+            nofail: If True, pipeline continues past failure instead of halting.
 
         Returns:
-            str: text output by the executed subprocess (check_output)
+            Stripped stdout string from the command. Empty string in test mode.
         """
 
         self._report_command(cmd)
@@ -1164,28 +1136,30 @@ class PipelineManager(object):
         lock_file: str | None = None,
         nofail: bool = False,
         container: str | None = None,
-    ) -> list[list[int | None], list[float]]:
-        """
-        Prints the command, and then executes it, then prints the memory use and
-        return code of the command.
+    ) -> tuple[list[int | None], list[float]]:
+        """Execute a command, print it, and track memory usage.
 
-        Uses python's subprocess.Popen() to execute the given command. The shell argument is simply
-        passed along to Popen(). You should use shell=False (default) where possible, because this enables memory
-        profiling. You should use shell=True if you require shell functions like redirects (>) or stars (*), but this
-        will prevent the script from monitoring memory use. The pipes (|) will be used to split the command into
-        subprocesses run within python, so the memory profiling is possible.
+        Example:
+            retcode, maxmem = pm.callprint("samtools sort in.bam")
 
-        cmd can also be a series (a dict object) of multiple commands, which will be run in succession.
+        Piped commands (|) are split into subprocesses so each can be memory-
+        profiled independently. Shell mode (used for redirects > or wildcards *)
+        runs the whole command in a shell, which prevents per-process memory
+        tracking. Prefer shell=False (default) when possible for better
+        profiling.
+
+        This is the low-level execution method; most users should use run()
+        instead, which adds target-based skipping and file locking on top.
 
         Args:
-            cmd (str | Iterable[str]): Bash command(s) to be run.
-            lock_file (str): a lock file name
-            nofail (bool): Should the pipeline bail on a nonzero return from a process? Default: False
-                Nofail can be used to implement non-essential parts of the pipeline; if these processes fail,
-                they will not cause the pipeline to bail out.
-            shell (bool): if the command should be run it its own shell, default: None (will try
-                to determine based on the command)
-            container (str): Named Docker container in which to execute.
+            cmd: Shell command string.
+            shell: Force shell mode. None auto-detects from pipes/redirects.
+            lock_file: Lock file name for this execution.
+            nofail: If True, pipeline continues past nonzero return codes.
+            container: Docker container name for execution.
+
+        Returns:
+            Tuple of (return_codes_per_process, peak_memory_GB_per_process).
         """
         # The Popen shell argument works like this:
         # if shell=False, then we format the command (with split()) to be a list of command and its arguments.
@@ -1354,13 +1328,10 @@ class PipelineManager(object):
         return [returncodes, local_maxmems]
 
     def process_counter(self) -> int | str:
-        """
-        Increments process counter with regard to the follow state:
-        if currently executed command is a follow function of another one, the counter is not incremented.
+        """Increment and return the process counter for logging.
 
-        Returns:
-            str | int: current counter state, a number if the counter has beed incremented or a number
-                of the previous process plus "f" otherwise
+        Returns "Nf" (e.g. "3f") for commands inside a follow function,
+        or the incremented integer count otherwise.
         """
         try:
             if self.in_follow:
@@ -1489,30 +1460,30 @@ class PipelineManager(object):
         finished: bool = False,
         raise_error: bool = True,
     ) -> None:
-        """
-        Print message, time, and time elapsed, perhaps creating checkpoint.
+        """Log a message with current time and elapsed time since last timestamp.
 
-        This prints your given message, along with the current time, and time
-        elapsed since the previous timestamp() call.  If you specify a
-        HEADING by beginning the message with "###", it surrounds the message
-        with newlines for easier readability in the log file. If a checkpoint
-        is designated, an empty file is created corresponding to the name
-        given. Depending on how this manager's been configured, the value of
-        the checkpoint, and whether this timestamp indicates initiation or
-        completion of a group of pipeline steps, this call may stop the
-        pipeline's execution.
+        Example:
+            pm.timestamp("### Alignment")
+            pm.timestamp("Reads trimmed", checkpoint="trim", finished=True)
+
+        Messages starting with "###" are formatted as headings with surrounding
+        newlines. If checkpoint is provided, creates a checkpoint file that
+        enables start/stop control for pipeline reruns.
+
+        Checkpoint semantics: with finished=False (default), the checkpoint
+        marks the *start* of a stage -- used with --stop-before to halt
+        before a stage runs. With finished=True, it marks *completion* of
+        a stage -- used with --stop-after to halt after a stage finishes.
+        A typical pattern is to call timestamp() with just a checkpoint name
+        before each stage (finished=False is implied), and pypiper handles
+        the rest.
 
         Args:
-            message (str): Message to timestamp.
-            checkpoint (str): Name of checkpoint; this tends to be something
-                that reflects the processing logic about to be or having just been
-                completed. Provision of an argument to this parameter means that
-                a checkpoint file will be created, facilitating arbitrary starting
-                and stopping point for the pipeline as desired.
-            finished (bool): Whether this call represents the completion of a
-                conceptual unit of a pipeline's processing
-            raise_error: Whether to raise exception if
-                checkpoint or current state indicates that a halt should occur.
+            message: Message to log with the timestamp.
+            checkpoint: Stage name for checkpoint file creation.
+            finished: True if the checkpoint stage just completed (retrospective);
+                False (default) if the stage is just starting (prospective).
+            raise_error: Whether to raise PipelineHalt when a stop point is reached.
         """
 
         # Halt if the manager's state has been set such that this call
@@ -1564,11 +1535,10 @@ class PipelineManager(object):
 
     @staticmethod
     def time_elapsed(time_since: float) -> float:
-        """
-        Returns the number of seconds that have elapsed since the time_since parameter.
+        """Return seconds elapsed since the given time (from time.time()).
 
-        Args:
-            time_since (float): Time as a float given by time.time().
+        Returns:
+            Elapsed seconds as float, rounded to nearest integer.
         """
         return round(time.time() - time_since, 0)
 
@@ -1614,20 +1584,21 @@ class PipelineManager(object):
         result_formatter: Callable | None = None,
         force_overwrite: bool = True,
     ) -> Any:
-        """
-        Writes a key:value pair to self.pipeline_stats_file.
+        """Report a key-value result to the pipeline stats file via pipestat.
+
+        Example:
+            pm.report_result("aligned_reads", 1500000)
+            pm.report_result("alignment_rate", 0.95, nolog=True)
 
         Args:
-            key (str): name (key) of the stat
-            value (dict): value of the stat to report.
-            nolog (bool): Turn on this flag to NOT print this result in the
-                logfile. Use sparingly in case you will be printing the result in a
-                different format.
-            result_formatter (str): function for formatting via pipestat backend
-            force_overwrite (bool): overwrite results if they already exist?
+            key: Result name (must match schema if schema validation is on).
+            value: Result value (str, int, float, dict, etc.).
+            nolog: If True, suppress logging the result to the pipeline log.
+            result_formatter: Custom formatter callable. Default: markdown.
+            force_overwrite: Overwrite existing results. Default: True.
 
         Returns:
-            str: reported_result: the reported result is returned as a list of formatted strings.
+            Formatted result string(s) from pipestat.
         """
         # keep the value in memory:
         self.stats_dict[key] = value
@@ -1663,30 +1634,23 @@ class PipelineManager(object):
         result_formatter: Callable | None = None,
         force_overwrite: bool = True,
     ) -> None:
-        """
-        Writes a key:value pair to self.pipeline_stats_file. Note: this function
-            will be deprecated. Using report_result is recommended.
+        """Report a file/image result via pipestat.
+
+        Deprecated: use pm.pipestat.report() directly instead:
+            pm.pipestat.report(values={"peak_plot": {"path": "peaks.png"}})
 
         Args:
-            key (str): name (key) of the object
-            filename (str): relative path to the file (relative to parent
-                output dir)
-            anchor_text (str): text used as the link anchor test or caption to
-                refer to the object. If not provided, defaults to the key.
-            anchor_image (str): a path to an HTML-displayable image thumbnail
-                (so, .png or .jpg, for example). If a path, the path should be
-                relative to the parent output dir.
-            annotation (str): By default, the figures will be annotated with
-                the pipeline name, so you can tell which pipeline records which
-                figures. If you want, you can change this.
-            nolog (bool): Turn on this flag to NOT print this result in the
-                logfile. Use sparingly in case you will be printing the result in a
-                different format.
-            result_formatter (str): function for formatting via pipestat backend
-            force_overwrite (bool): overwrite results if they already exist?
+            key: Result name.
+            filename: Path to the file (relative to output dir).
+            anchor_text: Link text or caption. Defaults to key.
+            anchor_image: Path to thumbnail image (.png/.jpg).
+            annotation: Annotation string. Defaults to pipeline name.
+            nolog: Suppress logging.
+            result_formatter: Custom formatter callable.
+            force_overwrite: Overwrite existing results.
 
         Returns:
-            str: reported_result: the reported result is returned as a list of formatted strings.
+            Formatted result string(s) from pipestat.
         """
         warnings.warn(
             "This function may be removed in future release. "
@@ -1871,15 +1835,10 @@ class PipelineManager(object):
 
     @staticmethod
     def make_sure_path_exists(path: str) -> None:
-        """
-        Creates all directories in a path if it does not exist.
+        """Create all directories in a path, no error if they already exist.
 
         Args:
-            path (str): Path to create.
-
-        Raises:
-            Exception: if the path creation attempt hits an error with
-                a code indicating a cause other than pre-existence.
+            path: Directory path to create.
         """
         try:
             os.makedirs(path)
@@ -1906,17 +1865,20 @@ class PipelineManager(object):
                 self.stats_dict[key] = value
 
     def get_stat(self, key: str) -> Any:
-        """
-        Returns a stat that was previously reported. This is necessary for reporting new stats that are
-        derived from two stats, one of which may have been reported by an earlier run. For example,
-        if you first use report_result to report (number of trimmed reads), and then in a later stage
-        want to report alignment rate, then this second stat (alignment rate) will require knowing the
-        first stat (number of trimmed reads); however, that may not have been calculated in the current
-        pipeline run, so we must retrieve it from the stats.yaml output file. This command will retrieve
-        such previously reported stats if they were not already calculated in the current pipeline run.
+        """Retrieve a previously reported stat, loading from disk if needed.
+
+        Example:
+            trimmed = pm.get_stat("trimmed_reads")
+            rate = pm.get_stat("aligned_reads") / trimmed
+
+        Checks in-memory cache first, then reads from the stats YAML file.
+        Returns None with a warning if the stat is not found.
 
         Args:
-            key: key of stat to retrieve
+            key: Stat name to retrieve.
+
+        Returns:
+            The stat value, or None if not found.
         """
 
         try:
@@ -2040,17 +2002,32 @@ class PipelineManager(object):
         return already_exists
 
     def complete(self) -> None:
-        """Stop a completely finished pipeline."""
+        """Mark the pipeline as successfully completed and finalize.
+
+        Example:
+            pm.complete()
+
+        Records elapsed time and success timestamp, runs cleanup of
+        intermediate files, and sets the pipeline status flag to 'completed'.
+        """
         self.stop_pipeline(status=COMPLETE_FLAG)
 
     def fail_pipeline(self, exc: Exception, dynamic_recover: bool = False) -> None:
-        """
-        If the pipeline does not complete, this function will stop the pipeline gracefully.
-        It sets the status flag to failed and skips the normal success completion procedure.
+        """Stop the pipeline with a failure status and raise the given exception.
+
+        Example:
+            pm.fail_pipeline(Exception("BAM file is empty"))
+
+        Terminates running subprocesses, writes cleanup script (but does
+        not delete intermediate files), and sets status to 'failed'.
 
         Args:
-            exc (Exception): Exception to raise.
-            dynamic_recover (bool): Whether to recover e.g. for job termination.
+            exc: Exception to raise after cleanup.
+            dynamic_recover: Create recovery flag files alongside each active
+                lock file. These flags signal a waiting pipeline to proceed
+                rather than waiting indefinitely for a lock that will never
+                be released. Used for job termination (e.g. SIGTERM from a
+                cluster scheduler) rather than code errors.
         """
         # Take care of any active running subprocess
         sys.stdout.flush()
@@ -2092,15 +2069,17 @@ class PipelineManager(object):
     def halt(
         self, checkpoint: str | None = None, finished: bool = False, raise_error: bool = True
     ) -> None:
-        """
-        Stop the pipeline before completion point.
+        """Pause the pipeline before its natural completion point.
+
+        Example:
+            pm.halt(checkpoint="alignment", finished=True)
+
+        Sets status to 'paused' and raises PipelineHalt if raise_error is True.
 
         Args:
-            checkpoint (str): Name of stage just reached or just completed.
-            finished (bool): Whether the indicated stage was just finished
-                (True), or just reached (False)
-            raise_error (bool): Whether to raise an exception to truly
-                halt execution.
+            checkpoint: Name of stage just reached or completed.
+            finished: Whether the indicated stage was just completed.
+            raise_error: Raise PipelineHalt to stop execution.
         """
         self.stop_pipeline(PAUSE_FLAG)
         self._active = False
@@ -2108,13 +2087,16 @@ class PipelineManager(object):
             raise PipelineHalt(checkpoint, finished)
 
     def get_elapsed_time(self) -> float:
-        """
-        Parse the pipeline profile file, collect the unique and last duplicated
-        runtimes and sum them up. In case the profile is not found, an estimate
-        is calculated (which is correct only in case the pipeline was not rerun)
+        """Calculate total pipeline runtime from the profile file.
+
+        Example:
+            total_seconds = pm.get_elapsed_time()
+
+        Parses the profile TSV to sum unique command runtimes (deduplicating
+        reruns). Falls back to wall-clock estimate if profile is unavailable.
 
         Returns:
-            int: sum of runtimes in seconds
+            Total runtime in seconds.
         """
         if os.path.isfile(self.pipeline_profile_file):
             df = _pd.read_csv(
@@ -2135,13 +2117,18 @@ class PipelineManager(object):
         return self.time_elapsed(self.starttime)
 
     def stop_pipeline(self, status: str = COMPLETE_FLAG) -> None:
-        """
-        Terminate the pipeline.
+        """Terminate the pipeline, recording time/memory stats and running cleanup.
 
-        This is the "healthy" pipeline completion function.
-        The normal pipeline completion function, to be run by the pipeline
-        at the end of the script. It sets status flag to completed and records
-        some time and memory statistics to the log file.
+        Example:
+            pm.stop_pipeline()  # defaults to 'completed' status
+
+        This is the underlying shutdown function. It reports Time and Success
+        results, removes lock files, deletes intermediate files registered
+        via clean_add(), and sets the status flag. Prefer complete() for
+        success or fail_pipeline() for failure -- they call this internally.
+
+        Args:
+            status: Status flag string. Default: 'completed'.
         """
         # self._set_status_flag(status)
         self.pipestat.set_status(
@@ -2355,7 +2342,15 @@ class PipelineManager(object):
         atexit.register(*args)
 
     def get_container(self, image: str, mounts: str | list[str]) -> None:
-        # image is something like "nsheff/refgenie"
+        """Start a Docker container for running pipeline commands.
+
+        Example:
+            pm.get_container("nsheff/refgenie", ["/data", "/ref"])
+
+        Args:
+            image: Docker image name (e.g. "nsheff/refgenie").
+            mounts: Path or list of paths to mount into the container.
+        """
         if type(mounts) == str:
             mounts = [mounts]
         cmd = "docker run -itd"
@@ -2376,31 +2371,33 @@ class PipelineManager(object):
         self._atexit_register(self.remove_container, container)
 
     def remove_container(self, container: str) -> None:
+        """Remove a Docker container by ID.
+
+        Args:
+            container: Docker container ID string.
+        """
         self.info("Removing docker container. . .")
         cmd = "docker rm -f " + container
         self.callprint(cmd)
 
     def clean_add(self, regex: str | None, conditional: bool = False, manual: bool = False) -> None:
-        """
-        Add files (or regexs) to a cleanup list, to delete when this pipeline
-        completes successfully. When making a call with run that produces
-        intermediate files that should be deleted after the pipeline completes,
-        you flag these files for deletion with this command. Files added with
-        clean_add will only be deleted upon success of the pipeline.
+        """Register files for automatic deletion when the pipeline succeeds.
 
-        Passing None is a no-op, which allows pipelines to call clean_add on
-        variables that may not have been assigned in conditional branches.
+        Example:
+            pm.clean_add("intermediate.bam")
+            pm.clean_add("temp_*.txt", conditional=True)
+            pm.clean_add(None)  # no-op, safe for unset variables
+
+        Passing None is a no-op, allowing safe calls on variables that may
+        not have been assigned in conditional branches.
 
         Args:
-            regex (str | None): A unix-style regular expression that matches
-                files to delete (can also be a file name). If None, this call
-                is silently skipped.
-            conditional (bool): True means the files will only be deleted if
-                no other pipelines are currently running; otherwise they are
-                added to a manual cleanup script called
-                {pipeline_name}_cleanup.sh
-            manual (bool): True means the files will just be added to a
-                manual cleanup script.
+            regex: Unix glob pattern or filename to delete. None is a no-op.
+            conditional: Only delete if no other pipelines are running
+                (checks for absence of flag files from other pipelines).
+            manual: Only add to the manual cleanup script, never auto-delete.
+                Note: if the PipelineManager was created with dirty=True,
+                all files are forced to manual cleanup regardless.
         """
         if regex is None:
             return

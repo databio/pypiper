@@ -3,7 +3,6 @@
 # Pypiper
 
 [![Build Status](https://github.com/databio/pypiper/actions/workflows/run-pytest.yml/badge.svg)](https://github.com/databio/pypiper/actions/workflows/run-pytest.yml)
-[![PEP compatible](https://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
 [![pypi-badge](https://img.shields.io/pypi/v/piper)](https://pypi.org/project/piper)
 
-A lightweight python toolkit for gluing together restartable, robust shell pipelines. Learn more in the [documentation](https://pep.databio.org/pypiper/).
+A lightweight Python toolkit for gluing together restartable, robust shell pipelines. Pypiper manages shell command execution with automatic restartability, file integrity protection, resource monitoring, and detailed logging -- useful for any multi-step workflow that calls command-line tools. Learn more in the [documentation](https://pep.databio.org/pypiper/).

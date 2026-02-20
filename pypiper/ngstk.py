@@ -1,4 +1,4 @@
-"""Broadly applicable NGS processing/analysis functionality"""
+"""Optional genomics toolkit with NGS processing convenience functions."""
 
 import errno
 import os
@@ -60,29 +60,21 @@ class NGSTools:
 
 
 class NGSTk:
-    """
-    Class to hold functions to build command strings used during pipeline runs.
-
-    NGSTk can be instantiated standalone or with a PipelineManager. Tool paths
-    come from the config's "tools" section; unconfigured tools default to their
-    name (assuming they're on $PATH).
-
-    Args:
-        config_file (str): Path to pipeline yaml config file (optional).
-        pm (pypiper.PipelineManager): A PipelineManager with which to associate
-            this toolkit instance.
+    """Build shell command strings for common NGS processing operations.
 
     Example:
-        from pypiper.ngstk import NGSTk as tk
         tk = NGSTk()
-        tk.samtools_index("sample.bam")
-        # returns: samtools index sample.bam
+        tk.samtools_index("sample.bam")  # => "samtools index sample.bam"
 
-        # Using a configuration file (custom executable location):
-        from pypiper.ngstk import NGSTk
-        tk = NGSTk("pipeline_config_file.yaml")
-        tk.samtools_index("sample.bam")
-        # returns: /home/.local/samtools/bin/samtools index sample.bam
+        tk = NGSTk("pipeline_config.yaml")
+        tk.samtools_index("sample.bam")  # uses configured samtools path
+
+    Tool paths come from the config's "tools" section; unconfigured tools
+    default to their name (assuming they're on $PATH).
+
+    Args:
+        config_file: Path to pipeline YAML config file.
+        pm: PipelineManager to associate with this toolkit.
     """
 
     def __init__(self, config_file: str | None = None, pm: Any = None) -> None:
@@ -130,16 +122,7 @@ class NGSTk:
             self.ziptool_cmd = "gzip -f"
 
     def _ensure_folders(self, *paths: str) -> None:
-        """
-        Ensure that paths to folder(s) exist.
-
-        Some command-line tools will not attempt to create folder(s) needed
-        for output path to exist. They instead assume that they already are
-        present and will fail if that assumption does not hold.
-
-        Args:
-            *paths (Iterable[str]): Collection of paths for which to ensure folder existence.
-        """
+        """Create parent directories for the given file paths if needed."""
         for p in paths:
             # Only provide assurance for absolute paths.
             if not p or not os.path.isabs(p):
@@ -153,21 +136,11 @@ class NGSTk:
 
     @property
     def ziptool(self) -> str:
-        """
-        Returns the command to use for compressing/decompressing.
-
-        Returns:
-            str: Either 'gzip' or 'pigz' if installed and multiple cores
-        """
+        """Compression command: 'pigz' if available with multiple cores, else 'gzip'."""
         return self.ziptool_cmd
 
     def make_dir(self, path: str) -> None:
-        """
-        Forge path to directory, creating intermediates as needed.
-
-        Args:
-            path (str): Path to create.
-        """
+        """Create directory and all intermediates, no error if exists."""
         try:
             os.makedirs(path)
         except OSError as exception:
@@ -180,9 +153,7 @@ class NGSTk:
 
     # Borrowed from looper
     def check_command(self, command: str) -> bool:
-        """
-        Check if command can be called.
-        """
+        """Check if a command is callable on the system."""
 
         # Use `command` to see if command is callable, store exit code
         code = os.system("command -v {0} >/dev/null 2>&1 || {{ exit 1; }}".format(command))
@@ -195,12 +166,7 @@ class NGSTk:
             return True
 
     def get_file_size(self, filenames: str | list[str]) -> float:
-        """
-        Get size of all files in string (space-separated) in megabytes (Mb).
-
-        Args:
-            filenames (str): a space-separated string of filenames
-        """
+        """Get total size of file(s) in megabytes."""
         # use (1024 ** 3) for gigabytes
         # equivalent to: stat -Lc '%s' filename
 
@@ -233,18 +199,7 @@ class NGSTk:
         output_fastq2: str | None = None,
         unpaired_fastq: str | None = None,
     ) -> str:
-        """
-        Create command to convert BAM(s) to FASTQ(s).
-
-        Args:
-            input_bam (str): Path to sequencing reads file to convert
-            output_fastq: Path to FASTQ to write
-            output_fastq2: Path to (R2) FASTQ to write
-            unpaired_fastq: Path to unpaired FASTQ to write
-
-        Returns:
-            str: Command to convert BAM(s) to FASTQ(s)
-        """
+        """Build command to convert BAM to FASTQ via Picard SamToFastq."""
         self._ensure_folders(output_fastq, output_fastq2, unpaired_fastq)
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
         cmd += " -jar " + self.tools.picard + " SamToFastq"
@@ -256,18 +211,7 @@ class NGSTk:
         return cmd
 
     def bam_to_fastq(self, bam_file: str, out_fastq_pre: str, paired_end: bool) -> str:
-        """
-        Build command to convert BAM file to FASTQ file(s) (R1/R2).
-
-        Args:
-            bam_file (str): path to BAM file with sequencing reads
-            out_fastq_pre (str): path prefix for output FASTQ file(s)
-            paired_end (bool): whether the given file contains paired-end
-                or single-end sequencing reads
-
-        Returns:
-            str: file conversion command, ready to run
-        """
+        """Build Picard SamToFastq command for BAM to FASTQ conversion."""
         self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
         cmd += " -jar " + self.tools.picard + " SamToFastq"
@@ -284,14 +228,10 @@ class NGSTk:
     def bam_to_fastq_awk(
         self, bam_file: str, out_fastq_pre: str, paired_end: bool, zipmode: bool = False
     ) -> tuple[str, str, str | None]:
-        """
-        This converts bam file to fastq files, but using awk. As of 2016, this is much faster
-        than the standard way of doing this using Picard, and also much faster than the
-        bedtools implementation as well; however, it does no sanity checks and assumes the reads
-        (for paired data) are all paired (no singletons), in the correct order.
+        """Build fast awk-based BAM to FASTQ conversion command.
 
-        Args:
-            zipmode (bool): Should the output be zipped?
+        Faster than Picard/bedtools but assumes paired reads are properly
+        ordered with no singletons.
         """
         self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
         fq1 = out_fastq_pre + "_R1.fastq"
@@ -321,9 +261,7 @@ class NGSTk:
     def bam_to_fastq_bedtools(
         self, bam_file: str, out_fastq_pre: str, paired_end: bool
     ) -> tuple[str, str, str | None]:
-        """
-        Converts bam to fastq; A version using bedtools
-        """
+        """Build bedtools bamtofastq command for BAM to FASTQ conversion."""
         self.make_sure_path_exists(os.path.dirname(out_fastq_pre))
         fq1 = out_fastq_pre + "_R1.fastq"
         fq2 = None
@@ -335,10 +273,7 @@ class NGSTk:
         return cmd, fq1, fq2
 
     def get_input_ext(self, input_file: str) -> str:
-        """
-        Get the extension of the input_file. Assumes you're using either
-        .bam or .fastq/.fq or .fastq.gz/.fq.gz.
-        """
+        """Detect input file type: ".bam", ".fastq.gz", or ".fastq"."""
         if input_file.endswith(".bam"):
             input_ext = ".bam"
         elif input_file.endswith(".fastq.gz") or input_file.endswith(".fq.gz"):
@@ -357,20 +292,18 @@ class NGSTk:
     def merge_or_link(
         self, input_args: list, raw_folder: str, local_base: str = "sample"
     ) -> str | list[str]:
-        """
-        Standardizes various input possibilities by converting either .bam,
-        .fastq, or .fastq.gz files into a local file; merging those if multiple
-        files given.
+        """Standardize inputs by linking or merging .bam/.fastq/.fastq.gz files.
+
+        Example:
+            local = tk.merge_or_link([["s1_R1.fq.gz"], ["s1_R2.fq.gz"]], "raw/", "sample1")
+
+        For single files, creates a symlink. For multiple files of the same
+        type, merges them (cat for fastq, samtools merge for bam).
 
         Args:
-            input_args (list): This is a list of arguments, each one is a
-                class of inputs (which can in turn be a string or a list).
-                Typically, input_args is a list with 2 elements: first a list of
-                read1 files; second an (optional!) list of read2 files.
-            raw_folder (str): Name/path of folder for the merge/link.
-            local_base (str): Usually the sample name. This (plus file
-                extension) will be the name of the local file linked (or merged)
-                by this function.
+            input_args: List of input file paths or list of lists (R1/R2).
+            raw_folder: Directory for the merge/link output.
+            local_base: Base name for output file (usually sample name).
         """
         self.make_sure_path_exists(raw_folder)
 
@@ -475,28 +408,19 @@ class NGSTk:
         multiclass: bool = False,
         zipmode: bool = False,
     ) -> list:
-        """
-        Builds a command to convert input file to fastq, for various inputs.
-
-        Takes either .bam, .fastq.gz, or .fastq input and returns
-        commands that will create the .fastq file, regardless of input type.
-        This is useful to made your pipeline easily accept any of these input
-        types seamlessly, standardizing you to fastq which is still the
-        most common format for adapter trimmers, etc. You can specify you want
-        output either zipped or not.
-
-        Commands will place the output fastq file in given `fastq_folder`.
+        """Build command to convert any input (.bam/.fastq.gz/.fastq) to FASTQ.
 
         Args:
-            input_file (str): filename of input you want to convert to fastq
-            multiclass (bool): Are both read1 and read2 included in a single
-                file? User should not need to set this; it will be inferred and used
-                in recursive calls, based on number files, and the paired_end arg.
-            zipmode (bool): Should the output be .fastq.gz? Otherwise, just fastq
+            input_file: Path(s) to input file(s).
+            sample_name: Sample name for output file naming.
+            paired_end: Whether data is paired-end.
+            fastq_folder: Directory for output FASTQ files.
+            output_file: Explicit output path (auto-derived if None).
+            multiclass: Internal flag for recursive R1/R2 handling.
+            zipmode: Output as .fastq.gz instead of .fastq.
 
         Returns:
-            str: A command (to be run with PipelineManager) that will ensure
-                your fastq file exists.
+            List of [command, fastq_prefix, output_file].
         """
 
         fastq_prefix = os.path.join(fastq_folder, sample_name)
@@ -591,12 +515,19 @@ class NGSTk:
     def check_fastq(
         self, input_files: str | list[str], output_files: str | list[str], paired_end: bool
     ) -> Callable:
-        """
-        Returns a follow sanity-check function to be run after a fastq conversion.
-        Run following a command that will produce the fastq files.
+        """Return a follow function that validates FASTQ conversion read counts.
 
-        This function will make sure any input files have the same number of reads as the
-        output files.
+        Example:
+            cmd, prefix, out = tk.input_to_fastq(bam, name, pe, folder)
+            pm.run(cmd, out, follow=tk.check_fastq(bam, out, pe))
+
+        Args:
+            input_files: Original input file(s) before conversion.
+            output_files: FASTQ output file(s) from conversion.
+            paired_end: Whether data is paired-end.
+
+        Returns:
+            Callable that compares read counts and reports stats.
         """
 
         # Define a temporary function which we will return, to be called by the
@@ -653,23 +584,16 @@ class NGSTk:
         trimmed_fastq_R2: str | None = None,
         fastqc_folder: str | None = None,
     ) -> Callable:
-        """
-        Build function to evaluate read trimming, and optionally run fastqc.
-
-        This is useful to construct an argument for the 'follow' parameter of
-        a PipelineManager's 'run' method.
+        """Return a follow function that counts trimmed reads and optionally runs FastQC.
 
         Args:
-            trimmed_fastq (str): Path to trimmed reads file.
-            paired_end (bool): Whether the processing is being done with
-                paired-end sequencing data.
-            trimmed_fastq_R2 (str): Path to read 2 file for the paired-end case.
-            fastqc_folder (str): Path to folder within which to place fastqc
-                output files; if unspecified, fastqc will not be run.
+            trimmed_fastq: Path to trimmed reads file.
+            paired_end: Whether data is paired-end.
+            trimmed_fastq_R2: Path to R2 trimmed file for paired-end.
+            fastqc_folder: If set, run FastQC and place output here.
 
         Returns:
-            callable: Function to evaluate read trimming and possibly run
-                fastqc.
+            Callable for use as pm.run() follow function.
         """
 
         def temp_func():
@@ -721,15 +645,7 @@ class NGSTk:
         return temp_func
 
     def validate_bam(self, input_bam: str) -> str:
-        """
-        Wrapper for Picard's ValidateSamFile.
-
-        Args:
-            input_bam (str): Path to file to validate.
-
-        Returns:
-            str: Command to run for the validation.
-        """
+        """Build Picard ValidateSamFile command."""
         cmd = self.tools.java + " -Xmx" + self.pm.javamem
         cmd += " -jar " + self.tools.picard + " ValidateSamFile"
         cmd += " INPUT=" + input_bam
@@ -742,18 +658,7 @@ class NGSTk:
         in_sorted: bool | str = "TRUE",
         tmp_dir: str | None = None,
     ) -> str | int:
-        """
-        Combine multiple files into one.
-
-        The tmp_dir parameter is important because on poorly configured
-        systems, the default can sometimes fill up.
-
-        Args:
-            input_bams (Iterable[str]): Paths to files to combine
-            merged_bam (str): Path to which to write combined result.
-            in_sorted (bool | str): Whether the inputs are sorted
-            tmp_dir (str): Path to temporary directory.
-        """
+        """Build Picard MergeSamFiles command to combine BAM files."""
         if not len(input_bams) > 1:
             print("No merge required")
             return 0
@@ -791,23 +696,7 @@ class NGSTk:
     def merge_fastq(
         self, inputs: list[str], output: str, run: bool = False, remove_inputs: bool = False
     ) -> str | None:
-        """
-        Merge FASTQ files (zipped or not) into one.
-
-        Args:
-            inputs (Iterable[str]): Collection of paths to files to merge.
-            output (str): Path to single output file.
-            run (bool): Whether to run the command.
-            remove_inputs (bool): Whether to keep the original files.
-
-        Returns:
-            NoneType | str: Null if running the command, otherwise the
-                command itself
-
-        Raises:
-            ValueError: Raise ValueError if the call is such that
-                inputs are to be deleted but command is not run.
-        """
+        """Merge multiple FASTQ files into one via cat."""
         if remove_inputs and not run:
             raise ValueError("Can't delete files if command isn't run")
         cmd = "cat {} > {}".format(" ".join(inputs), output)
@@ -820,12 +709,7 @@ class NGSTk:
             return cmd
 
     def count_lines(self, file_name: str) -> str:
-        """
-        Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
-
-        Args:
-            file_name (str): name of file whose lines are to be counted
-        """
+        """Count lines in a file using wc -l."""
         x = subprocess.check_output(
             "wc -l " + file_name + " | sed -E 's/^[[:space:]]+//' | cut -f1 -d' '",
             shell=True,
@@ -833,13 +717,7 @@ class NGSTk:
         return x.decode().strip()
 
     def count_lines_zip(self, file_name: str) -> str:
-        """
-        Uses the command-line utility wc to count the number of lines in a file. For MacOS, must strip leading whitespace from wc.
-        For compressed files.
-
-        Args:
-            file_name: file_name
-        """
+        """Count lines in a gzipped file using zcat | wc -l."""
         x = subprocess.check_output(
             self.ziptool
             + " -d -c "
@@ -850,10 +728,7 @@ class NGSTk:
         return x.decode().strip()
 
     def get_chrs_from_bam(self, file_name: str) -> list[str]:
-        """
-        Uses samtools to grab the chromosomes from the header that are contained
-        in this bam file.
-        """
+        """Extract chromosome names from a BAM file header via samtools."""
         x = subprocess.check_output(
             self.tools.samtools
             + " view -H "
@@ -870,15 +745,7 @@ class NGSTk:
     # In these functions, A paired-end read, with 2 sequences, counts as a two reads
 
     def count_unique_reads(self, file_name: str, paired_end: bool) -> int:
-        """
-        Sometimes alignment software puts multiple locations for a single read; if you just count
-        those reads, you will get an inaccurate count. This is _not_ the same as multimapping reads,
-        which may or may not be actually duplicated in the bam file (depending on the alignment
-        software).
-        This function counts each read only once.
-        This accounts for paired end or not for free because pairs have the same read name.
-        In this function, a paired-end read would count as 2 reads.
-        """
+        """Count unique reads (by name) in a BAM/SAM file. Paired-end counts as 2."""
         if file_name.endswith("sam"):
             param = "-S"
         if file_name.endswith("bam"):
@@ -904,18 +771,7 @@ class NGSTk:
         return int(r1) + int(r2)
 
     def count_unique_mapped_reads(self, file_name: str, paired_end: bool) -> int:
-        """
-        For a bam or sam file with paired or or single-end reads, returns the
-        number of mapped reads, counting each read only once, even if it appears
-        mapped at multiple locations.
-
-        Args:
-            file_name (str): name of reads file
-            paired_end (bool): True/False paired end data
-
-        Returns:
-            int: Number of uniquely mapped reads.
-        """
+        """Count mapped reads (by name, deduplicated) in a BAM/SAM file."""
 
         _, ext = os.path.splitext(file_name)
         ext = ext.lower()
@@ -949,17 +805,7 @@ class NGSTk:
         return int(r1) + int(r2)
 
     def count_flag_reads(self, file_name: str, flag: int | str, paired_end: bool) -> str:
-        """
-        Counts the number of reads with the specified flag.
-
-        Args:
-            file_name (str): name of reads file
-            flag (str): sam flag value to be read
-            paired_end (bool): This parameter is ignored; samtools automatically correctly responds depending
-                on the data in the bamfile. We leave the option here just for consistency, since all the other
-                counting functions require the parameter. This makes it easier to swap counting functions during
-                pipeline development.
-        """
+        """Count reads with a specific SAM flag value."""
 
         param = " -c -f" + str(flag)
         if file_name.endswith("sam"):
@@ -967,76 +813,36 @@ class NGSTk:
         return self.samtools_view(file_name, param=param)
 
     def count_multimapping_reads(self, file_name: str, paired_end: bool) -> int:
-        """
-        Counts the number of reads that mapped to multiple locations. Warning:
-        currently, if the alignment software includes the reads at multiple locations, this function
-        will count those more than once. This function is for software that randomly assigns,
-        but flags reads as multimappers.
-
-        Args:
-            file_name (str): name of reads file
-            paired_end: This parameter is ignored; samtools automatically correctly responds depending
-                on the data in the bamfile. We leave the option here just for consistency, since all the other
-                counting functions require the parameter. This makes it easier to swap counting functions during
-                pipeline development.
-        """
+        """Count reads flagged as multimapping (SAM flag 256)."""
         return int(self.count_flag_reads(file_name, 256, paired_end))
 
     def count_uniquelymapping_reads(self, file_name: str, paired_end: bool) -> str:
-        """
-        Counts the number of reads that mapped to a unique position.
-
-        Args:
-            file_name (str): name of reads file
-            paired_end (bool): This parameter is ignored.
-        """
+        """Count reads that mapped to a unique position (exclude flag 256)."""
         param = " -c -F256"
         if file_name.endswith("sam"):
             param += " -S"
         return self.samtools_view(file_name, param=param)
 
     def count_fail_reads(self, file_name: str, paired_end: bool) -> int:
-        """
-        Counts the number of reads that failed platform/vendor quality checks.
-
-        Args:
-            paired_end: This parameter is ignored; samtools automatically correctly responds depending
-                on the data in the bamfile. We leave the option here just for consistency, since all the other
-                counting functions require the parameter. This makes it easier to swap counting functions during
-                pipeline development.
-        """
+        """Count reads that failed platform/vendor quality checks (SAM flag 512)."""
         return int(self.count_flag_reads(file_name, 512, paired_end))
 
     def samtools_view(self, file_name: str, param: str, postpend: str = "") -> str:
-        """
-        Run samtools view, with flexible parameters and post-processing.
-
-        This is used internally to implement the various count_reads functions.
-
-        Args:
-            file_name (str): file_name
-            param (str): String of parameters to pass to samtools view
-            postpend (str): String to append to the samtools command;
-                useful to add cut, sort, wc operations to the samtools view output.
-        """
+        """Run samtools view with given parameters and optional post-processing pipe."""
         cmd = "{} view {} {} {}".format(self.tools.samtools, param, file_name, postpend)
         # in python 3, check_output returns a byte string which causes issues.
         # with python 3.6 we could use argument: "encoding='UTF-8'""
         return subprocess.check_output(cmd, shell=True).decode().strip()
 
     def count_reads(self, file_name: str, paired_end: bool) -> str | int | float:
-        """
-        Count reads in a file.
+        """Count reads in a BAM/SAM/FASTQ file.
 
-        Paired-end reads count as 2 in this function.
-        For paired-end reads, this function assumes that the reads are split
-        into 2 files, so it divides line count by 2 instead of 4.
-        This will thus give an incorrect result if your paired-end fastq files
-        are in only a single file (you must divide by 2 again).
+        Paired-end reads count as 2. Assumes paired-end FASTQs are split
+        into separate R1/R2 files (divides line count by 2 instead of 4).
 
         Args:
-            file_name (str): Name/path of file whose reads are to be counted.
-            paired_end (bool): Whether the file contains paired-end reads.
+            file_name: Path to BAM/SAM/FASTQ file.
+            paired_end: Whether the file contains paired-end reads.
         """
 
         _, ext = os.path.splitext(file_name)
@@ -1058,33 +864,14 @@ class NGSTk:
             return int(num_lines) / divisor
 
     def count_concordant(self, aligned_bam: str) -> str:
-        """
-        Count only reads that "aligned concordantly exactly 1 time."
-
-        Args:
-            aligned_bam (str): File for which to count mapped reads.
-        """
+        """Count reads aligned concordantly exactly once (YT:Z:CP flag)."""
         cmd = self.tools.samtools + " view " + aligned_bam + " | "
         cmd += "grep 'YT:Z:CP'" + " | uniq -u | wc -l | sed -E 's/^[[:space:]]+//'"
 
         return subprocess.check_output(cmd, shell=True).decode().strip()
 
     def count_mapped_reads(self, file_name: str, paired_end: bool) -> str | int:
-        """
-        Mapped_reads are not in fastq format, so this one doesn't need to accommodate fastq,
-        and therefore, doesn't require a paired-end parameter because it only uses samtools view.
-        Therefore, it's ok that it has a default parameter, since this is discarded.
-
-        Args:
-            file_name (str): File for which to count mapped reads.
-            paired_end (bool): This parameter is ignored; samtools automatically correctly responds depending
-                on the data in the bamfile. We leave the option here just for consistency, since all the other
-                counting functions require the parameter. This makes it easier to swap counting functions during
-                pipeline development.
-
-        Returns:
-            int: Either return code from samtools view command, or -1 to indicate an error state.
-        """
+        """Count mapped reads in a BAM/SAM file (excludes unmapped, flag -F4)."""
         if file_name.endswith("bam"):
             return self.samtools_view(file_name, param="-c -F4")
         if file_name.endswith("sam"):
@@ -1092,11 +879,11 @@ class NGSTk:
         return -1
 
     def sam_conversions(self, sam_file: str, depth: bool = True) -> str:
-        """
-        Convert sam files to bam files, then sort and index them for later use.
+        """Build command to convert SAM to sorted/indexed BAM (optionally with depth).
 
         Args:
-            depth (bool): also calculate coverage over each position
+            sam_file: Path to SAM file.
+            depth: Also calculate per-position coverage.
         """
         cmd = (
             self.tools.samtools
@@ -1127,11 +914,11 @@ class NGSTk:
         return cmd
 
     def bam_conversions(self, bam_file: str, depth: bool = True) -> str:
-        """
-        Sort and index bam files for later use.
+        """Build command to sort and index a BAM file (optionally with depth).
 
         Args:
-            depth (bool): also calculate coverage over each position
+            bam_file: Path to BAM file.
+            depth: Also calculate per-position coverage.
         """
         cmd = (
             self.tools.samtools
@@ -1162,16 +949,7 @@ class NGSTk:
         return cmd
 
     def fastqc(self, file: str, output_dir: str) -> str:
-        """
-        Create command to run fastqc on a FASTQ file
-
-        Args:
-            file (str): Path to file with sequencing reads
-            output_dir (str): Path to folder in which to place output
-
-        Returns:
-            str: Command with which to run fastqc
-        """
+        """Build FastQC command for a reads file."""
         # You can find the fastqc help with fastqc --help
         try:
             pm = self.pm
@@ -1185,24 +963,7 @@ class NGSTk:
         return "{} --noextract --outdir {} {}".format(self.tools.fastqc, output_dir, file)
 
     def fastqc_rename(self, input_bam: str, output_dir: str, sample_name: str) -> list[str]:
-        """
-        Create pair of commands to run fastqc and organize files.
-
-        The first command returned is the one that actually runs fastqc when
-        it's executed; the second moves the output files to the output
-        folder for the sample indicated.
-
-        Args:
-            input_bam (str): Path to file for which to run fastqc.
-            output_dir (str): Path to folder in which fastqc output will be
-                written, and within which the sample's output folder lives.
-            sample_name (str): Sample name, which determines subfolder within
-                output_dir for the fastqc files.
-
-        Returns:
-            list[str]: Pair of commands, to run fastqc and then move the files to
-                their intended destination based on sample name.
-        """
+        """Build commands to run FastQC and rename output by sample name."""
         cmds = list()
         initial = os.path.splitext(os.path.basename(input_bam))[0]
         cmd1 = self.fastqc(input_bam, output_dir)
@@ -1333,23 +1094,7 @@ class NGSTk:
         input_fastq2: str | None = None,
         output_fastq2: str | None = None,
     ) -> list[str]:
-        """
-        Create commands with which to run skewer.
-
-        Args:
-            input_fastq1 (str): Path to input (read 1) FASTQ file
-            output_prefix (str): Prefix for output FASTQ file names
-            output_fastq1 (str): Path to (read 1) output FASTQ file
-            log (str): Path to file to which to write logging information
-            cpus (int | str): Number of processing cores to allow
-            adapters (str): Path to file with sequencing adapters
-            input_fastq2 (str): Path to read 2 input FASTQ file
-            output_fastq2 (str): Path to read 2 output FASTQ file
-
-        Returns:
-            list[str]: Sequence of commands to run to trim reads with
-                skewer and rename files as desired.
-        """
+        """Build skewer adapter-trimming commands with file renaming."""
 
         pe = input_fastq2 is not None
         mode = "pe" if pe else "any"
@@ -1457,10 +1202,7 @@ class NGSTk:
         return [cmd1, cmd2, cmd3]
 
     def filter_reads(self, input_bam: str, output_bam: str, metrics_file: str, paired: bool = False, cpus: int = 16, Q: int = 30) -> list[str]:
-        """
-        Remove duplicates, filter for >Q, remove multiple mapping reads.
-        For paired-end reads, keep only proper pairs.
-        """
+        """Build commands to dedup, quality-filter, and remove multimappers."""
         nodups = re.sub(r"\.bam$", "", output_bam) + ".nodups.nofilter.bam"
         cmd1 = (
             self.tools.sambamba
