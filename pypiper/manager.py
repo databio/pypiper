@@ -190,9 +190,10 @@ class PipelineManager(object):
             setattr(self, optname, checkpoint)
         if self.stop_before and self.stop_after:
             raise TypeError(
-                "Cannot specify both pre-stop and post-stop; got '{}' and '{}'".format(
-                    self.stop_before, self.stop_after
-                )
+                "Cannot specify both stop_before and stop_after. "
+                "stop_before='{before}' (exclusive: stage is NOT run) and "
+                "stop_after='{after}' (inclusive: stage IS run) are mutually exclusive. "
+                "Use only one.".format(before=self.stop_before, after=self.stop_after)
             )
 
         # Update this manager's parameters with non-checkpoint-related
@@ -468,9 +469,9 @@ class PipelineManager(object):
             return getattr(self, "_pipestat_manager")
         except AttributeError:
             raise PipestatError(
-                f"{PipestatManager.__name__} has not been configured for this pipeline run. "
-                f"Provide an output schema to the {PipelineManager.__name__} object "
-                f"in order to initialize it."
+                "PipestatManager has not been configured for this pipeline run. "
+                "To enable pipestat result reporting, provide pipestat_schema='/path/to/output_schema.yaml' "
+                "when creating the PipelineManager, or pass --pipestat-schema on the command line."
             )
 
     @property
@@ -871,10 +872,10 @@ class PipelineManager(object):
             check_fpath = _checkpoint_filepath(self.curr_checkpoint, self)
             if os.path.isfile(check_fpath) and not self.overwrite_checkpoints:
                 self.info(
-                    "Checkpoint file exists for '{}' ('{}'), and the {} has "
-                    "been configured to not overwrite checkpoints; "
-                    "skipping command '{}'".format(
-                        self.curr_checkpoint, check_fpath, self.__class__.__name__, cmd
+                    "Checkpoint file exists for '{stage}' at '{path}'. "
+                    "Skipping command: `{cmd}`. "
+                    "To re-run this stage, delete the checkpoint file or use new_start=True (CLI: -N).".format(
+                        stage=self.curr_checkpoint, path=check_fpath, cmd=cmd
                     )
                 )
                 return default_return_code
@@ -886,7 +887,11 @@ class PipelineManager(object):
         # Therefore, a targetless command that you want
         # to lock must specify a lock_name manually.
         if target is None and lock_name is None:
-            self.fail_pipeline(Exception("You must provide either a target or a lock_name."))
+            self.fail_pipeline(Exception(
+                "PipelineManager.run() requires either a 'target' (output file path) or a 'lock_name'. "
+                "Provide target='/path/to/output_file' to enable output checking and file locking, "
+                "or provide lock_name='my_step' for targetless commands that still need locking."
+            ))
 
         # Downstream code requires target to be a list, so convert if only
         # a single item was given
@@ -952,7 +957,10 @@ class PipelineManager(object):
             ):
                 for tgt in target:
                     if os.path.exists(tgt):
-                        self.info("Target exists: `" + tgt + "`  ")
+                        self.info(
+                            "Target exists: `{tgt}`. Skipping this step. "
+                            "To force re-computation, use new_start=True (CLI: -N).".format(tgt=tgt)
+                        )
                 if self.new_start:
                     self.info("New start mode; run anyway.  ")
                     # Set the local_newstart flag so the command will run anyway.
@@ -983,7 +991,13 @@ class PipelineManager(object):
                 for lock_file in lock_files:
                     recover_file = self._recoverfile_from_lockfile(lock_file)
                     if os.path.isfile(lock_file):
-                        self.info("Found lock file: {}".format(lock_file))
+                        self.info(
+                            "Found lock file: {lock}. "
+                            "This means another pipeline may be running on this target, "
+                            "or a previous run crashed without cleaning up. "
+                            "To override the lock and re-run the command (overwriting any partial output), "
+                            "restart with recover=True (CLI: -R).".format(lock=lock_file)
+                        )
                         if self.overwrite_locks:
                             self.info("Overwriting target...")
                             proceed_through_locks = True
@@ -1017,7 +1031,8 @@ class PipelineManager(object):
                     except OSError as e:
                         if e.errno == errno.EEXIST:  # File already exists
                             self.info(
-                                "Lock file created after test! Looping again: {}".format(lock_file)
+                                "Lock file appeared between existence check and creation (race condition): {lock}. "
+                            "Re-checking. This is normal when multiple pipelines target the same file.".format(lock=lock_file)
                             )
 
                             # Since a lock file was created by a different source,
@@ -1320,10 +1335,18 @@ class PipelineManager(object):
         self.info("</pre>")
         self.info("Command completed. {info}".format(info=info))
 
-        for rc in returncodes:
+        for i, rc in enumerate(returncodes):
             if rc != 0:
-                msg = "Subprocess returned nonzero result. Check above output for details"
-                self._triage_error(SubprocessError(msg), nofail)
+                proc_name = self.completed_procs.get(processes[i].pid, {}).get("proc_name", cmd)
+                msg = (
+                    "Subprocess returned nonzero result (return code: {rc}). "
+                    "Failed command: `{proc_name}`. "
+                    "Check the output above for details. "
+                    "To allow this step to fail without stopping the pipeline, use nofail=True.".format(
+                        rc=rc, proc_name=proc_name
+                    )
+                )
+                self._triage_error(SubprocessError(msg, returncode=rc, cmd=proc_name), nofail)
 
         return [returncodes, local_maxmems]
 
@@ -1375,7 +1398,11 @@ class PipelineManager(object):
 
         self.info(info + "\n")
         if p.returncode != 0:
-            raise Exception("Process returned nonzero result.")
+            raise Exception(
+                "Process {pid} returned nonzero result (return code: {rc}).".format(
+                    pid=p.pid, rc=p.returncode
+                )
+            )
         return [p.returncode, local_maxmem]
 
     def _wait_for_lock(self, lock_file: str) -> None:
@@ -1395,11 +1422,12 @@ class PipelineManager(object):
             if first_message_flag is False:
                 self.timestamp("Waiting for file lock: " + lock_file)
                 self.warning(
-                    "This indicates that another process may be executing this "
-                    "command, or the pipeline was not properly shut down.  If the "
-                    "pipeline was not properly shut down last time, "
-                    "you should restart it in 'recover' mode (-R) to indicate that "
-                    "this step should be restarted."
+                    "Lock file: {lock}. Another pipeline process may be running this step, "
+                    "or a previous run crashed and left a stale lock. Options:\n"
+                    "  1. Wait (current behavior) -- the lock may be released by another process.\n"
+                    "  2. Restart with recover=True (CLI: -R) to override locks, discard partial output, and re-run.\n"
+                    "  3. Manually delete the lock file if you are certain no other process is running:\n"
+                    "     rm {lock}".format(lock=lock_file)
                 )
                 # self._set_status_flag(WAIT_FLAG)
                 self.pipestat.set_status(
@@ -1715,7 +1743,10 @@ class PipelineManager(object):
                     self._create_file_racefree(lock_file)
                 except OSError as e:
                     if e.errno == errno.EEXIST:
-                        self.warning("Lock file created after test! Looping again.")
+                        self.warning(
+                            "Lock file appeared between check and creation (race condition). "
+                            "Re-checking. This is normal in concurrent pipeline execution."
+                        )
                         continue  # Go back to start
 
                 # Proceed with file writing
@@ -2230,7 +2261,11 @@ class PipelineManager(object):
 
             logging.disable(logging.CRITICAL)
             try:
-                self.fail_pipeline(Exception("Pipeline failure. See details above."))
+                self.fail_pipeline(Exception(
+                    "Pipeline exited without calling stop_pipeline() or complete(). "
+                    "This usually means an unhandled exception occurred earlier in the pipeline. "
+                    "Check the log output above for the original error."
+                ))
             except Exception:
                 # Silently ignore any errors during shutdown
                 pass
@@ -2320,8 +2355,9 @@ class PipelineManager(object):
         if still_running:
             # still running!?
             self.warning(
-                "Child process {child_pid}{proc_string} never responded"
-                "I just can't take it anymore. I don't know what to do...".format(
+                "Child process {child_pid}{proc_string} did not terminate after repeated signals (SIGINT, SIGTERM, SIGKILL). "
+                "The process may be in an uninterruptible state (e.g., waiting on I/O). "
+                "You may need to manually kill it: kill -9 {child_pid}".format(
                     child_pid=child_pid, proc_string=proc_string
                 )
             )
@@ -2624,12 +2660,15 @@ class PipelineManager(object):
             self.fail_pipeline(e)
         elif self._failed:
             self.info(
-                "This is a nofail process, but the pipeline was terminated for other reasons, so we fail."
+                "This step has nofail=True, but the pipeline was already marked as failed "
+                "by a previous error, so this error is also raised. "
+                "Fix the earlier failure first."
             )
             raise e
         else:
             self.error(e)
             self.error(
-                "ERROR: Subprocess returned nonzero result, but pipeline is continuing because nofail=True"
+                "Subprocess returned nonzero result, but pipeline is continuing because nofail=True. "
+                "To make this a fatal error, remove the nofail=True argument from this run() call."
             )
         # TODO: return nonzero, or something. . .?

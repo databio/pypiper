@@ -266,7 +266,11 @@ class Pipeline(object):
 
         if stop_before and stop_after:
             raise IllegalPipelineExecutionError(
-                "Cannot specify both inclusive and exclusive stops."
+                "Cannot specify both stop_before (exclusive) and stop_after (inclusive). "
+                "Use stop_before='{name}' to stop just before a stage, "
+                "or stop_after='{name}' to stop after a stage completes. Pick one.".format(
+                    name="<stage_name>"
+                )
             )
 
         if stop_before:
@@ -302,7 +306,13 @@ class Pipeline(object):
         stop_index = self._stop_index(stop, inclusive=inclusive_stop)
         assert stop_index <= len(self._stages)
         if start_index >= stop_index:
-            raise IllegalPipelineExecutionError("Cannot start pipeline at or after stopping point")
+            raise IllegalPipelineExecutionError(
+                "Cannot start pipeline at or after stopping point. "
+                "start_point resolves to index {start} but stop resolves to index {stop}. "
+                "Ensure your start stage comes before your stop stage in the pipeline definition.".format(
+                    start=start_index, stop=stop_index
+                )
+            )
 
         # TODO: consider storing just stage name rather than entire stage.
         # TODO (cont.): the bad case for whole-Stage is if associated data

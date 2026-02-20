@@ -308,7 +308,12 @@ class NGSTk:
         self.make_sure_path_exists(raw_folder)
 
         if not isinstance(input_args, list):
-            raise Exception("Input must be a list")
+            raise TypeError(
+                "input_args must be a list of file paths, got {t}. "
+                "Pass a list even for single files: ['/path/to/file.fastq']".format(
+                    t=type(input_args).__name__
+                )
+            )
 
         if any(isinstance(i, list) for i in input_args):
             # We have a list of lists. Process each individually.
@@ -395,7 +400,9 @@ class NGSTk:
                 # At this point, we don't recognize the input file types or they
                 # do not match.
                 raise NotImplementedError(
-                    "Input files must be of the same type, and can only merge bam or fastq."
+                    "Cannot merge input files of different types. All input files must be "
+                    "either BAM (.bam) or FASTQ (.fastq/.fq/.fastq.gz/.fq.gz). "
+                    "Received mixed types. Check your input file list."
                 )
 
     def input_to_fastq(
@@ -781,7 +788,10 @@ class NGSTk:
         elif ext == ".bam":
             param = "-F4"
         else:
-            raise ValueError("Not a SAM or BAM: '{}'".format(file_name))
+            raise ValueError(
+                "Expected a SAM or BAM file (extension .sam or .bam), "
+                "got: '{file}'. Check the file path and extension.".format(file=file_name)
+            )
 
         if paired_end:
             r1 = self.samtools_view(

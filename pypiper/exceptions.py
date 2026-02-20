@@ -21,7 +21,12 @@ class PipelineError(Exception):
 
 
 class SubprocessError(Exception):
-    pass
+    """Error from a failed subprocess call."""
+
+    def __init__(self, msg="", returncode=None, cmd=None):
+        self.returncode = returncode
+        self.cmd = cmd
+        super().__init__(msg)
 
 
 class IllegalPipelineDefinitionError(PipelineError):
@@ -38,7 +43,13 @@ class MissingCheckpointError(Exception):
     """Represent case of expected but absent checkpoint file."""
 
     def __init__(self, checkpoint: str, filepath: str) -> None:
-        msg = "{}: '{}'".format(checkpoint, filepath)
+        msg = (
+            "Checkpoint '{checkpoint}' not found at expected path: '{filepath}'. "
+            "This checkpoint file is created when the '{checkpoint}' stage completes successfully. "
+            "The stage may not have been run yet, or its output was deleted. "
+            "To re-run from this stage, use start_point='{checkpoint}' or re-run the full pipeline "
+            "with new_start=True (CLI: -N).".format(checkpoint=checkpoint, filepath=filepath)
+        )
         super(MissingCheckpointError, self).__init__(msg)
 
 
@@ -51,7 +62,7 @@ class UnknownPipelineStageError(Exception):
     """
 
     def __init__(self, stage_name: str, pipeline: Any = None) -> None:
-        message = stage_name
+        message = "Unknown pipeline stage: '{stage}'.".format(stage=stage_name)
         if pipeline is not None:
             try:
                 stages = pipeline.stages()
@@ -59,7 +70,14 @@ class UnknownPipelineStageError(Exception):
                 # Just don't contextualize the error with known stages.
                 pass
             else:
-                message = "{}; defined stages: {}".format(message, ", ".join(map(str, stages)))
+                stage_names = ", ".join(map(str, stages))
+                message = (
+                    "Unknown pipeline stage: '{stage}'. "
+                    "Available stages are: [{stage_names}]. "
+                    "Check for typos in the stage name passed to start_point, stop_before, or stop_after.".format(
+                        stage=stage_name, stage_names=stage_names
+                    )
+                )
         super(UnknownPipelineStageError, self).__init__(message)
 
 
