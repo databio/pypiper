@@ -378,27 +378,35 @@ class PipelineManager(object):
                 pipestat_additional_properties = cli_val.lower() == "true"
 
         # Resolve validate_results: if explicitly provided, use that value.
-        # Otherwise, auto-detect: validate when schema is present.
-        if pipestat_validate_results is not None:
-            resolved_validate = pipestat_validate_results
-        else:
-            resolved_validate = resolved_schema is not None
+        # Otherwise, pass None to let PipestatManager auto-detect from schema presence.
+        resolved_validate = pipestat_validate_results
 
-        self._pipestat_manager = PipestatManager(
-            record_identifier=self.pipestat_record_identifier
-            or _get_arg(args_dict, "pipestat_sample_name")
-            or DEFAULT_SAMPLE_NAME,
-            pipeline_name=self.name,
-            schema_path=resolved_schema,
-            results_file_path=self.pipestat_results_file
-            or _get_arg(args_dict, "pipestat_results_file")
-            or self.pipeline_stats_file,
-            config_file=pipestat_config or _get_arg(args_dict, "pipestat_config"),
-            multi_pipelines=multi,
-            pipeline_type=self.pipestat_pipeline_type,
-            validate_results=resolved_validate,
-            additional_properties=pipestat_additional_properties,
-        )
+        pipestat_config_resolved = pipestat_config or _get_arg(args_dict, "pipestat_config")
+        if pipestat_config_resolved:
+            self._pipestat_manager = PipestatManager.from_config(
+                config=pipestat_config_resolved,
+                pipeline_type=self.pipestat_pipeline_type,
+                multi_pipelines=multi,
+            )
+        else:
+            self._pipestat_manager = PipestatManager.from_file_backend(
+                results_file_path=self.pipestat_results_file
+                or _get_arg(args_dict, "pipestat_results_file")
+                or self.pipeline_stats_file,
+                schema_path=resolved_schema,
+                record_identifier=self.pipestat_record_identifier
+                or _get_arg(args_dict, "pipestat_sample_name")
+                or DEFAULT_SAMPLE_NAME,
+                pipeline_name=self.name,
+                pipeline_type=self.pipestat_pipeline_type,
+                multi_pipelines=multi,
+                validate_results=resolved_validate,
+                additional_properties=pipestat_additional_properties,
+            )
+
+        # Set result formatter as property (removed from __init__)
+        if pipestat_result_formatter:
+            self._pipestat_manager.result_formatter = pipestat_result_formatter
 
         self.start_pipeline(args, multi)
 
