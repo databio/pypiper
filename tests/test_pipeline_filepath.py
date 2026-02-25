@@ -1,8 +1,8 @@
 """Tests for utility functions"""
 
 import os
+from unittest import mock
 
-import mock
 import pytest
 
 from pypiper.utils import _pipeline_filepath

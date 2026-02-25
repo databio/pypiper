@@ -1,6 +1,7 @@
 """Tests for checking a collection of commands for callability"""
 
-import mock
+from unittest import mock
+
 import pytest
 from ubiquerg import powerset
 
