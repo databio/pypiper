@@ -932,6 +932,7 @@ class PipelineManager(object):
 
         # Decide how to do follow-up.
         if not follow:
+
             def call_follow():
                 return None
         elif not hasattr(follow, "__call__"):
@@ -939,6 +940,7 @@ class PipelineManager(object):
             self.warning(
                 "Follow-up function is not callable and won't be used: {}".format(type(follow))
             )
+
             def call_follow():
                 return None
         else:

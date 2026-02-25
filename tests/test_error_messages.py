@@ -5,7 +5,6 @@ actionable guidance. They prevent regressions where someone shortens an
 error message back to a non-actionable form.
 """
 
-
 from pypiper.exceptions import (
     MissingCheckpointError,
     SubprocessError,

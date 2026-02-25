@@ -75,8 +75,10 @@ def test_check_all_requires_iterable_transformations_argument(commands, transfor
 @pytest.mark.parametrize("commands", powerset(["ls", "picard.jar", "$ENVVAR"], nonempty=True))
 def test_transformation_accumulation(commands):
     """Accumulation of transformations works as expected"""
+
     def mapjar(c):
         return "java -jar {}".format(c)
+
     envjar = "env.jar"
     transforms = [
         (lambda c: c == "$ENVVAR", lambda _: envjar),

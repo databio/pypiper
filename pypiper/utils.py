@@ -353,8 +353,10 @@ def determine_uncallable(
                 return cmd
 
     else:
+
         def finalize(cmd):
             return cmd
+
     return [
         (orig, used)
         for orig, used in map(lambda c: (c, finalize(c)), commands)
