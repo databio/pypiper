@@ -1,8 +1,7 @@
 """Tests for NGSTools class."""
 
-import pytest
 
-from pypiper.ngstk import NGSTools, NGSTk
+from pypiper.ngstk import NGSTk, NGSTools
 
 
 class TestNGSTools:

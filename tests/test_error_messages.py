@@ -5,7 +5,6 @@ actionable guidance. They prevent regressions where someone shortens an
 error message back to a non-actionable form.
 """
 
-import pytest
 
 from pypiper.exceptions import (
     MissingCheckpointError,

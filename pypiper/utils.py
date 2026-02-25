@@ -4,12 +4,10 @@ import os
 import re
 import sys
 from collections.abc import Callable, Iterable, Mapping, Sequence
+from inspect import getfullargspec as get_fun_sig
 from shlex import split
 from subprocess import PIPE
 from typing import Any
-
-CHECK_TEXT_TYPES = (str,)
-from inspect import getfullargspec as get_fun_sig
 
 from ubiquerg import expandpath, is_command_callable
 
@@ -19,6 +17,8 @@ from .const import (
     STAGE_NAME_SPACE_REPLACEMENT,
 )
 from .flags import FLAGS
+
+CHECK_TEXT_TYPES = (str,)
 
 # What to export/attach to pypiper package namespace.
 # Conceptually, reserve this for functions expected to be used in other
@@ -129,7 +129,7 @@ def build_sample_paths(sample: Any) -> None:
         print("{}: '{}'".format(path_name, path))
         base, ext = os.path.splitext(path)
         if ext:
-            print("Skipping file-like: '[}'".format(path))
+            print("Skipping file-like: '{}'".format(path))
         elif not os.path.isdir(base):
             os.makedirs(base)
 
@@ -353,7 +353,8 @@ def determine_uncallable(
                 return cmd
 
     else:
-        finalize = lambda cmd: cmd
+        def finalize(cmd):
+            return cmd
     return [
         (orig, used)
         for orig, used in map(lambda c: (c, finalize(c)), commands)
@@ -472,7 +473,7 @@ def _clear_flags(pm: Any, flag_names: str | list[str] | None = None) -> list[str
         path_flag_file = _pipeline_filepath(pm, suffix=flag_file_suffix)
         try:
             os.remove(path_flag_file)
-        except:
+        except Exception:
             pass
         else:
             print("Removed existing flag: '{}'".format(path_flag_file))

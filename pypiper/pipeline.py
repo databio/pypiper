@@ -3,7 +3,7 @@
 import abc
 import glob
 import os
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Iterable, Mapping
 from typing import Any
 
 from .exceptions import (

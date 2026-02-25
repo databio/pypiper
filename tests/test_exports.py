@@ -2,7 +2,6 @@
 
 import pypiper
 
-
 # Every symbol that downstream pipelines depend on
 REQUIRED_PUBLIC_API = [
     "PipelineManager",

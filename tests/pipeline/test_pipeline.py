@@ -13,10 +13,10 @@ from pypiper.pipeline import (
     IllegalPipelineExecutionError,
     UnknownPipelineStageError,
 )
-from pypiper.utils import _checkpoint_filepath
 from pypiper.stage import Stage
 from pypiper.utils import (
     _checkpoint_filename,
+    _checkpoint_filepath,
     _flag_name,
     _pipeline_filepath,
     _translate_stage_name,
@@ -447,7 +447,7 @@ def _assert_expected_content(fpath, content):
     assert os.path.isfile(fpath)
     exp_content = content.split(os.linesep)
     with open(fpath, "r") as f:
-        obs_content = [l.rstrip(os.linesep) for l in f.readlines()]
+        obs_content = [line.rstrip(os.linesep) for line in f.readlines()]
     assert exp_content == obs_content
 
 

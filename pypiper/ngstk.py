@@ -374,7 +374,7 @@ class NGSTk:
                     cmd = self.merge_bams_samtools(input_args, output_merge)
                     self.pm.debug("cmd: {}".format(cmd))
                     self.pm.run(cmd, output_merge)
-                    cmd2 = self.validate_bam(output_merge)
+                    self.validate_bam(output_merge)
                     self.pm.run(cmd, output_merge, nofail=True)
                     return output_merge
 
@@ -434,7 +434,7 @@ class NGSTk:
         self.make_sure_path_exists(fastq_folder)
 
         # this expects a list; if it gets a string, wrap it in a list.
-        if type(input_file) != list:
+        if not isinstance(input_file, list):
             input_file = [input_file]
 
         # If multiple files were provided, recurse on each file individually
@@ -547,9 +547,9 @@ class NGSTk:
         # files were split into read1/read2; therefore I must divide by number
         # of files for final reads.
         def temp_func(input_files=input_files, output_files=output_files, paired_end=paired_end):
-            if type(input_files) != list:
+            if not isinstance(input_files, list):
                 input_files = [input_files]
-            if type(output_files) != list:
+            if not isinstance(output_files, list):
                 output_files = [output_files]
 
             n_input_files = len(list(filter(bool, input_files)))
@@ -613,7 +613,7 @@ class NGSTk:
             self.pm.pipestat.report(values={"Trimmed_reads": int(n_trim)})
             try:
                 rr = float(self.pm.pipestat.retrieve("Raw_reads"))
-            except:
+            except Exception:
                 print("Can't calculate trim loss rate without raw read result.")
             else:
                 self.pm.report_result("Trim_loss_rate", round((rr - n_trim) * 100 / rr, 2))
@@ -1211,7 +1211,15 @@ class NGSTk:
         cmd3 = "rm {}".format(tmp_bam)
         return [cmd1, cmd2, cmd3]
 
-    def filter_reads(self, input_bam: str, output_bam: str, metrics_file: str, paired: bool = False, cpus: int = 16, Q: int = 30) -> list[str]:
+    def filter_reads(
+        self,
+        input_bam: str,
+        output_bam: str,
+        metrics_file: str,
+        paired: bool = False,
+        cpus: int = 16,
+        Q: int = 30,
+    ) -> list[str]:
         """Build commands to dedup, quality-filter, and remove multimappers."""
         nodups = re.sub(r"\.bam$", "", output_bam) + ".nodups.nofilter.bam"
         cmd1 = (
@@ -1276,7 +1284,7 @@ class NGSTk:
         try:
             import numpy as np
             import pysam
-        except:
+        except Exception:
             return
         frag_sizes = list()
         bam = pysam.Samfile(bam_file, "rb")
@@ -1287,7 +1295,12 @@ class NGSTk:
         return np.array(frag_sizes)
 
     def plot_atacseq_insert_sizes(
-        self, bam: str, plot: str, output_csv: str, max_insert: int = 1500, smallest_insert: int = 30
+        self,
+        bam: str,
+        plot: str,
+        output_csv: str,
+        max_insert: int = 1500,
+        smallest_insert: int = 30,
     ) -> None:
         """
         Heavy inspiration from here:
@@ -1303,7 +1316,7 @@ class NGSTk:
 
             matplotlib.use("Agg")
             import matplotlib.pyplot as plt
-        except:
+        except Exception:
             print("Necessary Python modules couldn't be loaded.")
             return
 
@@ -1311,7 +1324,7 @@ class NGSTk:
             import seaborn as sns
 
             sns.set_style("whitegrid")
-        except:
+        except Exception:
             pass
 
         def get_fragment_sizes(bam, max_insert=1500):
@@ -1384,7 +1397,7 @@ class NGSTk:
                 p0=paramGuess,
                 maxfev=100000,
             )
-        except:
+        except Exception:
             print("Nucleosomal fit could not be found.")
             return
 
@@ -1448,7 +1461,7 @@ class NGSTk:
             with open(output_csv, "w") as f:
                 writer = csv.writer(f)
                 writer.writerows(areas)
-        except:
+        except Exception:
             pass
 
     # TODO: parameterize in terms of normalization factor.
@@ -1524,7 +1537,9 @@ class NGSTk:
         cmds.append("chmod 755 {0}".format(output_bigwig))
         return cmds
 
-    def add_track_to_hub(self, sample_name: str, track_url: str, track_hub: str, colour: str, five_prime: str = "") -> list[str]:
+    def add_track_to_hub(
+        self, sample_name: str, track_url: str, track_hub: str, colour: str, five_prime: str = ""
+    ) -> list[str]:
         cmd1 = """echo "track type=bigWig name='{0} {1}' description='{0} {1}'""".format(
             sample_name, five_prime
         )
@@ -1710,7 +1725,9 @@ class NGSTk:
 
         return cmd
 
-    def macs2_call_peaks_atacseq(self, treatment_bam: str, output_dir: str, sample_name: str, genome: str) -> str:
+    def macs2_call_peaks_atacseq(
+        self, treatment_bam: str, output_dir: str, sample_name: str, genome: str
+    ) -> str:
         genome_sizes = {
             "hg38": 2.7e9,
             "hg19": 2.7e9,
@@ -1724,7 +1741,9 @@ class NGSTk:
         )
         return cmd
 
-    def macs2_plot_model(self, r_peak_model_file: str, sample_name: str, output_dir: str) -> list[str]:
+    def macs2_plot_model(
+        self, r_peak_model_file: str, sample_name: str, output_dir: str
+    ) -> list[str]:
         # run macs r script
         cmd1 = "{} {}".format(self.tools.Rscript, r_peak_model_file)
         # move output plot to sample dir
@@ -1781,7 +1800,9 @@ class NGSTk:
         cmd = self.tools.bedtools + " bamtobed -i {0} > {1}".format(input_bam, output_bed)
         return cmd
 
-    def zinba_call_peaks(self, treatment_bed: str, control_bed: str, cpus: int, tagmented: bool = False) -> str:
+    def zinba_call_peaks(
+        self, treatment_bed: str, control_bed: str, cpus: int, tagmented: bool = False
+    ) -> str:
         fragmentLength = 80 if tagmented else 180
         cmd = self.tools.Rscript + " `which zinba.R` -l {0} -t {1} -c {2}".format(
             fragmentLength, treatment_bed, control_bed
@@ -1806,14 +1827,18 @@ class NGSTk:
         cmd += " -mask -size {0} -len {1} -S {2}".format(size, length, n_motifs)
         return cmd
 
-    def homer_annotate_pPeaks(self, peak_file: str, genome: str, motif_file: str, output_bed: str) -> str:
+    def homer_annotate_pPeaks(
+        self, peak_file: str, genome: str, motif_file: str, output_bed: str
+    ) -> str:
         cmd = "annotatePeaks.pl {0} {1} -mask -mscore -m {2} |".format(
             peak_file, genome, motif_file
         )
         cmd += "tail -n +2 | cut -f 1,5,22 > {3}"
         return cmd
 
-    def center_peaks_on_motifs(self, peak_file: str, genome: str, window_width: int, motif_file: str, output_bed: str) -> str:
+    def center_peaks_on_motifs(
+        self, peak_file: str, genome: str, window_width: int, motif_file: str, output_bed: str
+    ) -> str:
         cmd = "annotatePeaks.pl {0} {1} -size {2} -center {3} |".format(
             peak_file, genome, window_width, motif_file
         )
@@ -1883,7 +1908,7 @@ class NGSTk:
         try:
             with open(stats_file) as handle:
                 content = handle.readlines()  # list of strings per line
-        except:
+        except Exception:
             return stats
         # total reads
         try:
@@ -1926,7 +1951,7 @@ class NGSTk:
         try:
             with open(stats_file) as handle:
                 content = handle.readlines()  # list of strings per line
-        except:
+        except Exception:
             return series
         try:
             line = [i for i in range(len(content)) if "single ends (among them " in content[i]][0]
@@ -1960,7 +1985,7 @@ class NGSTk:
             series["NSC"] = line[-3]
             series["RSC"] = line[-2]
             series["qualityTag"] = line[-1]
-        except:
+        except Exception:
             pass
         return series
 

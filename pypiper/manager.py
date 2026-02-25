@@ -31,13 +31,13 @@ from typing import IO, Any
 import logmuse
 import pandas as _pd
 import psutil
-from .echo_dict import EchoDict
 from pipestat import PipestatError, PipestatManager
 from yacman import load_yaml
 
 import __main__
 
 from .const import DEFAULT_SAMPLE_NAME, PROFILE_COLNAMES
+from .echo_dict import EchoDict
 
 __version__ = version("piper")
 __pipestat_version__ = version("pipestat")
@@ -52,10 +52,10 @@ from .utils import (
     _flag_name,
     _get_proc_name,
     _is_multi_target,
-    logger_via_cli,
     _make_lock_name,
     _parse_cmd,
     _pipeline_filepath,
+    logger_via_cli,
     result_formatter_markdown,
 )
 
@@ -756,7 +756,7 @@ class PipelineManager(object):
         flag_file_path = self._flag_file_path()
         try:
             os.remove(flag_file_path)
-        except:
+        except Exception:
             # Print message only if the failure to remove the status flag
             # is unexpected; there's no flag for initialization, so we
             # can't remove the file.
@@ -902,11 +902,13 @@ class PipelineManager(object):
         # Therefore, a targetless command that you want
         # to lock must specify a lock_name manually.
         if target is None and lock_name is None:
-            self.fail_pipeline(Exception(
-                "PipelineManager.run() requires either a 'target' (output file path) or a 'lock_name'. "
-                "Provide target='/path/to/output_file' to enable output checking and file locking, "
-                "or provide lock_name='my_step' for targetless commands that still need locking."
-            ))
+            self.fail_pipeline(
+                Exception(
+                    "PipelineManager.run() requires either a 'target' (output file path) or a 'lock_name'. "
+                    "Provide target='/path/to/output_file' to enable output checking and file locking, "
+                    "or provide lock_name='my_step' for targetless commands that still need locking."
+                )
+            )
 
         # Downstream code requires target to be a list, so convert if only
         # a single item was given
@@ -930,13 +932,15 @@ class PipelineManager(object):
 
         # Decide how to do follow-up.
         if not follow:
-            call_follow = lambda: None
+            def call_follow():
+                return None
         elif not hasattr(follow, "__call__"):
             # Warn about non-callable argument to follow-up function.
             self.warning(
                 "Follow-up function is not callable and won't be used: {}".format(type(follow))
             )
-            call_follow = lambda: None
+            def call_follow():
+                return None
         else:
             # Wrap the follow-up function so that the log shows what's going on.
             # additionally, the in_follow attribute is set to enable proper command count handling
@@ -967,14 +971,16 @@ class PipelineManager(object):
             if (
                 target is not None
                 and all([os.path.exists(t) for t in target])
-                and not any([os.path.isfile(l) for l in lock_files])
+                and not any([os.path.isfile(lf) for lf in lock_files])
                 and not local_newstart
             ):
                 for tgt in target:
                     if os.path.exists(tgt):
                         self.info(
                             "Target exists: `{tgt}`. Skipping this step. "
-                            "To force re-computation, use new_start=True (CLI: -N).".format(tgt=tgt)
+                            "To force re-computation, use new_start=True (CLI: -N).".format(
+                                tgt=tgt
+                            )
                         )
                 if self.new_start:
                     self.info("New start mode; run anyway.  ")
@@ -1047,7 +1053,9 @@ class PipelineManager(object):
                         if e.errno == errno.EEXIST:  # File already exists
                             self.info(
                                 "Lock file appeared between existence check and creation (race condition): {lock}. "
-                            "Re-checking. This is normal when multiple pipelines target the same file.".format(lock=lock_file)
+                                "Re-checking. This is normal when multiple pipelines target the same file.".format(
+                                    lock=lock_file
+                                )
                             )
 
                             # Since a lock file was created by a different source,
@@ -2301,11 +2309,13 @@ class PipelineManager(object):
 
             logging.disable(logging.CRITICAL)
             try:
-                self.fail_pipeline(Exception(
-                    "Pipeline exited without calling stop_pipeline() or complete(). "
-                    "This usually means an unhandled exception occurred earlier in the pipeline. "
-                    "Check the log output above for the original error."
-                ))
+                self.fail_pipeline(
+                    Exception(
+                        "Pipeline exited without calling stop_pipeline() or complete(). "
+                        "This usually means an unhandled exception occurred earlier in the pipeline. "
+                        "Check the log output above for the original error."
+                    )
+                )
             except Exception:
                 # Silently ignore any errors during shutdown
                 pass
@@ -2427,7 +2437,7 @@ class PipelineManager(object):
             image: Docker image name (e.g. "nsheff/refgenie").
             mounts: Path or list of paths to mount into the container.
         """
-        if type(mounts) == str:
+        if isinstance(mounts, str):
             mounts = [mounts]
         cmd = "docker run -itd"
         for mnt in mounts:
@@ -2456,7 +2466,9 @@ class PipelineManager(object):
         cmd = "docker rm -f " + container
         self.callprint(cmd)
 
-    def clean_add(self, regex: str | None, conditional: bool = False, manual: bool = False) -> None:
+    def clean_add(
+        self, regex: str | None, conditional: bool = False, manual: bool = False
+    ) -> None:
         """Register files for automatic deletion when the pipeline succeeds.
 
         Example:
@@ -2580,7 +2592,7 @@ class PipelineManager(object):
                         elif os.path.isdir(file):
                             self.debug("`rmdir {}`".format(file))
                             os.rmdir(os.path.join(file))
-                except:
+                except Exception:
                     pass
 
         if n_to_clean_cond > 0:
@@ -2611,7 +2623,7 @@ class PipelineManager(object):
                             elif os.path.isdir(file):
                                 self.debug("`rmdir {}`".format(file))
                                 os.rmdir(os.path.join(file))
-                    except:
+                    except Exception:
                         pass
             else:
                 self.info(
@@ -2685,7 +2697,7 @@ class PipelineManager(object):
                 key = parts[0][2:-1].lower()
                 if key in result:
                     result[key] = int(parts[1])
-        except:
+        except Exception:
             return 0
 
         finally:
