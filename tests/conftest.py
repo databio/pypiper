@@ -1,7 +1,9 @@
 """Fixtures and configuration visible to all tests"""
 
 import copy
+import glob
 import os
+import shutil
 from functools import partial
 
 import pytest
@@ -14,6 +16,37 @@ __email__ = "vreuter@virginia.edu"
 
 # Use a weird suffix for glob specificity.
 OUTPUT_SUFFIX = ".testout"
+
+# Legacy output folders that may contain stray files
+LEGACY_OUTPUT_PATTERNS = [
+    "tests/data/pipeline_output",
+    "tests/data/pipeline_output3",
+]
+
+
+def _clean_legacy_output_folders():
+    """Remove legacy output folders and any stray files within them."""
+    for pattern in LEGACY_OUTPUT_PATTERNS:
+        for path in glob.glob(pattern + "*"):
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            elif os.path.isfile(path):
+                os.remove(path)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_legacy_output_folders(request):
+    """
+    Session-scoped fixture that cleans up legacy output folders.
+
+    Runs before and after all tests to ensure clean state.
+    """
+    # Clean before tests
+    _clean_legacy_output_folders()
+
+    # Clean after all tests complete
+    request.addfinalizer(_clean_legacy_output_folders)
+
 
 TEST_PIPE_NAME = "test-pipe"
 

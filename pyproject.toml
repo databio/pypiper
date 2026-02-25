@@ -1,0 +1,75 @@
+[project]
+name = "piper"
+version = "0.15.0"
+description = "A lightweight python toolkit for gluing together restartable, robust command line pipelines"
+readme = "README.md"
+license = "BSD-2-Clause"
+requires-python = ">=3.10"
+authors = [
+    { name = "Nathan Sheffield" },
+    { name = "Johanna Klughammer" },
+    { name = "Andre Rendeiro" },
+]
+keywords = ["pipeline", "workflow", "restartable", "shell", "command-runner"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "logmuse>=0.2.4",
+    "psutil",
+    "pandas",
+    "ubiquerg>=0.9.0",
+    "yacman>=0.9.5",
+    "pipestat>=0.13.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/databio/pypiper/"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pypiper"]
+
+[project.optional-dependencies]
+ngstk = [
+    "numpy",
+    "pysam",
+]
+plot = [
+    "matplotlib",
+    "scipy",
+    "seaborn",
+]
+test = [
+    "pytest>=4.6.9",
+    "pytest-cov>=2.8.1",
+    "hypothesis",
+    "pytest-remotedata",
+]
+
+[tool.pytest.ini_options]
+addopts = "-rfE"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 99
+extend-exclude = ["docs_jupyter"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["F403", "F405", "E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["pypiper"]

@@ -1,43 +1,41 @@
 """Conceptualize a pipeline processing phase/stage."""
 
 import copy
+from collections.abc import Callable
+from typing import Any
 
-from .utils import translate_stage_name
-
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
+from .utils import _translate_stage_name
 
 __all__ = ["Stage"]
 
 
 class Stage(object):
-    """
-    Single stage/phase of a pipeline; a logical processing "unit". A stage is a
-    collection of commands that is checkpointed.
+    """A single checkpointable unit of pipeline processing.
+
+    Example:
+        stage = Stage(my_function, name="alignment", nofail=True)
+        stage()  # executes my_function
+
+    Args:
+        func: Callable that implements the stage's logic.
+        f_args: Positional arguments for func.
+        f_kwargs: Keyword arguments for func.
+        name: Stage name. Defaults to func.__name__.
+        checkpoint: Whether to create a checkpoint file. Default: True.
+        nofail: Allow stage failure without failing the pipeline.
     """
 
     def __init__(
         self,
-        func,
-        f_args=None,
-        f_kwargs=None,
-        name=None,
-        checkpoint=True,
+        func: Callable,
+        f_args: tuple | None = None,
+        f_kwargs: dict | None = None,
+        name: str | None = None,
+        checkpoint: bool = True,
         *,
-        nofail=False
-    ):
-        """
-        A function, perhaps with arguments, defines the stage.
-
-        :param callable func: The processing logic that defines the stage
-        :param tuple f_args: Positional arguments for func
-        :param dict f_kwargs: Keyword arguments for func
-        :param str name: name for the phase/stage
-        :param callable func: Object that defines how the stage will execute.
-        :param bool nofail: Allow a failure of this stage to not fail the pipeline
-            in which it's running
-        """
+        nofail: bool = False,
+    ) -> None:
+        """Create a Stage from a callable."""
         if isinstance(func, Stage):
             raise TypeError("Cannot create Stage from Stage")
         super(Stage, self).__init__()
@@ -49,27 +47,22 @@ class Stage(object):
         self.nofail = nofail
 
     @property
-    def checkpoint_name(self):
-        """
-        Determine the checkpoint name for this Stage.
+    def checkpoint_name(self) -> str | None:
+        """Checkpoint file name for this stage, or None if not a checkpoint."""
+        return _translate_stage_name(self.name) if self.checkpoint else None
 
-        :return str | NoneType: Checkpoint name for this stage; null if this
-            Stage is designated as a non-checkpoint.
-        """
-        return translate_stage_name(self.name) if self.checkpoint else None
-
-    def run(self, *args, **kwargs):
-        """Alternate form for direct call; execute stage."""
+    def run(self, *args: Any, **kwargs: Any) -> None:
+        """Execute the stage (alias for direct call)."""
         self(*args, **kwargs)
 
-    def __call__(self, *args, **update_kwargs):
+    def __call__(self, *args: Any, **update_kwargs: Any) -> None:
         """Execute the stage, allowing updates to args/kwargs."""
         kwargs = copy.deepcopy(self.f_kwargs)
         kwargs.update(update_kwargs)
         args = args or self.f_args
         self.f(*args, **kwargs)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, Stage)
             and self.f.__name__ == other.f.__name__
@@ -79,21 +72,18 @@ class Stage(object):
             )
         )
 
-    def __ne__(self, other):
+    def __ne__(self, other: object) -> bool:
         return not (self == other)
 
-    def __repr__(self):
-        return (
-            "{klass} '{n}': f={f}, args={pos}, kwargs={kwd}, "
-            "checkpoint={check}".format(
-                klass=self.__class__.__name__,
-                f=self.f,
-                n=self.name,
-                pos=self.f_args,
-                kwd=self.f_kwargs,
-                check=self.checkpoint,
-            )
+    def __repr__(self) -> str:
+        return "{klass} '{n}': f={f}, args={pos}, kwargs={kwd}, checkpoint={check}".format(
+            klass=self.__class__.__name__,
+            f=self.f,
+            n=self.name,
+            pos=self.f_args,
+            kwd=self.f_kwargs,
+            check=self.checkpoint,
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "{}: '{}'".format(self.__class__.__name__, self.name)

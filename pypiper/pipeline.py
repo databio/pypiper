@@ -3,9 +3,8 @@
 import abc
 import glob
 import os
-import sys
-
 from collections.abc import Iterable, Mapping
+from typing import Any
 
 from .exceptions import (
     IllegalPipelineDefinitionError,
@@ -15,60 +14,68 @@ from .exceptions import (
 from .manager import PipelineManager
 from .stage import Stage
 from .utils import (
-    checkpoint_filepath,
-    flag_name,
-    parse_stage_name,
-    translate_stage_name,
+    _checkpoint_filepath,
+    _flag_name,
+    _parse_stage_name,
+    _translate_stage_name,
 )
 
-__author__ = "Vince Reuter"
-__email__ = "vreuter@virginia.edu"
-
-
-__all__ = ["Pipeline", "UnknownPipelineStageError"]
+__all__ = ["Pipeline"]
 
 
 class Pipeline(object):
-    """
-    Generic pipeline framework.
+    """Base class for defining a multi-stage pipeline with checkpointing.
 
-    Note that either a PipelineManager or an output folder path is required
-    to create the Pipeline. If both are provided, the output folder path is
-    ignored and that of the PipelineManager that's passed is used instead.
+    Example:
+        class MyPipeline(Pipeline):
+            def stages(self):
+                return [("trim", self.trim), ("align", self.align)]
 
-    :param str name: Name for the pipeline; arbitrary, just used for messaging;
-        this is required if and only if a manager is not provided.
-    :param pypiper.PipelineManager manager: The pipeline manager to use for
-        this pipeline; this is required if and only if name or output folder is
-        not provided.
-    :param str outfolder: Path to main output folder for this pipeline
-    :param argparse.Namespace args: command-line options and arguments for PipelineManager
-    :param Mapping pl_mgr_kwargs: Additional keyword arguments for pipeline manager.
-    :raise TypeError: Either pipeline manager or output folder path must be
-        provided, and either pipeline manager or name must be provided.
-    :raise ValueError: Name of pipeline manager cannot be
-    :raise pypiper.IllegalPipelineDefinitionError: Definition of collection of
-        stages must be non-empty.
+            def trim(self):
+                self.manager.run("trimmomatic ...", target="trimmed.fq")
+
+            def align(self):
+                self.manager.run("bowtie2 ...", target="aligned.bam")
+
+        p = MyPipeline(name="rnaseq", outfolder="output/")
+        p.run(start_point="trim", stop_after="align")
+
+    Requires either a PipelineManager or (name + outfolder) to construct.
+    Subclasses must implement stages() returning an ordered collection.
+
+    Args:
+        name: Pipeline name. Required if manager is not provided.
+        manager: Existing PipelineManager to use.
+        outfolder: Output directory. Required if manager is not provided.
+        args: argparse.Namespace for PipelineManager construction.
+        **pl_mgr_kwargs: Additional PipelineManager keyword arguments.
     """
 
     __metaclass__ = abc.ABCMeta
 
     def __init__(
-        self, name=None, manager=None, outfolder=None, args=None, **pl_mgr_kwargs
-    ):
+        self,
+        name: str | None = None,
+        manager: PipelineManager | None = None,
+        outfolder: str | None = None,
+        args: Any = None,
+        **pl_mgr_kwargs: Any,
+    ) -> None:
         super(Pipeline, self).__init__()
         try:
             self.name = name or manager.name
         except AttributeError:
             raise TypeError(
-                "If a pipeline manager isn't provided to create "
-                "{}, a name is required.".format(Pipeline.__name__)
+                "If a pipeline manager isn't provided to create {}, a name is required.".format(
+                    Pipeline.__name__
+                )
             )
         else:
             if not self.name:
                 raise ValueError(
-                    "Invalid name, possible inferred from pipeline manager: "
-                    "{} ({})".format(self.name, type(self.name))
+                    "Invalid name, possible inferred from pipeline manager: {} ({})".format(
+                        self.name, type(self.name)
+                    )
                 )
 
         # Determine the PipelineManager.
@@ -90,13 +97,12 @@ class Pipeline(object):
             # instance to a non-null if we reach this point, and thus we're
             # protected from passing a null name argument to the pipeline
             # manager's constructor.
-            self.manager = PipelineManager(
-                self.name, outfolder, args=args, **pl_mgr_kwargs
-            )
+            self.manager = PipelineManager(self.name, outfolder, args=args, **pl_mgr_kwargs)
         else:
             raise TypeError(
-                "To create a {} instance, 'manager' or 'outfolder' "
-                "is required".format(self.__class__.__name__)
+                "To create a {} instance, 'manager' or 'outfolder' is required".format(
+                    self.__class__.__name__
+                )
             )
 
         # Require that checkpoints be overwritten.
@@ -107,19 +113,12 @@ class Pipeline(object):
         # stage names are handled, parsed, and translated.
         self._unordered = _is_unordered(self.stages())
         if self._unordered:
-            print(
-                "NOTICE: Unordered definition of stages for "
-                "pipeline {}".format(self.name)
-            )
+            print("NOTICE: Unordered definition of stages for pipeline {}".format(self.name))
 
         # Get to a sequence of pairs of key (possibly in need of translation)
         # and actual callable. Key is stage name and value is either stage
         # callable or an already-made stage object.
-        stages = (
-            self.stages().items()
-            if isinstance(self.stages(), Mapping)
-            else self.stages()
-        )
+        stages = self.stages().items() if isinstance(self.stages(), Mapping) else self.stages()
         # Stage spec. parser handles callable validation.
         name_stage_pairs = [_parse_stage_spec(s) for s in stages]
 
@@ -135,13 +134,13 @@ class Pipeline(object):
         # to determine checkpoint name/path from stage/stage name.
         # We just use this internal-to-external mapping here, ephemerally,
         # to pretest whether there'd be a checkpoint name resolution collision.
-        _internal_to_external = dict()
-        self._external_to_internal = dict()
-        self._stages = []
+        _internal_to_external: dict[str, str] = dict()
+        self._external_to_internal: dict[str, str] = dict()
+        self._stages: list[Stage] = []
 
         for name, stage in name_stage_pairs:
             # Use external translator to further confound redefinition.
-            internal_name = translate_stage_name(name)
+            internal_name = _translate_stage_name(name)
 
             # Check that there's not a checkpoint name collision.
             if internal_name in _internal_to_external:
@@ -162,94 +161,99 @@ class Pipeline(object):
         self.skipped, self.executed = None, None
 
     @property
-    def outfolder(self):
-        """
-        Determine the path to the output folder for this pipeline instance.
-
-        :return str: Path to output folder for this pipeline instance.
-        """
+    def outfolder(self) -> str:
+        """Path to the pipeline's output folder."""
         return self.manager.outfolder
 
     @abc.abstractmethod
-    def stages(self):
-        """
-        Define the names of pipeline processing stages.
+    def stages(self) -> Mapping | list:
+        """Define the pipeline's processing stages. Must be overridden.
 
-        :return Iterable[str]: Collection of pipeline stage names.
+        Returns:
+            Ordered collection of stages: list of (name, callable) tuples,
+            list of Stage objects, or OrderedDict mapping names to callables.
         """
         pass
 
     @property
-    def stage_names(self):
-        """
-        Fetch the pipeline's stage names as specified by the pipeline
-        class author (i.e., not necessarily those that are used for the
-        checkpoint files)
+    def stage_names(self) -> list[str]:
+        """List of stage names as defined by the pipeline author."""
+        return [_parse_stage_name(s) for s in self._stages]
 
-        :return list[str]: Sequence of names of this pipeline's defined stages.
-        """
-        return [parse_stage_name(s) for s in self._stages]
+    def checkpoint(self, stage: Stage, msg: str = "") -> bool:
+        """Write a checkpoint file for the given stage.
 
-    def checkpoint(self, stage, msg=""):
-        """
-        Touch checkpoint file for given stage and provide timestamp message.
+        Args:
+            stage: Stage object to checkpoint.
+            msg: Optional message for the timestamp.
 
-        :param pypiper.Stage stage: Stage for which to mark checkpoint
-        :param str msg: Message to embed in timestamp.
-        :return bool: Whether a checkpoint file was written.
+        Returns:
+            Whether a checkpoint file was written.
         """
         # Canonical usage model for Pipeline checkpointing through
         # implementations of this class is by automatically creating a
         # checkpoint when a conceptual unit or group of operations of a
         # pipeline completes, so fix the 'finished' parameter to the manager's
         # timestamp method to be True.
-        return self.manager.timestamp(
-            message=msg, checkpoint=stage.checkpoint_name, finished=True
-        )
+        return self.manager.timestamp(message=msg, checkpoint=stage.checkpoint_name, finished=True)
 
-    def completed_stage(self, stage):
-        """
-        Determine whether the pipeline's completed the stage indicated.
+    def completed_stage(self, stage: Stage) -> bool:
+        """Check whether a stage has a checkpoint file indicating completion.
 
-        :param pypiper.Stage stage: Stage to check for completion status.
-        :return bool: Whether this pipeline's completed the indicated stage.
-        :raises UnknownStageException: If the stage name given is undefined
-            for the pipeline, a ValueError arises.
+        Args:
+            stage: Stage to check.
+
+        Returns:
+            True if the checkpoint file exists.
         """
-        check_path = checkpoint_filepath(stage, self.manager)
+        check_path = _checkpoint_filepath(stage, self.manager)
         return os.path.exists(check_path)
 
-    def halt(self, **kwargs):
-        """Halt the pipeline"""
+    def halt(self, **kwargs: Any) -> None:
+        """Halt the pipeline via the underlying PipelineManager."""
         self.manager.halt(**kwargs)
 
-    def list_flags(self, only_name=False):
-        """
-        Determine the flag files associated with this pipeline.
+    def list_flags(self, only_name: bool = False) -> list[str]:
+        """List flag files associated with this pipeline.
 
-        :param bool only_name: Whether to return only flag file name(s) (True),
-            or full flag file paths (False); default False (paths)
-        :return list[str]: flag files associated with this pipeline.
+        Args:
+            only_name: Return only filenames (True) or full paths (False).
+
+        Returns:
+            List of flag file paths or names.
         """
-        paths = glob.glob(os.path.join(self.outfolder, flag_name("*")))
+        paths = glob.glob(os.path.join(self.outfolder, _flag_name("*")))
         if only_name:
             return [os.path.split(p)[1] for p in paths]
         else:
             return paths
 
-    def run(self, start_point=None, stop_before=None, stop_after=None):
-        """
-        Run the pipeline, optionally specifying start and/or stop points.
+    def run(
+        self,
+        start_point: str | None = None,
+        stop_before: str | None = None,
+        stop_after: str | None = None,
+    ) -> None:
+        """Execute pipeline stages, optionally specifying start and stop points.
 
-        :param str start_point: Name of stage at which to begin execution.
-        :param str stop_before: Name of stage at which to cease execution;
-            exclusive, i.e. this stage is not run
-        :param str stop_after: Name of stage at which to cease execution;
-            inclusive, i.e. this stage is the last one run
-        :raise IllegalPipelineExecutionError: If both inclusive (stop_after)
-            and exclusive (stop_before) halting points are provided, or if that
-            start stage is the same as or after the stop stage, raise an
-            IllegalPipelineExecutionError.
+        Example:
+            p.run()                           # run all stages
+            p.run(start_point="align")        # skip to alignment
+            p.run(stop_after="trim")          # stop after trimming
+
+        Stages with existing checkpoint files from previous runs are skipped.
+        When execution resumes (e.g. after a crash), stages before start_point
+        are skipped entirely, and stages between start_point and the first
+        uncheckpointed stage are also skipped. Cannot specify both stop_before
+        and stop_after.
+
+        Args:
+            start_point: Stage name to begin execution at. Stages before this
+                are skipped without checking checkpoint files.
+            stop_before: Stage name to stop before (exclusive -- this stage
+                does NOT run).
+            stop_after: Stage name to stop after (inclusive -- this stage
+                DOES run, then pipeline halts).
         """
 
         # Start the run with a clean slate of Stage status/label tracking.
@@ -262,7 +266,11 @@ class Pipeline(object):
 
         if stop_before and stop_after:
             raise IllegalPipelineExecutionError(
-                "Cannot specify both inclusive and exclusive stops."
+                "Cannot specify both stop_before (exclusive) and stop_after (inclusive). "
+                "Use stop_before='{name}' to stop just before a stage, "
+                "or stop_after='{name}' to stop after a stage completes. Pick one.".format(
+                    name="<stage_name>"
+                )
             )
 
         if stop_before:
@@ -279,7 +287,7 @@ class Pipeline(object):
         for s in [start_point, stop]:
             if s is None:
                 continue
-            name = parse_stage_name(s)
+            name = _parse_stage_name(s)
             if name not in self.stage_names:
                 raise UnknownPipelineStageError(name, self)
 
@@ -299,7 +307,11 @@ class Pipeline(object):
         assert stop_index <= len(self._stages)
         if start_index >= stop_index:
             raise IllegalPipelineExecutionError(
-                "Cannot start pipeline at or after stopping point"
+                "Cannot start pipeline at or after stopping point. "
+                "start_point resolves to index {start} but stop resolves to index {stop}. "
+                "Ensure your start stage comes before your stop stage in the pipeline definition.".format(
+                    start=start_index, stop=stop_index
+                )
             )
 
         # TODO: consider storing just stage name rather than entire stage.
@@ -349,44 +361,45 @@ class Pipeline(object):
         else:
             self.halt(raise_error=False)
 
-    def wrapup(self):
+    def wrapup(self) -> None:
         """Final mock stage to run after final one finishes."""
         self.manager.complete()
 
-    def _reset(self):
+    def _reset(self) -> None:
         """Scrub decks with respect to Stage status/label tracking."""
         self.skipped, self.executed = [], []
 
-    def _start_index(self, start=None):
+    def _start_index(self, start: str | None = None) -> int:
         """Seek to the first stage to run."""
         if start is None:
             return 0
-        start_stage = translate_stage_name(start)
-        internal_names = [translate_stage_name(s.name) for s in self._stages]
+        start_stage = _translate_stage_name(start)
+        internal_names = [_translate_stage_name(s.name) for s in self._stages]
         try:
             return internal_names.index(start_stage)
         except ValueError:
             raise UnknownPipelineStageError(start, self)
 
-    def _stop_index(self, stop_point, inclusive):
-        """
-        Determine index of stage of stopping point for run().
+    def _stop_index(self, stop_point: str | None, inclusive: bool | None) -> int:
+        """Determine index of stage of stopping point for run().
 
-        :param str | pypiper.Stage | function stop_point: Stopping point itself
-            or name of it.
-        :param bool inclusive: Whether the stopping point is to be regarded as
-            inclusive (i.e., whether it's the final stage to run, or the one
-            just beyond)
-        :return int: Index into sequence of Pipeline's stages that indicates
-            where to stop; critically, the value of the inclusive parameter
-            here is used to contextualize this index such that it's always
-            returned as an exclusive stopping index (i.e., execute up to the
-            stage indexed by the value returned from this function.)
+        Args:
+            stop_point: Stopping point itself or name of it.
+            inclusive: Whether the stopping point is to be regarded as
+                inclusive (i.e., whether it's the final stage to run, or the one
+                just beyond).
+
+        Returns:
+            Index into sequence of Pipeline's stages that indicates where to stop;
+            critically, the value of the inclusive parameter here is used to
+            contextualize this index such that it's always returned as an exclusive
+            stopping index (i.e., execute up to the stage indexed by the value
+            returned from this function).
         """
         if not stop_point:
             # Null case, no stopping point
             return len(self._stages)
-        stop_name = parse_stage_name(stop_point)
+        stop_name = _parse_stage_name(stop_point)
         try:
             stop_index = self.stage_names.index(stop_name)
         except ValueError:
@@ -394,19 +407,23 @@ class Pipeline(object):
         return stop_index + 1 if inclusive else stop_index
 
 
-def _is_unordered(collection):
-    """
-    Determine whether a collection appears to be unordered.
+def _is_unordered(collection: Iterable) -> bool:
+    """Determine whether a collection appears to be unordered.
 
     This is a conservative implementation, allowing for the possibility that
     someone's implemented Mapping or Set, for example, and provided an
     __iter__ implementation that defines a consistent ordering of the
     collection's elements.
 
-    :param object collection: Object to check as an unordered collection.
-    :return bool: Whether the given object appears to be unordered
-    :raises TypeError: If the given "collection" is non-iterable, it's
-        illogical to investigate whether it's ordered.
+    Args:
+        collection: Object to check as an unordered collection.
+
+    Returns:
+        Whether the given object appears to be unordered.
+
+    Raises:
+        TypeError: If the given "collection" is non-iterable, it's
+            illogical to investigate whether it's ordered.
     """
     if not isinstance(collection, Iterable):
         raise TypeError("Non-iterable alleged collection: {}".format(type(collection)))
@@ -414,18 +431,21 @@ def _is_unordered(collection):
     return isinstance(collection, set) or isinstance(collection, dict)
 
 
-def _parse_stage_spec(stage_spec):
-    """
-    Handle alternate Stage specifications, returning name and Stage.
+def _parse_stage_spec(stage_spec: Any) -> tuple[str, Stage]:
+    """Handle alternate Stage specifications, returning name and Stage.
 
     Isolate this parsing logic from any iteration. TypeError as single
     exception type funnel also provides a more uniform way for callers to
     handle specification errors (e.g., skip a stage, warn, re-raise, etc.)
 
-    :param (str, pypiper.Stage) | callable stage_spec: name and Stage
-    :return (name, pypiper.Stage): Pair of name and Stage instance from parsing
-        input specification
-    :raise TypeError: if the specification of the stage is not a supported type
+    Args:
+        stage_spec: Name and Stage tuple, or a callable.
+
+    Returns:
+        Pair of name and Stage instance from parsing input specification.
+
+    Raises:
+        TypeError: If the specification of the stage is not a supported type.
     """
 
     # The logic used here, a message to a user about how to specify Stage.

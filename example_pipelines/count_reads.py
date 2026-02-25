@@ -10,12 +10,7 @@ __license__ = "GPL3"
 __version__ = "0.1"
 
 import os
-import re
-import subprocess
-import sys
 from argparse import ArgumentParser
-
-import yaml
 
 import pypiper
 
@@ -79,9 +74,7 @@ pm.timestamp("### Merge/link and fastq conversion: ")
 # Now we'll rely on 2 NGSTk functions that can handle inputs of various types
 # and convert these to fastq files.
 
-local_input_files = ngstk.merge_or_link(
-    [args.input, args.input2], raw_folder, args.sample_name
-)
+local_input_files = ngstk.merge_or_link([args.input, args.input2], raw_folder, args.sample_name)
 
 cmd, out_fastq_pre, unaligned_fastq = ngstk.input_to_fastq(
     local_input_files, args.sample_name, args.paired_end, fastq_folder
@@ -98,12 +91,7 @@ pm.report_result("File_mb", ngstk.get_file_size(local_input_files))
 n_input_files = len(list(filter(bool, local_input_files)))
 
 raw_reads = (
-    sum(
-        [
-            int(ngstk.count_reads(input_file, args.paired_end))
-            for input_file in local_input_files
-        ]
-    )
+    sum([int(ngstk.count_reads(input_file, args.paired_end)) for input_file in local_input_files])
     / n_input_files
 )
 

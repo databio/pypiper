@@ -10,12 +10,8 @@ __license__ = "GPL3"
 __version__ = "0.1"
 
 import os
-import re
-import subprocess
 import sys
 from argparse import ArgumentParser
-
-import yaml
 
 import pypiper
 

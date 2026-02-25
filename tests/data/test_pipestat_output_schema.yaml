@@ -1,0 +1,30 @@
+# Pipestat output schema for pypiper tests
+# Allows arbitrary string results for flexible testing
+pipeline_name: test_pipeline
+samples:
+  key1:
+    type: string
+    description: "Test key 1"
+  key2:
+    type: string
+    description: "Test key 2"
+  Time:
+    type: string
+    description: "Pipeline elapsed time"
+  Success:
+    type: string
+    description: "Pipeline completion time"
+  Test figure:
+    type: object
+    properties:
+      path:
+        type: string
+        description: "Path to the figure file"
+      thumbnail_path:
+        type: string
+        description: "Path to thumbnail"
+      title:
+        type: string
+        description: "Figure title"
+    object_type: file
+    description: "Test figure result"

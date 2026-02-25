@@ -2,9 +2,7 @@
 
 import os
 
-import pytest
-
-from pypiper.utils import checkpoint_filepath, pipeline_filepath
+from pypiper.utils import _pipeline_filepath
 from tests.helpers import named_param
 
 __author__ = "Vince Reuter"
@@ -35,7 +33,7 @@ class ExecutionSkippingTests:
         # Make a call that should be skipped on the basis of not yet
         # reaching the start point.
         pm.timestamp(checkpoint="merge_reads")
-        path_merge_file = pipeline_filepath(pm, filename="merge.txt")
+        path_merge_file = _pipeline_filepath(pm, filename="merge.txt")
         assert not os.path.isfile(path_merge_file)
         cmd = "touch {}".format(path_merge_file)
         pm.run(cmd, target=path_merge_file)
@@ -60,7 +58,7 @@ class ExecutionSkippingTests:
         # Make a all that should be the first executed, on the basis of
         # being associated with the designated.
         pm.timestamp(checkpoint=start_point)
-        path_first_file = pipeline_filepath(pm, filename="outfile.bam")
+        path_first_file = _pipeline_filepath(pm, filename="outfile.bam")
         cmd = "touch {}".format(path_first_file)
         pm.run(cmd, target=path_first_file)
         assert os.path.isfile(path_first_file)
@@ -72,7 +70,7 @@ class ExecutionSkippingTests:
         pm = get_pipe_manager(name="skip-execs")
         pm._active = False
 
-        testfile = pipeline_filepath(pm, filename="output.txt")
+        testfile = _pipeline_filepath(pm, filename="output.txt")
         assert not os.path.isfile(testfile)
 
         cmd = "touch {}".format(testfile)
@@ -111,7 +109,7 @@ class ExecutionSkippingTests:
         # Go through the stages and see that we're skipping checkpoints
         # that exist, then proceeding to execute each subsequent stage.
         for i, s in enumerate(stages):
-            outfile = pipeline_filepath(pm, s + ".txt")
+            outfile = _pipeline_filepath(pm, s + ".txt")
             cmd = "touch {}".format(outfile)
             pm.timestamp(checkpoint=s)
             pm.run(cmd, target=outfile)
@@ -142,11 +140,11 @@ class ExecutionSkippingTests:
         for i, t in enumerate(targets):
             if i == halt_index:
                 pm.halt(raise_error=False)
-            target = pipeline_filepath(pm, filename=t)
+            target = _pipeline_filepath(pm, filename=t)
             cmd = "touch {}".format(target)
             pm.run(cmd, target=target)
         for i, t in enumerate(targets):
-            target = pipeline_filepath(pm, filename=t)
+            target = _pipeline_filepath(pm, filename=t)
             if i < halt_index:
                 assert os.path.isfile(target)
             else:

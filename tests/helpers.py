@@ -7,7 +7,7 @@ from functools import partial
 import pytest
 
 from pypiper import Pipeline
-from pypiper.utils import checkpoint_filepath
+from pypiper.utils import _checkpoint_filepath
 
 __author__ = "Vince Reuter"
 __email__ = "vreuter@virginia.edu"
@@ -32,7 +32,7 @@ def fetch_checkpoint_files(pm):
     :return Iterable[str]: collection of all of given manager's checkpoint
         files' paths.
     """
-    pattern = checkpoint_filepath("*", pm)
+    pattern = _checkpoint_filepath("*", pm)
     return glob.glob(pattern)
 
 

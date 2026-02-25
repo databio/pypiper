@@ -1,12 +1,11 @@
 """Tests for the timestamp functionality of a PipelineManager."""
 
 import os
-import sys
 
 import pytest
 
 from pypiper.exceptions import PipelineHalt
-from pypiper.utils import checkpoint_filepath
+from pypiper.utils import _checkpoint_filepath
 from tests.helpers import fetch_checkpoint_files, named_param
 
 __author__ = "Vince Reuter"
@@ -31,31 +30,6 @@ def test_timestamp_requires_no_arguments(get_pipe_manager):
     """A call to timestamp() requires no arguments."""
     pm = get_pipe_manager(name="TestPM")
     pm.timestamp()
-
-
-@pytest.mark.skip
-def test_timestamp_message(get_pipe_manager, capsys):
-    """Tests for the message component of a timestamp() call."""
-    name = "TestPM"
-    pm = get_pipe_manager(name=name)
-    logfile = pm.pipeline_log_file
-    assert not os.path.exists(logfile)
-    message_content = "Just testing"
-    message = "### {}".format(message_content)
-    pm.timestamp(message)
-
-    # Capture output but also write it so it's there.
-    # Since we're in interactive mode for the testing session, we don't have
-    # the luxury of a logfile for the pipeline manager.
-    out, err = capsys.readouterr()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-
-    # The stdout capture with capsys comes through as a single unicode block.
-    # With the move to logger, this test is no longer capturing the output
-    assert message_content in str(
-        out
-    ), "Missing timestamp message ('{}') in message(s)".format(message_content)
 
 
 class TimestampHaltingTests:
@@ -144,7 +118,7 @@ class TimestampStatusTypeTests:
         pm = get_pipe_manager(name="init-timestamp-file")
         stage_name = "align_reads"
         pm.timestamp(checkpoint=stage_name, finished=retrospective)
-        check_fpath = checkpoint_filepath(stage_name, pm)
+        check_fpath = _checkpoint_filepath(stage_name, pm)
         if retrospective:
             assert os.path.isfile(check_fpath)
         else:
@@ -185,7 +159,7 @@ class TimestampStatusTypeTests:
 
         if test_type == FILES_TEST:
             checkpoint_files = fetch_checkpoint_files(pm)
-            expected = [checkpoint_filepath(stage1, pm)]
+            expected = [_checkpoint_filepath(stage1, pm)]
             assert set(expected) == set(checkpoint_files)
         else:
             assert stage1 == pm.prev_checkpoint
@@ -200,7 +174,7 @@ class TimestampStatusTypeTests:
 
         if test_type == FILES_TEST:
             checkpoint_files = fetch_checkpoint_files(pm)
-            expected = [checkpoint_filepath(s, pm) for s in [stage1, stage2]]
+            expected = [_checkpoint_filepath(s, pm) for s in [stage1, stage2]]
             assert set(expected) == set(checkpoint_files)
         else:
             assert stage2 == pm.prev_checkpoint
@@ -219,7 +193,7 @@ class TimestampStatusTypeTests:
 
         if test_type == FILES_TEST:
             checkpoint_files = fetch_checkpoint_files(pm)
-            expected = [checkpoint_filepath(stage2, pm)]
+            expected = [_checkpoint_filepath(stage2, pm)]
             assert set(expected) == set(checkpoint_files)
         else:
             # Current checkpoint will be reset by second (retrospective)
@@ -239,7 +213,7 @@ class TimestampStatusTypeTests:
         pm.timestamp(checkpoint=stage2, finished=False)
 
         if test_type == FILES_TEST:
-            expected = [checkpoint_filepath(stage1, pm)]
+            expected = [_checkpoint_filepath(stage1, pm)]
             assert set(expected) == set(fetch_checkpoint_files(pm))
         else:
             assert pm.prev_checkpoint is None

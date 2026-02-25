@@ -5,9 +5,9 @@
 # This is a runnable example. You can run it to see what the output
 # looks like.
 
-# First, make sure you can import the pypiper package
+# For shorter scripts, you can use: with pypiper.PipelineManager(...) as pm:
 
-import os
+# First, make sure you can import the pypiper package
 
 import pypiper
 
