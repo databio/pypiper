@@ -205,6 +205,7 @@ class PipelineManager(object):
         # execution is to begin right away and set the internal flag so that
         # run() is let loose to execute instructions given.
         self._active = not self.start_point
+        self._stopped = False
 
         # Pipeline-level variables to track global state and pipeline stats
         # Pipeline settings
@@ -504,6 +505,8 @@ class PipelineManager(object):
     @property
     def _has_exit_status(self) -> bool:
         """Whether the managed pipeline has been safely stopped."""
+        if self._stopped:
+            return True
         return self._completed or self.halted or self._failed
 
     def _ignore_interrupts(self) -> None:
@@ -2097,7 +2100,7 @@ class PipelineManager(object):
                 be released. Used for job termination (e.g. SIGTERM from a
                 cluster scheduler) rather than code errors.
         """
-        # Take care of any active running subprocess
+        self._stopped = True
         sys.stdout.flush()
         self._terminate_running_subprocesses()
 
@@ -2198,7 +2201,7 @@ class PipelineManager(object):
         Args:
             status: Status flag string. Default: 'completed'.
         """
-        # self._set_status_flag(status)
+        self._stopped = True
         self.pipestat.set_status(
             record_identifier=self._pipestat_manager.record_identifier,
             status_identifier=status,
