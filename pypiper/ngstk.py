@@ -55,7 +55,7 @@ class NGSTools:
                 to their own name (echo behavior).
         """
         config = config or {}
-        for attr in self.__annotations__:
+        for attr in type(self).__annotations__:
             setattr(self, attr, config.get(attr, attr))
 
 
