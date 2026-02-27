@@ -1886,25 +1886,21 @@ class NGSTk:
         else:
             return "SE", read_length
 
-    def parse_bowtie_stats(self, stats_file: str) -> Any:
+    def parse_bowtie_stats(self, stats_file: str) -> dict:
         """
-        Parses Bowtie2 stats file, returns series with values.
+        Parses Bowtie2 stats file, returns dict with values.
 
         Args:
             stats_file (str): Bowtie2 output file with alignment statistics.
         """
-        import pandas as pd
-
-        stats = pd.Series(
-            index=[
-                "readCount",
-                "unpaired",
-                "unaligned",
-                "unique",
-                "multiple",
-                "alignmentRate",
-            ]
-        )
+        stats = {
+            "readCount": None,
+            "unpaired": None,
+            "unaligned": None,
+            "unique": None,
+            "multiple": None,
+            "alignmentRate": None,
+        }
         try:
             with open(stats_file) as handle:
                 content = handle.readlines()  # list of strings per line
@@ -1938,16 +1934,14 @@ class NGSTk:
             pass
         return stats
 
-    def parse_duplicate_stats(self, stats_file: str) -> Any:
+    def parse_duplicate_stats(self, stats_file: str) -> dict:
         """
-        Parses sambamba markdup output, returns series with values.
+        Parses sambamba markdup output, returns dict with values.
 
         Args:
             stats_file (str): sambamba output file with duplicate statistics.
         """
-        import pandas as pd
-
-        series = pd.Series()
+        series = {}
         try:
             with open(stats_file) as handle:
                 content = handle.readlines()  # list of strings per line
@@ -1968,7 +1962,7 @@ class NGSTk:
             pass
         return series
 
-    def parse_qc(self, qc_file: str) -> Any:
+    def parse_qc(self, qc_file: str) -> dict:
         """
         Parse phantompeakqualtools (spp) QC table and return quality metrics.
 
@@ -1976,9 +1970,7 @@ class NGSTk:
             qc_file (str): Path to phantompeakqualtools output file, which
                 contains sample quality measurements.
         """
-        import pandas as pd
-
-        series = pd.Series()
+        series = {}
         try:
             with open(qc_file) as handle:
                 line = handle.readlines()[0].strip().split("\t")  # list of strings per line
@@ -2001,17 +1993,15 @@ class NGSTk:
         sample["peakNumber"] = re.sub(r"\D.*", "", out)
         return sample
 
-    def get_frip(self, sample: Any) -> Any:
+    def get_frip(self, sample: Any) -> dict:
         """
         Calculates the fraction of reads in peaks for a given sample.
 
         Args:
             sample (pipelines.Sample): Sample object with "peaks" attribute.
         """
-        import pandas as pd
-
         with open(sample.frip, "r") as handle:
             content = handle.readlines()
         reads_in_peaks = int(re.sub(r"\D", "", content[0]))
         mapped_reads = sample["readCount"] - sample["unaligned"]
-        return pd.Series(reads_in_peaks / mapped_reads, index="FRiP")
+        return {"FRiP": reads_in_peaks / mapped_reads}

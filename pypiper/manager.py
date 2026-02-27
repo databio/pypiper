@@ -10,6 +10,7 @@ genomics) provide optional higher-level convenience functions.
 """
 
 import atexit
+import csv
 import datetime
 import errno
 import glob
@@ -29,7 +30,6 @@ from importlib.metadata import version
 from typing import IO, Any
 
 import logmuse
-import pandas as _pd
 import psutil
 from pipestat import PipestatError, PipestatManager
 from yacman import load_yaml
@@ -60,6 +60,21 @@ from .utils import (
 )
 
 __all__ = ["PipelineManager"]
+
+
+def _parse_timedelta(s: str) -> datetime.timedelta:
+    """Parse a 'H:MM:SS' or 'D days, H:MM:SS' timedelta string to datetime.timedelta."""
+    s = s.strip()
+    days = 0
+    if "day" in s:
+        day_part, _, time_part = s.partition(",")
+        days = int(day_part.split()[0])
+        s = time_part.strip()
+    parts = s.split(":")
+    hours = int(parts[0])
+    minutes = int(parts[1])
+    seconds = float(parts[2])
+    return datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
 
 LOCK_PREFIX = "lock."
@@ -580,86 +595,87 @@ class PipelineManager(object):
         # simultaneously capture and display subprocess output. I shelve this for now and stick with the tee option.
         # sys.stdout = Tee(self.pipeline_log_file)
 
-        # Record the git version of the pipeline and pypiper used. This gets (if it is in a git repo):
-        # dir: the directory where the code is stored
-        # hash: the commit id of the last commit in this repo
-        # date: the date of the last commit in this repo
-        # diff: a summary of any differences in the current (run) version vs. the committed version
-
-        # Wrapped in try blocks so that the code will not fail if the pipeline or pypiper are not git repositories
+        # Record the git version of the pipeline and pypiper used.
+        # For each directory, we first check for a .git/ directory to avoid
+        # spawning git subprocesses in non-repo directories (e.g. pip-installed pypiper).
+        # If the directory IS a git repo, we collect: hash, date, branch, diff.
         gitvars = {}
-        try:
-            # pypiper dir
-            ppd = os.path.dirname(os.path.realpath(__file__))
-            gitvars["pypiper_dir"] = ppd
-            gitvars["pypiper_hash"] = (
-                subprocess.check_output(
-                    "cd " + ppd + "; git rev-parse --verify HEAD 2>/dev/null",
-                    shell=True,
+        ppd = os.path.dirname(os.path.realpath(__file__))
+        gitvars["pypiper_dir"] = ppd
+        if os.path.isdir(os.path.join(ppd, ".git")):
+            try:
+                gitvars["pypiper_hash"] = (
+                    subprocess.check_output(
+                        "cd " + ppd + "; git rev-parse --verify HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pypiper_date"] = (
-                subprocess.check_output(
-                    "cd " + ppd + "; git show -s --format=%ai HEAD 2>/dev/null",
-                    shell=True,
+                gitvars["pypiper_date"] = (
+                    subprocess.check_output(
+                        "cd " + ppd + "; git show -s --format=%ai HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pypiper_diff"] = (
-                subprocess.check_output(
-                    "cd " + ppd + "; git diff --shortstat HEAD 2>/dev/null", shell=True
+                gitvars["pypiper_diff"] = (
+                    subprocess.check_output(
+                        "cd " + ppd + "; git diff --shortstat HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pypiper_branch"] = (
-                subprocess.check_output(
-                    "cd " + ppd + "; git branch | grep '*' 2>/dev/null", shell=True
+                gitvars["pypiper_branch"] = (
+                    subprocess.check_output(
+                        "cd " + ppd + "; git branch | grep '*' 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-        except Exception:
-            pass
-        try:
-            # pipeline dir
-            pld = os.path.dirname(os.path.realpath(sys.argv[0]))
-            gitvars["pipe_dir"] = pld
-            gitvars["pipe_hash"] = (
-                subprocess.check_output(
-                    "cd " + pld + "; git rev-parse --verify HEAD 2>/dev/null",
-                    shell=True,
+            except Exception:
+                pass
+        pld = os.path.dirname(os.path.realpath(sys.argv[0]))
+        gitvars["pipe_dir"] = pld
+        if os.path.isdir(os.path.join(pld, ".git")):
+            try:
+                gitvars["pipe_hash"] = (
+                    subprocess.check_output(
+                        "cd " + pld + "; git rev-parse --verify HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pipe_date"] = (
-                subprocess.check_output(
-                    "cd " + pld + "; git show -s --format=%ai HEAD 2>/dev/null",
-                    shell=True,
+                gitvars["pipe_date"] = (
+                    subprocess.check_output(
+                        "cd " + pld + "; git show -s --format=%ai HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pipe_diff"] = (
-                subprocess.check_output(
-                    "cd " + pld + "; git diff --shortstat HEAD 2>/dev/null", shell=True
+                gitvars["pipe_diff"] = (
+                    subprocess.check_output(
+                        "cd " + pld + "; git diff --shortstat HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pipe_branch"] = (
-                subprocess.check_output(
-                    "cd " + pld + "; git branch | grep '*' 2>/dev/null", shell=True
+                gitvars["pipe_branch"] = (
+                    subprocess.check_output(
+                        "cd " + pld + "; git branch | grep '*' 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-        except Exception:
-            pass
+            except Exception:
+                pass
 
         # Print out a header section in the pipeline log:
         # Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
@@ -2180,21 +2196,29 @@ class PipelineManager(object):
             Total runtime in seconds.
         """
         if os.path.isfile(self.pipeline_profile_file):
-            df = _pd.read_csv(
-                self.pipeline_profile_file,
-                sep="\t",
-                comment="#",
-                names=PROFILE_COLNAMES,
-            )
+            rows = []
+            with open(self.pipeline_profile_file) as fh:
+                reader = csv.reader(fh, delimiter="\t")
+                for row in reader:
+                    line = row[0].strip() if row else ""
+                    if not line or line.startswith("#"):
+                        continue
+                    if len(row) < len(PROFILE_COLNAMES):
+                        continue
+                    rows.append(dict(zip(PROFILE_COLNAMES, row)))
             try:
-                df["runtime"] = _pd.to_timedelta(df["runtime"])
-            except ValueError:
+                for r in rows:
+                    r["runtime"] = _parse_timedelta(r["runtime"])
+            except (ValueError, KeyError):
                 # return runtime estimate
                 # this happens if old profile style is mixed with the new one
                 # and the columns do not match
                 return self.time_elapsed(self.starttime)
-            unique_df = df[~df.duplicated("cid", keep="last").values]
-            return sum(unique_df["runtime"].apply(lambda x: x.total_seconds()))
+            # Deduplicate by cid, keeping last occurrence
+            seen = {}
+            for r in rows:
+                seen[r["cid"]] = r
+            return sum(r["runtime"].total_seconds() for r in seen.values())
         return self.time_elapsed(self.starttime)
 
     def stop_pipeline(self, status: str = COMPLETE_FLAG) -> None:
