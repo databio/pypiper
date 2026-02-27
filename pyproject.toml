@@ -1,6 +1,6 @@
 [project]
 name = "piper"
-version = "0.15.0"
+version = "0.15.1"
 description = "A lightweight python toolkit for gluing together restartable, robust command line pipelines"
 readme = "README.md"
 license = "BSD-2-Clause"
@@ -26,7 +26,7 @@ classifiers = [
 dependencies = [
     "logmuse>=0.2.4",
     "psutil",
-    "ubiquerg>=0.9.0",
+    "ubiquerg>=0.9.1",
     "yacman>=0.9.5",
     "pipestat>=0.13.0",
 ]

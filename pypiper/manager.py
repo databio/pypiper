@@ -32,6 +32,7 @@ from typing import IO, Any
 import logmuse
 import psutil
 from pipestat import PipestatError, PipestatManager
+from ubiquerg import parse_timedelta
 from yacman import load_yaml
 
 import __main__
@@ -60,21 +61,6 @@ from .utils import (
 )
 
 __all__ = ["PipelineManager"]
-
-
-def _parse_timedelta(s: str) -> datetime.timedelta:
-    """Parse a 'H:MM:SS' or 'D days, H:MM:SS' timedelta string to datetime.timedelta."""
-    s = s.strip()
-    days = 0
-    if "day" in s:
-        day_part, _, time_part = s.partition(",")
-        days = int(day_part.split()[0])
-        s = time_part.strip()
-    parts = s.split(":")
-    hours = int(parts[0])
-    minutes = int(parts[1])
-    seconds = float(parts[2])
-    return datetime.timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
 
 
 LOCK_PREFIX = "lock."
@@ -2208,7 +2194,7 @@ class PipelineManager(object):
                     rows.append(dict(zip(PROFILE_COLNAMES, row)))
             try:
                 for r in rows:
-                    r["runtime"] = _parse_timedelta(r["runtime"])
+                    r["runtime"] = parse_timedelta(r["runtime"])
             except (ValueError, KeyError):
                 # return runtime estimate
                 # this happens if old profile style is mixed with the new one
