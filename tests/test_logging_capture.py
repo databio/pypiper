@@ -242,6 +242,29 @@ class TestPypiperMessagesInLog:
         assert "INFO_MARKER_789" in log_content
 
 
+class TestPrintCapture:
+    """Bare print() calls must appear in the log file."""
+
+    def test_print_captured_in_log(self, tmp_path):
+        """Bare print() calls between pm.run() appear in the log file."""
+        outfolder = str(tmp_path / "out")
+        script = textwrap.dedent(f"""\
+            import pypiper
+            pm = pypiper.PipelineManager(
+                "test_pipe", outfolder="{outfolder}",
+                pipestat_schema="{TEST_SCHEMA_PATH}",
+            )
+            print("PRINT_MARKER_ABC123")
+            pm.stop_pipeline()
+        """)
+        result = _run_pipeline_script(script)
+        assert result.returncode == 0, f"Script failed: {result.stderr}"
+        log_file = os.path.join(outfolder, "test_pipe_log.md")
+        with open(log_file) as f:
+            log_content = f.read()
+        assert "PRINT_MARKER_ABC123" in log_content
+
+
 class TestMultiModeLogging:
     """Tests for logging via FileHandler and per-command capture."""
 

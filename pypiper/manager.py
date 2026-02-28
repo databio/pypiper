@@ -65,6 +65,32 @@ LOCK_PREFIX = "lock."
 LOGFILE_SUFFIX = "_log.md"
 
 
+class _LogTee:
+    """Wrap a stream to copy all writes to a log file.
+
+    Replaces sys.stdout/sys.stderr to capture print() calls in the pipeline
+    log file. Only operates at the Python level — does not modify OS file
+    descriptors, so subprocess output (captured separately via threads) is
+    unaffected.
+    """
+
+    def __init__(self, original, log_path):
+        self._original = original
+        self._log_path = log_path
+
+    def write(self, data):
+        self._original.write(data)
+        if data:  # skip empty writes
+            with open(self._log_path, "a") as f:
+                f.write(data)
+
+    def flush(self):
+        self._original.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self._original, attr)
+
+
 class PipelineManager(object):
     """Manage a pipeline: run commands, track files, and report results.
 
@@ -511,6 +537,11 @@ class PipelineManager(object):
         (for subprocess output) — no global fd manipulation needed.
         """
         atexit.register(self._exit_handler)
+
+        self._original_stdout = sys.stdout
+        self._original_stderr = sys.stderr
+        sys.stdout = _LogTee(sys.stdout, self.pipeline_log_file)
+        sys.stderr = _LogTee(sys.stderr, self.pipeline_log_file)
 
         # Record the git version of the pipeline and pypiper used.
         # For each directory, we first check for a .git/ directory to avoid
@@ -2231,6 +2262,10 @@ class PipelineManager(object):
         t = time.strftime("%Y-%m-%d %H:%M:%S")
         self.info("* " + "Pipeline completed time".rjust(30) + ": " + t)
 
+        if hasattr(self, "_original_stdout"):
+            sys.stdout = self._original_stdout
+            sys.stderr = self._original_stderr
+
     def _signal_term_handler(self, signal: int, frame: Any) -> None:
         """Handle SIGTERM by recording the event and failing gracefully.
 
@@ -2289,6 +2324,10 @@ class PipelineManager(object):
                 pass
             finally:
                 logging.disable(logging.NOTSET)
+
+        if hasattr(self, "_original_stdout"):
+            sys.stdout = self._original_stdout
+            sys.stderr = self._original_stderr
 
     def _terminate_running_subprocesses(self) -> None:
         # make a copy of the list to iterate over since we'll be removing items
