@@ -79,10 +79,18 @@ class _LogTee:
         self._log_path = log_path
 
     def write(self, data):
-        self._original.write(data)
+        result = self._original.write(data)
         if data:  # skip empty writes
             with open(self._log_path, "a") as f:
                 f.write(data)
+        return result
+
+    def writelines(self, lines):
+        lines_list = list(lines)
+        self._original.writelines(lines_list)
+        if lines_list:
+            with open(self._log_path, "a") as f:
+                f.writelines(lines_list)
 
     def flush(self):
         self._original.flush()
@@ -1119,11 +1127,12 @@ class PipelineManager(object):
         Args:
             stream: Readable byte stream (subprocess stdout/stderr pipe).
         """
+        output_stream = getattr(self, "_original_stdout", sys.stdout)
         with open(self.pipeline_log_file, "a") as log:
             for line in iter(stream.readline, b""):
                 text = line.decode("utf-8", errors="replace")
-                sys.stdout.write(text)
-                sys.stdout.flush()
+                output_stream.write(text)
+                output_stream.flush()
                 log.write(text)
                 log.flush()
         stream.close()
@@ -2254,15 +2263,13 @@ class PipelineManager(object):
         )
         # self.info("* " + "Total peak memory (all runs)".rjust(30) + ":  " +
         #     str(round(self.peak_memory, 4)) + " GB")
-        if self.halted:
-            return
 
-        t = time.strftime("%Y-%m-%d %H:%M:%S")
-        self.info("* " + "Pipeline completed time".rjust(30) + ": " + t)
+        if not self.halted:
+            t = time.strftime("%Y-%m-%d %H:%M:%S")
+            self.info("* " + "Pipeline completed time".rjust(30) + ": " + t)
 
-        if hasattr(self, "_original_stdout"):
-            sys.stdout = self._original_stdout
-            sys.stderr = self._original_stderr
+        self._restore_streams()
+        self._close_file_handler()
 
     def _signal_term_handler(self, signal: int, frame: Any) -> None:
         """Handle SIGTERM by recording the event and failing gracefully.
@@ -2323,9 +2330,21 @@ class PipelineManager(object):
             finally:
                 logging.disable(logging.NOTSET)
 
+        self._restore_streams()
+        self._close_file_handler()
+
+    def _restore_streams(self) -> None:
+        """Restore sys.stdout/sys.stderr to their original streams."""
         if hasattr(self, "_original_stdout"):
             sys.stdout = self._original_stdout
             sys.stderr = self._original_stderr
+
+    def _close_file_handler(self) -> None:
+        """Remove and close the log file handler."""
+        if hasattr(self, "_file_handler") and self._file_handler:
+            self._logger.removeHandler(self._file_handler)
+            self._file_handler.close()
+            self._file_handler = None
 
     def _terminate_running_subprocesses(self) -> None:
         # make a copy of the list to iterate over since we'll be removing items
