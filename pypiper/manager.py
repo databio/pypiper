@@ -252,6 +252,15 @@ class PipelineManager(object):
             self._logger = logmuse.init_logger(name, **logger_kwargs)
         self.debug(f"Logger set with {logger_builder_method}")
 
+        # Add a FileHandler so all pypiper messages (info, timestamp, etc.)
+        # are written to the log file directly via the logging framework.
+        import logging
+
+        os.makedirs(self.outfolder, exist_ok=True)
+        self._file_handler = logging.FileHandler(self.pipeline_log_file)
+        self._file_handler.setLevel(logging.DEBUG)
+        self._logger.addHandler(self._file_handler)
+
         # Keep track of an ID for the number of processes attempted
         self.proc_count = 0
 
@@ -1151,6 +1160,21 @@ class PipelineManager(object):
         except Exception as e:
             self._triage_error(e, nofail)
 
+    def _tee_output(self, stream: IO) -> None:
+        """Read lines from a subprocess pipe, write to stdout and log file.
+
+        Args:
+            stream: Readable byte stream (subprocess stdout/stderr pipe).
+        """
+        with open(self.pipeline_log_file, "a") as log:
+            for line in iter(stream.readline, b""):
+                text = line.decode("utf-8", errors="replace")
+                sys.stdout.write(text)
+                sys.stdout.flush()
+                log.write(text)
+                log.flush()
+        stream.close()
+
     def _attend_process(self, proc: Any, sleeptime: float) -> bool:
         """
         Waits on a process for a given time to see if it finishes, returns True
@@ -1256,6 +1280,14 @@ class PipelineManager(object):
 
         self.debug("Command: {}".format(cmd))
         param_list = _parse_cmd(cmd, shell)
+
+        # Override stdout/stderr for per-command capture.
+        # Final process stdout → PIPE (so we can tee it to screen + log).
+        # All processes stderr → PIPE (so we capture warnings from all stages).
+        param_list[-1]["stdout"] = subprocess.PIPE
+        for p in param_list:
+            p["stderr"] = subprocess.PIPE
+
         # cast all commands to str and concatenate for hashing
         conc_cmd = "".join([str(x["args"]) for x in param_list])
         self.debug("Hashed command '{}': {}".format(conc_cmd, make_hash(conc_cmd)))
@@ -1283,6 +1315,23 @@ class PipelineManager(object):
         # Capture the subprocess output in <pre> tags to make it format nicely
         # if the markdown log file is displayed as HTML.
         self.info("<pre>")
+
+        # Start tee threads to capture subprocess output to screen + log file.
+        # Daemon threads so they don't block if we return early (wait=False).
+        tee_threads = []
+        for proc in processes:
+            if proc.stderr:
+                t = threading.Thread(
+                    target=self._tee_output, args=(proc.stderr,), daemon=True
+                )
+                t.start()
+                tee_threads.append(t)
+        if processes[-1].stdout:
+            t = threading.Thread(
+                target=self._tee_output, args=(processes[-1].stdout,), daemon=True
+            )
+            t.start()
+            tee_threads.append(t)
 
         local_maxmems = [-1] * len(running_processes)
         returncodes = [None] * len(running_processes)
@@ -1346,6 +1395,10 @@ class PipelineManager(object):
             # (+ constant to prevent copious checks at the very beginning)
             # = more precise mem tracing for short processes
             sleeptime = min((sleeptime + 0.25) * 3, 60 / len(processes))
+
+        # Wait for tee threads to drain remaining pipe output.
+        for t in tee_threads:
+            t.join()
 
         # All jobs are done, print a final closing and job info
         info = (
