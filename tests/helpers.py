@@ -64,7 +64,7 @@ class SafeTestPipeline(Pipeline):
     """Pipeline for tests that protects against bad file descriptor."""
 
     def __init__(self, *args, **kwargs):
-        kwd_args = {"multi": True}  # Like interactive mode.
+        kwd_args = {"multi": True}  # Allow shared results file in tests.
         kwd_args.update(kwargs)
         super(SafeTestPipeline, self).__init__(*args, **kwd_args)
 
