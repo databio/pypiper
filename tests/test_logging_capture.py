@@ -156,7 +156,6 @@ class TestPipedCommandCapture:
 class TestMultipleManagers:
     """Multiple PipelineManagers in one process produce independent logs."""
 
-
     def test_sequential_managers_independent_logs(self, tmp_path):
         """Two managers produce correct, independent log files."""
         out1 = str(tmp_path / "out1")
@@ -268,7 +267,6 @@ class TestPrintCapture:
 class TestMultiModeLogging:
     """Tests for logging via FileHandler and per-command capture."""
 
-
     def test_multi_mode_stdout_in_log(self, tmp_path):
         """In multi mode, subprocess stdout should still appear in the log."""
         outfolder = str(tmp_path / "out")
@@ -289,7 +287,6 @@ class TestMultiModeLogging:
         with open(log_file) as f:
             log_content = f.read()
         assert "MULTI_STDOUT_MARKER" in log_content
-
 
     def test_multi_mode_info_in_log(self, tmp_path):
         """In multi mode, pypiper messages should still appear in the log."""

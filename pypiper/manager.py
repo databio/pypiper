@@ -1274,9 +1274,7 @@ class PipelineManager(object):
         tee_threads = []
         for proc in processes:
             if proc.stderr:
-                t = threading.Thread(
-                    target=self._tee_output, args=(proc.stderr,), daemon=True
-                )
+                t = threading.Thread(target=self._tee_output, args=(proc.stderr,), daemon=True)
                 t.start()
                 tee_threads.append(t)
         if processes[-1].stdout:
