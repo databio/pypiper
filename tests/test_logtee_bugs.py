@@ -50,7 +50,9 @@ class TestSubprocessOutputNotDoubled:
         """Command output appears exactly once in the log, not doubled."""
         outfolder = str(tmp_path / "out")
         pm = pypiper.PipelineManager(
-            "test_pipe", outfolder=outfolder, pipestat_schema=TEST_SCHEMA_PATH,
+            "test_pipe",
+            outfolder=outfolder,
+            pipestat_schema=TEST_SCHEMA_PATH,
         )
         pm.run("echo UNIQUE_MARKER_ONCE_ONLY", lock_name="t")
         pm.stop_pipeline()
@@ -59,7 +61,9 @@ class TestSubprocessOutputNotDoubled:
         with open(log_file) as f:
             lines = f.readlines()
         # Count lines that are the raw output (not the command info line with backticks)
-        output_lines = [l for l in lines if "UNIQUE_MARKER_ONCE_ONLY" in l and "`" not in l]
+        output_lines = [
+            line for line in lines if "UNIQUE_MARKER_ONCE_ONLY" in line and "`" not in line
+        ]
         assert len(output_lines) == 1, (
             f"Expected subprocess output once in log, found {len(output_lines)} times"
         )
@@ -91,13 +95,12 @@ class TestFileHandlerCleanup:
         """After stop_pipeline(), the FileHandler is removed from the logger."""
         outfolder = str(tmp_path / "out")
         pm = pypiper.PipelineManager(
-            "test_pipe", outfolder=outfolder, pipestat_schema=TEST_SCHEMA_PATH,
+            "test_pipe",
+            outfolder=outfolder,
+            pipestat_schema=TEST_SCHEMA_PATH,
         )
         pm.stop_pipeline()
-        file_handlers = [
-            h for h in pm._logger.handlers
-            if isinstance(h, logging.FileHandler)
-        ]
+        file_handlers = [h for h in pm._logger.handlers if isinstance(h, logging.FileHandler)]
         assert len(file_handlers) == 0, (
             f"{len(file_handlers)} FileHandler(s) still on logger after stop"
         )
