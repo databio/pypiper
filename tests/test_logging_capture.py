@@ -164,14 +164,14 @@ class TestMultipleManagers:
         script = textwrap.dedent(f"""\
             import pypiper
             pm1 = pypiper.PipelineManager(
-                "mgr_one", outfolder="{out1}", multi=True,
+                "mgr_one", outfolder="{out1}",
                 pipestat_schema="{TEST_SCHEMA_PATH}",
             )
             pm1.run("echo UNIQUE_PM1_AAA", lock_name="t1")
             pm1.stop_pipeline()
 
             pm2 = pypiper.PipelineManager(
-                "mgr_two", outfolder="{out2}", multi=True,
+                "mgr_two", outfolder="{out2}",
                 pipestat_schema="{TEST_SCHEMA_PATH}",
             )
             pm2.run("echo UNIQUE_PM2_BBB", lock_name="t2")
@@ -243,7 +243,7 @@ class TestPypiperMessagesInLog:
 
 
 class TestMultiModeLogging:
-    """Tests for multi=True mode logging via FileHandler and per-command capture."""
+    """Tests for logging via FileHandler and per-command capture."""
 
 
     def test_multi_mode_stdout_in_log(self, tmp_path):
@@ -252,7 +252,7 @@ class TestMultiModeLogging:
         script = textwrap.dedent(f"""\
             import pypiper
             pm = pypiper.PipelineManager(
-                "test_pipe", outfolder="{outfolder}", multi=True,
+                "test_pipe", outfolder="{outfolder}",
                 pipestat_schema="{TEST_SCHEMA_PATH}",
             )
             pm.run("echo MULTI_STDOUT_MARKER", lock_name="t")
@@ -274,7 +274,7 @@ class TestMultiModeLogging:
         script = textwrap.dedent(f"""\
             import pypiper
             pm = pypiper.PipelineManager(
-                "test_pipe", outfolder="{outfolder}", multi=True,
+                "test_pipe", outfolder="{outfolder}",
                 pipestat_schema="{TEST_SCHEMA_PATH}",
             )
             pm.info("MULTI_INFO_MARKER")

@@ -35,8 +35,6 @@ from pipestat import PipestatError, PipestatManager
 from ubiquerg import parse_timedelta
 from yacman import load_yaml
 
-import __main__
-
 from .const import DEFAULT_SAMPLE_NAME, PROFILE_COLNAMES
 from .echo_dict import EchoDict
 
@@ -67,22 +65,6 @@ LOCK_PREFIX = "lock."
 LOGFILE_SUFFIX = "_log.md"
 
 
-class Unbuffered(object):
-    def __init__(self, stream: IO) -> None:
-        self.stream = stream
-
-    def write(self, data: str) -> None:
-        self.stream.write(data)
-        self.stream.flush()
-
-    def writelines(self, datas: Iterable[str]) -> None:
-        self.stream.writelines(datas)
-        self.stream.flush()
-
-    def __getattr__(self, attr: str) -> Any:
-        return getattr(self.stream, attr)
-
-
 class PipelineManager(object):
     """Manage a pipeline: run commands, track files, and report results.
 
@@ -105,7 +87,7 @@ class PipelineManager(object):
         version: Pipeline version string.
         args: Parsed argparse.Namespace; pypiper records these and extracts
             relevant options (recover, new_start, etc.).
-        multi: Enable multiple pipelines in one script (disables log tee).
+        multi: Allow multiple pipelines to share a pipestat results file.
         dirty: Never auto-delete intermediate files.
         recover: Overwrite lock files to restart a failed pipeline.
         new_start: Rerun every command even if output exists.
@@ -211,7 +193,6 @@ class PipelineManager(object):
         # Pipeline-level variables to track global state and pipeline stats
         # Pipeline settings
         self.name = name
-        self.tee = None
         self.overwrite_locks = params["recover"]
         self.new_start = params["new_start"]
         self.force_follow = params["force_follow"]
@@ -519,76 +500,17 @@ class PipelineManager(object):
             return True
         return self._completed or self.halted or self._failed
 
-    def _ignore_interrupts(self) -> None:
-        """Ignore interrupt and termination signals for subprocess preexec_fn."""
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-
     def start_pipeline(self, args: Any = None, multi: bool = False) -> None:
         """Initialize pipeline logging, diagnostics, and status tracking.
 
         Called automatically by __init__; rarely called directly.
 
-        Sets up log file tee (mirroring stdout to a log file), prints
-        version/environment info, records git state, creates output folder,
-        and sets pipeline status to 'running'. In interactive/multi mode,
-        the log tee is disabled to avoid interfering with notebook or
-        multi-pipeline output.
+        Prints version/environment info, records git state, creates output
+        folder, and sets pipeline status to 'running'. Logging is handled by
+        a FileHandler (for pypiper messages) and per-command thread capture
+        (for subprocess output) — no global fd manipulation needed.
         """
-        # Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
-        # self.make_sure_path_exists(self.outfolder)
-
-        # By default, Pypiper will mirror every operation so it is displayed both
-        # on sys.stdout **and** to a log file. Unfortunately, interactive python sessions
-        # ruin this by interfering with stdout. So, for interactive mode, we do not enable
-        # the tee subprocess, sending all output to screen only.
-        # Starting multiple PipelineManagers in the same script has the same problem, and
-        # must therefore be run in interactive_mode.
-
-        interactive_mode = multi or not hasattr(__main__, "__file__")
-        if interactive_mode:
-            self.warning(
-                "Warning: You're running an interactive python session. "
-                "This works, but pypiper cannot tee the output, so results "
-                "are only logged to screen."
-            )
-        else:
-            sys.stdout = Unbuffered(sys.stdout)
-            # sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
-
-            # The tee subprocess must be instructed to ignore TERM and INT signals;
-            # Instead, I will clean up this process in the signal handler functions.
-            # This is required because otherwise, if pypiper receives a TERM or INT,
-            # the tee will be automatically terminated by python before I have a chance to
-            # print some final output (for example, about when the process stopped),
-            # and so those things don't end up in the log files because the tee
-            # subprocess is dead. Instead, I will handle the killing of the tee process
-            # manually (in the exit handler).
-
-            # a for append to file
-
-            tee = subprocess.Popen(
-                ["tee", "-a", self.pipeline_log_file],
-                stdin=subprocess.PIPE,
-                preexec_fn=self._ignore_interrupts,
-            )
-
-            # If the pipeline is terminated with SIGTERM/SIGINT,
-            # make sure we kill this spawned tee subprocess as well.
-            # atexit.register(self._kill_child_process, tee.pid, proc_name="tee")
-            os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
-            os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
-
-            self.tee = tee
-
-        # For some reason, this exit handler function MUST be registered after
-        # the one that kills the tee process.
         atexit.register(self._exit_handler)
-
-        # A future possibility to avoid this tee, is to use a Tee class; this works for anything printed here
-        # by pypiper, but can't tee the subprocess output. For this, it would require using threading to
-        # simultaneously capture and display subprocess output. I shelve this for now and stick with the tee option.
-        # sys.stdout = Tee(self.pipeline_log_file)
 
         # Record the git version of the pipeline and pypiper used.
         # For each directory, we first check for a .git/ directory to avoid
@@ -2310,40 +2232,21 @@ class PipelineManager(object):
         self.info("* " + "Pipeline completed time".rjust(30) + ": " + t)
 
     def _signal_term_handler(self, signal: int, frame: Any) -> None:
-        """
-        TERM signal handler function: this function is run if the process
-        receives a termination signal (TERM). This may be invoked, for example,
-        by SLURM if the job exceeds its memory or time limits. It will simply
-        record a message in the log file, stating that the process was
-        terminated, and then gracefully fail the pipeline. This is necessary to
-        1. set the status flag and 2. provide a meaningful error message in the
-        tee'd output; if you do not handle this, then the tee process will be
-        terminated before the TERM error message, leading to a confusing log
-        file.
+        """Handle SIGTERM by recording the event and failing gracefully.
+
+        Invoked by SLURM when a job exceeds memory or time limits. Records
+        a message in the log file and sets the pipeline status to failed.
         """
         signal_type = "SIGTERM"
         self._generic_signal_handler(signal_type)
 
     def _generic_signal_handler(self, signal_type: str) -> None:
-        """
-        Function for handling both SIGTERM and SIGINT
-        """
+        """Handle both SIGTERM and SIGINT signals."""
         self.info("</pre>")
         message = "Got " + signal_type + ". Failing gracefully..."
         self.timestamp(message)
         self.fail_pipeline(KeyboardInterrupt(signal_type), dynamic_recover=True)
         sys.exit(1)
-
-        # I used to write to the logfile directly, because the interrupts
-        # would first destroy the tee subprocess, so anything printed
-        # after an interrupt would only go to screen and not get put in
-        # the log, which is bad for cluster processing. But I later
-        # figured out how to sequester the kill signals so they didn't get
-        # passed directly to the tee subprocess, so I could handle that on
-        # my own; hence, now I believe I no longer need to do this. I'm
-        # leaving this code here as a relic in case something comes up.
-        # with open(self.pipeline_log_file, "a") as myfile:
-        #   myfile.write(message + "\n")
 
     def _signal_int_handler(self, signal: int, frame: Any) -> None:
         """
@@ -2386,9 +2289,6 @@ class PipelineManager(object):
                 pass
             finally:
                 logging.disable(logging.NOTSET)
-
-        if self.tee:
-            self.tee.kill()
 
     def _terminate_running_subprocesses(self) -> None:
         # make a copy of the list to iterate over since we'll be removing items

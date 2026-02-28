@@ -65,7 +65,7 @@ FILE_TEXT_PAIRS = list(zip(FILENAMES, CONTENTS))
 
 @pytest.fixture
 def get_pipe_manager(tmpdir):
-    """Provide safe creation of pipeline manager, with multi=True."""
+    """Provide safe creation of pipeline manager."""
 
     def get_mgr(**kwargs):
         if "outfolder" in kwargs:
@@ -73,7 +73,7 @@ def get_pipe_manager(tmpdir):
         else:
             kwd_args = copy.deepcopy(kwargs)
             kwd_args["outfolder"] = tmpdir.strpath
-        return PipelineManager(multi=True, **kwd_args)
+        return PipelineManager(**kwd_args)
 
     return get_mgr
 
