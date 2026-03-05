@@ -414,6 +414,17 @@ class PipelineManager(object):
                 pipeline_type=self.pipestat_pipeline_type,
                 multi_pipelines=multi,
             )
+            # Always set record_identifier from pypiper's resolution chain.
+            # Pypiper owns the record identity; the pipestat config should not override it.
+            self._pipestat_manager.record_identifier = (
+                self.pipestat_record_identifier
+                or _get_arg(args_dict, "pipestat_sample_name")
+                or DEFAULT_SAMPLE_NAME
+            )
+            # Sync pipeline_stats_file to pipestat's actual results file location
+            # so that _refresh_stats() reads from the correct file.
+            if self._pipestat_manager.file:
+                self.pipeline_stats_file = self._pipestat_manager.file
         else:
             self._pipestat_manager = PipestatManager.from_file_backend(
                 results_file_path=self.pipestat_results_file
@@ -1922,18 +1933,17 @@ class PipelineManager(object):
     ###################################
 
     def _refresh_stats(self) -> None:
-        """
-        Loads up the stats yaml created for this pipeline run and reads
-        those stats into memory
-        """
-
+        """Load stats from the pipestat results file into memory."""
         if os.path.isfile(self.pipeline_stats_file):
             data = load_yaml(filepath=self.pipeline_stats_file)
-
-            for key, value in data[self._pipestat_manager.pipeline_name][
-                self._pipestat_manager.pipeline_type
-            ][self._pipestat_manager.record_identifier].items():
-                self.stats_dict[key] = value
+            try:
+                record_data = data[self._pipestat_manager.pipeline_name][
+                    self._pipestat_manager.pipeline_type
+                ][self._pipestat_manager.record_identifier]
+                for key, value in record_data.items():
+                    self.stats_dict[key] = value
+            except (KeyError, TypeError):
+                pass
 
     def get_stat(self, key: str) -> Any:
         """Retrieve a previously reported stat, loading from disk if needed.
