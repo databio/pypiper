@@ -626,14 +626,18 @@ class NGSTk:
                 self.pm.run(cmd, lock_name="trimmed_fastqc", nofail=True)
                 fname, ext = os.path.splitext(os.path.basename(trimmed_fastq))
                 fastqc_html = os.path.join(fastqc_folder, fname + "_fastqc.html")
-                self.pm.report_result("FastQC_report_R1", {"path": fastqc_html, "title": "FastQC report R1"})
+                self.pm.report_result(
+                    "FastQC_report_R1", {"path": fastqc_html, "title": "FastQC report R1"}
+                )
 
                 if paired_end and trimmed_fastq_R2:
                     cmd = self.fastqc(trimmed_fastq_R2, fastqc_folder)
                     self.pm.run(cmd, lock_name="trimmed_fastqc_R2", nofail=True)
                     fname, ext = os.path.splitext(os.path.basename(trimmed_fastq_R2))
                     fastqc_html = os.path.join(fastqc_folder, fname + "_fastqc.html")
-                    self.pm.report_result("FastQC_report_R2", {"path": fastqc_html, "title": "FastQC report R2"})
+                    self.pm.report_result(
+                        "FastQC_report_R2", {"path": fastqc_html, "title": "FastQC report R2"}
+                    )
 
         return temp_func
 

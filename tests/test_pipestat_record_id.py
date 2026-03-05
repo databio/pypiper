@@ -8,9 +8,7 @@ Covers:
 """
 
 import os
-import tempfile
 
-import pytest
 import yaml
 
 from pypiper import PipelineManager
