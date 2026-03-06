@@ -252,7 +252,7 @@ class PipelineManager(object):
             logger_builder_method = "logger_via_cli"
             try:
                 self._logger = logger_via_cli(args, **logger_kwargs)
-            except logmuse.est.AbsentOptionException as e:
+            except logmuse.AbsentOptionException as e:
                 # Defer logger construction to init_logger.
                 self.debug(f"logger_via_cli failed: {e}")
         if self._logger is None:

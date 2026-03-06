@@ -24,11 +24,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 dependencies = [
-    "logmuse>=0.2.4",
+    "logmuse>=0.3.0",
     "psutil",
     "ubiquerg>=0.9.1",
-    "yacman>=0.9.5",
-    "pipestat>=0.13.0",
+    "yacman>=1.0.0",
+    "pipestat>=0.13.1",
 ]
 
 [project.urls]
