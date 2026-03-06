@@ -559,14 +559,14 @@ class NGSTk:
                 [int(self.count_reads(input_file, paired_end)) for input_file in input_files]
             )
             raw_reads = int(total_reads / n_input_files)
-            self.pm.pipestat.report(values={"Raw_reads": str(raw_reads)})
+            self.pm.report_result("Raw_reads", str(raw_reads))
 
             total_fastq_reads = sum(
                 [int(self.count_reads(output_file, paired_end)) for output_file in output_files]
             )
             fastq_reads = int(total_fastq_reads / n_output_files)
 
-            self.pm.pipestat.report(values={"Fastq_reads": fastq_reads})
+            self.pm.report_result("Fastq_reads", fastq_reads)
             input_ext = self.get_input_ext(input_files[0])
             # We can only assess pass filter reads in bam files with flags.
             if input_ext == ".bam":
@@ -574,7 +574,7 @@ class NGSTk:
                     [int(self.count_fail_reads(f, paired_end)) for f in input_files]
                 )
                 pf_reads = int(raw_reads) - num_failed_filter
-                self.pm.pipestat.report(values={"PF_reads": str(pf_reads)})
+                self.pm.report_result("PF_reads", str(pf_reads))
             if fastq_reads != int(raw_reads):
                 raise Exception(
                     "Fastq conversion error? Number of input reads doesn't number of output reads."
@@ -610,9 +610,9 @@ class NGSTk:
                 print("WARNING: specified paired-end but no R2 file")
 
             n_trim = float(self.count_reads(trimmed_fastq, paired_end))
-            self.pm.pipestat.report(values={"Trimmed_reads": int(n_trim)})
+            self.pm.report_result("Trimmed_reads", int(n_trim))
             try:
-                rr = float(self.pm.pipestat.retrieve("Raw_reads"))
+                rr = float(self.pm.get_stat("Raw_reads"))
             except Exception:
                 print("Can't calculate trim loss rate without raw read result.")
             else:
@@ -626,13 +626,8 @@ class NGSTk:
                 self.pm.run(cmd, lock_name="trimmed_fastqc", nofail=True)
                 fname, ext = os.path.splitext(os.path.basename(trimmed_fastq))
                 fastqc_html = os.path.join(fastqc_folder, fname + "_fastqc.html")
-                self.pm.pipestat.report(
-                    values={
-                        "FastQC_report_R1": {
-                            "path": fastqc_html,
-                            "title": "FastQC report R1",
-                        }
-                    }
+                self.pm.report_result(
+                    "FastQC_report_R1", {"path": fastqc_html, "title": "FastQC report R1"}
                 )
 
                 if paired_end and trimmed_fastq_R2:
@@ -640,13 +635,8 @@ class NGSTk:
                     self.pm.run(cmd, lock_name="trimmed_fastqc_R2", nofail=True)
                     fname, ext = os.path.splitext(os.path.basename(trimmed_fastq_R2))
                     fastqc_html = os.path.join(fastqc_folder, fname + "_fastqc.html")
-                    self.pm.pipestat.report(
-                        values={
-                            "FastQC_report_R2": {
-                                "path": fastqc_html,
-                                "title": "FastQC report R2",
-                            }
-                        }
+                    self.pm.report_result(
+                        "FastQC_report_R2", {"path": fastqc_html, "title": "FastQC report R2"}
                     )
 
         return temp_func
@@ -1886,25 +1876,21 @@ class NGSTk:
         else:
             return "SE", read_length
 
-    def parse_bowtie_stats(self, stats_file: str) -> Any:
+    def parse_bowtie_stats(self, stats_file: str) -> dict:
         """
-        Parses Bowtie2 stats file, returns series with values.
+        Parses Bowtie2 stats file, returns dict with values.
 
         Args:
             stats_file (str): Bowtie2 output file with alignment statistics.
         """
-        import pandas as pd
-
-        stats = pd.Series(
-            index=[
-                "readCount",
-                "unpaired",
-                "unaligned",
-                "unique",
-                "multiple",
-                "alignmentRate",
-            ]
-        )
+        stats = {
+            "readCount": None,
+            "unpaired": None,
+            "unaligned": None,
+            "unique": None,
+            "multiple": None,
+            "alignmentRate": None,
+        }
         try:
             with open(stats_file) as handle:
                 content = handle.readlines()  # list of strings per line
@@ -1938,16 +1924,14 @@ class NGSTk:
             pass
         return stats
 
-    def parse_duplicate_stats(self, stats_file: str) -> Any:
+    def parse_duplicate_stats(self, stats_file: str) -> dict:
         """
-        Parses sambamba markdup output, returns series with values.
+        Parses sambamba markdup output, returns dict with values.
 
         Args:
             stats_file (str): sambamba output file with duplicate statistics.
         """
-        import pandas as pd
-
-        series = pd.Series()
+        series = {}
         try:
             with open(stats_file) as handle:
                 content = handle.readlines()  # list of strings per line
@@ -1968,7 +1952,7 @@ class NGSTk:
             pass
         return series
 
-    def parse_qc(self, qc_file: str) -> Any:
+    def parse_qc(self, qc_file: str) -> dict:
         """
         Parse phantompeakqualtools (spp) QC table and return quality metrics.
 
@@ -1976,9 +1960,7 @@ class NGSTk:
             qc_file (str): Path to phantompeakqualtools output file, which
                 contains sample quality measurements.
         """
-        import pandas as pd
-
-        series = pd.Series()
+        series = {}
         try:
             with open(qc_file) as handle:
                 line = handle.readlines()[0].strip().split("\t")  # list of strings per line
@@ -2001,17 +1983,15 @@ class NGSTk:
         sample["peakNumber"] = re.sub(r"\D.*", "", out)
         return sample
 
-    def get_frip(self, sample: Any) -> Any:
+    def get_frip(self, sample: Any) -> dict:
         """
         Calculates the fraction of reads in peaks for a given sample.
 
         Args:
             sample (pipelines.Sample): Sample object with "peaks" attribute.
         """
-        import pandas as pd
-
         with open(sample.frip, "r") as handle:
             content = handle.readlines()
         reads_in_peaks = int(re.sub(r"\D", "", content[0]))
         mapped_reads = sample["readCount"] - sample["unaligned"]
-        return pd.Series(reads_in_peaks / mapped_reads, index="FRiP")
+        return {"FRiP": reads_in_peaks / mapped_reads}

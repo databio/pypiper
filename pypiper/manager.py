@@ -10,6 +10,7 @@ genomics) provide optional higher-level convenience functions.
 """
 
 import atexit
+import csv
 import datetime
 import errno
 import glob
@@ -29,12 +30,10 @@ from importlib.metadata import version
 from typing import IO, Any
 
 import logmuse
-import pandas as _pd
 import psutil
 from pipestat import PipestatError, PipestatManager
+from ubiquerg import parse_timedelta
 from yacman import load_yaml
-
-import __main__
 
 from .const import DEFAULT_SAMPLE_NAME, PROFILE_COLNAMES
 from .echo_dict import EchoDict
@@ -66,20 +65,38 @@ LOCK_PREFIX = "lock."
 LOGFILE_SUFFIX = "_log.md"
 
 
-class Unbuffered(object):
-    def __init__(self, stream: IO) -> None:
-        self.stream = stream
+class _LogTee:
+    """Wrap a stream to copy all writes to a log file.
 
-    def write(self, data: str) -> None:
-        self.stream.write(data)
-        self.stream.flush()
+    Replaces sys.stdout/sys.stderr to capture print() calls in the pipeline
+    log file. Only operates at the Python level — does not modify OS file
+    descriptors, so subprocess output (captured separately via threads) is
+    unaffected.
+    """
 
-    def writelines(self, datas: Iterable[str]) -> None:
-        self.stream.writelines(datas)
-        self.stream.flush()
+    def __init__(self, original, log_path):
+        self._original = original
+        self._log_path = log_path
 
-    def __getattr__(self, attr: str) -> Any:
-        return getattr(self.stream, attr)
+    def write(self, data):
+        result = self._original.write(data)
+        if data:  # skip empty writes
+            with open(self._log_path, "a") as f:
+                f.write(data)
+        return result
+
+    def writelines(self, lines):
+        lines_list = list(lines)
+        self._original.writelines(lines_list)
+        if lines_list:
+            with open(self._log_path, "a") as f:
+                f.writelines(lines_list)
+
+    def flush(self):
+        self._original.flush()
+
+    def __getattr__(self, attr):
+        return getattr(self._original, attr)
 
 
 class PipelineManager(object):
@@ -104,7 +121,7 @@ class PipelineManager(object):
         version: Pipeline version string.
         args: Parsed argparse.Namespace; pypiper records these and extracts
             relevant options (recover, new_start, etc.).
-        multi: Enable multiple pipelines in one script (disables log tee).
+        multi: Allow multiple pipelines to share a pipestat results file.
         dirty: Never auto-delete intermediate files.
         recover: Overwrite lock files to restart a failed pipeline.
         new_start: Rerun every command even if output exists.
@@ -210,7 +227,6 @@ class PipelineManager(object):
         # Pipeline-level variables to track global state and pipeline stats
         # Pipeline settings
         self.name = name
-        self.tee = None
         self.overwrite_locks = params["recover"]
         self.new_start = params["new_start"]
         self.force_follow = params["force_follow"]
@@ -236,7 +252,7 @@ class PipelineManager(object):
             logger_builder_method = "logger_via_cli"
             try:
                 self._logger = logger_via_cli(args, **logger_kwargs)
-            except logmuse.est.AbsentOptionException as e:
+            except logmuse.AbsentOptionException as e:
                 # Defer logger construction to init_logger.
                 self.debug(f"logger_via_cli failed: {e}")
         if self._logger is None:
@@ -250,6 +266,15 @@ class PipelineManager(object):
                 name = default_logname
             self._logger = logmuse.init_logger(name, **logger_kwargs)
         self.debug(f"Logger set with {logger_builder_method}")
+
+        # Add a FileHandler so all pypiper messages (info, timestamp, etc.)
+        # are written to the log file directly via the logging framework.
+        import logging
+
+        os.makedirs(self.outfolder, exist_ok=True)
+        self._file_handler = logging.FileHandler(self.pipeline_log_file)
+        self._file_handler.setLevel(logging.DEBUG)
+        self._logger.addHandler(self._file_handler)
 
         # Keep track of an ID for the number of processes attempted
         self.proc_count = 0
@@ -389,6 +414,17 @@ class PipelineManager(object):
                 pipeline_type=self.pipestat_pipeline_type,
                 multi_pipelines=multi,
             )
+            # Always set record_identifier from pypiper's resolution chain.
+            # Pypiper owns the record identity; the pipestat config should not override it.
+            self._pipestat_manager.record_identifier = (
+                self.pipestat_record_identifier
+                or _get_arg(args_dict, "pipestat_sample_name")
+                or DEFAULT_SAMPLE_NAME
+            )
+            # Sync pipeline_stats_file to pipestat's actual results file location
+            # so that _refresh_stats() reads from the correct file.
+            if self._pipestat_manager.file:
+                self.pipeline_stats_file = self._pipestat_manager.file
         else:
             self._pipestat_manager = PipestatManager.from_file_backend(
                 results_file_path=self.pipestat_results_file
@@ -509,157 +545,104 @@ class PipelineManager(object):
             return True
         return self._completed or self.halted or self._failed
 
-    def _ignore_interrupts(self) -> None:
-        """Ignore interrupt and termination signals for subprocess preexec_fn."""
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
-        signal.signal(signal.SIGTERM, signal.SIG_IGN)
-
     def start_pipeline(self, args: Any = None, multi: bool = False) -> None:
         """Initialize pipeline logging, diagnostics, and status tracking.
 
         Called automatically by __init__; rarely called directly.
 
-        Sets up log file tee (mirroring stdout to a log file), prints
-        version/environment info, records git state, creates output folder,
-        and sets pipeline status to 'running'. In interactive/multi mode,
-        the log tee is disabled to avoid interfering with notebook or
-        multi-pipeline output.
+        Prints version/environment info, records git state, creates output
+        folder, and sets pipeline status to 'running'. Logging is handled by
+        a FileHandler (for pypiper messages) and per-command thread capture
+        (for subprocess output) — no global fd manipulation needed.
         """
-        # Perhaps this could all just be put into __init__, but I just kind of like the idea of a start function
-        # self.make_sure_path_exists(self.outfolder)
-
-        # By default, Pypiper will mirror every operation so it is displayed both
-        # on sys.stdout **and** to a log file. Unfortunately, interactive python sessions
-        # ruin this by interfering with stdout. So, for interactive mode, we do not enable
-        # the tee subprocess, sending all output to screen only.
-        # Starting multiple PipelineManagers in the same script has the same problem, and
-        # must therefore be run in interactive_mode.
-
-        interactive_mode = multi or not hasattr(__main__, "__file__")
-        if interactive_mode:
-            self.warning(
-                "Warning: You're running an interactive python session. "
-                "This works, but pypiper cannot tee the output, so results "
-                "are only logged to screen."
-            )
-        else:
-            sys.stdout = Unbuffered(sys.stdout)
-            # sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)  # Unbuffer output
-
-            # The tee subprocess must be instructed to ignore TERM and INT signals;
-            # Instead, I will clean up this process in the signal handler functions.
-            # This is required because otherwise, if pypiper receives a TERM or INT,
-            # the tee will be automatically terminated by python before I have a chance to
-            # print some final output (for example, about when the process stopped),
-            # and so those things don't end up in the log files because the tee
-            # subprocess is dead. Instead, I will handle the killing of the tee process
-            # manually (in the exit handler).
-
-            # a for append to file
-
-            tee = subprocess.Popen(
-                ["tee", "-a", self.pipeline_log_file],
-                stdin=subprocess.PIPE,
-                preexec_fn=self._ignore_interrupts,
-            )
-
-            # If the pipeline is terminated with SIGTERM/SIGINT,
-            # make sure we kill this spawned tee subprocess as well.
-            # atexit.register(self._kill_child_process, tee.pid, proc_name="tee")
-            os.dup2(tee.stdin.fileno(), sys.stdout.fileno())
-            os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
-
-            self.tee = tee
-
-        # For some reason, this exit handler function MUST be registered after
-        # the one that kills the tee process.
         atexit.register(self._exit_handler)
 
-        # A future possibility to avoid this tee, is to use a Tee class; this works for anything printed here
-        # by pypiper, but can't tee the subprocess output. For this, it would require using threading to
-        # simultaneously capture and display subprocess output. I shelve this for now and stick with the tee option.
-        # sys.stdout = Tee(self.pipeline_log_file)
+        self._original_stdout = sys.stdout
+        self._original_stderr = sys.stderr
+        sys.stdout = _LogTee(sys.stdout, self.pipeline_log_file)
+        sys.stderr = _LogTee(sys.stderr, self.pipeline_log_file)
 
-        # Record the git version of the pipeline and pypiper used. This gets (if it is in a git repo):
-        # dir: the directory where the code is stored
-        # hash: the commit id of the last commit in this repo
-        # date: the date of the last commit in this repo
-        # diff: a summary of any differences in the current (run) version vs. the committed version
-
-        # Wrapped in try blocks so that the code will not fail if the pipeline or pypiper are not git repositories
+        # Record the git version of the pipeline and pypiper used.
+        # For each directory, we first check for a .git/ directory to avoid
+        # spawning git subprocesses in non-repo directories (e.g. pip-installed pypiper).
+        # If the directory IS a git repo, we collect: hash, date, branch, diff.
         gitvars = {}
-        try:
-            # pypiper dir
-            ppd = os.path.dirname(os.path.realpath(__file__))
-            gitvars["pypiper_dir"] = ppd
-            gitvars["pypiper_hash"] = (
-                subprocess.check_output(
-                    "cd " + ppd + "; git rev-parse --verify HEAD 2>/dev/null",
-                    shell=True,
+        ppd = os.path.dirname(os.path.realpath(__file__))
+        gitvars["pypiper_dir"] = ppd
+        if os.path.isdir(os.path.join(ppd, ".git")):
+            try:
+                gitvars["pypiper_hash"] = (
+                    subprocess.check_output(
+                        "cd " + ppd + "; git rev-parse --verify HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pypiper_date"] = (
-                subprocess.check_output(
-                    "cd " + ppd + "; git show -s --format=%ai HEAD 2>/dev/null",
-                    shell=True,
+                gitvars["pypiper_date"] = (
+                    subprocess.check_output(
+                        "cd " + ppd + "; git show -s --format=%ai HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pypiper_diff"] = (
-                subprocess.check_output(
-                    "cd " + ppd + "; git diff --shortstat HEAD 2>/dev/null", shell=True
+                gitvars["pypiper_diff"] = (
+                    subprocess.check_output(
+                        "cd " + ppd + "; git diff --shortstat HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pypiper_branch"] = (
-                subprocess.check_output(
-                    "cd " + ppd + "; git branch | grep '*' 2>/dev/null", shell=True
+                gitvars["pypiper_branch"] = (
+                    subprocess.check_output(
+                        "cd " + ppd + "; git branch | grep '*' 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-        except Exception:
-            pass
-        try:
-            # pipeline dir
-            pld = os.path.dirname(os.path.realpath(sys.argv[0]))
-            gitvars["pipe_dir"] = pld
-            gitvars["pipe_hash"] = (
-                subprocess.check_output(
-                    "cd " + pld + "; git rev-parse --verify HEAD 2>/dev/null",
-                    shell=True,
+            except Exception:
+                pass
+        pld = os.path.dirname(os.path.realpath(sys.argv[0]))
+        gitvars["pipe_dir"] = pld
+        if os.path.isdir(os.path.join(pld, ".git")):
+            try:
+                gitvars["pipe_hash"] = (
+                    subprocess.check_output(
+                        "cd " + pld + "; git rev-parse --verify HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pipe_date"] = (
-                subprocess.check_output(
-                    "cd " + pld + "; git show -s --format=%ai HEAD 2>/dev/null",
-                    shell=True,
+                gitvars["pipe_date"] = (
+                    subprocess.check_output(
+                        "cd " + pld + "; git show -s --format=%ai HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pipe_diff"] = (
-                subprocess.check_output(
-                    "cd " + pld + "; git diff --shortstat HEAD 2>/dev/null", shell=True
+                gitvars["pipe_diff"] = (
+                    subprocess.check_output(
+                        "cd " + pld + "; git diff --shortstat HEAD 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-            gitvars["pipe_branch"] = (
-                subprocess.check_output(
-                    "cd " + pld + "; git branch | grep '*' 2>/dev/null", shell=True
+                gitvars["pipe_branch"] = (
+                    subprocess.check_output(
+                        "cd " + pld + "; git branch | grep '*' 2>/dev/null",
+                        shell=True,
+                    )
+                    .decode()
+                    .strip()
                 )
-                .decode()
-                .strip()
-            )
-        except Exception:
-            pass
+            except Exception:
+                pass
 
         # Print out a header section in the pipeline log:
         # Wrap things in backticks to prevent markdown from interpreting underscores as emphasis.
@@ -1149,6 +1132,22 @@ class PipelineManager(object):
         except Exception as e:
             self._triage_error(e, nofail)
 
+    def _tee_output(self, stream: IO) -> None:
+        """Read lines from a subprocess pipe, write to stdout and log file.
+
+        Args:
+            stream: Readable byte stream (subprocess stdout/stderr pipe).
+        """
+        output_stream = getattr(self, "_original_stdout", sys.stdout)
+        with open(self.pipeline_log_file, "a") as log:
+            for line in iter(stream.readline, b""):
+                text = line.decode("utf-8", errors="replace")
+                output_stream.write(text)
+                output_stream.flush()
+                log.write(text)
+                log.flush()
+        stream.close()
+
     def _attend_process(self, proc: Any, sleeptime: float) -> bool:
         """
         Waits on a process for a given time to see if it finishes, returns True
@@ -1254,6 +1253,14 @@ class PipelineManager(object):
 
         self.debug("Command: {}".format(cmd))
         param_list = _parse_cmd(cmd, shell)
+
+        # Override stdout/stderr for per-command capture.
+        # Final process stdout → PIPE (so we can tee it to screen + log).
+        # All processes stderr → PIPE (so we capture warnings from all stages).
+        param_list[-1]["stdout"] = subprocess.PIPE
+        for p in param_list:
+            p["stderr"] = subprocess.PIPE
+
         # cast all commands to str and concatenate for hashing
         conc_cmd = "".join([str(x["args"]) for x in param_list])
         self.debug("Hashed command '{}': {}".format(conc_cmd, make_hash(conc_cmd)))
@@ -1281,6 +1288,21 @@ class PipelineManager(object):
         # Capture the subprocess output in <pre> tags to make it format nicely
         # if the markdown log file is displayed as HTML.
         self.info("<pre>")
+
+        # Start tee threads to capture subprocess output to screen + log file.
+        # Daemon threads so they don't block if we return early (wait=False).
+        tee_threads = []
+        for proc in processes:
+            if proc.stderr:
+                t = threading.Thread(target=self._tee_output, args=(proc.stderr,), daemon=True)
+                t.start()
+                tee_threads.append(t)
+        if processes[-1].stdout:
+            t = threading.Thread(
+                target=self._tee_output, args=(processes[-1].stdout,), daemon=True
+            )
+            t.start()
+            tee_threads.append(t)
 
         local_maxmems = [-1] * len(running_processes)
         returncodes = [None] * len(running_processes)
@@ -1344,6 +1366,10 @@ class PipelineManager(object):
             # (+ constant to prevent copious checks at the very beginning)
             # = more precise mem tracing for short processes
             sleeptime = min((sleeptime + 0.25) * 3, 60 / len(processes))
+
+        # Wait for tee threads to drain remaining pipe output.
+        for t in tee_threads:
+            t.join()
 
         # All jobs are done, print a final closing and job info
         info = (
@@ -1907,18 +1933,17 @@ class PipelineManager(object):
     ###################################
 
     def _refresh_stats(self) -> None:
-        """
-        Loads up the stats yaml created for this pipeline run and reads
-        those stats into memory
-        """
-
+        """Load stats from the pipestat results file into memory."""
         if os.path.isfile(self.pipeline_stats_file):
             data = load_yaml(filepath=self.pipeline_stats_file)
-
-            for key, value in data[self._pipestat_manager.pipeline_name][
-                self._pipestat_manager.pipeline_type
-            ][self._pipestat_manager.record_identifier].items():
-                self.stats_dict[key] = value
+            try:
+                record_data = data[self._pipestat_manager.pipeline_name][
+                    self._pipestat_manager.pipeline_type
+                ][self._pipestat_manager.record_identifier]
+                for key, value in record_data.items():
+                    self.stats_dict[key] = value
+            except (KeyError, TypeError):
+                pass
 
     def get_stat(self, key: str) -> Any:
         """Retrieve a previously reported stat, loading from disk if needed.
@@ -2180,21 +2205,29 @@ class PipelineManager(object):
             Total runtime in seconds.
         """
         if os.path.isfile(self.pipeline_profile_file):
-            df = _pd.read_csv(
-                self.pipeline_profile_file,
-                sep="\t",
-                comment="#",
-                names=PROFILE_COLNAMES,
-            )
+            rows = []
+            with open(self.pipeline_profile_file) as fh:
+                reader = csv.reader(fh, delimiter="\t")
+                for row in reader:
+                    line = row[0].strip() if row else ""
+                    if not line or line.startswith("#"):
+                        continue
+                    if len(row) < len(PROFILE_COLNAMES):
+                        continue
+                    rows.append(dict(zip(PROFILE_COLNAMES, row)))
             try:
-                df["runtime"] = _pd.to_timedelta(df["runtime"])
-            except ValueError:
+                for r in rows:
+                    r["runtime"] = parse_timedelta(r["runtime"])
+            except (ValueError, KeyError):
                 # return runtime estimate
                 # this happens if old profile style is mixed with the new one
                 # and the columns do not match
                 return self.time_elapsed(self.starttime)
-            unique_df = df[~df.duplicated("cid", keep="last").values]
-            return sum(unique_df["runtime"].apply(lambda x: x.total_seconds()))
+            # Deduplicate by cid, keeping last occurrence
+            seen = {}
+            for r in rows:
+                seen[r["cid"]] = r
+            return sum(r["runtime"].total_seconds() for r in seen.values())
         return self.time_elapsed(self.starttime)
 
     def stop_pipeline(self, status: str = COMPLETE_FLAG) -> None:
@@ -2240,47 +2273,30 @@ class PipelineManager(object):
         )
         # self.info("* " + "Total peak memory (all runs)".rjust(30) + ":  " +
         #     str(round(self.peak_memory, 4)) + " GB")
-        if self.halted:
-            return
 
-        t = time.strftime("%Y-%m-%d %H:%M:%S")
-        self.info("* " + "Pipeline completed time".rjust(30) + ": " + t)
+        if not self.halted:
+            t = time.strftime("%Y-%m-%d %H:%M:%S")
+            self.info("* " + "Pipeline completed time".rjust(30) + ": " + t)
+
+        self._restore_streams()
+        self._close_file_handler()
 
     def _signal_term_handler(self, signal: int, frame: Any) -> None:
-        """
-        TERM signal handler function: this function is run if the process
-        receives a termination signal (TERM). This may be invoked, for example,
-        by SLURM if the job exceeds its memory or time limits. It will simply
-        record a message in the log file, stating that the process was
-        terminated, and then gracefully fail the pipeline. This is necessary to
-        1. set the status flag and 2. provide a meaningful error message in the
-        tee'd output; if you do not handle this, then the tee process will be
-        terminated before the TERM error message, leading to a confusing log
-        file.
+        """Handle SIGTERM by recording the event and failing gracefully.
+
+        Invoked by SLURM when a job exceeds memory or time limits. Records
+        a message in the log file and sets the pipeline status to failed.
         """
         signal_type = "SIGTERM"
         self._generic_signal_handler(signal_type)
 
     def _generic_signal_handler(self, signal_type: str) -> None:
-        """
-        Function for handling both SIGTERM and SIGINT
-        """
+        """Handle both SIGTERM and SIGINT signals."""
         self.info("</pre>")
         message = "Got " + signal_type + ". Failing gracefully..."
         self.timestamp(message)
         self.fail_pipeline(KeyboardInterrupt(signal_type), dynamic_recover=True)
         sys.exit(1)
-
-        # I used to write to the logfile directly, because the interrupts
-        # would first destroy the tee subprocess, so anything printed
-        # after an interrupt would only go to screen and not get put in
-        # the log, which is bad for cluster processing. But I later
-        # figured out how to sequester the kill signals so they didn't get
-        # passed directly to the tee subprocess, so I could handle that on
-        # my own; hence, now I believe I no longer need to do this. I'm
-        # leaving this code here as a relic in case something comes up.
-        # with open(self.pipeline_log_file, "a") as myfile:
-        #   myfile.write(message + "\n")
 
     def _signal_int_handler(self, signal: int, frame: Any) -> None:
         """
@@ -2324,8 +2340,21 @@ class PipelineManager(object):
             finally:
                 logging.disable(logging.NOTSET)
 
-        if self.tee:
-            self.tee.kill()
+        self._restore_streams()
+        self._close_file_handler()
+
+    def _restore_streams(self) -> None:
+        """Restore sys.stdout/sys.stderr to their original streams."""
+        if hasattr(self, "_original_stdout"):
+            sys.stdout = self._original_stdout
+            sys.stderr = self._original_stderr
+
+    def _close_file_handler(self) -> None:
+        """Remove and close the log file handler."""
+        if hasattr(self, "_file_handler") and self._file_handler:
+            self._logger.removeHandler(self._file_handler)
+            self._file_handler.close()
+            self._file_handler = None
 
     def _terminate_running_subprocesses(self) -> None:
         # make a copy of the list to iterate over since we'll be removing items

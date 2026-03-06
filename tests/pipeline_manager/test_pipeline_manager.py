@@ -30,7 +30,7 @@ def single_pipeline_manager(tmpdir, request):
     """
     outfolder = str(tmpdir.mkdir("pipeline_output"))
     pp = pypiper.PipelineManager(
-        "sample_pipeline", outfolder=outfolder, multi=True, pipestat_schema=TEST_SCHEMA_PATH
+        "sample_pipeline", outfolder=outfolder, pipestat_schema=TEST_SCHEMA_PATH
     )
 
     def cleanup():
@@ -509,7 +509,6 @@ class TestPipestatValidationParameters:
         pp = pypiper.PipelineManager(
             "test_pipeline",
             outfolder=outfolder,
-            multi=True,
             pipestat_schema=TEST_SCHEMA_PATH,
         )
         assert pp.pipestat.cfg["validate_results"] is True
@@ -521,7 +520,6 @@ class TestPipestatValidationParameters:
         pp = pypiper.PipelineManager(
             "test_pipeline",
             outfolder=outfolder,
-            multi=True,
         )
         assert pp.pipestat.cfg["validate_results"] is False
         pp.stop_pipeline()
@@ -532,7 +530,6 @@ class TestPipestatValidationParameters:
         pp = pypiper.PipelineManager(
             "test_pipeline",
             outfolder=outfolder,
-            multi=True,
             pipestat_schema=TEST_SCHEMA_PATH,
             pipestat_validate_results=False,
         )
@@ -545,7 +542,6 @@ class TestPipestatValidationParameters:
         pp = pypiper.PipelineManager(
             "test_pipeline",
             outfolder=outfolder,
-            multi=True,
             pipestat_schema=TEST_SCHEMA_PATH,
             pipestat_validate_results=True,
         )
@@ -558,7 +554,6 @@ class TestPipestatValidationParameters:
         pp = pypiper.PipelineManager(
             "test_pipeline",
             outfolder=outfolder,
-            multi=True,
             pipestat_schema=TEST_SCHEMA_PATH,
         )
         # Default per JSON Schema spec should be True
@@ -571,7 +566,6 @@ class TestPipestatValidationParameters:
         pp = pypiper.PipelineManager(
             "test_pipeline",
             outfolder=outfolder,
-            multi=True,
             pipestat_schema=TEST_SCHEMA_PATH,
             pipestat_additional_properties=False,
         )
@@ -584,7 +578,6 @@ class TestPipestatValidationParameters:
         pp = pypiper.PipelineManager(
             "test_pipeline",
             outfolder=outfolder,
-            multi=True,
             pipestat_schema=TEST_SCHEMA_PATH,
             pipestat_additional_properties=True,
         )
