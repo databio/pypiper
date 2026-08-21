@@ -63,7 +63,7 @@ addopts = "-rfE"
 testpaths = ["tests"]
 
 [tool.ruff]
-line-length = 99
+line-length = 100
 extend-exclude = ["docs_jupyter"]
 
 [tool.ruff.lint]

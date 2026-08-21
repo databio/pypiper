@@ -201,9 +201,7 @@ class TimestampStatusTypeTests:
             assert stage2 == pm.prev_checkpoint
             assert pm.curr_checkpoint is None
 
-    def test_retrospective_the_prospective_checkpointed_timestamps(
-        self, test_type, stage_pair, pm
-    ):
+    def test_retrospective_the_prospective_checkpointed_timestamps(self, test_type, stage_pair, pm):
         """Test retrospective timestamp followed by prospective one."""
 
         stage1, stage2 = stage_pair

@@ -669,9 +669,7 @@ def _make_lock_name(original_path: str | Sequence[str], path_base_folder: str) -
         result = [make_name(p) for p in original_path]
         return [x for x in result if x]
     raise TypeError(
-        "Neither string nor other sequence type: {} ({})".format(
-            original_path, type(original_path)
-        )
+        "Neither string nor other sequence type: {} ({})".format(original_path, type(original_path))
     )
 
 

@@ -25,6 +25,7 @@ Run a shell command, skip it on re-run if the output file already exists, and ha
 ```python
 #!/usr/bin/env python
 """Recipe 1: Run a single command with automatic restart support."""
+
 import pypiper
 
 pm = pypiper.PipelineManager(name="file_processor", outfolder="output/")
@@ -40,6 +41,7 @@ pm.stop_pipeline()
 ```python
 #!/usr/bin/env python
 """Recipe 1 (context manager variant)."""
+
 import pypiper
 
 with pypiper.PipelineManager(name="file_processor", outfolder="output/") as pm:
@@ -58,6 +60,7 @@ Use checkpoints to enable restarting a pipeline from any named step.
 ```python
 #!/usr/bin/env python
 """Recipe 2: Multi-step pipeline with checkpoints for restart."""
+
 import pypiper
 
 pm = pypiper.PipelineManager(name="sorter", outfolder="output/")
@@ -87,6 +90,7 @@ Use `checkprint()` to capture stdout from a shell command and `report_result()` 
 ```python
 #!/usr/bin/env python
 """Recipe 3: Capture command output and report structured results."""
+
 import pypiper
 
 pm = pypiper.PipelineManager(name="system_info", outfolder="output/")
@@ -115,6 +119,7 @@ Use `multi=True` to run multiple independent PipelineManagers without log file c
 ```python
 #!/usr/bin/env python
 """Recipe 4: Multiple PipelineManagers in one script."""
+
 import pypiper
 
 # multi=True disables output tee-ing so managers don't conflict on log files.
@@ -142,6 +147,7 @@ Use `report_result()` to persist metrics extracted from command output.
 ```python
 #!/usr/bin/env python
 """Recipe 5: Report structured results to a YAML output file."""
+
 import pypiper
 
 pm = pypiper.PipelineManager(name="analyzer", outfolder="output/")
@@ -174,6 +180,7 @@ The `target` parameter is the key mechanism -- pypiper checks for file existence
 ```python
 #!/usr/bin/env python
 """Recipe 6: Skip expensive steps when output files already exist."""
+
 import pypiper
 
 pm = pypiper.PipelineManager(name="expensive", outfolder="output/")
@@ -207,6 +214,7 @@ Use `clean=True` or `clean_add()` to register intermediate files for automatic d
 ```python
 #!/usr/bin/env python
 """Recipe 7: Clean up intermediate files after pipeline success."""
+
 import pypiper
 
 pm = pypiper.PipelineManager(name="cleaner", outfolder="output/")
@@ -244,6 +252,7 @@ Use `nofail=True` to let the pipeline continue past a command that returns a non
 ```python
 #!/usr/bin/env python
 """Recipe 8: Continue past a command that might fail."""
+
 import pypiper
 
 pm = pypiper.PipelineManager(name="resilient", outfolder="output/")
@@ -270,14 +279,17 @@ The `follow` parameter runs a Python function after the command, only when the c
 ```python
 #!/usr/bin/env python
 """Recipe 9: Post-process command output with follow functions."""
+
 import pypiper
 
 pm = pypiper.PipelineManager(name="follower", outfolder="output/")
+
 
 def report_line_count():
     """This runs after the command, only when the command actually executes."""
     count = pm.checkprint("wc -l < output/data.txt")
     pm.report_result("line_count", int(count))
+
 
 pm.run(
     "seq 1 500 > output/data.txt",
@@ -308,6 +320,7 @@ parallelize -- it runs commands one after another under a single lock.
 
 To get parallelism, use one of these approaches:
 """
+
 import pypiper
 
 # APPROACH 1: Parallel pipelines via separate PipelineManager instances.
@@ -343,6 +356,7 @@ Use `multi=True` in Jupyter notebooks or interactive sessions to avoid log tee-i
 
 ```python
 """Recipe 11: Interactive / notebook usage."""
+
 import pypiper
 
 # multi=True is essential for notebooks -- it disables log tee-ing

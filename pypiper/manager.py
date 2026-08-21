@@ -963,9 +963,7 @@ class PipelineManager(object):
                     if os.path.exists(tgt):
                         self.info(
                             "Target exists: `{tgt}`. Skipping this step. "
-                            "To force re-computation, use new_start=True (CLI: -N).".format(
-                                tgt=tgt
-                            )
+                            "To force re-computation, use new_start=True (CLI: -N).".format(tgt=tgt)
                         )
                 if self.new_start:
                     self.info("New start mode; run anyway.  ")
@@ -1298,9 +1296,7 @@ class PipelineManager(object):
                 t.start()
                 tee_threads.append(t)
         if processes[-1].stdout:
-            t = threading.Thread(
-                target=self._tee_output, args=(processes[-1].stdout,), daemon=True
-            )
+            t = threading.Thread(target=self._tee_output, args=(processes[-1].stdout,), daemon=True)
             t.start()
             tee_threads.append(t)
 
@@ -2497,9 +2493,7 @@ class PipelineManager(object):
         cmd = "docker rm -f " + container
         self.callprint(cmd)
 
-    def clean_add(
-        self, regex: str | None, conditional: bool = False, manual: bool = False
-    ) -> None:
+    def clean_add(self, regex: str | None, conditional: bool = False, manual: bool = False) -> None:
         """Register files for automatic deletion when the pipeline succeeds.
 
         Example:

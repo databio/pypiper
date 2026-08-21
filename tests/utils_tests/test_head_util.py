@@ -17,9 +17,7 @@ NUMBERS_AND_LETTERS = list(string.ascii_letters) + list(range(-9, 10))
 
 # Strategy for generating a pretty arbitrary atomic
 ATOMICS = st.deferred(
-    lambda: (
-        st.booleans() | st.characters() | st.integers() | st.floats(allow_nan=False) | st.text()
-    )
+    lambda: st.booleans() | st.characters() | st.integers() | st.floats(allow_nan=False) | st.text()
 )
 
 

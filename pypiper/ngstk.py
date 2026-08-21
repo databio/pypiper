@@ -469,9 +469,7 @@ class NGSTk:
             if input_ext == ".bam":
                 print("Found .bam file")
                 # cmd = self.bam_to_fastq(input_file, fastq_prefix, paired_end)
-                cmd, fq1, fq2 = self.bam_to_fastq_awk(
-                    input_file, fastq_prefix, paired_end, zipmode
-                )
+                cmd, fq1, fq2 = self.bam_to_fastq_awk(input_file, fastq_prefix, paired_end, zipmode)
                 # pm.run(cmd, output_file, follow=check_fastq)
                 if fq2:
                     output_file = [fq1, fq2]
@@ -1183,9 +1181,7 @@ class NGSTk:
         return [cmd1, cmd2, cmd3]
 
     def sambamba_remove_duplicates(self, input_bam: str, output_bam: str, cpus: int = 16) -> str:
-        cmd = self.tools.sambamba + " markdup -t {0} -r {1} {2}".format(
-            cpus, input_bam, output_bam
-        )
+        cmd = self.tools.sambamba + " markdup -t {0} -r {1} {2}".format(cpus, input_bam, output_bam)
         return cmd
 
     def get_mitochondrial_reads(self, bam_file: str, output: str, cpus: int = 4) -> list[str]:
@@ -1737,9 +1733,7 @@ class NGSTk:
         # run macs r script
         cmd1 = "{} {}".format(self.tools.Rscript, r_peak_model_file)
         # move output plot to sample dir
-        cmd2 = "mv {0}/{1}_model.pdf {2}/{1}_model.pdf".format(
-            os.getcwd(), sample_name, output_dir
-        )
+        cmd2 = "mv {0}/{1}_model.pdf {2}/{1}_model.pdf".format(os.getcwd(), sample_name, output_dir)
         return [cmd1, cmd2]
 
     def spp_call_peaks(
@@ -1770,17 +1764,14 @@ class NGSTk:
             str: Command to run.
         """
         broad = "TRUE" if broad else "FALSE"
-        cmd = (
-            self.tools.Rscript
-            + " `which spp_peak_calling.R` {0} {1} {2} {3} {4} {5} {6}".format(
-                treatment_bam,
-                control_bam,
-                treatment_name,
-                control_name,
-                broad,
-                cpus,
-                output_dir,
-            )
+        cmd = self.tools.Rscript + " `which spp_peak_calling.R` {0} {1} {2} {3} {4} {5} {6}".format(
+            treatment_bam,
+            control_bam,
+            treatment_name,
+            control_name,
+            broad,
+            cpus,
+            output_dir,
         )
         if qvalue is not None:
             cmd += " {}".format(qvalue)
@@ -1901,14 +1892,12 @@ class NGSTk:
             line = [i for i in range(len(content)) if " reads; of these:" in content[i]][0]
             stats["readCount"] = re.sub(r"\D.*", "", content[line])
             if 7 > len(content) > 2:
-                line = [
-                    i for i in range(len(content)) if "were unpaired; of these:" in content[i]
-                ][0]
-                stats["unpaired"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
-            else:
-                line = [i for i in range(len(content)) if "were paired; of these:" in content[i]][
+                line = [i for i in range(len(content)) if "were unpaired; of these:" in content[i]][
                     0
                 ]
+                stats["unpaired"] = re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
+            else:
+                line = [i for i in range(len(content)) if "were paired; of these:" in content[i]][0]
                 stats["unpaired"] = stats["readCount"] - int(
                     re.sub(r"\D", "", re.sub(r"\(.*", "", content[line]))
                 )
