@@ -1,0 +1,4815 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:ns1="https://launchpad.net/jessyink"
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="1446.1908"
+   height="603.82129"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.91 r13725"
+   sodipodi:docname="pypiper.svg">
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="1"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.7"
+     inkscape:cx="616.40926"
+     inkscape:cy="238.11747"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer2"
+     showgrid="false"
+     inkscape:window-width="1317"
+     inkscape:window-height="744"
+     inkscape:window-x="49"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     fit-margin-top="10"
+     fit-margin-left="10"
+     fit-margin-right="10"
+     fit-margin-bottom="10" />
+  <defs
+     id="defs4">
+    <linearGradient
+       id="linearGradient9505"
+       y2="285.29999"
+       gradientUnits="userSpaceOnUse"
+       x2="340.20001"
+       y1="285.29999"
+       x1="153.75">
+      <stop
+         id="stop9359"
+         offset="0" />
+      <stop
+         id="stop9365"
+         stop-color="#ababab"
+         offset=".48946" />
+      <stop
+         id="stop9361"
+         offset="1" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient3794"
+       x1="300.29001"
+       gradientUnits="userSpaceOnUse"
+       y1="626.96002"
+       gradientTransform="matrix(0.70711,0.70711,-0.70711,0.70711,573.55,-39.95)"
+       x2="371.5"
+       y2="625.64001">
+      <stop
+         id="stop6490"
+         stop-opacity=".47059"
+         offset="0" />
+      <stop
+         id="stop6496"
+         stop-opacity="0"
+         offset=".5" />
+      <stop
+         id="stop6492"
+         stop-opacity=".47059"
+         offset="1" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="302.85999"
+       y1="366.64999"
+       gradientTransform="matrix(2.7744,0,0,1.9697,-1892.2,-872.89)"
+       x2="302.85999"
+       gradientUnits="userSpaceOnUse"
+       y2="609.51001"
+       id="linearGradient6715">
+      <stop
+         offset="0"
+         style="stop-color:black;stop-opacity:0"
+         id="stop5050" />
+      <stop
+         offset=".5"
+         style="stop-color:black"
+         id="stop5056" />
+      <stop
+         offset="1"
+         style="stop-color:black;stop-opacity:0"
+         id="stop5052" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       r="117.14"
+       gradientTransform="matrix(2.7744,0,0,1.9697,-1891.6,-872.89)"
+       cx="605.71002"
+       cy="486.64999"
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#linearGradient5060"
+       id="radialGradient6717" />
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient5060">
+      <stop
+         offset="0"
+         style="stop-color:black"
+         id="stop5062" />
+      <stop
+         offset="1"
+         style="stop-color:black;stop-opacity:0"
+         id="stop5064" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       r="117.14"
+       gradientTransform="matrix(-2.7744,0,0,1.9697,112.76,-872.89)"
+       cx="605.71002"
+       cy="486.64999"
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#linearGradient5060"
+       id="radialGradient6719" />
+    <linearGradient
+       inkscape:collect="always"
+       x1="1.8456"
+       x2="18.972"
+       gradientTransform="matrix(2.3027,0,0,0.43792,0,0.58403)"
+       y1="88.294998"
+       gradientUnits="userSpaceOnUse"
+       y2="88.294998"
+       id="linearGradient1471">
+      <stop
+         offset="0"
+         style="stop-color:#8e8d87"
+         id="stop4670" />
+      <stop
+         offset=".27586"
+         style="stop-color:#cbc9c1"
+         id="stop4676" />
+      <stop
+         offset="1"
+         style="stop-color:#8e8d87"
+         id="stop4672" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="1.8456"
+       x2="18.972"
+       gradientTransform="matrix(2.2918,0,0,0.43427,0.088552,2)"
+       y1="88.294998"
+       gradientUnits="userSpaceOnUse"
+       y2="88.294998"
+       id="linearGradient1468">
+      <stop
+         offset="0"
+         style="stop-color:#dcdcda"
+         id="stop4743" />
+      <stop
+         offset="1"
+         style="stop-color:#bab9b7"
+         id="stop4745" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="15.388"
+       x2="15.488"
+       gradientTransform="matrix(1.4926,0,0,0.66874,0.081881,2)"
+       y1="32.539001"
+       gradientUnits="userSpaceOnUse"
+       y2="58.831001"
+       id="linearGradient1464">
+      <stop
+         offset="0"
+         style="stop-color:#ffffff;stop-opacity:.12371"
+         id="stop4764" />
+      <stop
+         offset=".10345"
+         style="stop-color:#ffffff"
+         id="stop4768" />
+      <stop
+         offset="1"
+         style="stop-color:#ffffff;stop-opacity:0"
+         id="stop4766" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="25.056999"
+       x2="24.790001"
+       gradientTransform="matrix(0.94571,0,0,1.076,0.050167,4.0954)"
+       y1="3.6784999"
+       gradientUnits="userSpaceOnUse"
+       y2="25.247"
+       id="linearGradient1459">
+      <stop
+         offset="0"
+         style="stop-color:#e0e0e0"
+         id="stop260" />
+      <stop
+         offset=".40547"
+         style="stop-color:#ffffff"
+         id="stop4886" />
+      <stop
+         offset=".53448"
+         style="stop-color:#cdcdcd"
+         id="stop4884" />
+      <stop
+         offset="1"
+         style="stop-color:#494949"
+         id="stop261" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="20.771"
+       x2="20.718"
+       gradientTransform="matrix(1.1988,0,0,0.85356,-0.14309,2.0345)"
+       y1="25.139999"
+       gradientUnits="userSpaceOnUse"
+       y2="19.337"
+       id="linearGradient1456">
+      <stop
+         offset="0"
+         style="stop-color:#ffffff;stop-opacity:0"
+         id="stop15664" />
+      <stop
+         offset="1"
+         style="stop-color:#f8f8f8"
+         id="stop15666" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="10.338"
+       x2="10.338"
+       gradientTransform="matrix(2.3698,0,0,0.42197,0,2)"
+       y1="64.652"
+       gradientUnits="userSpaceOnUse"
+       y2="54.136002"
+       id="linearGradient1451">
+      <stop
+         offset="0"
+         style="stop-color:#f7f6f5"
+         id="stop4682" />
+      <stop
+         offset="1"
+         style="stop-color:#f7f6f5;stop-opacity:0"
+         id="stop4684" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="9.7316999"
+       x2="9.7053003"
+       gradientTransform="matrix(2.3698,0,0,0.42197,0,2)"
+       y1="70.724998"
+       gradientUnits="userSpaceOnUse"
+       y2="62.282001"
+       id="linearGradient1453">
+      <stop
+         offset="0"
+         style="stop-color:#666666"
+         id="stop4690" />
+      <stop
+         offset="1"
+         style="stop-color:#000000;stop-opacity:0"
+         id="stop4692" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       r="2.1227"
+       cy="26.926001"
+       gradientUnits="userSpaceOnUse"
+       cx="9.1295004"
+       id="radialGradient1433">
+      <stop
+         offset="0"
+         style="stop-color:#fffffd"
+         id="stop4700" />
+      <stop
+         offset=".5"
+         style="stop-color:#bbbbb9"
+         id="stop4706" />
+      <stop
+         offset="1"
+         style="stop-color:#000000"
+         id="stop4702" />
+    </radialGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="9.8697996"
+       x2="9.9127998"
+       gradientTransform="matrix(2.7721,0,0,0.36074,0.61872,2.8839)"
+       y1="57.228001"
+       gradientUnits="userSpaceOnUse"
+       y2="72.064003"
+       id="linearGradient1447">
+      <stop
+         offset="0"
+         style="stop-color:#000000;stop-opacity:.23711"
+         id="stop4735" />
+      <stop
+         offset="1"
+         style="stop-color:#000000;stop-opacity:0"
+         id="stop4737" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       r="15.645"
+       gradientTransform="matrix(1,0,0,0.53672,0,16.873)"
+       cx="24.837"
+       cy="36.421001"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient1503">
+      <stop
+         offset="0"
+         style="stop-color:#000000"
+         id="stop8664" />
+      <stop
+         offset="1"
+         style="stop-color:#000000;stop-opacity:0"
+         id="stop8666" />
+    </radialGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="13.479"
+       y1="10.612"
+       gradientTransform="translate(0.46541,-0.27759)"
+       x2="15.419"
+       gradientUnits="userSpaceOnUse"
+       y2="19.115"
+       id="linearGradient1486">
+      <stop
+         offset="0"
+         style="stop-color:#3465a4"
+         id="stop2833" />
+      <stop
+         offset=".33333"
+         style="stop-color:#5b86be"
+         id="stop2855" />
+      <stop
+         offset="1"
+         style="stop-color:#83a8d8;stop-opacity:0"
+         id="stop2835" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="37.127998"
+       y1="29.73"
+       gradientTransform="matrix(-1,0,0,-1,47.528,45.847)"
+       x2="37.064999"
+       gradientUnits="userSpaceOnUse"
+       y2="26.194"
+       id="linearGradient1488">
+      <stop
+         offset="0"
+         style="stop-color:#3465a4"
+         id="stop2849" />
+      <stop
+         offset="1"
+         style="stop-color:#3465a4;stop-opacity:0"
+         id="stop2851" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2386"
+       id="linearGradient3747"
+       gradientUnits="userSpaceOnUse"
+       x1="62.514"
+       y1="36.061001"
+       x2="15.985"
+       y2="20.608999" />
+    <linearGradient
+       inkscape:collect="always"
+       x1="62.514"
+       y1="36.061001"
+       x2="15.985"
+       gradientUnits="userSpaceOnUse"
+       y2="20.608999"
+       id="linearGradient2386">
+      <stop
+         offset="0"
+         style="stop-color:#b9cfe7"
+         id="stop2382" />
+      <stop
+         offset="1"
+         style="stop-color:#729fcf"
+         id="stop2384" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2386"
+       id="linearGradient3743"
+       gradientUnits="userSpaceOnUse"
+       x1="62.514"
+       y1="36.061001"
+       x2="15.985"
+       y2="20.608999" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1501"
+       id="linearGradient3745"
+       gradientUnits="userSpaceOnUse"
+       x1="46.834999"
+       y1="45.264"
+       x2="45.380001"
+       y2="50.939999" />
+    <linearGradient
+       inkscape:collect="always"
+       x1="46.834999"
+       y1="45.264"
+       x2="45.380001"
+       gradientUnits="userSpaceOnUse"
+       y2="50.939999"
+       id="linearGradient1501">
+      <stop
+         offset="0"
+         style="stop-color:#3465a4"
+         id="stop2873" />
+      <stop
+         offset="1"
+         style="stop-color:#3465a4"
+         id="stop2875" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="32.647999"
+       y1="30.749001"
+       x2="37.124001"
+       gradientUnits="userSpaceOnUse"
+       y2="24.841999"
+       id="linearGradient2696">
+      <stop
+         offset="0"
+         style="stop-color:#c4d7eb"
+         id="stop2692" />
+      <stop
+         offset="1"
+         style="stop-color:#c4d7eb;stop-opacity:0"
+         id="stop2694" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="36.714001"
+       y1="31.455999"
+       x2="37.124001"
+       gradientUnits="userSpaceOnUse"
+       y2="24.841999"
+       id="linearGradient2688">
+      <stop
+         offset="0"
+         style="stop-color:#3977c3"
+         id="stop2684" />
+      <stop
+         offset="1"
+         style="stop-color:#89aedc;stop-opacity:0"
+         id="stop2686" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2408"
+       id="linearGradient3753"
+       gradientUnits="userSpaceOnUse"
+       x1="18.936001"
+       y1="23.667999"
+       x2="53.589001"
+       y2="26.649" />
+    <linearGradient
+       inkscape:collect="always"
+       x1="18.936001"
+       y1="23.667999"
+       x2="53.589001"
+       gradientUnits="userSpaceOnUse"
+       y2="26.649"
+       id="linearGradient2408">
+      <stop
+         offset="0"
+         style="stop-color:#729fcf"
+         id="stop2404" />
+      <stop
+         offset="1"
+         style="stop-color:#528ac5"
+         id="stop2406" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1501"
+       id="linearGradient3755"
+       gradientUnits="userSpaceOnUse"
+       x1="46.834999"
+       y1="45.264"
+       x2="45.380001"
+       y2="50.939999" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2408"
+       id="linearGradient3749"
+       gradientUnits="userSpaceOnUse"
+       x1="18.936001"
+       y1="23.667999"
+       x2="53.589001"
+       y2="26.649" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1501"
+       id="linearGradient3751"
+       gradientUnits="userSpaceOnUse"
+       x1="46.834999"
+       y1="45.264"
+       x2="45.380001"
+       y2="50.939999" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2797"
+       id="linearGradient3757"
+       gradientUnits="userSpaceOnUse"
+       x1="5.9649"
+       y1="26.048"
+       x2="52.854"
+       y2="26.048" />
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient2797">
+      <stop
+         offset="0"
+         style="stop-color:#ffffff"
+         id="stop2799" />
+      <stop
+         offset="1"
+         style="stop-color:#ffffff;stop-opacity:0"
+         id="stop2801" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="5.9649"
+       y1="26.048"
+       x2="52.854"
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#linearGradient2797"
+       y2="26.048"
+       id="linearGradient1491" />
+    <filter
+       color-interpolation-filters="sRGB"
+       inkscape:collect="always"
+       id="filter3836">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="4.6089063"
+         id="feGaussianBlur3838" />
+    </filter>
+    <linearGradient
+       inkscape:collect="always"
+       x1="233.22"
+       y1="786.60999"
+       gradientTransform="matrix(1.0966,0,0,1.2833,-35.684,-208.4)"
+       x2="499.81"
+       gradientUnits="userSpaceOnUse"
+       y2="714.54999"
+       id="linearGradient3036">
+      <stop
+         offset="0"
+         style="stop-color:#67a9ff"
+         id="stop3032" />
+      <stop
+         offset="1"
+         style="stop-color:#33ea00"
+         id="stop3034" />
+    </linearGradient>
+    <filter
+       inkscape:collect="always"
+       id="filter3961"
+       color-interpolation-filters="sRGB">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="4.6875952"
+         id="feGaussianBlur3963" />
+    </filter>
+    <radialGradient
+       gradientTransform="matrix(1,0,0,0.09243698,0,44.229759)"
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#E"
+       id="F"
+       r="21.856001"
+       cy="48.735001"
+       cx="25.712" />
+    <linearGradient
+       id="E">
+      <stop
+         stop-color="#2e3436"
+         id="R" />
+      <stop
+         stop-opacity="0"
+         stop-color="#2e3436"
+         offset="1"
+         id="S" />
+    </linearGradient>
+    <radialGradient
+       gradientTransform="matrix(0.6174379,2.5604989,-3.7886681,0.9135993,49.367351,-37.86865)"
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#D"
+       id="G"
+       r="16.219"
+       cy="12.06"
+       cx="13.559" />
+    <linearGradient
+       id="D">
+      <stop
+         stop-color="#eeeeec"
+         id="P" />
+      <stop
+         stop-color="#d3d7cf"
+         offset="1"
+         id="Q" />
+    </linearGradient>
+    <linearGradient
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#C"
+       id="H"
+       y2="43.34"
+       x2="0"
+       y1="2.438" />
+    <linearGradient
+       id="C">
+      <stop
+         stop-opacity="0.8"
+         stop-color="#fff"
+         id="N" />
+      <stop
+         stop-opacity="0"
+         stop-color="#fff"
+         offset="1"
+         id="O" />
+    </linearGradient>
+    <filter
+       id="K"
+       color-interpolation-filters="sRGB"
+       height="1.302"
+       width="1.321"
+       y="-0.15099999"
+       x="-0.16">
+      <feGaussianBlur
+         id="T"
+         stdDeviation="0.5327" />
+    </filter>
+    <radialGradient
+       gradientTransform="matrix(1.9999999,2.0717464e-7,-2.1678585e-7,2.0927836,-34.124995,-9.2675658)"
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#D"
+       id="I"
+       r="3.03"
+       cy="8.6090002"
+       cx="34.130001" />
+    <linearGradient
+       id="linearGradient6073">
+      <stop
+         stop-color="#eeeeec"
+         id="stop6075" />
+      <stop
+         stop-color="#d3d7cf"
+         offset="1"
+         id="stop6077" />
+    </linearGradient>
+    <linearGradient
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#C"
+       id="J"
+       y2="6.3629999"
+       x2="36.533001"
+       y1="8.75"
+       x1="34.130001" />
+    <linearGradient
+       id="linearGradient6080">
+      <stop
+         stop-opacity="0.8"
+         stop-color="#fff"
+         id="stop6082" />
+      <stop
+         stop-opacity="0"
+         stop-color="#fff"
+         offset="1"
+         id="stop6084" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       r="74.188004"
+       cx="399.60999"
+       cy="498.07001"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient20787">
+      <stop
+         offset="0"
+         style="stop-color:#fbffff"
+         id="stop19798" />
+      <stop
+         offset="1"
+         style="stop-color:#fbffff;stop-opacity:0"
+         id="stop19800" />
+    </radialGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="249.48"
+       y1="262.87"
+       gradientTransform="matrix(-0.30163,0.080822,-0.082949,-0.30957,402.86,730.11)"
+       x2="272.03"
+       gradientUnits="userSpaceOnUse"
+       y2="427.54001"
+       id="linearGradient2107">
+      <stop
+         offset="0"
+         style="stop-color:#ffffff"
+         id="stop5199" />
+      <stop
+         offset="1"
+         style="stop-color:#ff0000"
+         id="stop5201" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="264.57999"
+       y1="296.37"
+       gradientTransform="matrix(0.31227,0,0,0.32049,127.55,434.38)"
+       x2="380.67999"
+       gradientUnits="userSpaceOnUse"
+       y2="553.73999"
+       id="linearGradient2109">
+      <stop
+         offset="0"
+         style="stop-color:#ffffff"
+         id="stop5192" />
+      <stop
+         offset="1"
+         style="stop-color:#ff0000"
+         id="stop5194" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="54.098999"
+       y1="107.26"
+       gradientTransform="matrix(1,0,0,0.8087,0.79012,20.731)"
+       x2="54.098999"
+       gradientUnits="userSpaceOnUse"
+       y2="61.615002"
+       id="linearGradient2257">
+      <stop
+         offset="0"
+         style="stop-color:#000000"
+         id="stop2253" />
+      <stop
+         offset="1"
+         style="stop-color:#000000;stop-opacity:0"
+         id="stop2255" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2353"
+       id="linearGradient3589"
+       gradientUnits="userSpaceOnUse"
+       x1="35.358002"
+       y1="27.844"
+       x2="54.798"
+       y2="57.939999" />
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient2353">
+      <stop
+         offset="0"
+         style="stop-color:#ffffff"
+         id="stop2355" />
+      <stop
+         offset="1"
+         style="stop-color:#ffffff;stop-opacity:0"
+         id="stop2357" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="108.57"
+       y1="332.35999"
+       gradientTransform="matrix(0.13465,0.029012,-0.050771,0.23564,7.3354,-51.196)"
+       x2="631.42999"
+       gradientUnits="userSpaceOnUse"
+       spreadMethod="reflect"
+       xlink:href="#linearGradient2431"
+       y2="332.35999"
+       id="linearGradient2214" />
+    <linearGradient
+       id="linearGradient2431">
+      <stop
+         offset="0"
+         style="stop-color:#c6c6c6"
+         id="stop2433" />
+      <stop
+         offset=".13501"
+         style="stop-color:#434343"
+         id="stop2439" />
+      <stop
+         offset=".64724"
+         style="stop-color:#f9f9f9"
+         id="stop2441" />
+      <stop
+         offset="1"
+         style="stop-color:#bcbcbc"
+         id="stop2435" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2431"
+       id="radialGradient3591"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.087793,0.018916,-0.011537,0.053544,12.306,9.9395)"
+       spreadMethod="reflect"
+       cx="370"
+       cy="315.22"
+       r="261.42999" />
+    <linearGradient
+       id="linearGradient6109">
+      <stop
+         offset="0"
+         style="stop-color:#c6c6c6"
+         id="stop6111" />
+      <stop
+         offset=".13501"
+         style="stop-color:#434343"
+         id="stop6113" />
+      <stop
+         offset=".64724"
+         style="stop-color:#f9f9f9"
+         id="stop6115" />
+      <stop
+         offset="1"
+         style="stop-color:#bcbcbc"
+         id="stop6117" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       r="38.702999"
+       gradientTransform="matrix(0.80672,0.18425,-0.097581,0.42726,0.33425,3.7054)"
+       cx="59.083"
+       cy="64.481003"
+       gradientUnits="userSpaceOnUse"
+       spreadMethod="reflect"
+       fy="53.448002"
+       id="radialGradient2210">
+      <stop
+         offset="0"
+         style="stop-color:#0076c8"
+         id="stop2823" />
+      <stop
+         offset="1"
+         style="stop-color:#79c8ff"
+         id="stop2825" />
+    </radialGradient>
+    <radialGradient
+       inkscape:collect="always"
+       r="233.56"
+       gradientTransform="matrix(0.20057,0.043216,-0.02113,0.098068,-30.04,5.2036)"
+       cx="368.57001"
+       cy="135"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient2208">
+      <stop
+         offset="0"
+         style="stop-color:#000000;stop-opacity:0"
+         id="stop2519" />
+      <stop
+         offset=".5"
+         style="stop-color:#000000;stop-opacity:0"
+         id="stop2525" />
+      <stop
+         offset="1"
+         style="stop-color:#000000"
+         id="stop2521" />
+    </radialGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2353"
+       id="linearGradient3593"
+       gradientUnits="userSpaceOnUse"
+       x1="35.358002"
+       y1="27.844"
+       x2="54.798"
+       y2="57.939999" />
+    <radialGradient
+       inkscape:collect="always"
+       r="261.42999"
+       gradientTransform="matrix(0.087793,0.018916,-0.011537,0.053544,12.306,9.9395)"
+       cx="370"
+       cy="315.22"
+       gradientUnits="userSpaceOnUse"
+       spreadMethod="reflect"
+       xlink:href="#linearGradient2431"
+       id="radialGradient2204" />
+    <linearGradient
+       id="linearGradient6134">
+      <stop
+         offset="0"
+         style="stop-color:#c6c6c6"
+         id="stop6136" />
+      <stop
+         offset=".13501"
+         style="stop-color:#434343"
+         id="stop6138" />
+      <stop
+         offset=".64724"
+         style="stop-color:#f9f9f9"
+         id="stop6140" />
+      <stop
+         offset="1"
+         style="stop-color:#bcbcbc"
+         id="stop6142" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       x1="35.358002"
+       y1="27.844"
+       x2="54.798"
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#linearGradient2353"
+       y2="57.939999"
+       id="linearGradient2202" />
+    <linearGradient
+       inkscape:collect="always"
+       x1="98.741997"
+       y1="66.886002"
+       gradientTransform="matrix(0.81807,0,0,0.95843,9.7827,-59.993)"
+       x2="98.741997"
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#linearGradient2431"
+       y2="56.956001"
+       id="linearGradient2200" />
+    <linearGradient
+       id="linearGradient6152">
+      <stop
+         offset="0"
+         style="stop-color:#c6c6c6"
+         id="stop6154" />
+      <stop
+         offset=".13501"
+         style="stop-color:#434343"
+         id="stop6156" />
+      <stop
+         offset=".64724"
+         style="stop-color:#f9f9f9"
+         id="stop6158" />
+      <stop
+         offset="1"
+         style="stop-color:#bcbcbc"
+         id="stop6160" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       r="30.862"
+       gradientTransform="matrix(1.938,0,0,1.6337,-4.5542,-86.188)"
+       cx="-44.119999"
+       cy="189.28"
+       gradientUnits="userSpaceOnUse"
+       spreadMethod="reflect"
+       xlink:href="#linearGradient2431"
+       id="radialGradient2222" />
+    <linearGradient
+       id="linearGradient6163">
+      <stop
+         offset="0"
+         style="stop-color:#c6c6c6"
+         id="stop6165" />
+      <stop
+         offset=".13501"
+         style="stop-color:#434343"
+         id="stop6167" />
+      <stop
+         offset=".64724"
+         style="stop-color:#f9f9f9"
+         id="stop6169" />
+      <stop
+         offset="1"
+         style="stop-color:#bcbcbc"
+         id="stop6171" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#radialGradient4554"
+       id="radialGradient3618"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.5315,0,0,1.028,-3.9699,29.405)"
+       cx="15.286"
+       cy="33.369999"
+       r="16" />
+    <radialGradient
+       r="16"
+       gradientTransform="matrix(1.5315,0,0,1.028,-3.9699,29.405)"
+       cx="15.286"
+       cy="33.369999"
+       gradientUnits="userSpaceOnUse"
+       id="radialGradient4554">
+      <stop
+         offset="0"
+         stop-color="#f00"
+         id="stop3009" />
+      <stop
+         offset="1"
+         stop-color="#800000"
+         id="stop3011" />
+    </radialGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient4556"
+       id="linearGradient3620"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.0345,0,0,1,4.1192,31.948)"
+       x1="28.211"
+       y1="28.798"
+       x2="7.2297001"
+       y2="4.2326002" />
+    <linearGradient
+       y2="4.2326002"
+       x2="7.2297001"
+       gradientTransform="matrix(1.0345,0,0,1,4.1192,31.948)"
+       y1="28.798"
+       gradientUnits="userSpaceOnUse"
+       x1="28.211"
+       id="linearGradient4556">
+      <stop
+         offset="0"
+         stop-opacity=".19417"
+         stop-color="#fff"
+         id="stop2800" />
+      <stop
+         offset="1"
+         stop-opacity="0"
+         stop-color="#fff"
+         id="stop2802" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient4558"
+       id="linearGradient3622"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.0334,0,0,0.9055,3.5706,32.126)"
+       x1="20.540001"
+       y1="5.9130998"
+       x2="20.540001"
+       y2="2.5" />
+    <linearGradient
+       y2="2.5"
+       x2="20.540001"
+       gradientTransform="matrix(1.0334,0,0,0.9055,3.5706,32.126)"
+       y1="5.9130998"
+       gradientUnits="userSpaceOnUse"
+       x1="20.540001"
+       id="linearGradient4558">
+      <stop
+         offset="0"
+         stop-opacity="0"
+         id="stop2782" />
+      <stop
+         offset="1"
+         stop-opacity=".23301"
+         stop-color="#fff"
+         id="stop2784" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient4766"
+       id="linearGradient4773"
+       x1="572.46167"
+       y1="672.0733"
+       x2="572.46167"
+       y2="463.81717"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.65644105,0,0,-2.3541412,-115.70167,1902.692)" />
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient4766">
+      <stop
+         style="stop-color:#000000;stop-opacity:1"
+         offset="0"
+         id="stop4769" />
+      <stop
+         style="stop-color:#000000;stop-opacity:0;"
+         offset="1"
+         id="stop4771" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5882"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient3287">
+      <stop
+         offset="0"
+         style="stop-color:#000000"
+         id="stop3289" />
+      <stop
+         offset="1"
+         style="stop-color:#000000;stop-opacity:0"
+         id="stop3291" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5870"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5872"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5874"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5876"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5878"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5880"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       r="398.09"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       gradientUnits="userSpaceOnUse"
+       xlink:href="#linearGradient3287"
+       id="radialGradient3295" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5756"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5758"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5760"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5762"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5764"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient3287"
+       id="radialGradient5766"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.5595,0,84.448)"
+       cx="922.77002"
+       cy="191.71001"
+       r="398.09" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2386"
+       id="linearGradient4743"
+       gradientUnits="userSpaceOnUse"
+       x1="62.514"
+       y1="36.061001"
+       x2="15.985"
+       y2="20.608999" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2408"
+       id="linearGradient4745"
+       gradientUnits="userSpaceOnUse"
+       x1="18.936001"
+       y1="23.667999"
+       x2="53.589001"
+       y2="26.649" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1501"
+       id="linearGradient4747"
+       gradientUnits="userSpaceOnUse"
+       x1="46.834999"
+       y1="45.264"
+       x2="45.380001"
+       y2="50.939999" />
+  </defs>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     ns1:masterSlide="masterSlide"
+     transform="translate(-98.699957,-160.37677)"
+     id="layer1"
+     inkscape:groupmode="layer"
+     inkscape:label="Master"
+     style="display:inline">
+    <flowRoot
+       style="font-size:64px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:TitilliumText22L;-inkscape-font-specification:TitilliumText22L"
+       id="flowRoot4028"
+       xml:space="preserve"><flowRegion
+         id="flowRegion4030"><rect
+           y="652.85712"
+           x="175.71428"
+           height="527.14288"
+           width="590"
+           id="rect4032" /></flowRegion><flowPara
+         id="flowPara4034" /></flowRoot>    <text
+       xml:space="preserve"
+       style="font-size:24px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:TitilliumText22L;-inkscape-font-specification:TitilliumText22L"
+       x="1490"
+       y="1029.5049"
+       id="text4453"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan4455"
+         x="1490"
+         y="1029.5049">master</tspan></text>
+  </g>
+  <g
+     inkscape:label="Slide 1"
+     id="layer2"
+     inkscape:groupmode="layer"
+     style="display:inline"
+     transform="translate(-98.699957,-308.01459)">
+    <g
+       id="g3607"
+       transform="matrix(0.68495098,0,0,0.68495098,-200.00092,365.23418)">
+      <g
+         transform="matrix(4.6874927,0,0,4.6874927,431.22014,3.0615515)"
+         id="g3013">
+        <rect
+           x="4.6187"
+           y="33.841999"
+           width="31.07"
+           height="28.641001"
+           ry="2.1896"
+           rx="2.8275001"
+           id="rect2983"
+           style="fill:url(#radialGradient3618);stroke:#800000;stroke-width:0.28967178;stroke-linecap:square" />
+        <path
+           d="M 5.1537,60.948 5.34506,34.354 h 29.809 c 0,26.932 -30,0.02144 -30,26.594 z"
+           id="path2985"
+           inkscape:connector-curvature="0"
+           style="fill:url(#linearGradient3620);fill-rule:evenodd" />
+        <rect
+           x="5.6373"
+           y="34.841999"
+           width="29.033001"
+           height="3.622"
+           ry="1.316"
+           rx="1.3752"
+           id="rect2987"
+           style="fill:none;stroke:url(#linearGradient3622);stroke-width:0.30127984;stroke-linecap:square" />
+        <rect
+           x="4.6187"
+           y="33.841999"
+           width="31.07"
+           height="28.641001"
+           ry="2.5"
+           rx="2.5"
+           id="rect2989"
+           style="fill:none;stroke:#800000;stroke-width:0.28967178;stroke-linecap:square" />
+      </g>
+      <g
+         transform="matrix(4.6874927,0,0,4.6874927,443.03731,296.18144)"
+         id="g3954">
+        <path
+           d="m 10.891,-17.367 c 0,0 -0.30688,-8.388 6.3422,-8.388 6.649,0 6.2399,8.388 6.2399,8.388 h -1.739 c 0,0 -0.05114,-6.3422 -4.5009,-6.4956 -4.4497,-0.15344 -4.194,6.4956 -4.194,6.4956 H 10.891 z"
+           id="path2858"
+           inkscape:connector-curvature="0"
+           style="fill:#ffffff" />
+        <path
+           d="m 24.635,-6.723 0.01412,-10.123 h -14.628 L 9.932902,-6.828 c 0.014125,3.721 3.2989,3.1596 7.351,3.1596 4.0521,0 7.351,0.67105 7.351,-3.0542 z"
+           id="path2865"
+           inkscape:connector-curvature="0"
+           style="fill:#ffffff" />
+        <path
+           d="m 17.282,-13.437 c -0.79896,0 -1.443,0.64406 -1.443,1.443 0,0.58224 0.33962,1.087 0.83544,1.3164 l -0.53468,3.6012 h 2.481 l -0.57287,-3.6898 c 0.40881,-0.25562 0.68354,-0.71015 0.68354,-1.2278 0,-0.79896 -0.6504,-1.443 -1.4494,-1.443 z"
+           id="path2860"
+           inkscape:connector-curvature="0"
+           style="fill:#1f2a1b" />
+      </g>
+    </g>
+    <g
+       inkscape:label="Layer 1"
+       id="layer1-72"
+       transform="matrix(0.85338824,0,0,0.85338824,104.64435,753.81727)">
+      <g
+         id="g2267">
+        <path
+           d="m 32.259,73.44 c -13.294,0.124 -23.73,2.001 -25.531,4.986 -0.1461,0.241 -0.0342,0.492 -0.0629,0.736 -4e-4,0.003 4e-4,0.007 0,0.011 -0.247,0.236 -0.6307,0.453 -0.7812,0.703 -2.6424,4.377 10.975,9.134 30.406,10.628 9.467,0.728 18.531,0.539 25.688,-0.345 0.188,0.091 0.304,0.197 0.562,0.278 l 4.125,1.305 c 0.596,0.685 2.654,1.385 5.125,2.142 l 34.03,12.256 c 4.44,1.36 11.57,1.49 16,0.29 4.43,-1.2 4.44,-3.27 0,-4.63 L 81.4149,91.274 c -2.448,-0.749 -4.747,-1.343 -7.062,-1.561 l -3.938,-1.227 c 2.955,-0.879 5.085,-1.944 5.844,-3.201 0.156,-0.259 0.08,-0.52 0.125,-0.781 0.245,-0.221 0.608,-0.423 0.75,-0.658 2.402,-3.979 -11.413,-8.421 -30.844,-9.915 -4.858,-0.374 -9.6,-0.532 -14.031,-0.491 z"
+           style="opacity:0.2;color:#000000;fill:url(#linearGradient2257);fill-rule:evenodd"
+           sodipodi:nodetypes="cssssscccccsccccscssc"
+           id="path2224"
+           inkscape:connector-curvature="0" />
+        <path
+           sodipodi:cx="50.255089"
+           sodipodi:cy="56.910515"
+           transform="matrix(-0.83235,-0.033058,0.10336,-0.2417,85.841,98.446)"
+           d="M 74.498751,56.910515 A 24.243662,21.59201 0 0 1 50.255089,78.502525 24.243662,21.59201 0 0 1 26.011427,56.910515 24.243662,21.59201 0 0 1 50.255089,35.318504 24.243662,21.59201 0 0 1 74.498751,56.910515 Z"
+           sodipodi:type="arc"
+           style="color:#000000;fill:url(#linearGradient3589);fill-rule:evenodd"
+           sodipodi:ry="21.59201"
+           sodipodi:rx="24.243662"
+           id="path2247" />
+        <path
+           d="M 75.484,45.441 C 72.841,57.704 54.926,64.26 35.495,60.073 16.064,55.887 2.438,42.535 5.08,30.271 7.7227,18.007 25.638,11.452 45.069,15.639 64.5,19.825 78.126,33.177 75.484,45.441 z M 72.41,42.608 C 70.385,52.011 54.547,56.584 37.059,52.816 19.571,49.048 7.021,38.359 9.047,28.956 11.073,19.554 26.911,14.981 44.399,18.749 61.887,22.517 74.436,33.206 72.41,42.608 z"
+           style="color:#000000;fill:url(#linearGradient2214);fill-rule:evenodd"
+           id="path1884"
+           inkscape:connector-curvature="0" />
+        <path
+           d="M 76.354,41.401 C 73.952,52.55 56.232,58.201 36.801,54.014 17.369,49.827 3.549,37.381 5.951,26.232 8.3529,15.083 26.073,9.432 45.504,13.619 64.936,17.805 78.756,30.252 76.354,41.401 z M 73.24,38.757 C 71.398,47.305 55.71,51.184 38.222,47.416 20.734,43.648 8.035,33.653 9.877,25.105 11.719,16.558 27.407,12.678 44.895,16.446 62.383,20.215 75.082,30.21 73.24,38.757 z"
+           style="color:#000000;fill:url(#radialGradient3591);fill-rule:evenodd"
+           id="path1886"
+           inkscape:connector-curvature="0" />
+        <path
+           d="M 44.204,18.703 C 60.407,22.194 72.205,31.616 72.264,40.461 68.74,47.736 54.237,50.862 38.028,47.369 21.818,43.877 9.864,35.051 9.648,26.97 13.345,18.934 28.001,15.211 44.204,18.703 z"
+           style="opacity:0.7;color:#000000;fill:url(#radialGradient2210);fill-rule:evenodd"
+           id="path2371"
+           inkscape:connector-curvature="0" />
+        <path
+           d="m 44.383,18.822 c -16.214,-3.493 -30.95,-0.037 -34.569,7.72 0.0127,0.376 0.0786,0.753 0.1454,1.133 4.4396,-6.986 18.512,-9.97 33.948,-6.644 15.437,3.326 27.036,11.84 28.204,20.035 0.216,-0.317 0.429,-0.636 0.595,-0.973 -0.104,-8.56 -12.109,-17.778 -28.323,-21.271 z"
+           style="opacity:0.7;color:#000000;fill:url(#radialGradient2208);fill-rule:evenodd"
+           id="path1888"
+           inkscape:connector-curvature="0" />
+        <path
+           sodipodi:cx="50.255089"
+           sodipodi:cy="56.910515"
+           transform="matrix(-0.83235,-0.06561,0.10336,-0.4797,85.841,70.498)"
+           d="M 74.498751,56.910515 A 24.243662,21.59201 0 0 1 50.255089,78.502525 24.243662,21.59201 0 0 1 26.011427,56.910515 24.243662,21.59201 0 0 1 50.255089,35.318504 24.243662,21.59201 0 0 1 74.498751,56.910515 Z"
+           sodipodi:type="arc"
+           style="color:#000000;fill:url(#linearGradient3593);fill-rule:evenodd"
+           sodipodi:ry="21.59201"
+           sodipodi:rx="24.243662"
+           id="path2389" />
+        <path
+           d="M 76.354,41.401 C 73.952,52.55 56.232,58.201 36.801,54.014 17.369,49.827 3.549,37.381 5.951,26.232 8.3529,15.083 26.073,9.432 45.504,13.619 64.936,17.805 78.756,30.252 76.354,41.401 z M 73.24,38.757 C 71.398,47.305 55.71,51.184 38.222,47.416 20.734,43.648 8.035,33.653 9.877,25.105 11.719,16.558 27.407,12.678 44.895,16.446 62.383,20.215 75.082,30.21 73.24,38.757 z"
+           style="color:#000000;fill:url(#radialGradient2204);fill-rule:evenodd"
+           id="path1890"
+           inkscape:connector-curvature="0" />
+        <path
+           sodipodi:cx="50.255089"
+           sodipodi:cy="56.910515"
+           transform="matrix(0.83235,0.06561,-0.10336,0.4797,-3.6443,-1.3274)"
+           d="M 74.498751,56.910515 A 24.243662,21.59201 0 0 1 50.255089,78.502525 24.243662,21.59201 0 0 1 26.011427,56.910515 24.243662,21.59201 0 0 1 50.255089,35.318504 24.243662,21.59201 0 0 1 74.498751,56.910515 Z"
+           sodipodi:type="arc"
+           style="color:#000000;fill:url(#linearGradient2202);fill-rule:evenodd"
+           sodipodi:ry="21.59201"
+           sodipodi:rx="24.243662"
+           id="path2377" />
+        <rect
+           x="81.884003"
+           y="-5.3269"
+           width="19.833"
+           height="9.4396"
+           transform="matrix(0.75004,0.66139,-0.77728,0.62916,0,0)"
+           style="color:#000000;fill:url(#linearGradient2200);fill-rule:evenodd"
+           ry="4.7198"
+           id="rect2462"
+           rx="4.7198" />
+        <path
+           d="m 67.793,59.018 c 4.432,-3.367 8.387,-0.595 12.824,3.21 l 40.413,29.5 c 4.44,3.805 4.44,9.582 0.01,12.942 -4.43,3.37 -11.57,3.02 -16.01,-0.79 L 70.988,69.543 C 66.551,65.739 63.362,62.385 67.793,59.018 z"
+           style="color:#000000;fill:url(#radialGradient2222);fill-rule:evenodd"
+           sodipodi:nodetypes="cccsccc"
+           id="rect1428"
+           inkscape:connector-curvature="0" />
+        <path
+           d="m 71.87,59.132 c -0.585,0.001 -1.176,0.114 -1.729,0.351 -0.131,0.051 -0.18,0.121 -0.3,0.175 1.963,0.805 3.935,2.278 6.012,4.058 l 40.407,29.51 c 3.75,3.22 4.3,7.834 1.7,11.224 3.3,-1.35 5.61,-4.21 4.34,-8.268 C 118.34,89.896 110.62,87.01 105.14,82.129 94.538,74.69 84.422,66.474 73.598,59.433 73.035,59.244 72.455,59.132 71.87,59.132 z"
+           style="opacity:0.29046003;color:#000000;fill:#ffffff;fill-rule:evenodd"
+           id="path2158"
+           inkscape:connector-curvature="0" />
+      </g>
+    </g>
+    <g
+       transform="matrix(0.71524979,0,0,0.71524979,639.88936,5.7514414)"
+       inkscape:label="Layer 1"
+       id="layer1-4">
+      <g
+         transform="matrix(0.9,0,0,0.9,170.44,-31.113)"
+         id="g2100">
+        <path
+           sodipodi:cx="384.28571"
+           sodipodi:cy="559.50507"
+           transform="matrix(0.30686,0,0,0.30686,127.62,429)"
+           d="m 634.28571,559.50507 a 250,250 0 0 1 -250,250 250,250 0 0 1 -250,-250 250,250 0 0 1 250,-250 250,250 0 0 1 250,250 z"
+           sodipodi:type="arc"
+           style="fill:#ff0000;fill-rule:evenodd;stroke:#cb0000;stroke-width:28.14122009"
+           sodipodi:ry="250"
+           sodipodi:rx="250"
+           id="path2174" />
+        <path
+           d="m 264.19,668.93 c 19.05,-5.1 34.17,-17.66 43.23,-33.82 14.71,-34.82 -40.17,46.7 -85.49,31.89 13.17,4.83 27.81,5.8 42.26,1.93 z"
+           style="fill:url(#linearGradient2107);fill-rule:evenodd"
+           sodipodi:nodetypes="cccc"
+           id="path2540"
+           inkscape:connector-curvature="0" />
+        <path
+           d="m 245.66,529.36 c -39.44,0 -71.44,32.85 -71.44,73.32 0,5.48 0.6,10.81 1.71,15.94 39.21,-75.47 81.45,-27.96 135.91,-43.55 -10.64,-26.8 -36.26,-45.71 -66.18,-45.71 z"
+           style="fill:url(#linearGradient2109);fill-rule:evenodd"
+           sodipodi:nodetypes="ccccc"
+           id="path2197"
+           inkscape:connector-curvature="0" />
+        <path
+           d="m 267.42,640.04 -21.68,-21.68 -21.88,21.88 -17.87,-17.87 21.88,-21.89 -21.68,-21.68 17.4,-17.4 21.68,21.68 21.95,-21.95 17.88,17.88 -21.96,21.95 21.68,21.68 -17.4,17.4"
+           style="opacity:0.73528999;fill:#ffffff"
+           sodipodi:nodetypes="ccccccccccccc"
+           id="text2705"
+           inkscape:connector-curvature="0" />
+        <path
+           d="m 267.3,637.01 -21.59,-21.59 -21.76,21.76 -14.9,-14.91 21.76,-21.75 -21.59,-21.59 14.51,-14.51 21.58,21.59 21.82,-21.81 14.9,14.9 -21.81,21.81 21.58,21.59 -14.5,14.51"
+           style="fill:#ffffff"
+           id="text2713"
+           inkscape:connector-curvature="0" />
+      </g>
+    </g>
+    <g
+       transform="matrix(0.2514273,0,0,0.2514273,850.83361,707.18972)"
+       inkscape:label="Layer 1"
+       id="layer1-60">
+      <g
+         transform="matrix(0.6788,0,0,0.6788,29.643,81.831)"
+         id="g20781">
+        <path
+           sodipodi:cx="399.60938"
+           sodipodi:cy="498.06531"
+           transform="translate(-34.805,-200.95)"
+           d="m 471.79687,498.06531 a 72.1875,72.1875 0 0 1 -72.1875,72.1875 72.1875,72.1875 0 0 1 -72.1875,-72.1875 72.1875,72.1875 0 0 1 72.1875,-72.1875 72.1875,72.1875 0 0 1 72.1875,72.1875 z"
+           sodipodi:type="arc"
+           style="fill:#000000;stroke:#000000;stroke-width:15.9091711;stroke-linecap:square;stroke-linejoin:round"
+           sodipodi:ry="72.1875"
+           sodipodi:rx="72.1875"
+           id="path11039" />
+        <path
+           d="m 365.2,151.42 c -1.49,0 -2.97,0.02 -4.44,0.07 C 197.2,153.86 65.2,287.31 65.2,451.42 65.195,615.73 197.5,749.28 361.32,751.36 280.31,749.31 215.2,682.93 215.2,601.42 c 0,-82.8 67.2,-150 150,-150 82.8,0 150,-67.2 150,-150 0,-82.8 -67.2,-150 -150,-150 z m 0,100 c 27.6,0 50,22.4 50,50 0,27.6 -22.4,50 -50,50 -27.6,0 -50,-22.4 -50,-50 0,-27.6 22.4,-50 50,-50 z"
+           style="fill:#ffffff;stroke:#000000;stroke-width:7.95458555;stroke-linecap:square;stroke-linejoin:round"
+           id="path2168"
+           inkscape:connector-curvature="0" />
+        <path
+           sodipodi:cx="399.60938"
+           sodipodi:cy="498.06531"
+           transform="translate(-30.938,103.27)"
+           d="m 471.79687,498.06531 a 72.1875,72.1875 0 0 1 -72.1875,72.1875 72.1875,72.1875 0 0 1 -72.1875,-72.1875 72.1875,72.1875 0 0 1 72.1875,-72.1875 72.1875,72.1875 0 0 1 72.1875,72.1875 z"
+           sodipodi:type="arc"
+           style="fill:url(#radialGradient20787);stroke:#000000;stroke-width:15.9091711;stroke-linecap:square;stroke-linejoin:round"
+           sodipodi:ry="72.1875"
+           sodipodi:rx="72.1875"
+           id="path14925" />
+        <path
+           d="m 365.2,751.36 c 1.48,0 2.96,-0.02 4.43,-0.06 163.56,-2.38 295.57,-135.82 295.57,-299.94 0,-164.3 -132.31,-297.86 -296.13,-299.94 81.01,2.06 146.13,68.44 146.13,149.94 0,82.8 -67.2,150 -150,150 -82.8,0 -150,67.2 -150,150 0,82.8 67.2,150 150,150 z m 0,-100 c -27.6,0 -50,-22.4 -50,-50 0,-27.6 22.4,-50 50,-50 27.6,0 50,22.4 50,50 0,27.6 -22.4,50 -50,50 z"
+           style="fill:#000000;stroke:#000000;stroke-width:7.95458555;stroke-linecap:square;stroke-linejoin:round"
+           id="path5191"
+           inkscape:connector-curvature="0" />
+      </g>
+    </g>
+    <g
+       id="g3421"
+       transform="matrix(2.1477093,0,0,2.1477093,875.97425,470.67856)">
+      <path
+         id="1"
+         transform="matrix(1.0944165,0,0,0.9661277,-4.1401442,-2.4030967)"
+         d="m 47.568058,48.734642 a 21.855595,2.0202651 0 1 1 -43.7111893,0 21.855595,2.0202651 0 1 1 43.7111893,0 z"
+         inkscape:connector-curvature="0"
+         style="opacity:0.54000005;fill:url(#F)" />
+      <path
+         id="2"
+         d="M 9.84375,1.367375 C 8.1263501,1.367375 6.75,2.7437253 6.75,4.461125 l 0,37.15625 c 0,1.7174 1.3763496,3.093751 3.09375,3.09375 l 28.3125,0 c 1.7174,0 3.09375,-1.376351 3.09375,-3.09375 l 0,-33.21875 -6.75,-7.03125 -24.65625,0 z"
+         inkscape:connector-curvature="0"
+         style="fill:#888a85" />
+      <path
+         id="3"
+         transform="translate(4.4958504e-8,0.148625)"
+         d="m 9.84375,2.25 c -1.1586131,0 -2.0625,0.903887 -2.0625,2.0625 l 0,37.15625 c 0,1.158614 0.9038868,2.062501 2.0625,2.0625 l 28.3125,0 c 1.158613,0 2.0625,-0.903888 2.0625,-2.0625 l 0,-32.78125 L 34.0625,2.25 9.84375,2.25 z"
+         inkscape:connector-curvature="0"
+         style="fill:url(#G)" />
+      <path
+         id="4"
+         transform="translate(4.4958504e-8,0.148625)"
+         d="m 9.84375,2.75 c -0.8977312,0 -1.5625,0.6647689 -1.5625,1.5625 l 0,37.15625 c 0,0.897732 0.6647689,1.562501 1.5625,1.5625 l 28.3125,0 c 0.897731,0 1.5625,-0.66477 1.5625,-1.5625 l 0,-32.625 -5.875,-6.09375 -24,0 z"
+         inkscape:connector-curvature="0"
+         style="opacity:0.8;fill:none;stroke:url(#H);stroke-width:0.46561238;stroke-linecap:square;stroke-linejoin:round" />
+      <path
+         id="5"
+         d="m 32.25,2.40625 0,6.875 c 0,0.956611 0.676661,1.593751 1.71875,1.59375 l 6.25,0 0,-1.8125 -6.9375,-6.65625 -1.03125,0 z"
+         inkscape:connector-curvature="0"
+         style="opacity:0.16000001;fill:#2e3436;filter:url(#K)" />
+      <path
+         id="6"
+         d="m 33.125,1.375 0,6.3125 c -2e-6,1.158614 0.903887,2.062501 2.0625,2.0625 l 6.0625,0 0,-1.34375 -6.75,-7.03125 -1.375,0 z"
+         inkscape:connector-curvature="0"
+         style="fill:#888a85" />
+      <path
+         id="7"
+         d="m 34.125,2.40625 0,5.28125 c -10e-7,0.6407004 0.421799,1.0625006 1.0625,1.0625 l 5,0 -6.0625,-6.34375 z"
+         inkscape:connector-curvature="0"
+         style="fill:url(#I)" />
+      <path
+         id="8"
+         d="m 34.625,3.6875 0,4 c -10e-7,0.3773049 0.185194,0.5625003 0.5625,0.5625 l 3.84375,0 L 34.625,3.6875 z"
+         inkscape:connector-curvature="0"
+         style="opacity:0.8;fill:none;stroke:url(#J);stroke-width:0.46561238;stroke-linecap:square" />
+      <path
+         id="9"
+         d="m 22.332903,14.407299 c -0.343654,1.58e-4 -0.719596,0.795847 -0.800647,1.129815 l -2.233526,9.144775 c -0.116177,-0.05914 -0.244499,-0.105588 -0.378243,-0.126878 -0.664362,-0.105754 -1.400379,-0.380461 -1.84571,-0.675083 -0.1311,-0.08673 -0.225111,-0.170684 -0.296846,-0.244184 -7.87e-4,-0.248088 -0.04717,-0.500858 -0.15321,-0.739722 -0.123792,-0.277457 -0.423661,-0.466371 -0.727378,-0.458233 -0.303718,0.0081 -0.593038,0.212846 -0.701798,0.496541 -0.117158,0.307049 -0.107829,0.639389 -0.02872,0.93841 -0.0065,0.0074 -0.0047,0.0085 -0.01196,0.01675 -0.136587,0.157493 0.1113,0.835272 -0.310985,0.971847 -0.422282,0.13657 -0.793316,0.485447 -1.224332,0.653446 -0.544984,0.519417 -2.723438,0.586798 -2.470026,0.55205 0.639129,0.414613 2.808841,0.02482 3.576833,-0.195173 0.511506,-0.165431 0.999393,-0.405102 1.39805,-0.775632 0.03327,0.0233 0.06169,0.05166 0.09576,0.07421 0.670868,0.443829 1.509903,0.743461 2.348438,0.890539 0.01067,0.01612 0.01231,0.01454 0.0383,0.06464 0.08756,0.168689 0.191205,0.554929 0.653539,0.861815 0.205835,0.136996 0.479145,0.166611 0.709541,0.07688 0.230405,-0.08972 0.411694,-0.296389 0.470663,-0.53651 l 1.709256,-6.995049 2.111442,12.374181 c 0.06102,0.368239 0.225967,1.298211 0.598921,1.283087 0.372953,-0.01512 0.659809,-1.169183 0.690803,-1.541149 0.121514,-1.393831 0.242673,-2.608305 0.335752,-3.821182 0.07687,-1.001847 0.277619,-1.816026 0.79717,-2.468129 0.516028,0.250849 1.145364,0.417273 1.867257,0.275297 0.240337,-0.04699 0.453709,-0.215316 0.555397,-0.438085 l 0.675082,-1.474653 c 0.331648,-0.169437 0.582903,-0.156506 1.048537,0.189121 0.331351,0.510624 0.49738,0.508325 0.775633,2.03243 0.06674,0.368027 0.433373,0.656326 0.806751,0.634394 0.545098,-0.03176 1.02079,-0.27196 1.350167,-0.567357 0.183787,-0.164832 0.326136,-0.338931 0.452456,-0.512302 0.139451,0.02474 0.25721,0.05435 0.323176,0.08618 0.0228,0.01104 0.03439,0.0089 0.04548,0.0096 -7.89e-4,0.0035 -0.0024,0.0024 -0.0024,0.0072 -0.01478,0.202139 0.05377,0.409107 0.186296,0.562464 0.132502,0.153367 0.327338,0.251226 0.529476,0.265961 0.202146,0.01472 0.409098,-0.05383 0.562434,-0.186389 0.15335,-0.132529 0.25118,-0.327377 0.265872,-0.529516 0.04945,-0.682678 -0.437953,-1.293568 -0.912084,-1.522532 -0.474125,-0.228974 -0.947016,-0.270043 -1.347779,-0.284879 -0.268397,-0.01044 -0.537679,0.130323 -0.682268,0.356695 -0.104459,0.163552 -0.199341,0.294073 -0.289654,0.406965 -0.304841,-1.036385 -0.646987,-1.366737 -0.830696,-1.692498 -0.0502,-0.0887 -0.118194,-0.167304 -0.198697,-0.229821 -0.988963,-0.774325 -2.209082,-0.781318 -3.083367,-0.246578 -0.130102,0.07972 -0.2357,0.198829 -0.299243,0.337548 l -0.598487,1.307084 c -0.319157,-0.01536 -0.558079,-0.157555 -0.897715,-0.394994 -0.281091,-0.19612 -0.695024,-0.173242 -0.952781,0.05266 -0.612085,0.53707 -1.05984,1.862645 -1.317736,2.545452 l -1.669892,-10.759 c -0.0606,-0.356041 -0.351157,-1.18175 -0.712309,-1.182478 l -1.7e-5,2.3e-5 z"
+         inkscape:connector-curvature="0"
+         style="fill:#ffffff" />
+      <path
+         id="A"
+         d="m 22.34375,14.40625 c -0.343654,1.58e-4 -0.731449,0.791032 -0.8125,1.125 L 19.3125,24.6875 c -0.116178,-0.05914 -0.272506,-0.10371 -0.40625,-0.125 -0.664361,-0.105754 -1.398419,-0.392878 -1.84375,-0.6875 -0.131101,-0.08673 -0.209515,-0.1765 -0.28125,-0.25 -7.87e-4,-0.248089 -0.05021,-0.479886 -0.15625,-0.71875 -0.123793,-0.277457 -0.415033,-0.476888 -0.71875,-0.46875 -0.303718,0.0081 -0.60999,0.216305 -0.71875,0.5 -0.117158,0.307048 -0.11036,0.638479 -0.03125,0.9375 -0.06829,0.07875 -0.05461,0.293797 -0.0625,0.5 -3.59e-4,0.01019 1.55e-4,0.02107 0,0.03125 -0.01117,0.19544 -0.04931,0.403843 -0.25,0.46875 -0.422282,0.13657 -0.787734,0.457001 -1.21875,0.625 -0.544984,0.519417 -2.722162,0.597248 -2.46875,0.5625 -0.106829,0.331656 0.0655,0.300076 0,1 0.639129,0.414613 2.794508,0.0325 3.5625,-0.1875 0.511506,-0.165431 1.007593,-0.41072 1.40625,-0.78125 0.03327,0.0233 0.05968,0.03995 0.09375,0.0625 0.670867,0.443829 1.505215,0.759172 2.34375,0.90625 0.01067,0.01612 0.0053,0.01241 0.03125,0.0625 0.08756,0.168689 0.193916,0.568114 0.65625,0.875 0.205835,0.136997 0.488354,0.152233 0.71875,0.0625 0.230404,-0.08973 0.409781,-0.291129 0.46875,-0.53125 l 1.71875,-7 2.09375,12.375 c 0.06102,0.368239 0.252046,1.296374 0.625,1.28125 0.372953,-0.01512 0.656506,-1.159284 0.6875,-1.53125 0.121513,-1.393832 0.219421,-2.630873 0.3125,-3.84375 0.07688,-1.001848 0.292949,-1.816647 0.8125,-2.46875 0.516028,0.250849 1.153107,0.423226 1.875,0.28125 0.240338,-0.04699 0.429562,-0.214731 0.53125,-0.4375 l 0.6875,-1.46875 c 0.331648,-0.169436 0.596866,-0.158127 1.0625,0.1875 0.331351,0.510625 0.471747,0.507145 0.75,2.03125 0.06674,0.368027 0.439122,0.646932 0.8125,0.625 C 32.951346,27.53074 33.420623,27.295397 33.75,27 c 0.183786,-0.164833 0.34243,-0.326629 0.46875,-0.5 0.139452,0.02474 0.246534,0.06192 0.3125,0.09375 0.0228,0.01104 0.05141,-6.31e-4 0.0625,0 -0.01478,0.202139 0.05497,0.409143 0.1875,0.5625 0.132503,0.153367 0.329112,0.266515 0.53125,0.28125 0.202147,0.01472 0.409164,-0.05494 0.5625,-0.1875 0.15335,-0.13253 0.235308,-0.329111 0.25,-0.53125 C 36.14173,26.487757 36.08488,26.26504 36,26.0625 36.06606,25.956138 36.115921,25.843667 36.125,25.71875 36.17444,25.036073 35.692881,24.416464 35.21875,24.1875 34.744626,23.958526 34.275763,23.921086 33.875,23.90625 33.606603,23.89581 33.332089,24.023628 33.1875,24.25 33.08304,24.413553 32.996563,24.543358 32.90625,24.65625 32.601407,23.619865 32.246209,23.294511 32.0625,22.96875 32.01229,22.88005 31.955503,22.812517 31.875,22.75 30.886037,21.975676 29.655535,21.96526 28.78125,22.5 c -0.130101,0.07971 -0.248957,0.205031 -0.3125,0.34375 L 27.875,24.15625 C 27.555844,24.140895 27.339636,23.987439 27,23.75 c -0.281091,-0.19612 -0.710993,-0.163399 -0.96875,0.0625 -0.612086,0.53707 -1.054604,1.848443 -1.3125,2.53125 l -1.6875,-10.75 c -0.0606,-0.356041 -0.326348,-1.186772 -0.6875,-1.1875 z"
+         inkscape:connector-curvature="0"
+         style="fill:#ffffff" />
+      <path
+         id="B"
+         d="m 22.332903,14.407241 c -0.343654,1.58e-4 -0.719596,0.795847 -0.800647,1.129815 l -2.233526,9.144775 c -0.116177,-0.05914 -0.244499,-0.105588 -0.378243,-0.126878 -0.664362,-0.105754 -1.400379,-0.380461 -1.84571,-0.675083 -0.1311,-0.08673 -0.225111,-0.170684 -0.296846,-0.244184 -7.87e-4,-0.248088 -0.04717,-0.500858 -0.15321,-0.739722 -0.123792,-0.277457 -0.423661,-0.466371 -0.727378,-0.458233 -0.303718,0.0081 -0.593038,0.212846 -0.701798,0.496541 -0.117158,0.307049 -0.107829,0.639389 -0.02872,0.93841 -0.0065,0.0074 -0.0047,0.0085 -0.01196,0.01675 -0.136587,0.157493 0.1113,0.835272 -0.310985,0.971847 -0.422282,0.13657 -0.793316,0.485447 -1.224332,0.653446 -0.544984,0.519417 -2.723438,0.586798 -2.470026,0.55205 0.639129,0.414613 2.808841,0.02482 3.576833,-0.195173 0.511506,-0.165431 0.999393,-0.405102 1.39805,-0.775632 0.03327,0.0233 0.06169,0.05166 0.09576,0.07421 0.670868,0.443829 1.509903,0.743461 2.348438,0.890539 0.01067,0.01612 0.01231,0.01454 0.0383,0.06463 0.08756,0.168689 0.191205,0.554929 0.653539,0.861815 0.205835,0.136996 0.479145,0.166611 0.709541,0.07688 0.230405,-0.08972 0.411694,-0.296389 0.470663,-0.53651 l 1.709256,-6.995049 2.111442,12.374181 c 0.06102,0.368239 0.225967,1.298211 0.598921,1.283087 0.372953,-0.01512 0.659809,-1.169183 0.690803,-1.541149 0.121514,-1.393831 0.242673,-2.608305 0.335752,-3.821182 0.07687,-1.001847 0.277619,-1.816026 0.79717,-2.468129 0.516028,0.250849 1.145364,0.417273 1.867257,0.275297 0.240337,-0.04699 0.453709,-0.215316 0.555397,-0.438085 l 0.675082,-1.474653 c 0.331648,-0.169437 0.582903,-0.156506 1.048537,0.189121 0.331351,0.510624 0.49738,0.508325 0.775633,2.03243 0.06674,0.368027 0.433373,0.656326 0.806751,0.634394 0.545098,-0.03176 1.02079,-0.27196 1.350167,-0.567357 0.183787,-0.164832 0.326136,-0.338931 0.452456,-0.512302 0.139451,0.02474 0.25721,0.05435 0.323176,0.08618 0.0228,0.01104 0.03439,0.0089 0.04548,0.0096 -7.89e-4,0.0035 -0.0024,0.0024 -0.0024,0.0072 -0.01478,0.202139 0.05377,0.409107 0.186296,0.562464 0.132502,0.153367 0.327338,0.251226 0.529476,0.265961 0.202146,0.01472 0.409098,-0.05383 0.562434,-0.186389 0.15335,-0.132529 0.25118,-0.327377 0.265872,-0.529516 0.04945,-0.682678 -0.437953,-1.293568 -0.912084,-1.522532 -0.474125,-0.228974 -0.947016,-0.270043 -1.347779,-0.284879 -0.268397,-0.01044 -0.537679,0.130323 -0.682268,0.356695 -0.104459,0.163552 -0.199341,0.294073 -0.289654,0.406965 -0.304841,-1.036385 -0.646987,-1.366737 -0.830696,-1.692498 -0.0502,-0.0887 -0.118194,-0.167304 -0.198697,-0.229821 -0.988963,-0.774325 -2.209082,-0.781318 -3.083367,-0.246578 -0.130102,0.07972 -0.2357,0.198829 -0.299243,0.337548 l -0.598487,1.307084 c -0.319157,-0.01536 -0.558079,-0.157555 -0.897715,-0.394994 -0.281091,-0.19612 -0.695024,-0.173242 -0.952781,0.05266 -0.612085,0.53707 -1.05984,1.862645 -1.317736,2.545452 l -1.669892,-10.759 c -0.0606,-0.356041 -0.351157,-1.18175 -0.712309,-1.182478 l -1.7e-5,2.3e-5 z"
+         inkscape:connector-curvature="0"
+         style="fill:#888a85" />
+    </g>
+    <g
+       transform="matrix(0.18744054,0,0,0.18744054,90.197747,542.22302)"
+       inkscape:label="Layer 1"
+       id="layer1-2">
+      <path
+         d="m 632.72,462.06 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.57998,87.512 0.0858,175.18 0.25,262.75 v 124.44 h -28.625 c -1.8123,5.2027 -1.0744,13.956 6,14.188 12.04,-0.85862 24.228,-0.32628 36.344,-0.46875 v -413.97 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -48.94,30.44 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.57998,87.512 0.0858,175.18 0.25,262.75 v 94 h -23.281 c -1.8123,5.2027 -1.0744,13.956 6,14.188 10.268,-0.76908 20.659,-0.38873 31,-0.46875 v -383.53 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -43.594,27.094 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.57998,87.512 0.0858,175.18 0.25,262.75 v 66.906 h -23.281 c -1.8123,5.2027 -1.0744,13.956 6,14.188 10.268,-0.76908 20.659,-0.38873 31,-0.46875 v -356.44 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -43.594,27.094 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.57998,87.512 0.0858,175.18 0.25,262.75 v 39.812 h -23.281 c -1.8123,5.2027 -1.0744,13.956 6,14.188 10.268,-0.76908 20.659,-0.38873 31,-0.46875 v -329.34 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -43.625,27.125 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.57998,87.512 0.0858,175.18 0.25,262.75 -0.71782,5.5114 3.0469,15.505 -6,12.688 -5.5093,0.69207 -13.342,-1.3667 -17.449,0.98589 -1.9315,5.2687 -0.0838,13.607 6.8237,13.233 10.04,-0.97142 20.229,-0.30936 30.344,-0.5 v -302.22 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -43.6,27.11 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.57952,82.71 0.0862,165.57 0.25,248.34 H 375.43 c -1.8123,5.2027 -1.0744,13.956 6,14.188 10.268,-0.76908 20.659,-0.38873 31,-0.46875 v -275.12 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -43.6,27.09 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.57836,73.679 0.087,147.51 0.25,221.25 H 331.83 c -1.8123,5.2027 -1.0744,13.956 6,14.188 10.268,-0.76908 20.659,-0.38873 31,-0.46875 v -248.03 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -43.594,27.125 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.5766,64.638 0.0884,129.43 0.25,194.12 h -23.281 c -1.8123,5.2027 -1.0744,13.956 6,14.188 10.268,-0.76908 20.659,-0.38873 31,-0.46875 v -220.91 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -43.594,27.094 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.57377,55.606 0.0905,111.37 0.25,167.03 h -23.281 c -1.8123,5.2027 -1.0744,13.956 6,14.188 10.268,-0.76908 20.659,-0.38873 31,-0.46875 v -193.81 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -43.625,27.125 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.56884,46.565 0.0941,93.282 0.25,139.91 h -23.281 c -1.8123,5.2027 -1.0744,13.956 6,14.188 10.268,-0.76908 20.659,-0.38873 31,-0.46875 v -166.69 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -43.6,27.1 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.55929,37.534 0.10117,75.22 0.25,112.81 h -23.281 c -1.8123,5.2027 -1.0744,13.956 6,14.188 10.268,-0.76908 20.659,-0.38873 31,-0.46875 v -139.59 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z m -43.594,29.094 c -4.6894,2.3205 -10.765,5.0189 -10.906,11.156 0.53777,28.504 0.11696,55.156 0.25,83.719 h -22.031 c -1.8123,5.2027 -1.0744,13.956 6,14.188 11.842,-0.85068 17.832,-0.33145 29.75,-0.46875 v -110.5 c -1.0208,0.63542 -2.0417,1.2708 -3.0625,1.9062 z"
+         inkscape:connector-curvature="0"
+         style="fill:#000000;filter:url(#filter3836)"
+         sodipodi:nodetypes="ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+         id="path3057" />
+      <path
+         d="m 628.94,452.21 -34.656,22.142 v 392.07 h 34.656 v -414.21 z m -48.94,31.3 -29.312,18.736 v 364.17 H 580 v -382.91 z m -43.594,27.863 -29.312,18.736 v 336.31 h 29.312 v -355.05 z m -43.594,27.863 -29.312,18.736 v 308.45 h 29.312 v -327.18 z m -43.625,27.895 -29.312,18.736 v 280.55 h 29.312 v -299.29 z m -43.594,27.863 -29.312,18.736 v 252.69 h 29.312 V 594.99 z m -43.61,27.88 -29.312,18.768 v 224.8 h 29.312 v -243.56 z m -43.594,27.895 -29.312,18.736 v 196.93 h 29.312 v -215.67 z m -43.6,27.85 -29.31,18.74 v 169.07 h 29.312 v -187.81 z m -43.625,27.895 -29.312,18.736 v 141.18 h 29.312 V 706.52 z m -43.594,27.863 -29.312,18.736 v 113.31 h 29.312 v -132.05 z m -43.59,27.87 -34.062,21.789 v 82.398 h 34.062 v -104.19 z"
+         inkscape:connector-curvature="0"
+         style="fill:url(#linearGradient3036)"
+         id="rect2985" />
+      <path
+         d="m 629.91,452.41 c -11.864,7.4696 -23.732,14.932 -35.594,22.406 v 389.72 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -374.53 c 10.541,-6.6465 21.086,-13.288 31.625,-19.938 -0.84163,-2.9325 2.3777,-12.007 -3.0625,-6.6562 z m -48.94,30.84 c -10.083,6.3651 -20.169,12.726 -30.25,19.094 v 362.19 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -347.03 c 8.76,-5.5216 17.524,-11.037 26.281,-16.562 -0.84264,-2.9345 2.3806,-12.046 -3.0625,-6.6875 z m -43.594,27.5 c -10.083,6.3448 -20.17,12.682 -30.25,19.031 v 334.75 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -319.56 c 8.76,-5.5216 17.524,-11.037 26.281,-16.562 -0.84163,-2.9325 2.3777,-12.007 -3.0625,-6.6562 z m -43.594,27.438 c -10.083,6.3651 -20.169,12.726 -30.25,19.094 v 307.25 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -292.06 c 8.7601,-5.5317 17.523,-11.06 26.281,-16.594 -0.84264,-2.9345 2.3806,-12.046 -3.0625,-6.6875 z m -43.625,27.531 c -10.083,6.3549 -20.169,12.704 -30.25,19.062 v 279.75 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -264.56 c 8.76,-5.5216 17.524,-11.037 26.281,-16.562 -0.84264,-2.9345 2.3806,-12.046 -3.0625,-6.6875 z m -43.6,27.47 c -10.083,6.3549 -20.169,12.704 -30.25,19.062 v 252.28 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -237.09 c 8.76,-5.5216 17.524,-11.037 26.281,-16.562 -0.84264,-2.9345 2.3806,-12.046 -3.0625,-6.6875 z m -43.594,27.469 c -10.083,6.3753 -20.168,12.748 -30.25,19.125 v 224.75 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -209.59 c 8.7601,-5.5317 17.523,-11.06 26.281,-16.594 -0.84264,-2.9345 2.3806,-12.046 -3.0625,-6.6875 z m -43.59,27.53 c -10.083,6.3448 -20.17,12.682 -30.25,19.031 v 197.31 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -182.12 c 8.7598,-5.5114 17.525,-11.015 26.281,-16.531 -0.84264,-2.9345 2.3806,-12.046 -3.0625,-6.6875 z m -43.594,27.438 c -10.083,6.3651 -20.169,12.726 -30.25,19.094 v 169.81 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 V 698.91 c 8.7601,-5.5317 17.523,-11.06 26.281,-16.594 -0.84264,-2.9345 2.3806,-12.046 -3.0625,-6.6875 z m -43.625,27.531 c -10.083,6.3651 -20.169,12.726 -30.25,19.094 v 142.28 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -127.12 c 8.76,-5.5216 17.524,-11.037 26.281,-16.562 -0.84264,-2.9345 2.3806,-12.046 -3.0625,-6.6875 z m -43.6,27.46 c -10.083,6.3549 -20.169,12.704 -30.25,19.062 v 114.84 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -99.656 c 8.76,-5.5216 17.524,-11.037 26.281,-16.562 -0.84264,-2.9345 2.3806,-12.046 -3.0625,-6.6875 z m -43.594,27.469 c -11.666,7.3651 -23.335,14.726 -35,22.094 v 84.344 c 8.6379,2.6275 7.2424,-4.7785 7.0312,-11 v -69.156 c 10.343,-6.5317 20.689,-13.06 31.031,-19.594 -0.84264,-2.9345 2.3806,-12.046 -3.0625,-6.6875 z"
+         inkscape:connector-curvature="0"
+         style="fill:#ffffff;filter:url(#filter3961)"
+         id="path3904" />
+    </g>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3624"
+       y="814.72894"
+       x="1001.3186"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"
+       xml:space="preserve"><tspan
+         style="font-size:49.3164711px"
+         y="814.72894"
+         x="1001.3186"
+         id="tspan3626"
+         sodipodi:role="line">Simplicity</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"
+       x="1000.2323"
+       y="531.659"
+       id="text3628"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         x="1000.2323"
+         y="531.659"
+         style="font-size:49.3164711px"
+         id="tspan3632">Logging</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3636"
+       y="676.11389"
+       x="237.36989"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"
+       xml:space="preserve"><tspan
+         style="font-size:49.3164711px"
+         y="676.11389"
+         x="237.36989"
+         sodipodi:role="line"
+         id="tspan3640">Memory use monitoring</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"
+       x="237.25751"
+       y="531.659"
+       id="text3644"
+       sodipodi:linespacing="125%"><tspan
+         id="tspan3646"
+         sodipodi:role="line"
+         x="237.25751"
+         y="531.659"
+         style="font-size:49.3164711px">Pipeline integrity protection</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3648"
+       y="379.86905"
+       x="237.20132"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"
+       xml:space="preserve"><tspan
+         id="tspan3650"
+         style="font-size:49.3164711px"
+         y="379.86905"
+         x="237.20132"
+         sodipodi:role="line">Restartability</tspan></text>
+    <g
+       inkscape:label="Layer 1"
+       id="layer1-26"
+       transform="matrix(2.2042135,0,0,2.2042135,106.70918,315.24323)">
+      <path
+         inkscape:r_cx="true"
+         inkscape:r_cy="true"
+         sodipodi:cx="24.837126"
+         sodipodi:cy="36.421127"
+         transform="matrix(-1.4897,0,0,-1.0013,61.209,75.282)"
+         d="M 40.481863,36.421127 A 15.644737,8.3968935 0 0 1 24.837126,44.818021 15.644737,8.3968935 0 0 1 9.1923885,36.421127 15.644737,8.3968935 0 0 1 24.837126,28.024234 15.644737,8.3968935 0 0 1 40.481863,36.421127 Z"
+         sodipodi:type="arc"
+         style="opacity:0.38332998;color:#000000;fill:url(#radialGradient1503);fill-rule:evenodd"
+         sodipodi:ry="8.3968935"
+         sodipodi:rx="15.644737"
+         id="path8660" />
+      <path
+         d="m 20.153,10.41 c 0,0 -8.938,-0.6251 -6.188,9.875 H 6.2779 c 0,0 0.5,-11.875 13.875,-9.875 z"
+         sodipodi:nodetypes="cccc"
+         inkscape:r_cx="true"
+         inkscape:r_cy="true"
+         style="color:#000000;fill:url(#linearGradient1486);stroke:url(#linearGradient1488);stroke-width:0.45367655;display:block"
+         id="path2865-1"
+         inkscape:connector-curvature="0" />
+      <g
+         transform="matrix(-0.57905,-0.48923,-0.48923,0.57905,56.916,13.371)"
+         inkscape:r_cy="true"
+         style="fill:url(#linearGradient4743);stroke:#3465a4;stroke-width:0.45367655"
+         inkscape:r_cx="true"
+         id="g1878">
+        <path
+           d="M 44.307,50.23 C 62.821,35.819 49.665,13.412 22.462,12.498 l -0.348,-9.3465 -14.49,17.346 15.09,12.721 c 0,0 -0.252,-9.881 -0.252,-9.881 18.83,0.999 32.982,14.072 21.845,26.892 z"
+           sodipodi:nodetypes="ccccccc"
+           inkscape:r_cx="true"
+           inkscape:r_cy="true"
+           style="color:#000000;fill:url(#linearGradient3743);stroke:url(#linearGradient3745);stroke-width:0.59849012;display:block"
+           id="path1880"
+           inkscape:connector-curvature="0" />
+      </g>
+      <path
+         inkscape:r_cx="true"
+         sodipodi:nodetypes="cccc"
+         d="m 28.375,33.438 c 0,0 8.937,0.624 6.187,-9.876 h 7.776 c 0,1.503 -0.588,11.876 -13.963,9.876 z"
+         inkscape:r_cy="true"
+         style="color:#000000;fill:url(#linearGradient2696);stroke:url(#linearGradient2688);stroke-width:0.45367655;display:block"
+         id="path2839"
+         inkscape:connector-curvature="0" />
+      <g
+         transform="matrix(0.57905,0.48923,0.48923,-0.57905,-7.921,30.536)"
+         inkscape:r_cx="true"
+         inkscape:r_cy="true"
+         style="color:#000000;fill:url(#linearGradient4745);stroke:url(#linearGradient4747);stroke-width:0.59849012;display:block"
+         id="g2779">
+        <path
+           d="M 44.307,50.23 C 62.821,35.819 49.665,13.412 22.462,12.498 L 22.399,3.069 7.794,20.424 22.462,33.006 v -9.668 c 18.83,0.999 32.982,14.072 21.845,26.892 z"
+           sodipodi:nodetypes="ccccccc"
+           inkscape:r_cx="true"
+           inkscape:r_cy="true"
+           style="color:#000000;fill:url(#linearGradient3749);stroke:url(#linearGradient3751);stroke-width:0.59849012;display:block"
+           id="path2781"
+           inkscape:connector-curvature="0" />
+      </g>
+      <path
+         d="m 7.0625,38.188 0.0625,-14.876 12.937,-0.374 -4.388,5.178 3.867,2.374 c -3,2.25 -4.55,2.422 -5.55,4.984 l -2.817,-2.11 -4.1115,4.824 z"
+         sodipodi:nodetypes="cccccccc"
+         inkscape:r_cx="true"
+         inkscape:r_cy="true"
+         style="opacity:0.27222003;color:#000000;fill:#ffffff"
+         id="path2791"
+         inkscape:connector-curvature="0" />
+      <g
+         transform="matrix(0.50854,0.42965,0.42965,-0.50854,-3.9732,30.541)"
+         inkscape:r_cy="true"
+         style="opacity:0.5;fill:none;stroke:#ffffff;stroke-width:0.45367655"
+         inkscape:r_cx="true"
+         id="g2793">
+        <path
+           d="M 51.09,45.944 C 60.21,30.724 46.632,12.201 19.485,11.949 l 0.028,-8.2457 -12.979,15.594 12.834,10.972 c 0,0 0.055,-9.007 0.055,-9.007 17.528,-0.224 35.195,10.103 31.667,24.682 z"
+           sodipodi:nodetypes="ccccccc"
+           inkscape:r_cx="true"
+           inkscape:r_cy="true"
+           style="color:#000000;fill:none;stroke:url(#linearGradient3757);stroke-width:0.68146753;display:block"
+           id="path2795"
+           inkscape:connector-curvature="0" />
+      </g>
+      <g
+         transform="matrix(-0.50854,-0.42965,-0.42965,0.50854,53.049,13.365)"
+         inkscape:r_cx="true"
+         inkscape:r_cy="true"
+         style="opacity:0.5;fill:none;stroke:#ffffff;stroke-width:0.45367655"
+         id="g2805">
+        <path
+           d="M 51.39,46.506 C 60.51,31.286 47.051,12.432 19.628,12.07 l -0.285,-8.0193 -13.002,15.328 13.468,11.386 -0.182,-9.454 c 18.245,0.382 34.784,10.926 31.763,25.195 z"
+           sodipodi:nodetypes="ccccccc"
+           inkscape:r_cx="true"
+           inkscape:r_cy="true"
+           style="color:#000000;fill:none;stroke:url(#linearGradient1491);stroke-width:0.68146753;display:block"
+           id="path2807"
+           inkscape:connector-curvature="0" />
+      </g>
+      <path
+         d="m 6.8125,16.5 c 3.5935,-10.441 16.444,-6.145 20.188,-4.5 4.175,0.211 5.675,-2.835 9,-3 -14.05,-9.79 -28.812,-6.5 -29.188,7.5 z"
+         sodipodi:nodetypes="cccc"
+         inkscape:r_cx="true"
+         inkscape:r_cy="true"
+         style="opacity:0.27222003;color:#000000;fill:#ffffff"
+         id="path2811"
+         inkscape:connector-curvature="0" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"
+       x="239.18661"
+       y="814.49481"
+       id="text3759"
+       sodipodi:linespacing="125%"><tspan
+         id="tspan3761"
+         sodipodi:role="line"
+         x="239.18661"
+         y="814.49481"
+         style="font-size:49.3164711px">Job status monitoring</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3763"
+       y="379.86905"
+       x="1000.0263"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"
+       xml:space="preserve"><tspan
+         style="font-size:49.3164711px"
+         y="379.86905"
+         x="1000.0263"
+         sodipodi:role="line"
+         id="tspan3767">Robust error handling</tspan></text>
+    <g
+       inkscape:label="Layer 1"
+       id="layer1-6"
+       transform="matrix(2.189536,0,0,2.189536,874.77632,610.59874)">
+      <g
+         transform="matrix(0.02311,0,0,0.022715,44.685,39.361)"
+         id="g6707">
+        <rect
+           x="-1559.3"
+           y="-150.7"
+           width="1339.6"
+           height="478.35999"
+           style="opacity:0.40206;color:#000000;fill:url(#linearGradient6715)"
+           id="rect6709" />
+        <path
+           d="m -219.62,-150.68 v 478.33 c 142.88,0.9 345.4,-107.17 345.4,-239.2 0,-132.02 -159.44,-239.13 -345.4,-239.13 z"
+           style="opacity:0.40206;color:#000000;fill:url(#radialGradient6717)"
+           sodipodi:nodetypes="cccc"
+           id="path6711"
+           inkscape:connector-curvature="0" />
+        <path
+           d="m -1559.3,-150.68 v 478.33 c -142.8,0.9 -345.4,-107.17 -345.4,-239.2 0,-132.02 159.5,-239.13 345.4,-239.13 z"
+           style="opacity:0.40206;color:#000000;fill:url(#radialGradient6719)"
+           sodipodi:nodetypes="cccc"
+           id="path6713"
+           inkscape:connector-curvature="0" />
+      </g>
+      <rect
+         x="4.75"
+         y="36.004002"
+         width="38.438"
+         height="6.4916"
+         ry="1.7115"
+         rx="1.7115"
+         style="fill:url(#linearGradient1471);stroke:#595959;stroke-width:0.45671776"
+         id="rect4652" />
+      <path
+         d="m 7.1309,21.5 h 33.74 c 0.385,0 0.877,0.288 1.18,0.724 0.303,0.436 1.737,2.61 2.058,3.074 0.322,0.464 0.393,0.904 0.393,1.476 v 12.077 c 0,0.914 -0.732,1.649 -1.641,1.649 H 5.1399 C 4.231,40.5 3.499,39.765 3.499,38.851 V 26.774 c 0,-0.494 0.1012,-1.202 0.4464,-1.653 C 4.3811,24.552 5.5498,22.573 5.858,22.153 6.1663,21.733 6.7323,21.5 7.1308,21.5 z"
+         style="color:#000000;fill:url(#linearGradient1468);stroke:#676767;stroke-width:0.45671776"
+         sodipodi:nodetypes="cssssssssssss"
+         id="rect4609"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 7.4246,21.976 c -0.5027,0 -1.1197,0.078 -1.37,0.491 l -1.9003,3.138 c -0.2822,0.466 0.0339,1.263 0.933,1.263 h 37.644 c 1.31,0 1.22,-1.01 0.933,-1.44 l -1.768,-2.652 c -0.32,-0.48 -0.437,-0.8 -1.237,-0.8 H 7.4253 z"
+         style="fill:#fbfbfb;fill-rule:evenodd"
+         sodipodi:nodetypes="cssssssss"
+         id="path4718"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 7.6054,22.446 h 32.828 c 0.365,0 0.833,0.273 1.121,0.685 0.288,0.413 1.296,2.03 1.602,2.469 0.305,0.44 0.435,0.856 0.435,1.398 v 11.281 c 0,0.865 -0.133,1.249 -0.997,1.249 H 5.5324 C 4.6691,39.528 4.473,39.144 4.473,38.279 V 26.998 c 0,-0.468 0.2208,-1.138 0.5487,-1.565 0.4138,-0.539 1.0826,-1.971 1.3753,-2.369 0.2928,-0.397 0.8304,-0.618 1.2088,-0.618 z"
+         style="color:#000000;fill:none;stroke:url(#linearGradient1464);stroke-width:0.43249801"
+         sodipodi:nodetypes="cssssssssssss"
+         id="path4750"
+         inkscape:connector-curvature="0" />
+      <path
+         d="m 11.673,4.4999 h 24.652 c 0.651,0 1.175,0.5102 1.175,1.1438 v 18.704 H 10.498 V 5.6437 c 0,-0.6339 0.524,-1.1441 1.175,-1.1441 z"
+         style="color:#000000;fill:url(#linearGradient1459);stroke:#898989;stroke-width:0.45671776;stroke-linecap:round;display:block"
+         sodipodi:nodetypes="ccccccc"
+         id="rect15391"
+         inkscape:connector-curvature="0" />
+      <rect
+         x="11.499"
+         y="5.4991999"
+         width="25.000999"
+         height="18.836"
+         ry="0.17678"
+         rx="0.17678"
+         style="color:#000000;fill:none;stroke:url(#linearGradient1456);stroke-width:0.45671776;stroke-linecap:round;stroke-linejoin:round;display:block"
+         id="rect15660" />
+      <rect
+         x="6.875"
+         y="27.375"
+         width="33.75"
+         height="5.1875"
+         ry="1.7115"
+         rx="1.7115"
+         style="fill:url(#linearGradient1451);stroke:url(#linearGradient1453);stroke-width:0.45671776"
+         id="rect4678" />
+      <path
+         sodipodi:cx="9.5901356"
+         sodipodi:cy="27.626486"
+         transform="translate(0,2)"
+         d="m 10.871767,27.626486 a 1.281631,1.281631 0 0 1 -1.2816314,1.281631 1.281631,1.281631 0 0 1 -1.281631,-1.281631 1.281631,1.281631 0 0 1 1.281631,-1.281631 1.281631,1.281631 0 0 1 1.2816314,1.281631 z"
+         sodipodi:type="arc"
+         style="fill:url(#radialGradient1433)"
+         sodipodi:ry="1.281631"
+         sodipodi:rx="1.281631"
+         id="path4696" />
+      <path
+         d="m 11.744,25.416 25.562,0.063 c 0.688,0.001 0.988,-0.371 0.938,-1 l -0.125,-1.563 h 1.866 c 0.812,0 0.99,0.193 1.187,0.563 l 0.5,0.937 c 0.527,0.988 1.812,1.974 0.498,1.974 -4.502,0 -28.176,-0.349 -30.426,-0.974 z"
+         style="opacity:0.36571003;fill:url(#linearGradient1447);fill-rule:evenodd"
+         sodipodi:nodetypes="csscssssc"
+         id="path4731"
+         inkscape:connector-curvature="0" />
+      <path
+         d="M 43.489,26.5 H 4.511"
+         style="fill:none;stroke:#ffffff;stroke-width:0.45671776px;stroke-linecap:round;stroke-linejoin:round"
+         sodipodi:nodetypes="cc"
+         id="path4760"
+         inkscape:connector-curvature="0" />
+      <g
+         transform="translate(0,2)"
+         style="opacity:0.43575003"
+         id="g4849">
+        <rect
+           x="14"
+           y="7"
+           width="19"
+           height="1"
+           style="color:#000000;fill:#000000;fill-opacity:0.29240035"
+           id="rect4833" />
+        <rect
+           x="14"
+           y="9"
+           width="19"
+           height="1"
+           style="color:#000000;fill:#000000;fill-opacity:0.29240035"
+           id="rect4835" />
+        <rect
+           x="14"
+           y="11"
+           width="19"
+           height="1"
+           style="color:#000000;fill:#000000;fill-opacity:0.29240035"
+           id="rect4837" />
+        <rect
+           x="14"
+           y="13"
+           width="11"
+           height="1"
+           style="color:#000000;fill:#000000;fill-opacity:0.29240035"
+           id="rect4839" />
+        <rect
+           x="14"
+           y="17"
+           width="19"
+           height="1"
+           style="color:#000000;fill:#000000;fill-opacity:0.29240035"
+           id="rect4843" />
+        <rect
+           x="14"
+           y="19"
+           width="19"
+           height="1"
+           style="color:#000000;fill:#000000;fill-opacity:0.29240035"
+           id="rect4845" />
+      </g>
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:Arial;-inkscape-font-specification:Arial"
+       x="1000.0076"
+       y="676.11389"
+       id="text3902"
+       sodipodi:linespacing="125%"><tspan
+         sodipodi:role="line"
+         id="tspan3904"
+         x="1000.0076"
+         y="676.11389"
+         style="font-size:49.3164711px">Easy result reports</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5679"
+       y="576.61639"
+       x="263.41437"
+       style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:49.3164711px;line-height:125%;font-family:courier;-inkscape-font-specification:courier;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;enable-background:accumulate"
+       xml:space="preserve"><tspan
+         style="font-size:38.35725403px;font-family:courier;-inkscape-font-specification:courier"
+         y="576.61639"
+         x="263.41437"
+         sodipodi:role="line"
+         id="tspan5681">pypiper.run()</tspan></text>
+    <text
+       xml:space="preserve"
+       style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:49.3164711px;line-height:125%;font-family:courier;-inkscape-font-specification:courier;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;enable-background:accumulate"
+       x="263.41437"
+       y="711.48859"
+       id="text5683"
+       sodipodi:linespacing="125%"><tspan
+         id="tspan5685"
+         sodipodi:role="line"
+         x="263.41437"
+         y="711.48859"
+         style="font-size:38.35725403px;font-family:courier;-inkscape-font-specification:courier">pypiper.run()</tspan></text>
+    <text
+       xml:space="preserve"
+       style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:49.3164711px;line-height:125%;font-family:courier;-inkscape-font-specification:courier;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;enable-background:accumulate"
+       x="263.41437"
+       y="422.2627"
+       id="text5687"
+       sodipodi:linespacing="125%"><tspan
+         id="tspan5689"
+         sodipodi:role="line"
+         x="263.41437"
+         y="422.2627"
+         style="font-size:38.35725403px;font-family:courier;-inkscape-font-specification:courier">pypiper.run()</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5691"
+       y="856.85065"
+       x="264.06641"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:courier;-inkscape-font-specification:courier"
+       xml:space="preserve"><tspan
+         style="font-size:38.35725403px;font-family:courier;-inkscape-font-specification:courier"
+         y="856.85065"
+         x="264.06641"
+         sodipodi:role="line"
+         id="tspan5693">PIPE_failed.flag</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:courier;-inkscape-font-specification:courier"
+       x="260.42249"
+       y="895.81378"
+       id="text5695"
+       sodipodi:linespacing="125%"><tspan
+         id="tspan5697"
+         sodipodi:role="line"
+         x="260.42249"
+         y="895.81378"
+         style="font-size:38.35725403px;font-family:courier;-inkscape-font-specification:courier">flagCheck.sh</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5699"
+       y="422.2627"
+       x="1016.8604"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:courier;-inkscape-font-specification:courier"
+       xml:space="preserve"><tspan
+         style="font-size:38.35725403px;font-family:courier;-inkscape-font-specification:courier"
+         y="422.2627"
+         x="1016.8604"
+         sodipodi:role="line"
+         id="tspan5701">pypiper.fail_pipeline()</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:courier;-inkscape-font-specification:courier"
+       x="1016.8604"
+       y="572.95197"
+       id="text5703"
+       sodipodi:linespacing="125%"><tspan
+         id="tspan5705"
+         sodipodi:role="line"
+         x="1016.8604"
+         y="572.95197"
+         style="font-size:38.35725403px;font-family:courier;-inkscape-font-specification:courier">PIPE_log.md</tspan></text>
+    <text
+       sodipodi:linespacing="125%"
+       id="text5707"
+       y="718.16156"
+       x="1016.8604"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:courier;-inkscape-font-specification:courier"
+       xml:space="preserve"><tspan
+         style="font-size:38.35725403px;font-family:courier;-inkscape-font-specification:courier"
+         y="718.16156"
+         x="1016.8604"
+         sodipodi:role="line"
+         id="tspan5709">pypiper.report_result()</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:49.3164711px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-indent:0;text-align:start;text-decoration:none;line-height:125%;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;text-anchor:start;baseline-shift:baseline;color:#000000;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;marker:none;visibility:visible;display:inline;overflow:visible;enable-background:accumulate;font-family:courier;-inkscape-font-specification:courier"
+       x="1016.8604"
+       y="855.15173"
+       id="text5711"
+       sodipodi:linespacing="125%"><tspan
+         id="tspan5713"
+         sodipodi:role="line"
+         x="1016.8604"
+         y="855.15173"
+         style="font-size:38.35725403px;font-family:courier;-inkscape-font-specification:courier">import pypiper</tspan></text>
+  </g>
+  <script
+     ns1:version="1.5.5"
+     id="JessyInk">// Copyright 2008, 2009 Hannes Hochreiner
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see http://www.gnu.org/licenses/.
+
+// Set onload event handler.
+window.onload = jessyInkInit;
+
+// Creating a namespace dictionary. The standard Inkscape namespaces are taken from inkex.py.
+var NSS = new Object();
+NSS['sodipodi']='http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd';
+NSS['cc']='http://web.resource.org/cc/';
+NSS['svg']='http://www.w3.org/2000/svg';
+NSS['dc']='http://purl.org/dc/elements/1.1/';
+NSS['rdf']='http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+NSS['inkscape']='http://www.inkscape.org/namespaces/inkscape';
+NSS['xlink']='http://www.w3.org/1999/xlink';
+NSS['xml']='http://www.w3.org/XML/1998/namespace';
+NSS['jessyink']='https://launchpad.net/jessyink';
+
+// Keycodes.
+var LEFT_KEY = 37; // cursor left keycode
+var UP_KEY = 38; // cursor up keycode
+var RIGHT_KEY = 39; // cursor right keycode
+var DOWN_KEY = 40; // cursor down keycode
+var PAGE_UP_KEY = 33; // page up keycode
+var PAGE_DOWN_KEY = 34; // page down keycode
+var HOME_KEY = 36; // home keycode
+var END_KEY = 35; // end keycode
+var ENTER_KEY = 13; // next slide
+var SPACE_KEY = 32;
+var ESCAPE_KEY = 27;
+
+// Presentation modes.
+var SLIDE_MODE = 1;
+var INDEX_MODE = 2;
+var DRAWING_MODE = 3;
+
+// Mouse handler actions.
+var MOUSE_UP = 1;
+var MOUSE_DOWN = 2;
+var MOUSE_MOVE = 3;
+var MOUSE_WHEEL = 4;
+
+// Parameters.
+var ROOT_NODE = document.getElementsByTagNameNS(NSS[&quot;svg&quot;], &quot;svg&quot;)[0];
+var HEIGHT = 0;
+var WIDTH = 0;
+var INDEX_COLUMNS_DEFAULT = 4;
+var INDEX_COLUMNS = INDEX_COLUMNS_DEFAULT;
+var INDEX_OFFSET = 0;
+var STATE_START = -1;
+var STATE_END = -2;
+var BACKGROUND_COLOR = null;
+var slides = new Array();
+
+// Initialisation.
+var currentMode = SLIDE_MODE;
+var masterSlide = null;
+var activeSlide = 0;
+var activeEffect = 0;
+var timeStep = 30; // 40 ms equal 25 frames per second.
+var lastFrameTime = null;
+var processingEffect = false;
+var transCounter = 0;
+var effectArray = 0;
+var defaultTransitionInDict = new Object();
+defaultTransitionInDict[&quot;name&quot;] = &quot;appear&quot;;
+var defaultTransitionOutDict = new Object();
+defaultTransitionOutDict[&quot;name&quot;] = &quot;appear&quot;;
+var jessyInkInitialised = false;
+
+// Initialise char and key code dictionaries.
+var charCodeDictionary = getDefaultCharCodeDictionary();
+var keyCodeDictionary = getDefaultKeyCodeDictionary();
+
+// Initialise mouse handler dictionary.
+var mouseHandlerDictionary = getDefaultMouseHandlerDictionary();
+
+var progress_bar_visible = false;
+var timer_elapsed = 0;
+var timer_start = timer_elapsed;
+var timer_duration = 15; // 15 minutes
+
+var history_counter = 0;
+var history_original_elements = new Array();
+var history_presentation_elements = new Array();
+
+var mouse_original_path = null;
+var mouse_presentation_path = null;
+var mouse_last_x = -1;
+var mouse_last_y = -1;
+var mouse_min_dist_sqr = 3 * 3;
+var path_colour = &quot;red&quot;;
+var path_width_default = 3;
+var path_width = path_width_default;
+var path_paint_width = path_width;
+
+var number_of_added_slides = 0;
+
+/** Initialisation function.
+ *  The whole presentation is set-up in this function.
+ */
+function jessyInkInit()
+{
+	// Make sure we only execute this code once. Double execution can occur if the onload event handler is set
+	// in the main svg tag as well (as was recommended in earlier versions). Executing this function twice does
+	// not lead to any problems, but it takes more time.
+	if (jessyInkInitialised)
+		return;
+
+	// Making the presentation scaleable.
+	var VIEWBOX = ROOT_NODE.getAttribute(&quot;viewBox&quot;);
+
+	if (VIEWBOX)
+	{
+		WIDTH = ROOT_NODE.viewBox.animVal.width;
+		HEIGHT = ROOT_NODE.viewBox.animVal.height;
+	}
+	else
+	{
+		HEIGHT = parseFloat(ROOT_NODE.getAttribute(&quot;height&quot;));
+		WIDTH = parseFloat(ROOT_NODE.getAttribute(&quot;width&quot;));
+		ROOT_NODE.setAttribute(&quot;viewBox&quot;, &quot;0 0 &quot; + WIDTH + &quot; &quot; + HEIGHT);
+	}
+
+	ROOT_NODE.setAttribute(&quot;width&quot;, &quot;100%&quot;);
+	ROOT_NODE.setAttribute(&quot;height&quot;, &quot;100%&quot;);
+
+	// Setting the background color.
+	var namedViews = document.getElementsByTagNameNS(NSS[&quot;sodipodi&quot;], &quot;namedview&quot;);
+
+	for (var counter = 0; counter &lt; namedViews.length; counter++)
+	{
+		if (namedViews[counter].hasAttribute(&quot;id&quot;) &amp;&amp; namedViews[counter].hasAttribute(&quot;pagecolor&quot;))
+		{
+			if (namedViews[counter].getAttribute(&quot;id&quot;) == &quot;base&quot;)
+			{
+				BACKGROUND_COLOR = namedViews[counter].getAttribute(&quot;pagecolor&quot;);
+				var newAttribute = &quot;background-color:&quot; + BACKGROUND_COLOR + &quot;;&quot;;
+
+				if (ROOT_NODE.hasAttribute(&quot;style&quot;))
+					newAttribute += ROOT_NODE.getAttribute(&quot;style&quot;);
+
+				ROOT_NODE.setAttribute(&quot;style&quot;, newAttribute);
+			}
+		}
+	}
+
+	// Defining clip-path.
+	var defsNodes = document.getElementsByTagNameNS(NSS[&quot;svg&quot;], &quot;defs&quot;);
+
+	if (defsNodes.length &gt; 0)
+	{
+		var existingClipPath = document.getElementById(&quot;jessyInkSlideClipPath&quot;);
+
+		if (!existingClipPath)
+		{
+			var rectNode = document.createElementNS(NSS[&quot;svg&quot;], &quot;rect&quot;);
+			var clipPath = document.createElementNS(NSS[&quot;svg&quot;], &quot;clipPath&quot;);
+
+			rectNode.setAttribute(&quot;x&quot;, 0);
+			rectNode.setAttribute(&quot;y&quot;, 0);
+			rectNode.setAttribute(&quot;width&quot;, WIDTH);
+			rectNode.setAttribute(&quot;height&quot;, HEIGHT);
+
+			clipPath.setAttribute(&quot;id&quot;, &quot;jessyInkSlideClipPath&quot;);
+			clipPath.setAttribute(&quot;clipPathUnits&quot;, &quot;userSpaceOnUse&quot;);
+
+			clipPath.appendChild(rectNode);
+			defsNodes[0].appendChild(clipPath);
+		}
+	}
+
+	// Making a list of the slide and finding the master slide.
+	var nodes = document.getElementsByTagNameNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+	var tempSlides = new Array();
+	var existingJessyInkPresentationLayer = null;
+
+	for (var counter = 0; counter &lt; nodes.length; counter++)
+	{
+		if (nodes[counter].getAttributeNS(NSS[&quot;inkscape&quot;], &quot;groupmode&quot;) &amp;&amp; (nodes[counter].getAttributeNS(NSS[&quot;inkscape&quot;], &quot;groupmode&quot;) == &quot;layer&quot;))
+		{
+			if (nodes[counter].getAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;) &amp;&amp; nodes[counter].getAttributeNS(NSS[&quot;jessyink&quot;], &quot;masterSlide&quot;) == &quot;masterSlide&quot;)
+				masterSlide = nodes[counter];
+			else if (nodes[counter].getAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;) &amp;&amp; nodes[counter].getAttributeNS(NSS[&quot;jessyink&quot;], &quot;presentationLayer&quot;) == &quot;presentationLayer&quot;)
+				existingJessyInkPresentationLayer = nodes[counter];
+			else
+				tempSlides.push(nodes[counter].getAttribute(&quot;id&quot;));
+		}
+		else if (nodes[counter].getAttributeNS(NSS['jessyink'], 'element'))
+		{
+			handleElement(nodes[counter]);
+		}
+	}
+
+	// Hide master slide set default transitions.
+	if (masterSlide)
+	{
+		masterSlide.style.display = &quot;none&quot;;
+
+		if (masterSlide.hasAttributeNS(NSS[&quot;jessyink&quot;], &quot;transitionIn&quot;))
+			defaultTransitionInDict = propStrToDict(masterSlide.getAttributeNS(NSS[&quot;jessyink&quot;], &quot;transitionIn&quot;));
+
+		if (masterSlide.hasAttributeNS(NSS[&quot;jessyink&quot;], &quot;transitionOut&quot;))
+			defaultTransitionOutDict = propStrToDict(masterSlide.getAttributeNS(NSS[&quot;jessyink&quot;], &quot;transitionOut&quot;));
+	}
+
+	if (existingJessyInkPresentationLayer != null)
+	{
+		existingJessyInkPresentationLayer.parentNode.removeChild(existingJessyInkPresentationLayer);
+	}
+
+	// Set start slide.
+	var hashObj = new LocationHash(window.location.hash);
+
+	activeSlide = hashObj.slideNumber;
+	activeEffect = hashObj.effectNumber;
+
+	if (activeSlide &lt; 0)
+		activeSlide = 0;
+	else if (activeSlide &gt;= tempSlides.length)
+		activeSlide = tempSlides.length - 1;
+
+	var originalNode = document.getElementById(tempSlides[counter]);
+
+	var JessyInkPresentationLayer = document.createElementNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+	JessyInkPresentationLayer.setAttributeNS(NSS[&quot;inkscape&quot;], &quot;groupmode&quot;, &quot;layer&quot;);
+	JessyInkPresentationLayer.setAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;, &quot;JessyInk Presentation Layer&quot;);
+	JessyInkPresentationLayer.setAttributeNS(NSS[&quot;jessyink&quot;], &quot;presentationLayer&quot;, &quot;presentationLayer&quot;);
+	JessyInkPresentationLayer.setAttribute(&quot;id&quot;, &quot;jessyink_presentation_layer&quot;);
+	JessyInkPresentationLayer.style.display = &quot;inherit&quot;;
+	ROOT_NODE.appendChild(JessyInkPresentationLayer);
+
+	// Gathering all the information about the transitions and effects of the slides, set the background
+	// from the master slide and substitute the auto-texts.
+	for (var counter = 0; counter &lt; tempSlides.length; counter++)
+	{
+		var originalNode = document.getElementById(tempSlides[counter]);
+		originalNode.style.display = &quot;none&quot;;
+		var node = suffixNodeIds(originalNode.cloneNode(true), &quot;_&quot; + counter);
+		JessyInkPresentationLayer.appendChild(node);
+		slides[counter] = new Object();
+		slides[counter][&quot;original_element&quot;] = originalNode;
+		slides[counter][&quot;element&quot;] = node;
+
+		// Set build in transition.
+		slides[counter][&quot;transitionIn&quot;] = new Object();
+
+		var dict;
+
+		if (node.hasAttributeNS(NSS[&quot;jessyink&quot;], &quot;transitionIn&quot;))
+			dict = propStrToDict(node.getAttributeNS(NSS[&quot;jessyink&quot;], &quot;transitionIn&quot;));
+		else
+			dict = defaultTransitionInDict;
+
+		slides[counter][&quot;transitionIn&quot;][&quot;name&quot;] = dict[&quot;name&quot;];
+		slides[counter][&quot;transitionIn&quot;][&quot;options&quot;] = new Object();
+
+		for (key in dict)
+			if (key != &quot;name&quot;)
+				slides[counter][&quot;transitionIn&quot;][&quot;options&quot;][key] = dict[key];
+
+		// Set build out transition.
+		slides[counter][&quot;transitionOut&quot;] = new Object();
+
+		if (node.hasAttributeNS(NSS[&quot;jessyink&quot;], &quot;transitionOut&quot;))
+			dict = propStrToDict(node.getAttributeNS(NSS[&quot;jessyink&quot;], &quot;transitionOut&quot;));
+		else
+			dict = defaultTransitionOutDict;
+
+		slides[counter][&quot;transitionOut&quot;][&quot;name&quot;] = dict[&quot;name&quot;];
+		slides[counter][&quot;transitionOut&quot;][&quot;options&quot;] = new Object();
+
+		for (key in dict)
+			if (key != &quot;name&quot;)
+				slides[counter][&quot;transitionOut&quot;][&quot;options&quot;][key] = dict[key];
+
+		// Copy master slide content.
+		if (masterSlide)
+		{
+			var clonedNode = suffixNodeIds(masterSlide.cloneNode(true), &quot;_&quot; + counter);
+			clonedNode.removeAttributeNS(NSS[&quot;inkscape&quot;], &quot;groupmode&quot;);
+			clonedNode.removeAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;);
+			clonedNode.style.display = &quot;inherit&quot;;
+
+			node.insertBefore(clonedNode, node.firstChild);
+		}
+
+		// Setting clip path.
+		node.setAttribute(&quot;clip-path&quot;, &quot;url(#jessyInkSlideClipPath)&quot;);
+
+		// Substitute auto texts.
+		substituteAutoTexts(node, node.getAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;), counter + 1, tempSlides.length);
+
+		node.removeAttributeNS(NSS[&quot;inkscape&quot;], &quot;groupmode&quot;);
+		node.removeAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;);
+
+		// Set effects.
+		var tempEffects = new Array();
+		var groups = new Object();
+
+		for (var IOCounter = 0; IOCounter &lt;= 1; IOCounter++)
+		{
+			var propName = &quot;&quot;;
+			var dir = 0;
+
+			if (IOCounter == 0)
+			{
+				propName = &quot;effectIn&quot;;
+				dir = 1;
+			}
+			else if (IOCounter == 1)
+			{
+				propName = &quot;effectOut&quot;;
+				dir = -1;
+			}
+
+			var effects = getElementsByPropertyNS(node, NSS[&quot;jessyink&quot;], propName);
+
+			for (var effectCounter = 0; effectCounter &lt; effects.length; effectCounter++)
+			{
+				var element = document.getElementById(effects[effectCounter]);
+				var dict = propStrToDict(element.getAttributeNS(NSS[&quot;jessyink&quot;], propName));
+
+				// Put every element that has an effect associated with it, into its own group.
+				// Unless of course, we already put it into its own group.
+				if (!(groups[element.id]))
+				{
+					var newGroup = document.createElementNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+
+					element.parentNode.insertBefore(newGroup, element);
+					newGroup.appendChild(element.parentNode.removeChild(element));
+					groups[element.id] = newGroup;
+				}
+
+				var effectDict = new Object();
+
+				effectDict[&quot;effect&quot;] = dict[&quot;name&quot;];
+				effectDict[&quot;dir&quot;] = dir;
+				effectDict[&quot;element&quot;] = groups[element.id];
+
+				for (var option in dict)
+				{
+					if ((option != &quot;name&quot;) &amp;&amp; (option != &quot;order&quot;))
+					{
+						if (!effectDict[&quot;options&quot;])
+							effectDict[&quot;options&quot;] = new Object();
+
+						effectDict[&quot;options&quot;][option] = dict[option];
+					}
+				}
+
+				if (!tempEffects[dict[&quot;order&quot;]])
+					tempEffects[dict[&quot;order&quot;]] = new Array();
+
+				tempEffects[dict[&quot;order&quot;]][tempEffects[dict[&quot;order&quot;]].length] = effectDict;
+			}
+		}
+
+		// Make invisible, but keep in rendering tree to ensure that bounding box can be calculated.
+		node.setAttribute(&quot;opacity&quot;,0);
+		node.style.display = &quot;inherit&quot;;
+
+		// Create a transform group.
+		var transformGroup = document.createElementNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+
+		// Add content to transform group.
+		while (node.firstChild)
+			transformGroup.appendChild(node.firstChild);
+
+		// Transfer the transform attribute from the node to the transform group.
+		if (node.getAttribute(&quot;transform&quot;))
+		{
+			transformGroup.setAttribute(&quot;transform&quot;, node.getAttribute(&quot;transform&quot;));
+			node.removeAttribute(&quot;transform&quot;);
+		}
+
+		// Create a view group.
+		var viewGroup = document.createElementNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+
+		viewGroup.appendChild(transformGroup);
+		slides[counter][&quot;viewGroup&quot;] = node.appendChild(viewGroup);
+
+		// Insert background.
+		if (BACKGROUND_COLOR != null)
+		{
+			var rectNode = document.createElementNS(NSS[&quot;svg&quot;], &quot;rect&quot;);
+
+			rectNode.setAttribute(&quot;x&quot;, 0);
+			rectNode.setAttribute(&quot;y&quot;, 0);
+			rectNode.setAttribute(&quot;width&quot;, WIDTH);
+			rectNode.setAttribute(&quot;height&quot;, HEIGHT);
+			rectNode.setAttribute(&quot;id&quot;, &quot;jessyInkBackground&quot; + counter);
+			rectNode.setAttribute(&quot;fill&quot;, BACKGROUND_COLOR);
+
+			slides[counter][&quot;viewGroup&quot;].insertBefore(rectNode, slides[counter][&quot;viewGroup&quot;].firstChild);
+		}
+
+		// Set views.
+		var tempViews = new Array();
+		var views = getElementsByPropertyNS(node, NSS[&quot;jessyink&quot;], &quot;view&quot;);
+		var matrixOld = (new matrixSVG()).fromElements(1, 0, 0, 0, 1, 0, 0, 0, 1);
+
+		// Set initial view even if there are no other views.
+		slides[counter][&quot;viewGroup&quot;].setAttribute(&quot;transform&quot;, matrixOld.toAttribute());
+		slides[counter].initialView = matrixOld.toAttribute();
+
+		for (var viewCounter = 0; viewCounter &lt; views.length; viewCounter++)
+		{
+			var element = document.getElementById(views[viewCounter]);
+			var dict = propStrToDict(element.getAttributeNS(NSS[&quot;jessyink&quot;], &quot;view&quot;));
+
+			if (dict[&quot;order&quot;] == 0)
+			{
+				matrixOld = pointMatrixToTransformation(rectToMatrix(element)).mult((new matrixSVG()).fromSVGMatrix(slides[counter].viewGroup.getScreenCTM()).inv().mult((new matrixSVG()).fromSVGMatrix(element.parentNode.getScreenCTM())).inv());
+				slides[counter].initialView = matrixOld.toAttribute();
+			}
+			else
+			{
+				var effectDict = new Object();
+
+				effectDict[&quot;effect&quot;] = dict[&quot;name&quot;];
+				effectDict[&quot;dir&quot;] = 1;
+				effectDict[&quot;element&quot;] = slides[counter][&quot;viewGroup&quot;];
+				effectDict[&quot;order&quot;] = dict[&quot;order&quot;];
+
+				for (var option in dict)
+				{
+					if ((option != &quot;name&quot;) &amp;&amp; (option != &quot;order&quot;))
+					{
+						if (!effectDict[&quot;options&quot;])
+							effectDict[&quot;options&quot;] = new Object();
+
+						effectDict[&quot;options&quot;][option] = dict[option];
+					}
+				}
+
+				effectDict[&quot;options&quot;][&quot;matrixNew&quot;] = pointMatrixToTransformation(rectToMatrix(element)).mult((new matrixSVG()).fromSVGMatrix(slides[counter].viewGroup.getScreenCTM()).inv().mult((new matrixSVG()).fromSVGMatrix(element.parentNode.getScreenCTM())).inv());
+
+				tempViews[dict[&quot;order&quot;]] = effectDict;
+			}
+
+			// Remove element.
+			element.parentNode.removeChild(element);
+		}
+
+		// Consolidate view array and append it to the effect array.
+		if (tempViews.length &gt; 0)
+		{
+			for (var viewCounter = 0; viewCounter &lt; tempViews.length; viewCounter++)
+			{
+				if (tempViews[viewCounter])
+				{
+					tempViews[viewCounter][&quot;options&quot;][&quot;matrixOld&quot;] = matrixOld;
+					matrixOld = tempViews[viewCounter][&quot;options&quot;][&quot;matrixNew&quot;];
+
+					if (!tempEffects[tempViews[viewCounter][&quot;order&quot;]])
+						tempEffects[tempViews[viewCounter][&quot;order&quot;]] = new Array();
+
+					tempEffects[tempViews[viewCounter][&quot;order&quot;]][tempEffects[tempViews[viewCounter][&quot;order&quot;]].length] = tempViews[viewCounter];
+				}
+			}
+		}
+
+		// Set consolidated effect array.
+		if (tempEffects.length &gt; 0)
+		{
+			slides[counter][&quot;effects&quot;] = new Array();
+
+			for (var effectCounter = 0; effectCounter &lt; tempEffects.length; effectCounter++)
+			{
+				if (tempEffects[effectCounter])
+					slides[counter][&quot;effects&quot;][slides[counter][&quot;effects&quot;].length] = tempEffects[effectCounter];
+			}
+		}
+
+		node.setAttribute(&quot;onmouseover&quot;, &quot;if ((currentMode == INDEX_MODE) &amp;&amp; ( activeSlide != &quot; + counter + &quot;)) { indexSetActiveSlide(&quot; + counter + &quot;); };&quot;);
+
+		// Set visibility for initial state.
+		if (counter == activeSlide)
+		{
+			node.style.display = &quot;inherit&quot;;
+			node.setAttribute(&quot;opacity&quot;,1);
+		}
+		else
+		{
+			node.style.display = &quot;none&quot;;
+			node.setAttribute(&quot;opacity&quot;,0);
+		}
+	}
+
+	// Set key handler.
+	var jessyInkObjects = document.getElementsByTagNameNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+
+	for (var counter = 0; counter &lt; jessyInkObjects.length; counter++)
+	{
+		var elem = jessyInkObjects[counter];
+
+		if (elem.getAttributeNS(NSS[&quot;jessyink&quot;], &quot;customKeyBindings&quot;))
+		{
+			if (elem.getCustomKeyBindings != undefined)
+				keyCodeDictionary = elem.getCustomKeyBindings();
+
+			if (elem.getCustomCharBindings != undefined)
+				charCodeDictionary = elem.getCustomCharBindings();
+		}
+	}
+
+	// Set mouse handler.
+	var jessyInkMouseHandler = document.getElementsByTagNameNS(NSS[&quot;jessyink&quot;], &quot;mousehandler&quot;);
+
+	for (var counter = 0; counter &lt; jessyInkMouseHandler.length; counter++)
+	{
+		var elem = jessyInkMouseHandler[counter];
+
+		if (elem.getMouseHandler != undefined)
+		{
+			var tempDict = elem.getMouseHandler();
+
+			for (mode in tempDict)
+			{
+				if (!mouseHandlerDictionary[mode])
+					mouseHandlerDictionary[mode] = new Object();
+
+				for (handler in tempDict[mode])
+					mouseHandlerDictionary[mode][handler] = tempDict[mode][handler];
+			}
+		}
+	}
+
+	// Check effect number.
+	if ((activeEffect &lt; 0) || (!slides[activeSlide].effects))
+	{
+		activeEffect = 0;
+	}
+	else if (activeEffect &gt; slides[activeSlide].effects.length)
+	{
+		activeEffect = slides[activeSlide].effects.length;
+	}
+
+	createProgressBar(JessyInkPresentationLayer);
+	hideProgressBar();
+	setProgressBarValue(activeSlide);
+	setTimeIndicatorValue(0);
+	setInterval(&quot;updateTimer()&quot;, 1000);
+	setSlideToState(activeSlide, activeEffect);
+	jessyInkInitialised = true;
+}
+
+/** Function to subtitute the auto-texts.
+ *
+ *  @param node the node
+ *  @param slideName name of the slide the node is on
+ *  @param slideNumber number of the slide the node is on
+ *  @param numberOfSlides number of slides in the presentation
+ */
+function substituteAutoTexts(node, slideName, slideNumber, numberOfSlides)
+{
+	var texts = node.getElementsByTagNameNS(NSS[&quot;svg&quot;], &quot;tspan&quot;);
+
+	for (var textCounter = 0; textCounter &lt; texts.length; textCounter++)
+	{
+		if (texts[textCounter].getAttributeNS(NSS[&quot;jessyink&quot;], &quot;autoText&quot;) == &quot;slideNumber&quot;)
+			texts[textCounter].firstChild.nodeValue = slideNumber;
+		else if (texts[textCounter].getAttributeNS(NSS[&quot;jessyink&quot;], &quot;autoText&quot;) == &quot;numberOfSlides&quot;)
+			texts[textCounter].firstChild.nodeValue = numberOfSlides;
+		else if (texts[textCounter].getAttributeNS(NSS[&quot;jessyink&quot;], &quot;autoText&quot;) == &quot;slideTitle&quot;)
+			texts[textCounter].firstChild.nodeValue = slideName;
+	}
+}
+
+/** Convenience function to get an element depending on whether it has a property with a particular name.
+ *	This function emulates some dearly missed XPath functionality.
+ *
+ *  @param node the node
+ *  @param namespace namespace of the attribute
+ *  @param name attribute name
+ */
+function getElementsByPropertyNS(node, namespace, name)
+{
+	var elems = new Array();
+
+	if (node.getAttributeNS(namespace, name))
+		elems.push(node.getAttribute(&quot;id&quot;));
+
+	for (var counter = 0; counter &lt; node.childNodes.length; counter++)
+	{
+		if (node.childNodes[counter].nodeType == 1)
+			elems = elems.concat(getElementsByPropertyNS(node.childNodes[counter], namespace, name));
+	}
+
+	return elems;
+}
+
+/** Function to dispatch the next effect, if there is none left, change the slide.
+ *
+ *  @param dir direction of the change (1 = forwards, -1 = backwards)
+ */
+function dispatchEffects(dir)
+{
+	if (slides[activeSlide][&quot;effects&quot;] &amp;&amp; (((dir == 1) &amp;&amp; (activeEffect &lt; slides[activeSlide][&quot;effects&quot;].length)) || ((dir == -1) &amp;&amp; (activeEffect &gt; 0))))
+	{
+		processingEffect = true;
+
+		if (dir == 1)
+		{
+			effectArray = slides[activeSlide][&quot;effects&quot;][activeEffect];
+			activeEffect += dir;
+		}
+		else if (dir == -1)
+		{
+			activeEffect += dir;
+			effectArray = slides[activeSlide][&quot;effects&quot;][activeEffect];
+		}
+
+		transCounter = 0;
+		startTime = (new Date()).getTime();
+		lastFrameTime = null;
+		effect(dir);
+	}
+	else if (((dir == 1) &amp;&amp; (activeSlide &lt; (slides.length - 1))) || (((dir == -1) &amp;&amp; (activeSlide &gt; 0))))
+	{
+		changeSlide(dir);
+	}
+}
+
+/** Function to skip effects and directly either put the slide into start or end state or change slides.
+ *
+ *  @param dir direction of the change (1 = forwards, -1 = backwards)
+ */
+function skipEffects(dir)
+{
+	if (slides[activeSlide][&quot;effects&quot;] &amp;&amp; (((dir == 1) &amp;&amp; (activeEffect &lt; slides[activeSlide][&quot;effects&quot;].length)) || ((dir == -1) &amp;&amp; (activeEffect &gt; 0))))
+	{
+		processingEffect = true;
+
+		if (slides[activeSlide][&quot;effects&quot;] &amp;&amp; (dir == 1))
+			activeEffect = slides[activeSlide][&quot;effects&quot;].length;
+		else
+			activeEffect = 0;
+
+		if (dir == 1)
+			setSlideToState(activeSlide, STATE_END);
+		else
+			setSlideToState(activeSlide, STATE_START);
+
+		processingEffect = false;
+	}
+	else if (((dir == 1) &amp;&amp; (activeSlide &lt; (slides.length - 1))) || (((dir == -1) &amp;&amp; (activeSlide &gt; 0))))
+	{
+		changeSlide(dir);
+	}
+}
+
+/** Function to change between slides.
+ *
+ *  @param dir direction (1 = forwards, -1 = backwards)
+ */
+function changeSlide(dir)
+{
+	processingEffect = true;
+	effectArray = new Array();
+
+	effectArray[0] = new Object();
+	if (dir == 1)
+	{
+		effectArray[0][&quot;effect&quot;] = slides[activeSlide][&quot;transitionOut&quot;][&quot;name&quot;];
+		effectArray[0][&quot;options&quot;] = slides[activeSlide][&quot;transitionOut&quot;][&quot;options&quot;];
+		effectArray[0][&quot;dir&quot;] = -1;
+	}
+	else if (dir == -1)
+	{
+		effectArray[0][&quot;effect&quot;] = slides[activeSlide][&quot;transitionIn&quot;][&quot;name&quot;];
+		effectArray[0][&quot;options&quot;] = slides[activeSlide][&quot;transitionIn&quot;][&quot;options&quot;];
+		effectArray[0][&quot;dir&quot;] = 1;
+	}
+	effectArray[0][&quot;element&quot;] = slides[activeSlide][&quot;element&quot;];
+
+	activeSlide += dir;
+	setProgressBarValue(activeSlide);
+
+	effectArray[1] = new Object();
+
+	if (dir == 1)
+	{
+		effectArray[1][&quot;effect&quot;] = slides[activeSlide][&quot;transitionIn&quot;][&quot;name&quot;];
+		effectArray[1][&quot;options&quot;] = slides[activeSlide][&quot;transitionIn&quot;][&quot;options&quot;];
+		effectArray[1][&quot;dir&quot;] = 1;
+	}
+	else if (dir == -1)
+	{
+		effectArray[1][&quot;effect&quot;] = slides[activeSlide][&quot;transitionOut&quot;][&quot;name&quot;];
+		effectArray[1][&quot;options&quot;] = slides[activeSlide][&quot;transitionOut&quot;][&quot;options&quot;];
+		effectArray[1][&quot;dir&quot;] = -1;
+	}
+
+	effectArray[1][&quot;element&quot;] = slides[activeSlide][&quot;element&quot;];
+
+	if (slides[activeSlide][&quot;effects&quot;] &amp;&amp; (dir == -1))
+		activeEffect = slides[activeSlide][&quot;effects&quot;].length;
+	else
+		activeEffect = 0;
+
+	if (dir == -1)
+		setSlideToState(activeSlide, STATE_END);
+	else
+		setSlideToState(activeSlide, STATE_START);
+
+	transCounter = 0;
+	startTime = (new Date()).getTime();
+	lastFrameTime = null;
+	effect(dir);
+}
+
+/** Function to toggle between index and slide mode.
+*/
+function toggleSlideIndex()
+{
+	var suspendHandle = ROOT_NODE.suspendRedraw(500);
+
+	if (currentMode == SLIDE_MODE)
+	{
+		hideProgressBar();		
+		INDEX_OFFSET = -1;
+		indexSetPageSlide(activeSlide);
+		currentMode = INDEX_MODE;
+	}
+	else if (currentMode == INDEX_MODE)
+	{
+		for (var counter = 0; counter &lt; slides.length; counter++)
+		{
+			slides[counter][&quot;element&quot;].setAttribute(&quot;transform&quot;,&quot;scale(1)&quot;);
+
+			if (counter == activeSlide)
+			{
+				slides[counter][&quot;element&quot;].style.display = &quot;inherit&quot;;
+				slides[counter][&quot;element&quot;].setAttribute(&quot;opacity&quot;,1);
+				activeEffect = 0;
+			}
+			else
+			{
+				slides[counter][&quot;element&quot;].setAttribute(&quot;opacity&quot;,0);
+				slides[counter][&quot;element&quot;].style.display = &quot;none&quot;;
+			}
+		}
+		currentMode = SLIDE_MODE;
+		setSlideToState(activeSlide, STATE_START);
+		setProgressBarValue(activeSlide);
+
+		if (progress_bar_visible)
+		{
+			showProgressBar();
+		}
+	}
+
+	ROOT_NODE.unsuspendRedraw(suspendHandle);
+	ROOT_NODE.forceRedraw();
+}
+
+/** Function to run an effect.
+ *
+ *  @param dir direction in which to play the effect (1 = forwards, -1 = backwards)
+ */
+function effect(dir)
+{
+	var done = true;
+
+	var suspendHandle = ROOT_NODE.suspendRedraw(200);
+
+	for (var counter = 0; counter &lt; effectArray.length; counter++)
+	{
+		if (effectArray[counter][&quot;effect&quot;] == &quot;fade&quot;)
+			done &amp;= fade(parseInt(effectArray[counter][&quot;dir&quot;]) * dir, effectArray[counter][&quot;element&quot;], transCounter, effectArray[counter][&quot;options&quot;]);
+		else if (effectArray[counter][&quot;effect&quot;] == &quot;appear&quot;)
+			done &amp;= appear(parseInt(effectArray[counter][&quot;dir&quot;]) * dir, effectArray[counter][&quot;element&quot;], transCounter, effectArray[counter][&quot;options&quot;]);
+		else if (effectArray[counter][&quot;effect&quot;] == &quot;pop&quot;)
+			done &amp;= pop(parseInt(effectArray[counter][&quot;dir&quot;]) * dir, effectArray[counter][&quot;element&quot;], transCounter, effectArray[counter][&quot;options&quot;]);
+		else if (effectArray[counter][&quot;effect&quot;] == &quot;view&quot;)
+			done &amp;= view(parseInt(effectArray[counter][&quot;dir&quot;]) * dir, effectArray[counter][&quot;element&quot;], transCounter, effectArray[counter][&quot;options&quot;]);
+	}
+
+	ROOT_NODE.unsuspendRedraw(suspendHandle);
+	ROOT_NODE.forceRedraw();
+
+	if (!done)
+	{
+		var currentTime = (new Date()).getTime();
+		var timeDiff = 1;
+
+		transCounter = currentTime - startTime;
+
+		if (lastFrameTime != null)
+		{
+			timeDiff = timeStep - (currentTime - lastFrameTime);
+
+			if (timeDiff &lt;= 0)
+				timeDiff = 1;
+		}
+
+		lastFrameTime = currentTime;
+
+		window.setTimeout(&quot;effect(&quot; + dir + &quot;)&quot;, timeDiff);
+	}
+	else
+	{
+		window.location.hash = (activeSlide + 1) + '_' + activeEffect;
+		processingEffect = false;
+	}
+}
+
+/** Function to display the index sheet.
+ *
+ *  @param offsetNumber offset number
+ */
+function displayIndex(offsetNumber)
+{
+	var offsetX = 0;
+	var offsetY = 0;
+
+	if (offsetNumber &lt; 0)
+		offsetNumber = 0;
+	else if (offsetNumber &gt;= slides.length)
+		offsetNumber = slides.length - 1;
+
+	for (var counter = 0; counter &lt; slides.length; counter++)
+	{
+		if ((counter &lt; offsetNumber) || (counter &gt; offsetNumber + INDEX_COLUMNS * INDEX_COLUMNS - 1))
+		{
+			slides[counter][&quot;element&quot;].setAttribute(&quot;opacity&quot;,0);
+			slides[counter][&quot;element&quot;].style.display = &quot;none&quot;;
+		}
+		else
+		{
+			offsetX = ((counter - offsetNumber) % INDEX_COLUMNS) * WIDTH;
+			offsetY = Math.floor((counter - offsetNumber) / INDEX_COLUMNS) * HEIGHT;
+
+			slides[counter][&quot;element&quot;].setAttribute(&quot;transform&quot;,&quot;scale(&quot;+1/INDEX_COLUMNS+&quot;) translate(&quot;+offsetX+&quot;,&quot;+offsetY+&quot;)&quot;);
+			slides[counter][&quot;element&quot;].style.display = &quot;inherit&quot;;
+			slides[counter][&quot;element&quot;].setAttribute(&quot;opacity&quot;,0.5);
+		}
+
+		setSlideToState(counter, STATE_END);
+	}
+
+	//do we need to save the current offset?
+	if (INDEX_OFFSET != offsetNumber)
+		INDEX_OFFSET = offsetNumber;
+}
+
+/** Function to set the active slide in the slide view.
+ *
+ *  @param nbr index of the active slide
+ */
+function slideSetActiveSlide(nbr)
+{
+	if (nbr &gt;= slides.length)
+		nbr = slides.length - 1;
+	else if (nbr &lt; 0)
+		nbr = 0;
+
+	slides[activeSlide][&quot;element&quot;].setAttribute(&quot;opacity&quot;,0);
+	slides[activeSlide][&quot;element&quot;].style.display = &quot;none&quot;;
+
+	activeSlide = parseInt(nbr);
+
+	setSlideToState(activeSlide, STATE_START);
+	slides[activeSlide][&quot;element&quot;].style.display = &quot;inherit&quot;;
+	slides[activeSlide][&quot;element&quot;].setAttribute(&quot;opacity&quot;,1);
+
+	activeEffect = 0;
+	setProgressBarValue(nbr);
+}
+
+/** Function to set the active slide in the index view.
+ *
+ *  @param nbr index of the active slide
+ */
+function indexSetActiveSlide(nbr)
+{
+	if (nbr &gt;= slides.length)
+		nbr = slides.length - 1;
+	else if (nbr &lt; 0)
+		nbr = 0;
+
+	slides[activeSlide][&quot;element&quot;].setAttribute(&quot;opacity&quot;,0.5);
+
+	activeSlide = parseInt(nbr);
+	window.location.hash = (activeSlide + 1) + '_0';
+
+	slides[activeSlide][&quot;element&quot;].setAttribute(&quot;opacity&quot;,1);
+}
+
+/** Function to set the page and active slide in index view. 
+ *
+ *  @param nbr index of the active slide
+ *
+ *  NOTE: To force a redraw,
+ *  set INDEX_OFFSET to -1 before calling indexSetPageSlide().
+ *
+ *  This is necessary for zooming (otherwise the index might not
+ *  get redrawn) and when switching to index mode.
+ *
+ *  INDEX_OFFSET = -1
+ *  indexSetPageSlide(activeSlide);
+ */
+function indexSetPageSlide(nbr)
+{
+	if (nbr &gt;= slides.length)
+		nbr = slides.length - 1;
+	else if (nbr &lt; 0)
+		nbr = 0;
+
+	//calculate the offset
+	var offset = nbr - nbr % (INDEX_COLUMNS * INDEX_COLUMNS);
+
+	if (offset &lt; 0)
+		offset = 0;
+
+	//if different from kept offset, then record and change the page
+	if (offset != INDEX_OFFSET)
+	{
+		INDEX_OFFSET = offset;
+		displayIndex(INDEX_OFFSET);
+	}
+
+	//set the active slide
+	indexSetActiveSlide(nbr);
+}
+
+/** Event handler for key press.
+ *
+ *  @param e the event
+ */
+function keydown(e)
+{
+	if (!e)
+		e = window.event;
+
+	code = e.keyCode || e.charCode;
+
+	if (!processingEffect &amp;&amp; keyCodeDictionary[currentMode] &amp;&amp; keyCodeDictionary[currentMode][code])
+		return keyCodeDictionary[currentMode][code]();
+	else
+		document.onkeypress = keypress;
+}
+// Set event handler for key down.
+document.onkeydown = keydown;
+
+/** Event handler for key press.
+ *
+ *  @param e the event
+ */
+function keypress(e)
+{
+	document.onkeypress = null;
+
+	if (!e)
+		e = window.event;
+
+	str = String.fromCharCode(e.keyCode || e.charCode);
+
+	if (!processingEffect &amp;&amp; charCodeDictionary[currentMode] &amp;&amp; charCodeDictionary[currentMode][str])
+		return charCodeDictionary[currentMode][str]();
+}
+
+/** Function to supply the default char code dictionary.
+ *
+ * @returns default char code dictionary
+ */
+function getDefaultCharCodeDictionary()
+{
+	var charCodeDict = new Object();
+
+	charCodeDict[SLIDE_MODE] = new Object();
+	charCodeDict[INDEX_MODE] = new Object();
+	charCodeDict[DRAWING_MODE] = new Object();
+
+	charCodeDict[SLIDE_MODE][&quot;i&quot;] = function () { return toggleSlideIndex(); };
+	charCodeDict[SLIDE_MODE][&quot;d&quot;] = function () { return slideSwitchToDrawingMode(); };
+	charCodeDict[SLIDE_MODE][&quot;D&quot;] = function () { return slideQueryDuration(); };
+	charCodeDict[SLIDE_MODE][&quot;n&quot;] = function () { return slideAddSlide(activeSlide); };
+	charCodeDict[SLIDE_MODE][&quot;p&quot;] = function () { return slideToggleProgressBarVisibility(); };
+	charCodeDict[SLIDE_MODE][&quot;t&quot;] = function () { return slideResetTimer(); };
+	charCodeDict[SLIDE_MODE][&quot;e&quot;] = function () { return slideUpdateExportLayer(); };
+
+	charCodeDict[DRAWING_MODE][&quot;d&quot;] = function () { return drawingSwitchToSlideMode(); };
+	charCodeDict[DRAWING_MODE][&quot;0&quot;] = function () { return drawingResetPathWidth(); };
+	charCodeDict[DRAWING_MODE][&quot;1&quot;] = function () { return drawingSetPathWidth(1.0); };
+	charCodeDict[DRAWING_MODE][&quot;3&quot;] = function () { return drawingSetPathWidth(3.0); };
+	charCodeDict[DRAWING_MODE][&quot;5&quot;] = function () { return drawingSetPathWidth(5.0); };
+	charCodeDict[DRAWING_MODE][&quot;7&quot;] = function () { return drawingSetPathWidth(7.0); };
+	charCodeDict[DRAWING_MODE][&quot;9&quot;] = function () { return drawingSetPathWidth(9.0); };
+	charCodeDict[DRAWING_MODE][&quot;b&quot;] = function () { return drawingSetPathColour(&quot;blue&quot;); };
+	charCodeDict[DRAWING_MODE][&quot;c&quot;] = function () { return drawingSetPathColour(&quot;cyan&quot;); };
+	charCodeDict[DRAWING_MODE][&quot;g&quot;] = function () { return drawingSetPathColour(&quot;green&quot;); };
+	charCodeDict[DRAWING_MODE][&quot;k&quot;] = function () { return drawingSetPathColour(&quot;black&quot;); };
+	charCodeDict[DRAWING_MODE][&quot;m&quot;] = function () { return drawingSetPathColour(&quot;magenta&quot;); };
+	charCodeDict[DRAWING_MODE][&quot;o&quot;] = function () { return drawingSetPathColour(&quot;orange&quot;); };
+	charCodeDict[DRAWING_MODE][&quot;r&quot;] = function () { return drawingSetPathColour(&quot;red&quot;); };
+	charCodeDict[DRAWING_MODE][&quot;w&quot;] = function () { return drawingSetPathColour(&quot;white&quot;); };
+	charCodeDict[DRAWING_MODE][&quot;y&quot;] = function () { return drawingSetPathColour(&quot;yellow&quot;); };
+	charCodeDict[DRAWING_MODE][&quot;z&quot;] = function () { return drawingUndo(); };
+
+	charCodeDict[INDEX_MODE][&quot;i&quot;] = function () { return toggleSlideIndex(); };
+	charCodeDict[INDEX_MODE][&quot;-&quot;] = function () { return indexDecreaseNumberOfColumns(); };
+	charCodeDict[INDEX_MODE][&quot;=&quot;] = function () { return indexIncreaseNumberOfColumns(); };
+	charCodeDict[INDEX_MODE][&quot;+&quot;] = function () { return indexIncreaseNumberOfColumns(); };
+	charCodeDict[INDEX_MODE][&quot;0&quot;] = function () { return indexResetNumberOfColumns(); };
+
+	return charCodeDict;
+}
+
+/** Function to supply the default key code dictionary.
+ *
+ * @returns default key code dictionary
+ */
+function getDefaultKeyCodeDictionary()
+{
+	var keyCodeDict = new Object();
+
+	keyCodeDict[SLIDE_MODE] = new Object();
+	keyCodeDict[INDEX_MODE] = new Object();
+	keyCodeDict[DRAWING_MODE] = new Object();
+
+	keyCodeDict[SLIDE_MODE][LEFT_KEY] = function() { return dispatchEffects(-1); };
+	keyCodeDict[SLIDE_MODE][RIGHT_KEY] = function() { return dispatchEffects(1); };
+	keyCodeDict[SLIDE_MODE][UP_KEY] = function() { return skipEffects(-1); };
+	keyCodeDict[SLIDE_MODE][DOWN_KEY] = function() { return skipEffects(1); };
+	keyCodeDict[SLIDE_MODE][PAGE_UP_KEY] = function() { return dispatchEffects(-1); };
+	keyCodeDict[SLIDE_MODE][PAGE_DOWN_KEY] = function() { return dispatchEffects(1); };
+	keyCodeDict[SLIDE_MODE][HOME_KEY] = function() { return slideSetActiveSlide(0); };
+	keyCodeDict[SLIDE_MODE][END_KEY] = function() { return slideSetActiveSlide(slides.length - 1); };
+	keyCodeDict[SLIDE_MODE][SPACE_KEY] = function() { return dispatchEffects(1); };
+
+	keyCodeDict[INDEX_MODE][LEFT_KEY] = function() { return indexSetPageSlide(activeSlide - 1); };
+	keyCodeDict[INDEX_MODE][RIGHT_KEY] = function() { return indexSetPageSlide(activeSlide + 1); };
+	keyCodeDict[INDEX_MODE][UP_KEY] = function() { return indexSetPageSlide(activeSlide - INDEX_COLUMNS); };
+	keyCodeDict[INDEX_MODE][DOWN_KEY] = function() { return indexSetPageSlide(activeSlide + INDEX_COLUMNS); };
+	keyCodeDict[INDEX_MODE][PAGE_UP_KEY] = function() { return indexSetPageSlide(activeSlide - INDEX_COLUMNS * INDEX_COLUMNS); };
+	keyCodeDict[INDEX_MODE][PAGE_DOWN_KEY] = function() { return indexSetPageSlide(activeSlide + INDEX_COLUMNS * INDEX_COLUMNS); };
+	keyCodeDict[INDEX_MODE][HOME_KEY] = function() { return indexSetPageSlide(0); };
+	keyCodeDict[INDEX_MODE][END_KEY] = function() { return indexSetPageSlide(slides.length - 1); };
+	keyCodeDict[INDEX_MODE][ENTER_KEY] = function() { return toggleSlideIndex(); };
+
+	keyCodeDict[DRAWING_MODE][ESCAPE_KEY] = function () { return drawingSwitchToSlideMode(); };
+
+	return keyCodeDict;
+}
+
+/** Function to handle all mouse events.
+ *
+ *	@param	evnt	event
+ *	@param	action	type of event (e.g. mouse up, mouse wheel)
+ */
+function mouseHandlerDispatch(evnt, action)
+{
+	if (!evnt)
+		evnt = window.event;
+
+	var retVal = true;
+
+	if (!processingEffect &amp;&amp; mouseHandlerDictionary[currentMode] &amp;&amp; mouseHandlerDictionary[currentMode][action])
+	{
+		var subRetVal = mouseHandlerDictionary[currentMode][action](evnt);
+
+		if (subRetVal != null &amp;&amp; subRetVal != undefined)
+			retVal = subRetVal;
+	}
+
+	if (evnt.preventDefault &amp;&amp; !retVal)
+		evnt.preventDefault();
+
+	evnt.returnValue = retVal;
+
+	return retVal;
+}
+
+// Set mouse event handler.
+document.onmousedown = function(e) { return mouseHandlerDispatch(e, MOUSE_DOWN); };
+document.onmouseup = function(e) { return mouseHandlerDispatch(e, MOUSE_UP); };
+document.onmousemove = function(e) { return mouseHandlerDispatch(e, MOUSE_MOVE); };
+
+// Moz
+if (window.addEventListener)
+{
+	window.addEventListener('DOMMouseScroll', function(e) { return mouseHandlerDispatch(e, MOUSE_WHEEL); }, false);
+}
+
+// Opera Safari OK - may not work in IE
+window.onmousewheel = function(e) { return mouseHandlerDispatch(e, MOUSE_WHEEL); };
+
+/** Function to supply the default mouse handler dictionary.
+ *
+ * @returns default mouse handler dictionary
+ */
+function getDefaultMouseHandlerDictionary()
+{
+	var mouseHandlerDict = new Object();
+
+	mouseHandlerDict[SLIDE_MODE] = new Object();
+	mouseHandlerDict[INDEX_MODE] = new Object();
+	mouseHandlerDict[DRAWING_MODE] = new Object();
+
+	mouseHandlerDict[SLIDE_MODE][MOUSE_DOWN] = function(evnt) { return dispatchEffects(1); };
+	mouseHandlerDict[SLIDE_MODE][MOUSE_WHEEL] = function(evnt) { return slideMousewheel(evnt); };
+
+	mouseHandlerDict[INDEX_MODE][MOUSE_DOWN] = function(evnt) { return toggleSlideIndex(); };
+
+	mouseHandlerDict[DRAWING_MODE][MOUSE_DOWN] = function(evnt) { return drawingMousedown(evnt); };
+	mouseHandlerDict[DRAWING_MODE][MOUSE_UP] = function(evnt) { return drawingMouseup(evnt); };
+	mouseHandlerDict[DRAWING_MODE][MOUSE_MOVE] = function(evnt) { return drawingMousemove(evnt); };
+
+	return mouseHandlerDict;
+}
+
+/** Function to switch from slide mode to drawing mode.
+*/
+function slideSwitchToDrawingMode()
+{
+	currentMode = DRAWING_MODE;
+
+	var tempDict;
+
+	if (ROOT_NODE.hasAttribute(&quot;style&quot;))
+		tempDict = propStrToDict(ROOT_NODE.getAttribute(&quot;style&quot;));
+	else
+		tempDict = new Object();
+
+	tempDict[&quot;cursor&quot;] = &quot;crosshair&quot;;
+	ROOT_NODE.setAttribute(&quot;style&quot;, dictToPropStr(tempDict));
+}
+
+/** Function to switch from drawing mode to slide mode.
+*/
+function drawingSwitchToSlideMode()
+{
+	currentMode = SLIDE_MODE;
+
+	var tempDict;
+
+	if (ROOT_NODE.hasAttribute(&quot;style&quot;))
+		tempDict = propStrToDict(ROOT_NODE.getAttribute(&quot;style&quot;));
+	else
+		tempDict = new Object();
+
+	tempDict[&quot;cursor&quot;] = &quot;auto&quot;;
+	ROOT_NODE.setAttribute(&quot;style&quot;, dictToPropStr(tempDict));
+}
+
+/** Function to decrease the number of columns in index mode.
+*/
+function indexDecreaseNumberOfColumns()
+{
+	if (INDEX_COLUMNS &gt;= 3)
+	{
+		INDEX_COLUMNS -= 1;
+		INDEX_OFFSET = -1
+			indexSetPageSlide(activeSlide);
+	}
+}
+
+/** Function to increase the number of columns in index mode.
+*/
+function indexIncreaseNumberOfColumns()
+{
+	if (INDEX_COLUMNS &lt; 7)
+	{
+		INDEX_COLUMNS += 1;
+		INDEX_OFFSET = -1
+			indexSetPageSlide(activeSlide);
+	}
+}
+
+/** Function to reset the number of columns in index mode.
+*/
+function indexResetNumberOfColumns()
+{
+	if (INDEX_COLUMNS != INDEX_COLUMNS_DEFAULT)
+	{
+		INDEX_COLUMNS = INDEX_COLUMNS_DEFAULT;
+		INDEX_OFFSET = -1
+			indexSetPageSlide(activeSlide);
+	}
+}
+
+/** Function to reset path width in drawing mode.
+*/
+function drawingResetPathWidth()
+{
+	path_width = path_width_default;
+	set_path_paint_width();
+}
+
+/** Function to set path width in drawing mode.
+ *
+ * @param width new path width
+ */
+function drawingSetPathWidth(width)
+{
+	path_width = width;
+	set_path_paint_width();
+}
+
+/** Function to set path colour in drawing mode.
+ *
+ * @param colour new path colour
+ */
+function drawingSetPathColour(colour)
+{
+	path_colour = colour;
+}
+
+/** Function to query the duration of the presentation from the user in slide mode.
+*/
+function slideQueryDuration()
+{
+	var new_duration = prompt(&quot;Length of presentation in minutes?&quot;, timer_duration);
+
+	if ((new_duration != null) &amp;&amp; (new_duration != ''))
+	{
+		timer_duration = new_duration;
+	}
+
+	updateTimer();
+}
+
+/** Function to add new slide in slide mode.
+ *
+ * @param afterSlide after which slide to insert the new one
+ */
+function slideAddSlide(afterSlide)
+{
+	addSlide(afterSlide);
+	slideSetActiveSlide(afterSlide + 1);
+	updateTimer();
+}
+
+/** Function to toggle the visibility of the progress bar in slide mode.
+*/
+function slideToggleProgressBarVisibility()
+{
+	if (progress_bar_visible)
+	{
+		progress_bar_visible = false;
+		hideProgressBar();
+	}
+	else
+	{
+		progress_bar_visible = true;
+		showProgressBar();
+	}
+}
+
+/** Function to reset the timer in slide mode.
+*/
+function slideResetTimer()
+{
+	timer_start = timer_elapsed;
+	updateTimer();
+}
+
+/** Convenience function to pad a string with zero in front up to a certain length.
+ */
+function padString(str, len)
+{
+	var outStr = str;
+
+	while (outStr.length &lt; len)
+	{
+		outStr = '0' + outStr;
+	}
+
+	return outStr;
+}
+
+/** Function to update the export layer.
+ */
+function slideUpdateExportLayer()
+{
+	// Suspend redraw since we are going to mess with the slides.
+	var suspendHandle = ROOT_NODE.suspendRedraw(2000);
+
+	var tmpActiveSlide = activeSlide;
+	var tmpActiveEffect = activeEffect;
+	var exportedLayers = new Array();
+
+	for (var counterSlides = 0; counterSlides &lt; slides.length; counterSlides++)
+	{
+		var exportNode;
+
+		setSlideToState(counterSlides, STATE_START);
+
+		var maxEffect = 0;
+
+		if (slides[counterSlides].effects)
+		{
+			maxEffect = slides[counterSlides].effects.length;
+		}
+
+		exportNode = slides[counterSlides].element.cloneNode(true);
+		exportNode.setAttributeNS(NSS[&quot;inkscape&quot;], &quot;groupmode&quot;, &quot;layer&quot;);
+		exportNode.setAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;, &quot;slide_&quot; + padString((counterSlides + 1).toString(), slides.length.toString().length) + &quot;_effect_&quot; + padString(&quot;0&quot;, maxEffect.toString().length));
+
+		exportedLayers.push(exportNode);
+
+		if (slides[counterSlides][&quot;effects&quot;])
+		{	
+			for (var counter = 0; counter &lt; slides[counterSlides][&quot;effects&quot;].length; counter++)
+			{
+				for (var subCounter = 0; subCounter &lt; slides[counterSlides][&quot;effects&quot;][counter].length; subCounter++)
+				{
+					var effect = slides[counterSlides][&quot;effects&quot;][counter][subCounter];
+					if (effect[&quot;effect&quot;] == &quot;fade&quot;)
+						fade(parseInt(effect[&quot;dir&quot;]), effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;appear&quot;)
+						appear(parseInt(effect[&quot;dir&quot;]), effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;pop&quot;)
+						pop(parseInt(effect[&quot;dir&quot;]), effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;view&quot;)
+						view(parseInt(effect[&quot;dir&quot;]), effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+				}
+
+				var layerName = &quot;slide_&quot; + padString((counterSlides + 1).toString(), slides.length.toString().length) + &quot;_effect_&quot; + padString((counter + 1).toString(), maxEffect.toString().length);
+				exportNode = slides[counterSlides].element.cloneNode(true);
+				exportNode.setAttributeNS(NSS[&quot;inkscape&quot;], &quot;groupmode&quot;, &quot;layer&quot;);
+				exportNode.setAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;, layerName);
+				exportNode.setAttribute(&quot;id&quot;, layerName);
+
+				exportedLayers.push(exportNode);
+			}
+		}
+	}
+
+	activeSlide = tmpActiveSlide;
+	activeEffect = tmpActiveEffect;
+	setSlideToState(activeSlide, activeEffect);
+
+	// Copy image.
+	var newDoc = document.documentElement.cloneNode(true);
+
+	// Delete viewbox form new imag and set width and height.
+	newDoc.removeAttribute('viewbox');
+	newDoc.setAttribute('width', WIDTH);
+	newDoc.setAttribute('height', HEIGHT);
+
+	// Delete all layers and script elements.
+	var nodesToBeRemoved = new Array();
+
+	for (var childCounter = 0; childCounter &lt;  newDoc.childNodes.length; childCounter++)
+	{
+		var child = newDoc.childNodes[childCounter];
+
+		if (child.nodeType == 1)
+		{
+			if ((child.nodeName.toUpperCase() == 'G') || (child.nodeName.toUpperCase() == 'SCRIPT'))
+			{
+				nodesToBeRemoved.push(child);
+			}
+		}
+	}
+
+	for (var ndCounter = 0; ndCounter &lt; nodesToBeRemoved.length; ndCounter++)
+	{
+		var nd = nodesToBeRemoved[ndCounter];
+
+		// Before removing the node, check whether it contains any definitions.
+		var defs = nd.getElementsByTagNameNS(NSS[&quot;svg&quot;], &quot;defs&quot;);
+
+		for (var defsCounter = 0; defsCounter &lt; defs.length; defsCounter++)
+		{
+			if (defs[defsCounter].id)
+			{
+				newDoc.appendChild(defs[defsCounter].cloneNode(true));
+			}
+		}
+
+		// Remove node.
+		nd.parentNode.removeChild(nd);
+	}
+
+	// Set current layer.
+	if (exportedLayers[0])
+	{
+		var namedView;
+
+		for (var nodeCounter = 0; nodeCounter &lt; newDoc.childNodes.length; nodeCounter++)
+		{
+			if ((newDoc.childNodes[nodeCounter].nodeType == 1) &amp;&amp; (newDoc.childNodes[nodeCounter].getAttribute('id') == 'base'))
+			{
+				namedView = newDoc.childNodes[nodeCounter];
+			}
+		}
+
+		if (namedView)
+		{
+			namedView.setAttributeNS(NSS['inkscape'], 'current-layer', exportedLayers[0].getAttributeNS(NSS['inkscape'], 'label'));
+		}
+	}
+
+	// Add exported layers.
+	while (exportedLayers.length &gt; 0)
+	{
+		var nd = exportedLayers.pop();
+
+		nd.setAttribute(&quot;opacity&quot;,1);
+		nd.style.display = &quot;inherit&quot;;
+
+		newDoc.appendChild(nd);
+	}
+
+	// Serialise the new document.
+	var serializer = new XMLSerializer();
+	var strm = 
+	{
+		content : &quot;&quot;,
+		close : function() {},  
+		flush : function() {},  
+		write : function(str, count) { this.content += str; }  
+	};
+
+	var xml = serializer.serializeToStream(newDoc, strm, 'UTF-8');
+
+	window.location = 'data:application/svg+xml;base64;charset=utf-8,' + window.btoa(strm.content);
+
+	// Unsuspend redraw.
+	ROOT_NODE.unsuspendRedraw(suspendHandle);
+	ROOT_NODE.forceRedraw();
+}
+
+/** Function to undo last drawing operation.
+*/
+function drawingUndo()
+{
+	mouse_presentation_path = null;
+	mouse_original_path = null;
+
+	if (history_presentation_elements.length &gt; 0)
+	{
+		var p = history_presentation_elements.pop();
+		var parent = p.parentNode.removeChild(p);
+
+		p = history_original_elements.pop();
+		parent = p.parentNode.removeChild(p);
+	}
+}
+
+/** Event handler for mouse down in drawing mode.
+ *
+ *  @param e the event
+ */
+function drawingMousedown(e)
+{
+	var value = 0;
+
+	if (e.button)
+		value = e.button;
+	else if (e.which)
+		value = e.which;
+
+	if (value == 1)
+	{
+		history_counter++;
+
+		var p = calcCoord(e);
+
+		mouse_last_x = e.clientX;
+		mouse_last_y = e.clientY;
+		mouse_original_path = document.createElementNS(NSS[&quot;svg&quot;], &quot;path&quot;);
+		mouse_original_path.setAttribute(&quot;stroke&quot;, path_colour);
+		mouse_original_path.setAttribute(&quot;stroke-width&quot;, path_paint_width);
+		mouse_original_path.setAttribute(&quot;fill&quot;, &quot;none&quot;);
+		mouse_original_path.setAttribute(&quot;id&quot;, &quot;path &quot; + Date());
+		mouse_original_path.setAttribute(&quot;d&quot;, &quot;M&quot; + p.x + &quot;,&quot; + p.y);
+		slides[activeSlide][&quot;original_element&quot;].appendChild(mouse_original_path);
+		history_original_elements.push(mouse_original_path);
+
+		mouse_presentation_path = document.createElementNS(NSS[&quot;svg&quot;], &quot;path&quot;);
+		mouse_presentation_path.setAttribute(&quot;stroke&quot;, path_colour);
+		mouse_presentation_path.setAttribute(&quot;stroke-width&quot;, path_paint_width);
+		mouse_presentation_path.setAttribute(&quot;fill&quot;, &quot;none&quot;);
+		mouse_presentation_path.setAttribute(&quot;id&quot;, &quot;path &quot; + Date() + &quot; presentation copy&quot;);
+		mouse_presentation_path.setAttribute(&quot;d&quot;, &quot;M&quot; + p.x + &quot;,&quot; + p.y);
+
+		if (slides[activeSlide][&quot;viewGroup&quot;])
+			slides[activeSlide][&quot;viewGroup&quot;].appendChild(mouse_presentation_path);
+		else
+			slides[activeSlide][&quot;element&quot;].appendChild(mouse_presentation_path);
+
+		history_presentation_elements.push(mouse_presentation_path);
+
+		return false;
+	}
+
+	return true;
+}
+
+/** Event handler for mouse up in drawing mode.
+ *
+ *  @param e the event
+ */
+function drawingMouseup(e)
+{
+	if(!e)
+		e = window.event;
+
+	if (mouse_presentation_path != null)
+	{
+		var p = calcCoord(e);
+		var d = mouse_presentation_path.getAttribute(&quot;d&quot;);
+		d += &quot; L&quot; + p.x + &quot;,&quot; + p.y;
+		mouse_presentation_path.setAttribute(&quot;d&quot;, d);
+		mouse_presentation_path = null;
+		mouse_original_path.setAttribute(&quot;d&quot;, d);
+		mouse_original_path = null;
+
+		return false;
+	}
+
+	return true;
+}
+
+/** Event handler for mouse move in drawing mode.
+ *
+ *  @param e the event
+ */
+function drawingMousemove(e)
+{
+	if(!e)
+		e = window.event;
+
+	var dist = (mouse_last_x - e.clientX) * (mouse_last_x - e.clientX) + (mouse_last_y - e.clientY) * (mouse_last_y - e.clientY);
+
+	if (mouse_presentation_path == null)
+	{
+		return true;
+	}
+
+	if (dist &gt;= mouse_min_dist_sqr)
+	{
+		var p = calcCoord(e);
+		var d = mouse_presentation_path.getAttribute(&quot;d&quot;);
+		d += &quot; L&quot; + p.x + &quot;,&quot; + p.y;
+		mouse_presentation_path.setAttribute(&quot;d&quot;, d);
+		mouse_original_path.setAttribute(&quot;d&quot;, d);
+		mouse_last_x = e.clientX;
+		mouse_last_y = e.clientY;
+	}
+
+	return false;
+}
+
+/** Event handler for mouse wheel events in slide mode.
+ *  based on http://adomas.org/javascript-mouse-wheel/
+ *
+ *  @param e the event
+ */
+function slideMousewheel(e)
+{
+	var delta = 0;
+
+	if (!e)
+		e = window.event;
+
+	if (e.wheelDelta)
+	{ // IE Opera
+		delta = e.wheelDelta/120;
+	}
+	else if (e.detail)
+	{ // MOZ
+		delta = -e.detail/3;
+	}
+
+	if (delta &gt; 0)
+		skipEffects(-1);
+	else if (delta &lt; 0)
+		skipEffects(1);
+
+	if (e.preventDefault)
+		e.preventDefault();
+
+	e.returnValue = false;
+}
+
+/** Event handler for mouse wheel events in index mode.
+ *  based on http://adomas.org/javascript-mouse-wheel/
+ *
+ *  @param e the event
+ */
+function indexMousewheel(e)
+{
+	var delta = 0;
+
+	if (!e)
+		e = window.event;
+
+	if (e.wheelDelta)
+	{ // IE Opera
+		delta = e.wheelDelta/120;
+	}
+	else if (e.detail)
+	{ // MOZ
+		delta = -e.detail/3;
+	}
+
+	if (delta &gt; 0)
+		indexSetPageSlide(activeSlide - INDEX_COLUMNS * INDEX_COLUMNS);
+	else if (delta &lt; 0)
+		indexSetPageSlide(activeSlide + INDEX_COLUMNS * INDEX_COLUMNS);
+
+	if (e.preventDefault)
+		e.preventDefault();
+
+	e.returnValue = false;
+}
+
+/** Function to set the path paint width.
+*/
+function set_path_paint_width()
+{
+	var svgPoint1 = document.documentElement.createSVGPoint();
+	var svgPoint2 = document.documentElement.createSVGPoint();
+
+	svgPoint1.x = 0.0;
+	svgPoint1.y = 0.0;
+	svgPoint2.x = 1.0;
+	svgPoint2.y = 0.0;
+
+	var matrix = slides[activeSlide][&quot;element&quot;].getTransformToElement(ROOT_NODE);
+
+	if (slides[activeSlide][&quot;viewGroup&quot;])
+		matrix = slides[activeSlide][&quot;viewGroup&quot;].getTransformToElement(ROOT_NODE);
+
+	svgPoint1 = svgPoint1.matrixTransform(matrix);
+	svgPoint2 = svgPoint2.matrixTransform(matrix);
+
+	path_paint_width = path_width / Math.sqrt((svgPoint2.x - svgPoint1.x) * (svgPoint2.x - svgPoint1.x) + (svgPoint2.y - svgPoint1.y) * (svgPoint2.y - svgPoint1.y));
+}
+
+/** The view effect.
+ *
+ *  @param dir direction the effect should be played (1 = forwards, -1 = backwards)
+ *  @param element the element the effect should be applied to
+ *  @param time the time that has elapsed since the beginning of the effect
+ *  @param options a dictionary with additional options (e.g. length of the effect); for the view effect the options need to contain the old and the new matrix.
+ */
+function view(dir, element, time, options)
+{
+	var length = 250;
+	var fraction;
+
+	if (!options[&quot;matrixInitial&quot;])
+	{
+		var tempString = slides[activeSlide][&quot;viewGroup&quot;].getAttribute(&quot;transform&quot;);
+
+		if (tempString)
+			options[&quot;matrixInitial&quot;] = (new matrixSVG()).fromAttribute(tempString);
+		else
+			options[&quot;matrixInitial&quot;] = (new matrixSVG()).fromSVGElements(1, 0, 0, 1, 0, 0);
+	}
+
+	if ((time == STATE_END) || (time == STATE_START))
+		fraction = 1;
+	else
+	{
+		if (options &amp;&amp; options[&quot;length&quot;])
+			length = options[&quot;length&quot;];
+
+		fraction = time / length;
+	}
+
+	if (dir == 1)
+	{
+		if (fraction &lt;= 0)
+		{
+			element.setAttribute(&quot;transform&quot;, options[&quot;matrixInitial&quot;].toAttribute());
+		}
+		else if (fraction &gt;= 1)
+		{
+			element.setAttribute(&quot;transform&quot;, options[&quot;matrixNew&quot;].toAttribute());
+
+			set_path_paint_width();
+
+			options[&quot;matrixInitial&quot;] = null;
+			return true;
+		}
+		else
+		{
+			element.setAttribute(&quot;transform&quot;, options[&quot;matrixInitial&quot;].mix(options[&quot;matrixNew&quot;], fraction).toAttribute());
+		}
+	}
+	else if (dir == -1)
+	{
+		if (fraction &lt;= 0)
+		{
+			element.setAttribute(&quot;transform&quot;, options[&quot;matrixInitial&quot;].toAttribute());
+		}
+		else if (fraction &gt;= 1)
+		{
+			element.setAttribute(&quot;transform&quot;, options[&quot;matrixOld&quot;].toAttribute());
+			set_path_paint_width();
+
+			options[&quot;matrixInitial&quot;] = null;
+			return true;
+		}
+		else
+		{
+			element.setAttribute(&quot;transform&quot;, options[&quot;matrixInitial&quot;].mix(options[&quot;matrixOld&quot;], fraction).toAttribute());
+		}
+	}
+
+	return false;
+}
+
+/** The fade effect.
+ *
+ *  @param dir direction the effect should be played (1 = forwards, -1 = backwards)
+ *  @param element the element the effect should be applied to
+ *  @param time the time that has elapsed since the beginning of the effect
+ *  @param options a dictionary with additional options (e.g. length of the effect)
+ */
+function fade(dir, element, time, options)
+{
+	var length = 250;
+	var fraction;
+
+	if ((time == STATE_END) || (time == STATE_START))
+		fraction = 1;
+	else
+	{
+		if (options &amp;&amp; options[&quot;length&quot;])
+			length = options[&quot;length&quot;];
+
+		fraction = time / length;
+	}
+
+	if (dir == 1)
+	{
+		if (fraction &lt;= 0)
+		{
+			element.style.display = &quot;none&quot;;
+			element.setAttribute(&quot;opacity&quot;, 0);
+		}
+		else if (fraction &gt;= 1)
+		{
+			element.style.display = &quot;inherit&quot;;
+			element.setAttribute(&quot;opacity&quot;, 1);
+			return true;
+		}
+		else
+		{
+			element.style.display = &quot;inherit&quot;;
+			element.setAttribute(&quot;opacity&quot;, fraction);
+		}
+	}
+	else if (dir == -1)
+	{
+		if (fraction &lt;= 0)
+		{
+			element.style.display = &quot;inherit&quot;;
+			element.setAttribute(&quot;opacity&quot;, 1);
+		}
+		else if (fraction &gt;= 1)
+		{
+			element.setAttribute(&quot;opacity&quot;, 0);
+			element.style.display = &quot;none&quot;;
+			return true;
+		}
+		else
+		{
+			element.style.display = &quot;inherit&quot;;
+			element.setAttribute(&quot;opacity&quot;, 1 - fraction);
+		}
+	}
+	return false;
+}
+
+/** The appear effect.
+ *
+ *  @param dir direction the effect should be played (1 = forwards, -1 = backwards)
+ *  @param element the element the effect should be applied to
+ *  @param time the time that has elapsed since the beginning of the effect
+ *  @param options a dictionary with additional options (e.g. length of the effect)
+ */
+function appear(dir, element, time, options)
+{
+	if (dir == 1)
+	{
+		element.style.display = &quot;inherit&quot;;
+		element.setAttribute(&quot;opacity&quot;,1);
+	}
+	else if (dir == -1)
+	{
+		element.style.display = &quot;none&quot;;
+		element.setAttribute(&quot;opacity&quot;,0);
+	}
+	return true;
+}
+
+/** The pop effect.
+ *
+ *  @param dir direction the effect should be played (1 = forwards, -1 = backwards)
+ *  @param element the element the effect should be applied to
+ *  @param time the time that has elapsed since the beginning of the effect
+ *  @param options a dictionary with additional options (e.g. length of the effect)
+ */
+function pop(dir, element, time, options)
+{
+	var length = 500;
+	var fraction;
+
+	if ((time == STATE_END) || (time == STATE_START))
+		fraction = 1;
+	else
+	{
+		if (options &amp;&amp; options[&quot;length&quot;])
+			length = options[&quot;length&quot;];
+
+		fraction = time / length;
+	}
+
+	if (dir == 1)
+	{
+		if (fraction &lt;= 0)
+		{
+			element.setAttribute(&quot;opacity&quot;, 0);
+			element.setAttribute(&quot;transform&quot;, &quot;scale(0)&quot;);
+			element.style.display = &quot;none&quot;;
+		}
+		else if (fraction &gt;= 1)
+		{
+			element.setAttribute(&quot;opacity&quot;, 1);
+			element.removeAttribute(&quot;transform&quot;);
+			element.style.display = &quot;inherit&quot;;
+			return true;
+		}
+		else
+		{
+			element.style.display = &quot;inherit&quot;;
+			var opacityFraction = fraction * 3;
+			if (opacityFraction &gt; 1)
+				opacityFraction = 1;
+			element.setAttribute(&quot;opacity&quot;, opacityFraction);
+			var offsetX = WIDTH * (1.0 - fraction) / 2.0;
+			var offsetY = HEIGHT * (1.0 - fraction) / 2.0;
+			element.setAttribute(&quot;transform&quot;, &quot;translate(&quot; + offsetX + &quot;,&quot; + offsetY + &quot;) scale(&quot; + fraction + &quot;)&quot;);
+		}
+	}
+	else if (dir == -1)
+	{
+		if (fraction &lt;= 0)
+		{
+			element.setAttribute(&quot;opacity&quot;, 1);
+			element.setAttribute(&quot;transform&quot;, &quot;scale(1)&quot;);
+			element.style.display = &quot;inherit&quot;;
+		}
+		else if (fraction &gt;= 1)
+		{
+			element.setAttribute(&quot;opacity&quot;, 0);
+			element.removeAttribute(&quot;transform&quot;);
+			element.style.display = &quot;none&quot;;
+			return true;
+		}
+		else
+		{
+			element.setAttribute(&quot;opacity&quot;, 1 - fraction);
+			element.setAttribute(&quot;transform&quot;, &quot;scale(&quot; + 1 - fraction + &quot;)&quot;);
+			element.style.display = &quot;inherit&quot;;
+		}
+	}
+	return false;
+}
+
+/** Function to set a slide either to the start or the end state.
+ *  
+ *  @param slide the slide to use
+ *  @param state the state into which the slide should be set
+ */
+function setSlideToState(slide, state)
+{
+	slides[slide][&quot;viewGroup&quot;].setAttribute(&quot;transform&quot;, slides[slide].initialView);
+
+	if (slides[slide][&quot;effects&quot;])
+	{	
+		if (state == STATE_END)
+		{
+			for (var counter = 0; counter &lt; slides[slide][&quot;effects&quot;].length; counter++)
+			{
+				for (var subCounter = 0; subCounter &lt; slides[slide][&quot;effects&quot;][counter].length; subCounter++)
+				{
+					var effect = slides[slide][&quot;effects&quot;][counter][subCounter];
+					if (effect[&quot;effect&quot;] == &quot;fade&quot;)
+						fade(effect[&quot;dir&quot;], effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;appear&quot;)
+						appear(effect[&quot;dir&quot;], effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;pop&quot;)
+						pop(effect[&quot;dir&quot;], effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;view&quot;)
+						view(effect[&quot;dir&quot;], effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+				}
+			}
+		}
+		else if (state == STATE_START)
+		{
+			for (var counter = slides[slide][&quot;effects&quot;].length - 1; counter &gt;= 0; counter--)
+			{
+				for (var subCounter = 0; subCounter &lt; slides[slide][&quot;effects&quot;][counter].length; subCounter++)
+				{
+					var effect = slides[slide][&quot;effects&quot;][counter][subCounter];
+					if (effect[&quot;effect&quot;] == &quot;fade&quot;)
+						fade(parseInt(effect[&quot;dir&quot;]) * -1, effect[&quot;element&quot;], STATE_START, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;appear&quot;)
+						appear(parseInt(effect[&quot;dir&quot;]) * -1, effect[&quot;element&quot;], STATE_START, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;pop&quot;)
+						pop(parseInt(effect[&quot;dir&quot;]) * -1, effect[&quot;element&quot;], STATE_START, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;view&quot;)
+						view(parseInt(effect[&quot;dir&quot;]) * -1, effect[&quot;element&quot;], STATE_START, effect[&quot;options&quot;]);	
+				}
+			}
+		}
+		else
+		{
+			setSlideToState(slide, STATE_START);
+
+			for (var counter = 0; counter &lt; slides[slide][&quot;effects&quot;].length &amp;&amp; counter &lt; state; counter++)
+			{
+				for (var subCounter = 0; subCounter &lt; slides[slide][&quot;effects&quot;][counter].length; subCounter++)
+				{
+					var effect = slides[slide][&quot;effects&quot;][counter][subCounter];
+					if (effect[&quot;effect&quot;] == &quot;fade&quot;)
+						fade(effect[&quot;dir&quot;], effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;appear&quot;)
+						appear(effect[&quot;dir&quot;], effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;pop&quot;)
+						pop(effect[&quot;dir&quot;], effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+					else if (effect[&quot;effect&quot;] == &quot;view&quot;)
+						view(effect[&quot;dir&quot;], effect[&quot;element&quot;], STATE_END, effect[&quot;options&quot;]);	
+				}
+			}
+		}
+	}
+
+	window.location.hash = (activeSlide + 1) + '_' + activeEffect;
+}
+
+/** Convenience function to translate a attribute string into a dictionary.
+ *
+ *	@param str the attribute string
+ *  @return a dictionary
+ *  @see dictToPropStr
+ */
+function propStrToDict(str)
+{
+	var list = str.split(&quot;;&quot;);
+	var obj = new Object();
+
+	for (var counter = 0; counter &lt; list.length; counter++)
+	{
+		var subStr = list[counter];
+		var subList = subStr.split(&quot;:&quot;);
+		if (subList.length == 2)
+		{
+			obj[subList[0]] = subList[1];
+		}	
+	}
+
+	return obj;
+}
+
+/** Convenience function to translate a dictionary into a string that can be used as an attribute.
+ *
+ *  @param dict the dictionary to convert
+ *  @return a string that can be used as an attribute
+ *  @see propStrToDict
+ */
+function dictToPropStr(dict)
+{
+	var str = &quot;&quot;;
+
+	for (var key in dict)
+	{
+		str += key + &quot;:&quot; + dict[key] + &quot;;&quot;;
+	}
+
+	return str;
+}
+
+/** Sub-function to add a suffix to the ids of the node and all its children.
+ *	
+ *	@param node the node to change
+ *	@param suffix the suffix to add
+ *	@param replace dictionary of replaced ids
+ *  @see suffixNodeIds
+ */
+function suffixNoneIds_sub(node, suffix, replace)
+{
+	if (node.nodeType == 1)
+	{
+		if (node.getAttribute(&quot;id&quot;))
+		{
+			var id = node.getAttribute(&quot;id&quot;)
+				replace[&quot;#&quot; + id] = id + suffix;
+			node.setAttribute(&quot;id&quot;, id + suffix);
+		}
+
+		if ((node.nodeName == &quot;use&quot;) &amp;&amp; (node.getAttributeNS(NSS[&quot;xlink&quot;], &quot;href&quot;)) &amp;&amp; (replace[node.getAttribute(NSS[&quot;xlink&quot;], &quot;href&quot;)]))
+			node.setAttribute(NSS[&quot;xlink&quot;], &quot;href&quot;, node.getAttribute(NSS[&quot;xlink&quot;], &quot;href&quot;) + suffix);
+
+		if (node.childNodes)
+		{
+			for (var counter = 0; counter &lt; node.childNodes.length; counter++)
+				suffixNoneIds_sub(node.childNodes[counter], suffix, replace);
+		}
+	}
+}
+
+/** Function to add a suffix to the ids of the node and all its children.
+ *	
+ *	@param node the node to change
+ *	@param suffix the suffix to add
+ *  @return the changed node
+ *  @see suffixNodeIds_sub
+ */
+function suffixNodeIds(node, suffix)
+{
+	var replace = new Object();
+
+	suffixNoneIds_sub(node, suffix, replace);
+
+	return node;
+}
+
+/** Function to build a progress bar.
+ *	
+ *  @param parent node to attach the progress bar to
+ */
+function createProgressBar(parent_node)
+{
+	var g = document.createElementNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+	g.setAttribute(&quot;clip-path&quot;, &quot;url(#jessyInkSlideClipPath)&quot;);
+	g.setAttribute(&quot;id&quot;, &quot;layer_progress_bar&quot;);
+	g.setAttribute(&quot;style&quot;, &quot;display: none;&quot;);
+
+	var rect_progress_bar = document.createElementNS(NSS[&quot;svg&quot;], &quot;rect&quot;);
+	rect_progress_bar.setAttribute(&quot;style&quot;, &quot;marker: none; fill: rgb(128, 128, 128); stroke: none;&quot;);
+	rect_progress_bar.setAttribute(&quot;id&quot;, &quot;rect_progress_bar&quot;);
+	rect_progress_bar.setAttribute(&quot;x&quot;, 0);
+	rect_progress_bar.setAttribute(&quot;y&quot;, 0.99 * HEIGHT);
+	rect_progress_bar.setAttribute(&quot;width&quot;, 0);
+	rect_progress_bar.setAttribute(&quot;height&quot;, 0.01 * HEIGHT);
+	g.appendChild(rect_progress_bar);
+
+	var circle_timer_indicator = document.createElementNS(NSS[&quot;svg&quot;], &quot;circle&quot;);
+	circle_timer_indicator.setAttribute(&quot;style&quot;, &quot;marker: none; fill: rgb(255, 0, 0); stroke: none;&quot;);
+	circle_timer_indicator.setAttribute(&quot;id&quot;, &quot;circle_timer_indicator&quot;);
+	circle_timer_indicator.setAttribute(&quot;cx&quot;, 0.005 * HEIGHT);
+	circle_timer_indicator.setAttribute(&quot;cy&quot;, 0.995 * HEIGHT);
+	circle_timer_indicator.setAttribute(&quot;r&quot;, 0.005 * HEIGHT);
+	g.appendChild(circle_timer_indicator);
+
+	parent_node.appendChild(g);
+}
+
+/** Function to hide the progress bar.
+ *	
+ */
+function hideProgressBar()
+{
+	var progress_bar = document.getElementById(&quot;layer_progress_bar&quot;);
+
+	if (!progress_bar)
+	{
+		return;
+	}
+
+	progress_bar.setAttribute(&quot;style&quot;, &quot;display: none;&quot;);
+}
+
+/** Function to show the progress bar.
+ *	
+ */
+function showProgressBar()
+{
+	var progress_bar = document.getElementById(&quot;layer_progress_bar&quot;);
+
+	if (!progress_bar)
+	{
+		return;
+	}
+
+	progress_bar.setAttribute(&quot;style&quot;, &quot;display: inherit;&quot;);
+}
+
+/** Set progress bar value.
+ *	
+ *	@param value the current slide number
+ *
+ */
+function setProgressBarValue(value)
+{
+	var rect_progress_bar = document.getElementById(&quot;rect_progress_bar&quot;);
+
+	if (!rect_progress_bar)
+	{
+		return;
+	}
+
+	if (value &lt; 1)
+	{
+		// First slide, assumed to be the title of the presentation
+		var x = 0;
+		var w = 0.01 * HEIGHT;
+	}
+	else if (value &gt;= slides.length - 1)
+	{
+		// Last slide, assumed to be the end of the presentation
+		var x = WIDTH - 0.01 * HEIGHT;
+		var w = 0.01 * HEIGHT;
+	}
+	else
+	{
+		value -= 1;
+		value /= (slides.length - 2);
+
+		var x = WIDTH * value;
+		var w = WIDTH / (slides.length - 2);
+	}
+
+	rect_progress_bar.setAttribute(&quot;x&quot;, x);
+	rect_progress_bar.setAttribute(&quot;width&quot;, w);
+}
+
+/** Set time indicator.
+ *	
+ *	@param value the percentage of time elapse so far between 0.0 and 1.0
+ *
+ */
+function setTimeIndicatorValue(value)
+{
+	var circle_timer_indicator = document.getElementById(&quot;circle_timer_indicator&quot;);
+
+	if (!circle_timer_indicator)
+	{
+		return;
+	}
+
+	if (value &lt; 0.0)
+	{
+		value = 0.0;
+	}
+
+	if (value &gt; 1.0)
+	{
+		value = 1.0;
+	}
+
+	var cx = (WIDTH - 0.01 * HEIGHT) * value + 0.005 * HEIGHT;
+	circle_timer_indicator.setAttribute(&quot;cx&quot;, cx);
+}
+
+/** Update timer.
+ *	
+ */
+function updateTimer()
+{
+	timer_elapsed += 1;
+	setTimeIndicatorValue((timer_elapsed - timer_start) / (60 * timer_duration));
+}
+
+/** Convert screen coordinates to document coordinates.
+ *
+ *  @param e event with screen coordinates
+ *
+ *  @return coordinates in SVG file coordinate system	
+ */
+function calcCoord(e)
+{
+	var svgPoint = document.documentElement.createSVGPoint();
+	svgPoint.x = e.clientX + window.pageXOffset;
+	svgPoint.y = e.clientY + window.pageYOffset;
+
+	var matrix = slides[activeSlide][&quot;element&quot;].getScreenCTM();
+
+	if (slides[activeSlide][&quot;viewGroup&quot;])
+		matrix = slides[activeSlide][&quot;viewGroup&quot;].getScreenCTM();
+
+	svgPoint = svgPoint.matrixTransform(matrix.inverse());
+	return svgPoint;
+}
+
+/** Add slide.
+ *
+ *	@param after_slide after which slide the new slide should be inserted into the presentation
+ */
+function addSlide(after_slide)
+{
+	number_of_added_slides++;
+
+	var g = document.createElementNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+	g.setAttribute(&quot;clip-path&quot;, &quot;url(#jessyInkSlideClipPath)&quot;);
+	g.setAttribute(&quot;id&quot;, &quot;Whiteboard &quot; + Date() + &quot; presentation copy&quot;);
+	g.setAttribute(&quot;style&quot;, &quot;display: none;&quot;);
+
+	var new_slide = new Object();
+	new_slide[&quot;element&quot;] = g;
+
+	// Set build in transition.
+	new_slide[&quot;transitionIn&quot;] = new Object();
+	var dict = defaultTransitionInDict;
+	new_slide[&quot;transitionIn&quot;][&quot;name&quot;] = dict[&quot;name&quot;];
+	new_slide[&quot;transitionIn&quot;][&quot;options&quot;] = new Object();
+
+	for (key in dict)
+		if (key != &quot;name&quot;)
+			new_slide[&quot;transitionIn&quot;][&quot;options&quot;][key] = dict[key];
+
+	// Set build out transition.
+	new_slide[&quot;transitionOut&quot;] = new Object();
+	dict = defaultTransitionOutDict;
+	new_slide[&quot;transitionOut&quot;][&quot;name&quot;] = dict[&quot;name&quot;];
+	new_slide[&quot;transitionOut&quot;][&quot;options&quot;] = new Object();
+
+	for (key in dict)
+		if (key != &quot;name&quot;)
+			new_slide[&quot;transitionOut&quot;][&quot;options&quot;][key] = dict[key];
+
+	// Copy master slide content.
+	if (masterSlide)
+	{
+		var clonedNode = suffixNodeIds(masterSlide.cloneNode(true), &quot;_&quot; + Date() + &quot; presentation_copy&quot;);
+		clonedNode.removeAttributeNS(NSS[&quot;inkscape&quot;], &quot;groupmode&quot;);
+		clonedNode.removeAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;);
+		clonedNode.style.display = &quot;inherit&quot;;
+
+		g.appendChild(clonedNode);
+	}
+
+	// Substitute auto texts.
+	substituteAutoTexts(g, &quot;Whiteboard &quot; + number_of_added_slides, &quot;W&quot; + number_of_added_slides, slides.length);
+
+	g.setAttribute(&quot;onmouseover&quot;, &quot;if ((currentMode == INDEX_MODE) &amp;&amp; ( activeSlide != &quot; + (after_slide + 1) + &quot;)) { indexSetActiveSlide(&quot; + (after_slide + 1) + &quot;); };&quot;);
+
+	// Create a transform group.
+	var transformGroup = document.createElementNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+
+	// Add content to transform group.
+	while (g.firstChild)
+		transformGroup.appendChild(g.firstChild);
+
+	// Transfer the transform attribute from the node to the transform group.
+	if (g.getAttribute(&quot;transform&quot;))
+	{
+		transformGroup.setAttribute(&quot;transform&quot;, g.getAttribute(&quot;transform&quot;));
+		g.removeAttribute(&quot;transform&quot;);
+	}
+
+	// Create a view group.
+	var viewGroup = document.createElementNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+
+	viewGroup.appendChild(transformGroup);
+	new_slide[&quot;viewGroup&quot;] = g.appendChild(viewGroup);
+
+	// Insert background.
+	if (BACKGROUND_COLOR != null)
+	{
+		var rectNode = document.createElementNS(NSS[&quot;svg&quot;], &quot;rect&quot;);
+
+		rectNode.setAttribute(&quot;x&quot;, 0);
+		rectNode.setAttribute(&quot;y&quot;, 0);
+		rectNode.setAttribute(&quot;width&quot;, WIDTH);
+		rectNode.setAttribute(&quot;height&quot;, HEIGHT);
+		rectNode.setAttribute(&quot;id&quot;, &quot;jessyInkBackground&quot; + Date());
+		rectNode.setAttribute(&quot;fill&quot;, BACKGROUND_COLOR);
+
+		new_slide[&quot;viewGroup&quot;].insertBefore(rectNode, new_slide[&quot;viewGroup&quot;].firstChild);
+	}
+
+	// Set initial view even if there are no other views.
+	var matrixOld = (new matrixSVG()).fromElements(1, 0, 0, 0, 1, 0, 0, 0, 1);
+
+	new_slide[&quot;viewGroup&quot;].setAttribute(&quot;transform&quot;, matrixOld.toAttribute());
+	new_slide.initialView = matrixOld.toAttribute();
+
+	// Insert slide
+	var node = slides[after_slide][&quot;element&quot;];
+	var next_node = node.nextSibling;
+	var parent_node = node.parentNode;
+
+	if (next_node)
+	{
+		parent_node.insertBefore(g, next_node);
+	}
+	else
+	{
+		parent_node.appendChild(g);
+	}
+
+	g = document.createElementNS(NSS[&quot;svg&quot;], &quot;g&quot;);
+	g.setAttributeNS(NSS[&quot;inkscape&quot;], &quot;groupmode&quot;, &quot;layer&quot;);
+	g.setAttributeNS(NSS[&quot;inkscape&quot;], &quot;label&quot;, &quot;Whiteboard &quot; + number_of_added_slides);
+	g.setAttribute(&quot;clip-path&quot;, &quot;url(#jessyInkSlideClipPath)&quot;);
+	g.setAttribute(&quot;id&quot;, &quot;Whiteboard &quot; + Date());
+	g.setAttribute(&quot;style&quot;, &quot;display: none;&quot;);
+
+	new_slide[&quot;original_element&quot;] = g;
+
+	node = slides[after_slide][&quot;original_element&quot;];
+	next_node = node.nextSibling;
+	parent_node = node.parentNode;
+
+	if (next_node)
+	{
+		parent_node.insertBefore(g, next_node);
+	}
+	else
+	{
+		parent_node.appendChild(g);
+	}
+
+	before_new_slide = slides.slice(0, after_slide + 1);
+	after_new_slide = slides.slice(after_slide + 1);
+	slides = before_new_slide.concat(new_slide, after_new_slide);
+
+	//resetting the counter attributes on the slides that follow the new slide...
+	for (var counter = after_slide+2; counter &lt; slides.length; counter++)
+	{
+		slides[counter][&quot;element&quot;].setAttribute(&quot;onmouseover&quot;, &quot;if ((currentMode == INDEX_MODE) &amp;&amp; ( activeSlide != &quot; + counter + &quot;)) { indexSetActiveSlide(&quot; + counter + &quot;); };&quot;);
+	}
+}
+
+/** Convenience function to obtain a transformation matrix from a point matrix.
+ *
+ *	@param mPoints Point matrix.
+ *	@return A transformation matrix.
+ */
+function pointMatrixToTransformation(mPoints)
+{
+	mPointsOld = (new matrixSVG()).fromElements(0, WIDTH, WIDTH, 0, 0, HEIGHT, 1, 1, 1);
+
+	return mPointsOld.mult(mPoints.inv());
+}
+
+/** Convenience function to obtain a matrix with three corners of a rectangle.
+ *
+ *	@param rect an svg rectangle
+ *	@return a matrixSVG containing three corners of the rectangle
+ */
+function rectToMatrix(rect)
+{
+	rectWidth = rect.getBBox().width;
+	rectHeight = rect.getBBox().height;
+	rectX = rect.getBBox().x;
+	rectY = rect.getBBox().y;
+	rectXcorr = 0;
+	rectYcorr = 0;
+
+	scaleX = WIDTH / rectWidth;
+	scaleY = HEIGHT / rectHeight;
+
+	if (scaleX &gt; scaleY)
+	{
+		scaleX = scaleY;
+		rectXcorr -= (WIDTH / scaleX - rectWidth) / 2;
+		rectWidth = WIDTH / scaleX;
+	}	
+	else
+	{
+		scaleY = scaleX;
+		rectYcorr -= (HEIGHT / scaleY - rectHeight) / 2;
+		rectHeight = HEIGHT / scaleY;
+	}
+
+	if (rect.transform.baseVal.numberOfItems &lt; 1)
+	{
+		mRectTrans = (new matrixSVG()).fromElements(1, 0, 0, 0, 1, 0, 0, 0, 1);
+	}
+	else
+	{
+		mRectTrans = (new matrixSVG()).fromSVGMatrix(rect.transform.baseVal.consolidate().matrix);
+	}
+
+	newBasePoints = (new matrixSVG()).fromElements(rectX, rectX, rectX, rectY, rectY, rectY, 1, 1, 1);
+	newVectors = (new matrixSVG()).fromElements(rectXcorr, rectXcorr + rectWidth, rectXcorr + rectWidth, rectYcorr, rectYcorr, rectYcorr + rectHeight, 0, 0, 0);
+
+	return mRectTrans.mult(newBasePoints.add(newVectors));
+}
+
+/** Function to handle JessyInk elements.
+ *
+ *	@param	node	Element node.
+ */
+function handleElement(node)
+{
+	if (node.getAttributeNS(NSS['jessyink'], 'element') == 'core.video')
+	{
+		var url;
+		var width;
+		var height;
+		var x;
+		var y;
+		var transform;
+
+		var tspans = node.getElementsByTagNameNS(&quot;http://www.w3.org/2000/svg&quot;, &quot;tspan&quot;);
+
+		for (var tspanCounter = 0; tspanCounter &lt; tspans.length; tspanCounter++)
+		{
+			if (tspans[tspanCounter].getAttributeNS(&quot;https://launchpad.net/jessyink&quot;, &quot;video&quot;) == &quot;url&quot;)
+			{
+				url = tspans[tspanCounter].firstChild.nodeValue;
+			}
+		}
+
+		var rects = node.getElementsByTagNameNS(&quot;http://www.w3.org/2000/svg&quot;, &quot;rect&quot;);
+
+		for (var rectCounter = 0; rectCounter &lt; rects.length; rectCounter++)
+		{
+			if (rects[rectCounter].getAttributeNS(&quot;https://launchpad.net/jessyink&quot;, &quot;video&quot;) == &quot;rect&quot;)
+			{
+				x = rects[rectCounter].getAttribute(&quot;x&quot;);
+				y = rects[rectCounter].getAttribute(&quot;y&quot;);
+				width = rects[rectCounter].getAttribute(&quot;width&quot;);
+				height = rects[rectCounter].getAttribute(&quot;height&quot;);
+				transform = rects[rectCounter].getAttribute(&quot;transform&quot;);
+			}
+		}
+
+		for (var childCounter = 0; childCounter &lt; node.childNodes.length; childCounter++)
+		{
+			if (node.childNodes[childCounter].nodeType == 1)
+			{
+				if (node.childNodes[childCounter].style)
+				{
+					node.childNodes[childCounter].style.display = 'none';
+				}
+				else
+				{
+					node.childNodes[childCounter].setAttribute(&quot;style&quot;, &quot;display: none;&quot;);
+				}
+			}
+		}
+
+		var foreignNode = document.createElementNS(&quot;http://www.w3.org/2000/svg&quot;, &quot;foreignObject&quot;);
+		foreignNode.setAttribute(&quot;x&quot;, x);
+		foreignNode.setAttribute(&quot;y&quot;, y);
+		foreignNode.setAttribute(&quot;width&quot;, width);
+		foreignNode.setAttribute(&quot;height&quot;, height);
+		foreignNode.setAttribute(&quot;transform&quot;, transform);
+
+		var videoNode = document.createElementNS(&quot;http://www.w3.org/1999/xhtml&quot;, &quot;video&quot;);
+		videoNode.setAttribute(&quot;src&quot;, url);
+
+		foreignNode.appendChild(videoNode);
+		node.appendChild(foreignNode);
+	}
+}
+
+/** Class processing the location hash.
+ *
+ *	@param str location hash
+ */
+function LocationHash(str)
+{
+	this.slideNumber = 0;
+	this.effectNumber = 0;
+
+	str = str.substr(1, str.length - 1);
+
+	var parts = str.split('_');
+
+	// Try to extract slide number.
+	if (parts.length &gt;= 1)
+	{
+		try
+		{
+			var slideNumber = parseInt(parts[0]);
+
+			if (!isNaN(slideNumber))
+			{
+				this.slideNumber = slideNumber - 1;
+			}
+		}
+		catch (e)
+		{
+		}
+	}
+	
+	// Try to extract effect number.
+	if (parts.length &gt;= 2)
+	{
+		try
+		{
+			var effectNumber = parseInt(parts[1]);
+
+			if (!isNaN(effectNumber))
+			{
+				this.effectNumber = effectNumber;
+			}
+		}
+		catch (e)
+		{
+		}
+	}
+}
+
+/** Class representing an svg matrix.
+*/
+function matrixSVG()
+{
+	this.e11 = 0; // a
+	this.e12 = 0; // c
+	this.e13 = 0; // e
+	this.e21 = 0; // b
+	this.e22 = 0; // d
+	this.e23 = 0; // f
+	this.e31 = 0;
+	this.e32 = 0;
+	this.e33 = 0;
+}
+
+/** Constructor function.
+ *
+ *	@param a element a (i.e. 1, 1) as described in the svg standard.
+ *	@param b element b (i.e. 2, 1) as described in the svg standard.
+ *	@param c element c (i.e. 1, 2) as described in the svg standard.
+ *	@param d element d (i.e. 2, 2) as described in the svg standard.
+ *	@param e element e (i.e. 1, 3) as described in the svg standard.
+ *	@param f element f (i.e. 2, 3) as described in the svg standard.
+ */
+matrixSVG.prototype.fromSVGElements = function(a, b, c, d, e, f)
+{
+	this.e11 = a;
+	this.e12 = c;
+	this.e13 = e;
+	this.e21 = b;
+	this.e22 = d;
+	this.e23 = f;
+	this.e31 = 0;
+	this.e32 = 0;
+	this.e33 = 1;
+
+	return this;
+}
+
+/** Constructor function.
+ *
+ *	@param matrix an svg matrix as described in the svg standard.
+ */
+matrixSVG.prototype.fromSVGMatrix = function(m)
+{
+	this.e11 = m.a;
+	this.e12 = m.c;
+	this.e13 = m.e;
+	this.e21 = m.b;
+	this.e22 = m.d;
+	this.e23 = m.f;
+	this.e31 = 0;
+	this.e32 = 0;
+	this.e33 = 1;
+
+	return this;
+}
+
+/** Constructor function.
+ *
+ *	@param e11 element 1, 1 of the matrix.
+ *	@param e12 element 1, 2 of the matrix.
+ *	@param e13 element 1, 3 of the matrix.
+ *	@param e21 element 2, 1 of the matrix.
+ *	@param e22 element 2, 2 of the matrix.
+ *	@param e23 element 2, 3 of the matrix.
+ *	@param e31 element 3, 1 of the matrix.
+ *	@param e32 element 3, 2 of the matrix.
+ *	@param e33 element 3, 3 of the matrix.
+ */
+matrixSVG.prototype.fromElements = function(e11, e12, e13, e21, e22, e23, e31, e32, e33)
+{
+	this.e11 = e11;
+	this.e12 = e12;
+	this.e13 = e13;
+	this.e21 = e21;
+	this.e22 = e22;
+	this.e23 = e23;
+	this.e31 = e31;
+	this.e32 = e32;
+	this.e33 = e33;
+
+	return this;
+}
+
+/** Constructor function.
+ *
+ *	@param attrString string value of the &quot;transform&quot; attribute (currently only &quot;matrix&quot; is accepted)
+ */
+matrixSVG.prototype.fromAttribute = function(attrString)
+{
+	str = attrString.substr(7, attrString.length - 8);
+
+	str = str.trim();
+
+	strArray = str.split(&quot;,&quot;);
+
+	// Opera does not use commas to separate the values of the matrix, only spaces.
+	if (strArray.length != 6)
+		strArray = str.split(&quot; &quot;);
+
+	this.e11 = parseFloat(strArray[0]);
+	this.e21 = parseFloat(strArray[1]);
+	this.e31 = 0;
+	this.e12 = parseFloat(strArray[2]);
+	this.e22 = parseFloat(strArray[3]);
+	this.e32 = 0;
+	this.e13 = parseFloat(strArray[4]);
+	this.e23 = parseFloat(strArray[5]);
+	this.e33 = 1;
+
+	return this;
+}
+
+/** Output function
+ *
+ *	@return a string that can be used as the &quot;transform&quot; attribute.
+ */
+matrixSVG.prototype.toAttribute = function()
+{
+	return &quot;matrix(&quot; + this.e11 + &quot;, &quot; + this.e21 + &quot;, &quot; + this.e12 + &quot;, &quot; + this.e22 + &quot;, &quot; + this.e13 + &quot;, &quot; + this.e23 + &quot;)&quot;;
+}
+
+/** Matrix nversion.
+ *
+ *	@return the inverse of the matrix
+ */
+matrixSVG.prototype.inv = function()
+{
+	out = new matrixSVG();
+
+	det = this.e11 * (this.e33 * this.e22 - this.e32 * this.e23) - this.e21 * (this.e33 * this.e12 - this.e32 * this.e13) + this.e31 * (this.e23 * this.e12 - this.e22 * this.e13);
+
+	out.e11 =  (this.e33 * this.e22 - this.e32 * this.e23) / det;
+	out.e12 = -(this.e33 * this.e12 - this.e32 * this.e13) / det;
+	out.e13 =  (this.e23 * this.e12 - this.e22 * this.e13) / det;
+	out.e21 = -(this.e33 * this.e21 - this.e31 * this.e23) / det;
+	out.e22 =  (this.e33 * this.e11 - this.e31 * this.e13) / det;
+	out.e23 = -(this.e23 * this.e11 - this.e21 * this.e13) / det;
+	out.e31 =  (this.e32 * this.e21 - this.e31 * this.e22) / det;
+	out.e32 = -(this.e32 * this.e11 - this.e31 * this.e12) / det;
+	out.e33 =  (this.e22 * this.e11 - this.e21 * this.e12) / det;
+
+	return out;
+}
+
+/** Matrix multiplication.
+ *
+ *	@param op another svg matrix
+ *	@return this * op
+ */
+matrixSVG.prototype.mult = function(op)
+{
+	out = new matrixSVG();
+
+	out.e11 = this.e11 * op.e11 + this.e12 * op.e21 + this.e13 * op.e31;
+	out.e12 = this.e11 * op.e12 + this.e12 * op.e22 + this.e13 * op.e32;
+	out.e13 = this.e11 * op.e13 + this.e12 * op.e23 + this.e13 * op.e33;
+	out.e21 = this.e21 * op.e11 + this.e22 * op.e21 + this.e23 * op.e31;
+	out.e22 = this.e21 * op.e12 + this.e22 * op.e22 + this.e23 * op.e32;
+	out.e23 = this.e21 * op.e13 + this.e22 * op.e23 + this.e23 * op.e33;
+	out.e31 = this.e31 * op.e11 + this.e32 * op.e21 + this.e33 * op.e31;
+	out.e32 = this.e31 * op.e12 + this.e32 * op.e22 + this.e33 * op.e32;
+	out.e33 = this.e31 * op.e13 + this.e32 * op.e23 + this.e33 * op.e33;
+
+	return out;
+}
+
+/** Matrix addition.
+ *
+ *	@param op another svg matrix
+ *	@return this + op
+ */
+matrixSVG.prototype.add = function(op)
+{
+	out = new matrixSVG();
+
+	out.e11 = this.e11 + op.e11;
+	out.e12 = this.e12 + op.e12;
+	out.e13 = this.e13 + op.e13;
+	out.e21 = this.e21 + op.e21;
+	out.e22 = this.e22 + op.e22;
+	out.e23 = this.e23 + op.e23;
+	out.e31 = this.e31 + op.e31;
+	out.e32 = this.e32 + op.e32;
+	out.e33 = this.e33 + op.e33;
+
+	return out;
+}
+
+/** Matrix mixing.
+ *
+ *	@param op another svg matrix
+ *	@parma contribOp contribution of the other matrix (0 &lt;= contribOp &lt;= 1)
+ *	@return (1 - contribOp) * this + contribOp * op
+ */
+matrixSVG.prototype.mix = function(op, contribOp)
+{
+	contribThis = 1.0 - contribOp;
+	out = new matrixSVG();
+
+	out.e11 = contribThis * this.e11 + contribOp * op.e11;
+	out.e12 = contribThis * this.e12 + contribOp * op.e12;
+	out.e13 = contribThis * this.e13 + contribOp * op.e13;
+	out.e21 = contribThis * this.e21 + contribOp * op.e21;
+	out.e22 = contribThis * this.e22 + contribOp * op.e22;
+	out.e23 = contribThis * this.e23 + contribOp * op.e23;
+	out.e31 = contribThis * this.e31 + contribOp * op.e31;
+	out.e32 = contribThis * this.e32 + contribOp * op.e32;
+	out.e33 = contribThis * this.e33 + contribOp * op.e33;
+
+	return out;
+}
+
+/** Trimming function for strings.
+*/
+String.prototype.trim = function()
+{
+	return this.replace(/^\s+|\s+$/g, '');
+}
+
+</script>
+</svg>

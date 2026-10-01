@@ -64,7 +64,7 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 99
-extend-exclude = ["docs_jupyter"]
+extend-exclude = ["docs"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I"]
