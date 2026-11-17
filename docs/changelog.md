@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.15.2] -- 2026-11-17
+### Fixed
+- A pipestat config whose `results_file_path` contains `{record_identifier}` (one results file per sample) works again. `PipelineManager` now passes the record identifier when it builds the pipestat manager, so the path is filled in before the first `report_result()`. This broke in 0.15.0.
+
 ## [0.15.1] -- 2026-03-05
 ### Changed
 - Updated for logmuse 0.3.0 compatibility
