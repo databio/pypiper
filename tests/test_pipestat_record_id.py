@@ -160,3 +160,32 @@ class TestPipelineStatsFileSync:
             assert pm.pipeline_stats_file == pm.pipestat.file
         finally:
             pm.stop_pipeline()
+
+
+class TestPerRecordResultsFile:
+    """A results_file_path with {record_identifier} should give one results file per record."""
+
+    def test_report_result_writes_per_record_file(self, tmp_path):
+        """report_result() should write to the record's own resolved results file."""
+        results_template = str(tmp_path / "{record_identifier}" / "stats.yaml")
+        config_path = _write_pipestat_config(
+            tmp_path, TEST_SCHEMA_PATH, results_file_path=results_template
+        )
+        outfolder = tmp_path / "output"
+        outfolder.mkdir()
+
+        pm = PipelineManager(
+            name="test_pipeline",
+            outfolder=str(outfolder),
+            pipestat_config=config_path,
+            pipestat_record_identifier="sample1",
+        )
+        try:
+            pm.report_result("key1", "value1")
+        finally:
+            pm.stop_pipeline()
+
+        stats_file = tmp_path / "sample1" / "stats.yaml"
+        assert stats_file.is_file()
+        data = yaml.safe_load(stats_file.read_text())
+        assert data["test_pipeline"]["sample"]["sample1"]["key1"] == "value1"
