@@ -1,0 +1,37 @@
+site_name: Pypiper
+nav:
+  - Pypiper: README.md
+  - Getting started:
+    - Philosophy: philosophy.md
+    - Features at-a-glance: features.md
+    - Hello world: code/hello-world.md
+  - Developer guides:
+    - Building a basic pipeline: code/basic-pipeline.md
+    - Using the run method: advanced-run-method.md
+    - Automatic command-line arguments: cli.md
+    - Configuring pipelines: configuration.md
+    - Reporting statistics: report.md
+    - Reporting statistics with pipestat: pipestat.md
+    - Cleaning up intermediate files: clean.md
+    - Best practices: best-practices.md
+  - Toolkits:
+    - 'NGSTk: the NGS toolkit': ngstk_intro.md
+  - Reference:
+    - How to cite: /citations/
+    - Catalog of pipeline outputs: outputs.md
+    - Pypiper API: code/python-api.md
+    - NGSTk API: code/ngstk-api.md
+    - FAQ: faq.md
+    - Support: support.md
+    - Contributing: contributing.md
+    - Changelog: changelog.md
+
+renderers:
+  - hub-notebooks:
+      include: [notebooks/*.ipynb]
+      execute: false
+  - hub-python-api:
+      package_root: ..
+      packages: [pypiper]
+      include: [code/python-api.md, code/ngstk-api.md]
+      docstring_style: google
