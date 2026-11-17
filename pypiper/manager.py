@@ -409,17 +409,16 @@ class PipelineManager(object):
 
         pipestat_config_resolved = pipestat_config or _get_arg(args_dict, "pipestat_config")
         if pipestat_config_resolved:
-            self._pipestat_manager = PipestatManager.from_config(
-                config=pipestat_config_resolved,
+            # Pass record_identifier at construction so pipestat can fill a
+            # {record_identifier} placeholder in the config's results_file_path.
+            # Pypiper owns the record identity; it overrides any value in the config.
+            self._pipestat_manager = PipestatManager(
+                config_file=pipestat_config_resolved,
+                record_identifier=self.pipestat_record_identifier
+                or _get_arg(args_dict, "pipestat_sample_name")
+                or DEFAULT_SAMPLE_NAME,
                 pipeline_type=self.pipestat_pipeline_type,
                 multi_pipelines=multi,
-            )
-            # Always set record_identifier from pypiper's resolution chain.
-            # Pypiper owns the record identity; the pipestat config should not override it.
-            self._pipestat_manager.record_identifier = (
-                self.pipestat_record_identifier
-                or _get_arg(args_dict, "pipestat_sample_name")
-                or DEFAULT_SAMPLE_NAME
             )
             # Sync pipeline_stats_file to pipestat's actual results file location
             # so that _refresh_stats() reads from the correct file.
